@@ -1,0 +1,658 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using PepperDash.Core;
+using PepperDash.Essentials.Core;
+using Crestron.SimplSharp.Reflection;
+using Crestron.SimplSharp;
+using PepperDash.Essentials.Devices.Common.Codec;
+using Crestron.SimplSharpPro.CrestronThread;
+using PepperDash.Essentials.Devices;
+using System.Text.RegularExpressions;
+
+namespace Tesira_DSP_EPI {
+    public class TesiraDspDialer : TesiraDspControlPoint, IHasDialer, IKeyed {
+
+        public bool IsInCall { get; private set; }
+        //public TesiraDsp Parent { get; private set; }
+        public bool IsVoip { get; private set; }
+        public string DialString { get; private set; }
+
+        private bool _OffHookStatus { get; set; }
+        public bool OffHookStatus {
+            get {
+                return _OffHookStatus;
+            }
+            private set {
+                _OffHookStatus = value;
+                Debug.Console(2, this, "_OffHookStatus = {0}", value.ToString());
+                this.OffHookFeedback.FireUpdate();
+            }
+        }
+
+        private int CallAppearance { get; set; }
+
+        private bool AppendDtmf { get; set; }
+        private bool ClearOnHangup { get; set; }
+
+        private bool _AutoAnswerState { get; set; }
+        public bool AutoAnswerState { get; set; }
+
+
+        private bool _DoNotDisturbState { get; set; }
+        public bool DoNotDisturbState { get; private set; }
+
+        public string DialerCustomName { get; set; }
+        public string ControlStatusCustomName { get; set; }
+        public string AutoAnswerCustomName { get; set; }
+
+        public string CallStatus {
+            get {
+                return CallStatusEnum.ToString();
+            }
+            set { }
+        }
+
+        private eCallStatus _CallStatusEnum { get; set; }
+        private eCallStatus CallStatusEnum {
+            get {
+                return _CallStatusEnum;
+            }
+            set {
+                _CallStatusEnum = value;
+                if (CallStatusEnum == eCallStatus.DIAL_TONE ||
+                    CallStatusEnum == eCallStatus.DIALING ||
+                    CallStatusEnum == eCallStatus.ANSWERING ||
+                    CallStatusEnum == eCallStatus.ACTIVE ||
+                    CallStatusEnum == eCallStatus.ACTIVE_MUTED ||
+                    CallStatusEnum == eCallStatus.BUSY ||
+                    CallStatusEnum == eCallStatus.INVALID_NUMBER ||
+                    CallStatusEnum == eCallStatus.ON_HOLD) {
+                    OffHookStatus = true;
+                }
+                else
+                    OffHookStatus = false;
+                if (value == eCallStatus.IDLE) {
+                        if (ClearOnHangup) {
+                            DialString = String.Empty;
+                            this.DialStringFeedback.FireUpdate();
+                        }
+                }
+            }
+        }
+
+        public bool IncomingCallState {
+            get {
+                if (CallStatusEnum == eCallStatus.RINGING)
+                    return true;
+                else
+                    return false;
+            }
+            set { 
+            }
+        }
+
+        public int LineNumber { get; private set; }
+      
+        private string _CallerIDNumber { get; set; }
+        public string CallerIDNumber {
+            get {
+                return _CallerIDNumber;
+            }
+            set {
+                _CallerIDNumber = value;
+                CallerIDNumberFB.FireUpdate();
+            }
+        }
+
+        private string _CallerIDName { get; set; }
+        public string CallerIDName {
+            get {
+                return _CallerIDName;
+            }
+            set {
+                _CallerIDName = value;
+                CallerIDNameFB.FireUpdate();
+            }
+        }
+
+        public BoolFeedback OffHookFeedback;
+        public BoolFeedback AutoAnswerFeedback;
+        public BoolFeedback DoNotDisturbFeedback;
+        public StringFeedback DialStringFeedback;
+        public StringFeedback CallerIDNumberFB;
+        public StringFeedback CallerIDNameFB;
+        public BoolFeedback IncomingCallFeedback;
+
+        public override bool IsSubscribed {
+            get {
+                bool isSubscribed;
+                if (IsVoip) {
+                    if (VoipIsSubscribed && AutoAnswerIsSubscribed)
+                        isSubscribed =  true;
+                    else
+                        isSubscribed =  false;
+                }
+                else
+                    isSubscribed =  false;
+                return isSubscribed;
+            }
+            protected set { }
+        }
+
+        private bool VoipIsSubscribed { get; set; }
+        private bool DndIsSubscribed { get; set; }
+        private bool AutoAnswerIsSubscribed { get; set; }
+
+        public TesiraDspDialer(string key, TesiraDialerControlBlockConfig config, TesiraDsp parent)
+            : base(config.dialerInstanceTag, config.controlStatusInstanceTag, config.index, config.callAppearance, parent) {
+
+            DialStringFeedback = new StringFeedback(() => { return DialString; });
+            OffHookFeedback = new BoolFeedback(() => { return OffHookStatus; });
+            AutoAnswerFeedback = new BoolFeedback(() => { return AutoAnswerState; });
+            DoNotDisturbFeedback = new BoolFeedback(() => { return DoNotDisturbState; });
+            CallerIDNumberFB = new StringFeedback(() => { return CallerIDNumber; });
+            CallerIDNameFB = new StringFeedback(() => { return CallerIDName; });
+            IncomingCallFeedback = new BoolFeedback(() => { return IncomingCallState; });
+
+            Initialize(key, config);
+
+        }
+
+        public void Initialize(string key, TesiraDialerControlBlockConfig config) {
+            Key = string.Format("{0}--{1}", Parent.Key, key);
+
+            DeviceManager.AddDevice(this);
+
+            Debug.Console(2, this, "Adding LevelControl '{0}'", Key);
+
+            IsSubscribed = false;
+
+            IsVoip = config.isVoip;
+            LineNumber = config.index;
+            AppendDtmf = config.appendDtmf;
+            ClearOnHangup = config.clearOnHangup;
+            Enabled = config.enabled;
+            CallAppearance = config.callAppearance;
+        }
+
+        public void AcceptCall(CodecActiveCallItem item) {
+
+        }
+
+        public event EventHandler<CodecCallStatusItemChangeEventArgs> CallStatusChange;
+
+        void onCallStatusChange(CodecCallStatusItemChangeEventArgs args) {
+            var handler = CallStatusChange;
+            if (handler != null) {
+                CallStatusChange(this, args);
+            }
+        }
+
+        public void Subscribe() {
+            if (IsVoip) {
+                DialerCustomName = string.Format("{0}~VoIPDialer{1}", this.InstanceTag1, this.Index1);
+                AutoAnswerCustomName = string.Format("{0}~VoIPDialerAutoAnswer{1}", this.InstanceTag1, this.Index1);
+                ControlStatusCustomName = string.Format("{0}~VoIPControl{1}", this.InstanceTag2, this.Index1);
+
+                SendSubscriptionCommand(ControlStatusCustomName, "callState", 250, 2);
+
+                SendSubscriptionCommand(AutoAnswerCustomName, "autoAnswer", 500, 1);
+
+                SendFullCommand("get", "dndEnable", null, 1);
+
+            }
+        }
+
+        // <summary>
+        /// Parses the response from the DspBase
+        /// </summary>
+        /// <param name="customName"></param>
+        /// <param name="value"></param>
+        public void ParseSubscriptionMessage(string customName, string value) {
+            try {
+                if (IsVoip && customName == ControlStatusCustomName) {
+                    //Pulls Entire Value "array" and seperates call appearances
+                    string pattern1 = "\\[([^\\[\\]]+)\\]";
+                    //Seperates each call appearance into their constituent parts
+                    string pattern2 = "\\[(?<state>\\d+)\\s+(?<line>\\d+)\\s+(?<call>\\d+)\\s+(?<action>\\d+)\\s+(?<cid>\".+\"|\"\")\\s+(?<prompt>\\d+)\\]";
+                    //Pulls CallerID Data
+                    string pattern3 = "(?:(?:\\\\\"(?<time>.*)\\\\\")(?:\\\\\"(?<number>.*)\\\\\")(?:\\\\\"(?<name>.*)\\\\\"))|\"\"";
+
+                    var myMatches = Regex.Matches(value, pattern1);
+
+                    Debug.Console(2, this, "This is the list of Call States - {0}", myMatches.ToString());
+
+                    Match match = myMatches[CallAppearance - 1];
+                    Match match2 = Regex.Match(match.Value, pattern2);
+                    if (match2.Success) {
+                        Debug.Console(2, this, "VoIPControlStatus Subscribed Response = {0}", match.Value);
+                        int lineNumber = (int)(ushort.Parse(match2.Groups["line"].Value) + 1);
+                        var CallStatusInt = int.Parse(match2.Groups["state"].Value.ToString());
+                        CallStatusEnum = (eCallStatus)(CallStatusInt);
+                        Debug.Console(2, this, "Callstate for Line {0} is {1}", lineNumber, int.Parse(match2.Groups["state"].Value));
+                        Debug.Console(2, this, "Callstate Enum for Line {0} is {1}", lineNumber, (int)CallStatusEnum);
+                        if (CallStatusEnum == eCallStatus.RINGING) {
+                            IncomingCallState = true;
+                        }
+                        else
+                            IncomingCallState = false;
+                        this.IncomingCallFeedback.FireUpdate();
+                        
+                        this.OffHookFeedback.FireUpdate();
+
+                        Match match3 = Regex.Match(match2.Groups["cid"].Value, pattern3);
+                        if (match3.Success) {
+                            CallerIDNumber = match3.Groups["number"].Value;
+                            CallerIDName = match3.Groups["name"].Value;
+                            if (lineNumber == LineNumber) {
+                                Debug.Console(2, this, "CallState Complete - Firing Updates");
+                                this.CallerIDNumberFB.FireUpdate();
+                                this.OffHookFeedback.FireUpdate();
+                                VoipIsSubscribed = true;
+                            }
+                        }
+                    }
+                }
+            }
+            catch (Exception e) {
+                Debug.Console(0, this, "Error in ParseSubscriptioMessage - {0}", e.Message);
+            }
+            if (customName == AutoAnswerCustomName) {
+                AutoAnswerState = bool.Parse(value);          
+                    
+                AutoAnswerIsSubscribed = true;
+
+                this.AutoAnswerFeedback.FireUpdate();
+            }
+
+        }
+
+        /// <summary>
+        /// Parses any non-subscribed messages destined for this class
+        /// </summary>
+        /// <param name="attributeCode"></param>
+        /// <param name="message"></param>
+        public override void ParseGetMessage(string attributeCode, string message) {
+            try {
+                Debug.Console(2, this, "Parsing Message - '{0}' : Message has an attributeCode of {1}", message, attributeCode);
+                // Parse an "+OK" message
+                string pattern = "[^ ]* (.*)";
+
+                Match match = Regex.Match(message, pattern);
+
+                if (match.Success) {
+
+                    string value = match.Groups[1].Value;
+
+                    Debug.Console(1, this, "Response: '{0}' Value: '{1}'", attributeCode, value);
+
+                    if (message.IndexOf("+OK") > -1) {
+                        switch (attributeCode) {
+                            case "autoAnswer": {
+                                    AutoAnswerState = bool.Parse(value);
+
+                                    Debug.Console(1, this, "AutoAnswerState is '{0}'", AutoAnswerState);
+
+                                    this.AutoAnswerFeedback.FireUpdate();
+
+                                    break;
+                                }
+                            case "dndEnable": {
+                                    DoNotDisturbState = bool.Parse(value);
+
+                                    Debug.Console(1, this, "DoNotDisturbState is '{0}'", DoNotDisturbState);
+
+                                    this.DoNotDisturbFeedback.FireUpdate();
+
+                                    break;
+                                }
+                            default: {
+                                    Debug.Console(2, "Response does not match expected attribute codes: '{0}'", message);
+
+                                    break;
+                                }
+                        }
+                    }
+                }
+            }
+            catch (Exception e) {
+                Debug.Console(2, "Unable to parse message: '{0}'\n{1}", message, e);
+            }
+        }
+
+        public void Dial() {
+            if (OffHookStatus) {
+                SendFullCommand(null, "end", null, 1);
+                if (ClearOnHangup) {
+                    DialString = String.Empty;
+                    this.DialStringFeedback.FireUpdate();
+                }
+            }
+            else if (!OffHookStatus) {
+                SendFullCommand(null, "dial", DialString, 1);
+            }
+        }
+
+        public void SetDialString(string data) {
+            DialString = data;
+            this.DialStringFeedback.FireUpdate();
+        }
+
+        public void OnHook() {
+            if (IsVoip) {
+                SendFullCommand(null, "onHook", null, 1);
+            }
+        }
+
+        public void OffHook() {
+            if (IsVoip)
+                SendFullCommand(null, "answer", null, 1);
+        }
+
+        public void Answer() {
+            if (IsVoip)
+                SendFullCommand(null, "answer", null, 1);
+        }
+
+        public void Dial(string number) {
+            throw new NotImplementedException();
+        }
+
+        public void EndAllCalls() {
+            SendFullCommand(null, "end", null, 1);
+            /*if (ClearOnHangup) {
+                DialString = String.Empty;
+                this.DialStringFeedback.FireUpdate();
+            }*/
+        }
+
+        public void EndCall(CodecActiveCallItem activeCall) {
+            SendFullCommand(null, "end", null, 1);
+            /*if (ClearOnHangup) {
+                DialString = String.Empty;
+                this.DialStringFeedback.FireUpdate();
+            }*/
+        }
+
+        public void AutoAnswerOn() {
+            SendFullCommand("set", "autoAnswer", "true", 1);
+        }
+
+        public void AutoAnswerOff() {
+            SendFullCommand("set", "autoAnswer", "false", 1);
+        }
+
+        public void AutoAnswerToggle() {
+            SendFullCommand("toggle", "autoAnswer", null, 1);
+        }
+
+        public void DoNotDisturbOn() {
+            SendFullCommand("set", "dndEnable", "true", 1);
+            SendFullCommand("get", "dndEnable", null, 1);
+        }
+        public void DoNotDisturbOff() {
+            SendFullCommand("set", "dndEnable", "false", 1);
+            SendFullCommand("get", "dndEnable", null, 1);
+        }
+        public void DoNotDisturbToggle() {
+            if (DoNotDisturbState) 
+                SendFullCommand("set", "dndEnable", "false", 1);
+            else
+                SendFullCommand("set", "dndEnable", "true", 1);
+            SendFullCommand("get", "dndEnable", null, 1);
+        }
+
+
+        public void RejectCall(CodecActiveCallItem item) {
+            throw new NotImplementedException();
+        }
+
+        public void SendDtmf(string digit) {
+            throw new NotImplementedException();
+        }
+
+        public void SendKeypad(eKeypadKeys data) {
+            if (!OffHookStatus) {
+                switch (data) {
+                    case eKeypadKeys.Num0:
+                        DialString = DialString + "0";
+                        this.DialStringFeedback.FireUpdate();
+                        break;
+                    case eKeypadKeys.Num1:
+                        DialString = DialString + "1";
+                        this.DialStringFeedback.FireUpdate();
+                        break;
+                    case eKeypadKeys.Num2:
+                        DialString = DialString + "2";
+                        this.DialStringFeedback.FireUpdate();
+                        break;
+                    case eKeypadKeys.Num3:
+                        DialString = DialString + "3";
+                        this.DialStringFeedback.FireUpdate();
+                        break;
+                    case eKeypadKeys.Num4:
+                        DialString = DialString + "4";
+                        this.DialStringFeedback.FireUpdate();
+                        break;
+                    case eKeypadKeys.Num5:
+                        DialString = DialString + "5";
+                        this.DialStringFeedback.FireUpdate();
+                        break;
+                    case eKeypadKeys.Num6:
+                        DialString = DialString + "6";
+                        this.DialStringFeedback.FireUpdate();
+                        break;
+                    case eKeypadKeys.Num7:
+                        DialString = DialString + "7";
+                        this.DialStringFeedback.FireUpdate();
+                        break;
+                    case eKeypadKeys.Num8:
+                        DialString = DialString + "8";
+                        this.DialStringFeedback.FireUpdate();
+                        break;
+                    case eKeypadKeys.Num9:
+                        DialString = DialString + "9";
+                        this.DialStringFeedback.FireUpdate();
+                        break;
+                    case eKeypadKeys.Star:
+                        DialString = DialString + "*";
+                        this.DialStringFeedback.FireUpdate();
+                        break;
+                    case eKeypadKeys.Pound:
+                        DialString = DialString + "#";
+                        this.DialStringFeedback.FireUpdate();
+                        break;
+                    case eKeypadKeys.Clear:
+                        DialString = String.Empty;
+                        this.DialStringFeedback.FireUpdate();
+                        break;
+                    case eKeypadKeys.Backspace:
+                        DialString = DialString.Remove(DialString.Length - 1, 1);
+                        this.DialStringFeedback.FireUpdate();
+                        break;
+                    default:
+                        break;
+                }
+            }
+            if (OffHookStatus) {
+                switch (data) {
+                    case eKeypadKeys.Num0:
+                        SendFullCommand(null, "dtmf", "0", 1);
+                        if (AppendDtmf) {
+                            DialString = DialString + "0";
+                            this.DialStringFeedback.FireUpdate();
+                        }
+                        break;
+                    case eKeypadKeys.Num1:
+                        SendFullCommand(null, "dtmf", "1", 1);
+                        if (AppendDtmf) {
+                            DialString = DialString + "1";
+                            this.DialStringFeedback.FireUpdate();
+                        }
+                        break;
+                    case eKeypadKeys.Num2:
+                        SendFullCommand(null, "dtmf", "2", 1);
+                        if (AppendDtmf) {
+                            DialString = DialString + "2";
+                            this.DialStringFeedback.FireUpdate();
+                        }
+                        break;
+                    case eKeypadKeys.Num3:
+                        SendFullCommand(null, "dtmf", "3", 1);
+                        if (AppendDtmf) {
+                            DialString = DialString + "3";
+                            this.DialStringFeedback.FireUpdate();
+                        }
+                        break;
+                    case eKeypadKeys.Num4:
+                        SendFullCommand(null, "dtmf", "4", 1);
+                        if (AppendDtmf) {
+                            DialString = DialString + "4";
+                            this.DialStringFeedback.FireUpdate();
+                        }
+                        break;
+                    case eKeypadKeys.Num5:
+                        SendFullCommand(null, "dtmf", "5", 1);
+                        if (AppendDtmf) {
+                            DialString = DialString + "5";
+                            this.DialStringFeedback.FireUpdate();
+                        }
+                        break;
+                    case eKeypadKeys.Num6:
+                        SendFullCommand(null, "dtmf", "6", 1);
+                        if (AppendDtmf) {
+                            DialString = DialString + "6";
+                            this.DialStringFeedback.FireUpdate();
+                        }
+                        break;
+                    case eKeypadKeys.Num7:
+                        SendFullCommand(null, "dtmf", "7", 1);
+                        if (AppendDtmf) {
+                            DialString = DialString + "7";
+                            this.DialStringFeedback.FireUpdate();
+                        }
+                        break;
+                    case eKeypadKeys.Num8:
+                        SendFullCommand(null, "dtmf", "8", 1);
+                        if (AppendDtmf) {
+                            DialString = DialString + "8";
+                            this.DialStringFeedback.FireUpdate();
+                        }
+                        break;
+                    case eKeypadKeys.Num9:
+                        SendFullCommand(null, "dtmf", "9", 1);
+                        if (AppendDtmf) {
+                            DialString = DialString + "9";
+                            this.DialStringFeedback.FireUpdate();
+                        }
+                        break;
+                    case eKeypadKeys.Star:
+                        SendFullCommand(null, "dtmf", "*", 1);
+                        if (AppendDtmf) {
+                            DialString = DialString + "*";
+                            this.DialStringFeedback.FireUpdate();
+                        }
+                        break;
+                    case eKeypadKeys.Pound:
+                        SendFullCommand(null, "dtmf", "#", 1);
+                        if (AppendDtmf) {
+                            DialString = DialString + "#";
+                            this.DialStringFeedback.FireUpdate();
+                        }
+                        break;
+                    case eKeypadKeys.Clear:
+                        break;
+                    case eKeypadKeys.Backspace:
+                        break;
+                    default:
+                        break;
+                }
+            }
+        }
+
+        private enum eCallStatus {
+            INIT = 1,
+
+            FAULT,
+
+            IDLE,
+
+            DIAL_TONE,
+
+            SILENT,
+
+            DIALING,
+
+            RINGBACK,
+
+            RINGING,
+
+            ANSWERING,
+
+            BUSY,
+
+            REJECT,
+
+            INVALID_NUMBER,
+
+            ACTIVE,
+
+            ACTIVE_MUTED,
+
+            ON_HOLD,
+
+            WAITING_RING,
+
+            CONF_ACTIVE,
+
+            CONF_HOLD,
+
+            XFER_INIT,
+
+            XFER_Silent,
+
+            XFER_ReqDialing,
+
+            XFER_Process,
+
+            XFER_ReplacesProcess,
+
+            XFER_Active,
+
+            XFER_RingBack,
+
+            XFER_OnHold,
+
+            XFER_Decision,
+
+            XFER_InitError,
+
+            XFER_WAIT
+
+            
+
+            
+            
+        }
+
+        public enum eKeypadKeys {
+            Num0 = 0,
+            Num1,
+            Num2,
+            Num3,
+            Num4,
+            Num5,
+            Num6,
+            Num7,
+            Num8,
+            Num9,
+            Star,
+            Pound,
+            Clear,
+            Backspace
+        }
+
+    }
+}
