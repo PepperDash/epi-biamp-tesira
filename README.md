@@ -1,5 +1,23 @@
 # Tesira-DSP-EPI
 
+## Features
+
+Level/Mute control - specifically the Level and Mute attributes.
+
+Preset - Call preset by name.
+
+VoIP - Single call appearance per line.
+
+## RoadMap
+
+Router/Source Selector Blocks
+
+Arbitrary State Control
+
+POTS
+
+"Generic" control - so we don't have to develop new features for controls that only you will use.
+
 ## Config Example :
 
 ```javascript
