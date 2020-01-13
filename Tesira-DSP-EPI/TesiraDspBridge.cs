@@ -63,9 +63,11 @@ namespace Tesira_DSP_EPI {
             //Presets 
             x = 0;
             trilist.SetStringSigAction(joinMap.Presets, s => DspDevice.RunPreset(s));
+            trilist.SetStringSigAction(joinMap.PresetCallByInputName, s => DspDevice.RunPresetByName());
+            trilist.SetStringSigAction(joinMap.PresetNameInput, s => DspDevice.SetPresetName(s));
             foreach (var preset in DspDevice.PresetList) {
                 var temp = x;
-                trilist.StringInput[joinMap.Presets + temp + 1].StringValue = preset.label;
+                trilist.StringInput[joinMap.PresetNames + temp + 1].StringValue = preset.label;
                 trilist.SetSigTrueAction(joinMap.Presets + temp + 1, () => DspDevice.RunPresetNumber(temp));
                 x++;
             }
@@ -140,6 +142,10 @@ namespace Tesira_DSP_EPI {
         public uint ChannelVolumeUp { get; set; }
         public uint ChannelVolumeDown { get; set; }
         public uint Presets { get; set; }
+        public uint PresetNames { get; set; }
+        public uint PresetCallByInputName { get; set; }
+        public uint PresetNameInput { get; set; }
+
         public uint ChannelVisible { get; set; }
 
         
@@ -189,8 +195,16 @@ namespace Tesira_DSP_EPI {
 
             // SingleJoins
             IsOnline = 1;
-            Address = 1;
+
+            //Digital
+            PresetCallByInputName = 99;
             Presets = 100;
+
+            //Analog
+
+            //Serial
+            PresetNameInput = 99;
+            PresetNames = 100;
             
             //Digital
             IncomingCall = 3100;

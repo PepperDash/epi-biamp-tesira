@@ -4,7 +4,7 @@
 
 Level/Mute control - specifically the Level and Mute attributes.
 
-Preset - Call preset by name.
+Preset - Call Preset by Index from Config - Call preset directly by name.
 
 VoIP - Single call appearance per line.
 
@@ -125,8 +125,16 @@ public TesiraDspDeviceJoinMap() {
 
             // SingleJoins
             IsOnline = 1;
-            Address = 1;
+
+            //Digital
+            PresetCallByInputName = 99;
             Presets = 100;
+
+            //Analog
+
+            //Serial
+            PresetNameInput = 99;
+            PresetNames = 100;
             
             //Digital
             IncomingCall = 3100;
