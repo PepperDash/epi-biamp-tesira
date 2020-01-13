@@ -1,6 +1,6 @@
 # Tesira-DSP-EPI
 
-##Config Example :
+## Config Example :
 
 ```javascript
 {
@@ -88,7 +88,7 @@
 
 
 
-##JoinMap
+## JoinMap
 
 ```.net
 public TesiraDspDeviceJoinMap() {
