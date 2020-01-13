@@ -29,7 +29,6 @@ namespace Tesira_DSP_EPI {
             ushort x = 1;
             var comm = DspDevice as ICommunicationMonitor;
             DspDevice.CommunicationMonitor.IsOnlineFeedback.LinkInputSig(trilist.BooleanInput[joinMap.IsOnline]);
-            trilist.SetStringSigAction(joinMap.Address, (s) => { DspDevice.SetIpAddress(s); });
 
             Debug.Console(2, "There are {0} Level Control Points", DspDevice.LevelControlPoints.Count());
             foreach (var channel in DspDevice.LevelControlPoints) {
@@ -63,8 +62,6 @@ namespace Tesira_DSP_EPI {
             //Presets 
             x = 0;
             trilist.SetStringSigAction(joinMap.Presets, s => DspDevice.RunPreset(s));
-            trilist.SetStringSigAction(joinMap.PresetCallByInputName, s => DspDevice.RunPresetByName());
-            trilist.SetStringSigAction(joinMap.PresetNameInput, s => DspDevice.SetPresetName(s));
             foreach (var preset in DspDevice.PresetList) {
                 var temp = x;
                 trilist.StringInput[joinMap.PresetNames + temp + 1].StringValue = preset.label;
@@ -182,29 +179,36 @@ namespace Tesira_DSP_EPI {
         public TesiraDspDeviceJoinMap() {
 
             // Arrays
-            ChannelName = 200;
+            //Digital
             ChannelMuteToggle = 400;
             ChannelMuteOn = 600;
             ChannelMuteOff = 800;
-            ChannelVolume = 200;
             ChannelVolumeUp = 1000;
             ChannelVolumeDown = 1200;
-            ChannelType = 400;
             Presets = 100;
             ChannelVisible = 200;
 
+            //Analog
+            ChannelType = 400;
+            ChannelVolume = 200;
+            
+            //Serial
+            ChannelName = 200;
+            PresetNames = 100;
+            
+
             // SingleJoins
-            IsOnline = 1;
+            
 
             //Digital
-            PresetCallByInputName = 99;
-            Presets = 100;
+            IsOnline = 1;
+            PresetCallByInputName = 100;
 
             //Analog
 
             //Serial
-            PresetNameInput = 99;
-            PresetNames = 100;
+            PresetNameInput = 100;
+            
             
             //Digital
             IncomingCall = 3100;

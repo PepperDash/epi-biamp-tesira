@@ -402,20 +402,6 @@ namespace Tesira_DSP_EPI {
         
         #region Presets
 
-        public string PresetName { get;  private set; }
-
-        public void RunPresetByName() {
-            if (!String.IsNullOrEmpty(PresetName)) {
-                RunPreset(PresetName);
-            }
-            else
-                Debug.Console(1, this, "PresetName is Empty - Unable to run preset");
-        }
-
-        public void SetPresetName(string data) {
-            PresetName = data;
-        }
-
         public void RunPresetNumber(ushort n) {
             RunPreset(PresetList[n].preset);
         }
