@@ -15,6 +15,7 @@ namespace Tesira_DSP_EPI {
         public int Index2 { get; set; }
         public TesiraDsp Parent { get; private set; }
         public bool Enabled { get; set; }
+        public string Label { get; set; }
 
         public virtual bool IsSubscribed { get; protected set; }
 
@@ -27,6 +28,10 @@ namespace Tesira_DSP_EPI {
         }
 
         virtual public void Initialize() {
+
+        }
+
+        virtual public void Subscribe() {
 
         }
 
@@ -59,7 +64,7 @@ namespace Tesira_DSP_EPI {
             if (attributeCode == "level" || attributeCode == "mute" || attributeCode == "minLevel" || 
                 attributeCode == "maxLevel" || attributeCode == "label" || attributeCode == "rampInterval" || 
                 attributeCode == "rampStep" || attributeCode == "autoAnswer" || attributeCode == "dndEnable" ||
-                attributeCode == "dtmf" ) {
+                attributeCode == "dtmf" ||  attributeCode == "state") {
                 //Command requires Index
 
                 if (String.IsNullOrEmpty(value)) {
@@ -139,7 +144,7 @@ namespace Tesira_DSP_EPI {
                     instanceTag = InstanceTag1;
                     break;
             }
-            if (attributeCode == "callState") {
+            if (attributeCode == "callState" || attributeCode == "sourceSelection") {
                 cmd = string.Format("\"{0}\" subscribe {1} {2} {3}", instanceTag, attributeCode, customName, responseRate);
             }
 
@@ -150,6 +155,7 @@ namespace Tesira_DSP_EPI {
                 cmd = string.Format("\"{0}\" subscribe {1} {2} {3}", instanceTag, attributeCode, Index1, customName);
             }
 
+            //Parent.WatchDogList.Add(customName,cmd);
             Parent.SendLine(cmd);
         }
 

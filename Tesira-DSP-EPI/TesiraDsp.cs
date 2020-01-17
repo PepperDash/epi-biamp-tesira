@@ -15,6 +15,7 @@ using PepperDash.Essentials.Core.Config;
 using PepperDash.Essentials.Bridges;
 using Crestron.SimplSharpPro.DeviceSupport;
 using Crestron.SimplSharpPro.Diagnostics;
+using Tesira_DSP_EPI.Bridge;
 
 namespace Tesira_DSP_EPI {
     public class TesiraDsp : ReconfigurableDevice, IBridge{
@@ -38,13 +39,14 @@ namespace Tesira_DSP_EPI {
 
         public bool isSubscribed;
 
-        private CTimer SubscriptionTimer;
-        public string SerialNumber { get; set; }
+        //public TesiraDspWatchdog Watchdog;
 
+        private CTimer WatchdogTimer;
 
         public Dictionary<string, TesiraDspLevelControl> LevelControlPoints { get; private set; }
-        public Dictionary<string, TesiraDspDialer> Dialers { get; set; }
-        //public Dictionary<string, TesiraDspControlPoint> Switchers { get; set; }
+        public Dictionary<string, TesiraDspDialer> Dialers { get; private set; }
+        public Dictionary<string, TesiraDspSwitcher> Switchers { get; private set; }
+        public Dictionary<string, TesiraDspStateControl> States { get; private set; }
         public List<TesiraDspPresets> PresetList = new List<TesiraDspPresets>();
 
         DeviceConfig _Dc;
@@ -60,7 +62,9 @@ namespace Tesira_DSP_EPI {
 			TesiraDspPropertiesConfig props = JsonConvert.DeserializeObject<TesiraDspPropertiesConfig>(dc.Properties.ToString());
             Debug.Console(0, this, "Made it to device constructor");
 
-            SerialNumber = Guid.NewGuid().ToString();
+            //WatchDogList = new Dictionary<string, string>();
+
+            //Watchdog = new TesiraDspWatchdog("WatchDog", this);
 
             CommandQueue = new CrestronQueue(100);
             Communication = comm;
@@ -82,7 +86,8 @@ namespace Tesira_DSP_EPI {
 
             LevelControlPoints = new Dictionary<string, TesiraDspLevelControl>();
 			Dialers = new Dictionary<string, TesiraDspDialer>();
-            //Switchers = new Dictionary<string, TesiraSwitcherControl>();
+            Switchers = new Dictionary<string, TesiraDspSwitcher>();
+            States = new Dictionary<string, TesiraDspStateControl>();
 			CreateDspObjects();
         }
 
@@ -125,7 +130,8 @@ namespace Tesira_DSP_EPI {
             LevelControlPoints.Clear();
             PresetList.Clear();
             Dialers.Clear();
-            //Switchers.Clear();
+            States.Clear();
+            Switchers.Clear();
 
 
 
@@ -135,12 +141,24 @@ namespace Tesira_DSP_EPI {
                     string key = block.Key;
                     Debug.Console(2, this, "LevelControlBlock Key - {0}", key);
 					var value = block.Value;
-					value.levelInstanceTag = value.levelInstanceTag;
-					value.muteInstanceTag = value.muteInstanceTag;
+					//value.levelInstanceTag = value.levelInstanceTag;
+					//value.muteInstanceTag = value.muteInstanceTag;
 
 					this.LevelControlPoints.Add(key, new TesiraDspLevelControl(key, value, this));
 					Debug.Console(2, this, "Added LevelControlPoint {0} LevelTag: {1} MuteTag: {2}", key, value.levelInstanceTag, value.muteInstanceTag);
 				}
+            }
+
+            if (props.switcherControlBlocks != null) {
+                Debug.Console(2, this, "switcherControlBlocks is not null - There are {0} of them", props.levelControlBlocks.Count());
+                foreach (KeyValuePair<string, TesiraSwitcherControlBlockConfig> block in props.switcherControlBlocks) {
+                    string key = block.Key;
+                    Debug.Console(2, this, "SwitcherControlBlock Key - {0}", key);
+                    var value = block.Value;
+
+                    this.Switchers.Add(key, new TesiraDspSwitcher(key, value, this));
+                    Debug.Console(2, this, "Added TesiraSwitcher {0} InstanceTag {1}", key, value.switcherInstanceTag);
+                }
             }
 
             if (props.dialerControlBlocks != null) {
@@ -149,12 +167,24 @@ namespace Tesira_DSP_EPI {
                     string key = block.Key;
                     Debug.Console(2, this, "LevelControlBlock Key - {0}", key);
                     var value = block.Value;
-                    value.controlStatusInstanceTag = value.controlStatusInstanceTag;
-                    value.dialerInstanceTag = value.dialerInstanceTag;
+                    //value.controlStatusInstanceTag = value.controlStatusInstanceTag;
+                    //value.dialerInstanceTag = value.dialerInstanceTag;
 
                     this.Dialers.Add(key, new TesiraDspDialer(key, value, this));
                     Debug.Console(2, this, "Added DspDialer {0} ControlStatusTag: {1} DialerTag: {2}", key, value.controlStatusInstanceTag, value.dialerInstanceTag);
 
+                }
+            }
+
+            if (props.stateControlBlocks != null) {
+                Debug.Console(2, this, "stateControlBlocks is not null - There are {0} of them", props.stateControlBlocks.Count());
+                foreach (KeyValuePair<string, TesiraStateControlBlockConfig> block in props.stateControlBlocks) {
+                    string key = block.Key;
+                    Debug.Console(2, this, "StateControlBlock Key - {0}", key);
+                    var value = block.Value;
+                    //value.stateInstanceTag = value.stateInstanceTag;
+                    Debug.Console(2, this, "Adding DspState {0} InstanceTag: {1}", key, value.stateInstanceTag);
+                    this.States.Add(key, new TesiraDspStateControl(key, value, this));
                 }
             }
 
@@ -166,6 +196,7 @@ namespace Tesira_DSP_EPI {
                     Debug.Console(2, this, "Added Preset {0} {1}", value.label, value.preset);
                 }
             }
+
         }
 
         void Port_LineReceived(object dev, GenericCommMethodReceiveTextArgs args) {
@@ -176,13 +207,16 @@ namespace Tesira_DSP_EPI {
             Debug.Console(1, this, "RX: '{0}'", args.Text);
 
             try {
+
                 if (args.Text.IndexOf("Welcome to the Tesira Text Protocol Server...") > -1) {
                     // Indicates a new TTP session
-
+                    CommunicationMonitor.Start();
                     SubscribeToAttributes();
                 }
                 else if (args.Text.IndexOf("! ") > -1) {
                     // response is from a subscribed attribute
+
+                    //(if(args.Text
 
                     string pattern = "! [\\\"](.*?[^\\\\])[\\\"] (.*)";
 
@@ -210,10 +244,25 @@ namespace Tesira_DSP_EPI {
                             }
                         }
                         foreach (KeyValuePair<string, TesiraDspDialer> controlPoint in Dialers) {
+
                             if (customName == controlPoint.Value.AutoAnswerCustomName || customName == controlPoint.Value.ControlStatusCustomName ||
-                                customName == controlPoint.Value.DialerCustomName ) {
+                                customName == controlPoint.Value.DialerCustomName) {
                                 controlPoint.Value.ParseSubscriptionMessage(customName, value);
                                 return;
+                            }
+
+                        }
+                        foreach (KeyValuePair<string, TesiraDspStateControl> controlPoint in States) {
+
+                            if (customName == controlPoint.Value.StateCustomName) {
+                                controlPoint.Value.ParseSubscriptionMessage(customName, value);
+                            }
+                        }
+
+                        foreach (KeyValuePair<string, TesiraDspSwitcher> controlPoint in Switchers) {
+
+                            if (customName == controlPoint.Value.SelectorCustomName) {
+                                controlPoint.Value.ParseSubscriptionMessage(customName, value);
                             }
                         }
                     }
@@ -270,6 +319,11 @@ namespace Tesira_DSP_EPI {
                     Debug.Console(2, this, "Error parsing response: '{0}'\n{1}", args.Text, e);
             }
 
+        }
+
+        public void Resubscribe() {
+            Debug.Console(0, this, "Issue Detected with device subscriptions - resubscribing to all controls");
+            CreateDspObjects();
         }
 
     
@@ -348,23 +402,39 @@ namespace Tesira_DSP_EPI {
                 dialer.Value.Subscribe();
             }
 
+            foreach (KeyValuePair<string, TesiraDspSwitcher> switcher in Switchers) {
+                Debug.Console(2, this, "Made it to Object - {0}", switcher.Value.InstanceTag1);
+                switcher.Value.Subscribe();
+            }
+
+            foreach (KeyValuePair<string, TesiraDspDialer> dialer in Dialers) {
+                Debug.Console(2, this, "Made it to Object - {0}", dialer.Value.InstanceTag1);
+                dialer.Value.Subscribe();
+            }
+
             if (!CommandQueueInProgress)
                 SendNextQueuedCommand();
 
             ResetSubscriptionTimer();
-            CommunicationMonitor.Start();
+            
         }
 
         /// <summary>
         /// Resets or Sets the subscription timer
         /// </summary>
         void ResetSubscriptionTimer() {
+            Debug.Console(2, this, "Reset Subscription Timer Fired");
             isSubscribed = true;
 
-            if (SubscriptionTimer != null) {
-                SubscriptionTimer = new CTimer(o => SubscribeToAttributes(), 30000);
-                SubscriptionTimer.Reset();
-
+            if (WatchdogTimer != null) {
+                WatchdogTimer.Stop();
+                WatchdogTimer = null;
+                WatchdogTimer = new CTimer(o => SubscribeToAttributes(), 90000);
+                //SubscriptionTimer.Reset();
+            }
+            else {
+                WatchdogTimer = new CTimer(o => SubscribeToAttributes(), 90000);
+                //SubscriptionTimer.Reset();
             }
         }
 
@@ -399,6 +469,9 @@ namespace Tesira_DSP_EPI {
         public void WriteConfig() {
             CustomSetConfig(_Dc);
         }
+
+
+
         
         #region Presets
 
@@ -428,6 +501,9 @@ namespace Tesira_DSP_EPI {
         #region IBridge Members
 
         public void LinkToApi(BasicTriList trilist, uint joinStart, string joinMapKey) {
+            foreach(var item in States) {
+                Debug.Console(2, this, "State {0} has an InstanceTag of {1}", item.Key, item.Value.InstanceTag1);
+            }
             this.LinkToApiExt(trilist, joinStart, joinMapKey);
         }
 

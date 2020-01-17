@@ -11,6 +11,9 @@ namespace Tesira_DSP_EPI {
     public class TesiraDspLevelControl : TesiraDspControlPoint, IBasicVolumeWithFeedback, IKeyed {
         bool _IsMuted;
         ushort _VolumeLevel;
+        public int Permissions { get; set; }
+
+        public int ControlType { get; set; }
 
         public BoolFeedback MuteFeedback { get; private set; }
 
@@ -123,17 +126,30 @@ namespace Tesira_DSP_EPI {
 
             VolumeLevelFeedback = new IntFeedback(() => _VolumeLevel);
 
-            LevelCustomName = config.label;
+            Label = config.label;
             HasMute = config.hasMute;
             HasLevel = config.hasLevel;
             UseAbsoluteValue = config.useAbsoluteValue;
             Enabled = config.enabled;
+            Permissions = config.permissions;
             IncrementAmount = config.incrementAmount;
             AutomaticUnmuteOnVolumeUp = config.unmuteOnVolChange;
             VolumeUpRepeatTimer = new CTimer(VolumeUpRepeat, Timeout.Infinite);
             VolumeDownRepeatTimer = new CTimer(VolumeDownRepeat, Timeout.Infinite);
             VolumeUpRepeatDelayTimer = new CTimer(VolumeUpRepeatDelay, Timeout.Infinite);
             VolumeDownRepeatDelayTimer = new CTimer(VolumeDownRepeatDelay, Timeout.Infinite);
+
+            if (HasMute && HasLevel) {
+                ControlType = 0;
+            }
+            else if (!HasMute && HasLevel) {
+                ControlType = 1;
+            }
+
+            else if (HasMute && !HasLevel) {
+                ControlType = 2;
+            }
+
             
         }
 
@@ -155,7 +171,7 @@ namespace Tesira_DSP_EPI {
             this.VolumeDown(true);
         }
 
-        public void Subscribe() {
+        public override void Subscribe() {
             //Subscribe to Level
             if (this.HasLevel) {
                 LevelCustomName = string.Format("{0}~level{1}", this.InstanceTag1, this.Index1);
@@ -178,8 +194,6 @@ namespace Tesira_DSP_EPI {
         /// <param name="value"></param>
         public void ParseSubscriptionMessage(string customName, string value) {
 
-            // Check for valid subscription response
-
             if (this.HasMute && customName == MuteCustomName) {
                 //if (value.IndexOf("+OK") > -1)
                 //{
@@ -191,15 +205,9 @@ namespace Tesira_DSP_EPI {
                 //    value = value.Substring(0, value.Length - (value.Length - (pointer - 1)));
                 //}
 
-                if (value.IndexOf("true") > -1) {
-                    _IsMuted = true;
-                    MuteIsSubscribed = true;
-
-                }
-                else if (value.IndexOf("false") > -1) {
-                    _IsMuted = false;
-                    MuteIsSubscribed = true;
-                }
+                _IsMuted = bool.Parse(value);
+                MuteIsSubscribed = true;
+                
 
                 MuteFeedback.FireUpdate();
             }
@@ -313,18 +321,18 @@ namespace Tesira_DSP_EPI {
         /// Polls the current volume level
         /// </summary>
         public void GetVolume() {
-            SendFullCommand("get", "level", "", 1);
+            SendFullCommand("get", "level", String.Empty, 1);
         }
 
         public void GetMute() {
-            SendFullCommand("get", "mute", "", 2);
+            SendFullCommand("get", "mute", String.Empty, 2);
         }
 
         /// <summary>
         /// Toggles mute status
         /// </summary>
         public void MuteToggle() {
-            SendFullCommand("toggle", "mute", "", 2);
+            SendFullCommand("toggle", "mute", String.Empty, 2);
         }
 
         /// <summary>

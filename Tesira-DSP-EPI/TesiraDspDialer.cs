@@ -31,6 +31,7 @@ namespace Tesira_DSP_EPI {
             }
         }
 
+
         private int CallAppearance { get; set; }
 
         private bool AppendDtmf { get; set; }
@@ -46,6 +47,8 @@ namespace Tesira_DSP_EPI {
         public string DialerCustomName { get; set; }
         public string ControlStatusCustomName { get; set; }
         public string AutoAnswerCustomName { get; set; }
+        public string HookStateCustomName { get; set; }
+        public string PotsDialerCustomName { get; set; }
 
         public string CallStatus {
             get {
@@ -69,11 +72,13 @@ namespace Tesira_DSP_EPI {
                     CallStatusEnum == eCallStatus.BUSY ||
                     CallStatusEnum == eCallStatus.INVALID_NUMBER ||
                     CallStatusEnum == eCallStatus.ON_HOLD) {
-                    OffHookStatus = true;
+                    if(IsVoip)
+                        OffHookStatus = true;
                 }
                 else
-                    OffHookStatus = false;
-                if (value == eCallStatus.IDLE) {
+                    if(IsVoip)
+                        OffHookStatus = false;
+                if (value == eCallStatus.IDLE && IsVoip) {
                         if (ClearOnHangup) {
                             DialString = String.Empty;
                             this.DialStringFeedback.FireUpdate();
@@ -134,6 +139,12 @@ namespace Tesira_DSP_EPI {
                     else
                         isSubscribed =  false;
                 }
+                else if (!IsVoip) {
+                    if (PotsIsSubscribed && HookStateIsSubscribed)
+                        isSubscribed = true;
+                    else
+                        isSubscribed = false;
+                }
                 else
                     isSubscribed =  false;
                 return isSubscribed;
@@ -144,6 +155,8 @@ namespace Tesira_DSP_EPI {
         private bool VoipIsSubscribed { get; set; }
         private bool DndIsSubscribed { get; set; }
         private bool AutoAnswerIsSubscribed { get; set; }
+        private bool HookStateIsSubscribed { get; set; }
+        private bool PotsIsSubscribed { get; set; }               
 
         public TesiraDspDialer(string key, TesiraDialerControlBlockConfig config, TesiraDsp parent)
             : base(config.dialerInstanceTag, config.controlStatusInstanceTag, config.index, config.callAppearance, parent) {
@@ -168,6 +181,9 @@ namespace Tesira_DSP_EPI {
             Debug.Console(2, this, "Adding LevelControl '{0}'", Key);
 
             IsSubscribed = false;
+            PotsIsSubscribed = false;
+            VoipIsSubscribed = false;
+            AutoAnswerIsSubscribed = false;
 
             IsVoip = config.isVoip;
             LineNumber = config.index;
@@ -190,7 +206,7 @@ namespace Tesira_DSP_EPI {
             }
         }
 
-        public void Subscribe() {
+        public override void Subscribe() {
             if (IsVoip) {
                 DialerCustomName = string.Format("{0}~VoIPDialer{1}", this.InstanceTag1, this.Index1);
                 AutoAnswerCustomName = string.Format("{0}~VoIPDialerAutoAnswer{1}", this.InstanceTag1, this.Index1);
@@ -199,10 +215,19 @@ namespace Tesira_DSP_EPI {
                 SendSubscriptionCommand(ControlStatusCustomName, "callState", 250, 2);
 
                 SendSubscriptionCommand(AutoAnswerCustomName, "autoAnswer", 500, 1);
-
-                SendFullCommand("get", "dndEnable", null, 1);
-
             }
+            else if (!IsVoip) {
+                PotsDialerCustomName = string.Format("{0}~PotsDialer{1}", this.InstanceTag1, this.Index1);
+                HookStateCustomName = string.Format("{0}~HookState{1}", this.InstanceTag1, this.Index1);
+
+                SendSubscriptionCommand(DialerCustomName, "callState", 250, 1);
+
+                SendSubscriptionCommand(HookStateCustomName, "hookState", 500, 1);
+
+                SendFullCommand("get", "autoAnswer", null, 1);
+            }
+
+            SendFullCommand("get", "dndEnable", null, 1);
         }
 
         // <summary>
@@ -212,7 +237,8 @@ namespace Tesira_DSP_EPI {
         /// <param name="value"></param>
         public void ParseSubscriptionMessage(string customName, string value) {
             try {
-                if (IsVoip && customName == ControlStatusCustomName) {
+                Debug.Console(2, this, "New Subscription Message to Dialer");
+                if (customName == ControlStatusCustomName || customName == PotsDialerCustomName) {
                     //Pulls Entire Value "array" and seperates call appearances
                     string pattern1 = "\\[([^\\[\\]]+)\\]";
                     //Seperates each call appearance into their constituent parts
@@ -250,7 +276,10 @@ namespace Tesira_DSP_EPI {
                                 Debug.Console(2, this, "CallState Complete - Firing Updates");
                                 this.CallerIDNumberFB.FireUpdate();
                                 this.OffHookFeedback.FireUpdate();
-                                VoipIsSubscribed = true;
+                                if(IsVoip)
+                                    VoipIsSubscribed = true;
+                                if (!IsVoip)
+                                    PotsIsSubscribed = true;
                             }
                         }
                     }
@@ -265,6 +294,16 @@ namespace Tesira_DSP_EPI {
                 AutoAnswerIsSubscribed = true;
 
                 this.AutoAnswerFeedback.FireUpdate();
+            }
+
+            if (customName == HookStateCustomName) {
+
+                if (value.IndexOf("OFF") > -1)
+                    OffHookStatus = true;
+                if (value.IndexOf("ON") > -1)
+                    OffHookStatus = false;
+
+                this.OffHookFeedback.FireUpdate();
             }
 
         }
@@ -323,15 +362,34 @@ namespace Tesira_DSP_EPI {
         }
 
         public void Dial() {
-            if (OffHookStatus) {
-                SendFullCommand(null, "end", null, 1);
-                if (ClearOnHangup) {
-                    DialString = String.Empty;
-                    this.DialStringFeedback.FireUpdate();
+            if (IsVoip) {
+                if (OffHookStatus) {
+                    SendFullCommand(null, "end", null, 1);
+                    if (ClearOnHangup) {
+                        DialString = String.Empty;
+                        this.DialStringFeedback.FireUpdate();
+                    }
+                }
+                else if (!OffHookStatus) {
+                    SendFullCommand(null, "dial", DialString, 1);
                 }
             }
-            else if (!OffHookStatus) {
-                SendFullCommand(null, "dial", DialString, 1);
+
+            else if (!IsVoip) {
+                if (OffHookStatus) {
+                    SendFullCommand("set", "hookState", "ONHOOK", 1);
+                    if (ClearOnHangup) {
+                        DialString = String.Empty;
+                        this.DialStringFeedback.FireUpdate();
+                    }
+                }
+                else if (!OffHookStatus) {
+                    if (!String.IsNullOrEmpty(DialString)) {
+                        SendFullCommand(null, "dial", DialString, 1);
+                    }
+                    else
+                        SendFullCommand("set", "hookState", "OFFHOOK", 1);
+                }
             }
         }
 
@@ -344,11 +402,17 @@ namespace Tesira_DSP_EPI {
             if (IsVoip) {
                 SendFullCommand(null, "onHook", null, 1);
             }
+            if (!IsVoip) {
+                SendFullCommand("set", "hookState", "ONHOOK", 1);
+            }
         }
 
         public void OffHook() {
             if (IsVoip)
                 SendFullCommand(null, "answer", null, 1);
+            if (!IsVoip) {
+                SendFullCommand("set", "hookState", "OFFHOOK", 1);
+            }
         }
 
         public void Answer() {
@@ -378,14 +442,20 @@ namespace Tesira_DSP_EPI {
 
         public void AutoAnswerOn() {
             SendFullCommand("set", "autoAnswer", "true", 1);
+            if (!IsVoip)
+                SendFullCommand("get", "autoAnswer", null, 1);
         }
 
         public void AutoAnswerOff() {
             SendFullCommand("set", "autoAnswer", "false", 1);
+            if (!IsVoip)
+                SendFullCommand("get", "autoAnswer", null, 1);
         }
 
         public void AutoAnswerToggle() {
             SendFullCommand("toggle", "autoAnswer", null, 1);
+            if (!IsVoip)
+                SendFullCommand("get", "autoAnswer", null, 1);
         }
 
         public void DoNotDisturbOn() {
