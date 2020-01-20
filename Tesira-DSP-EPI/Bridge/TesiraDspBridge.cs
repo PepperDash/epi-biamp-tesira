@@ -27,6 +27,8 @@ namespace Tesira_DSP_EPI.Bridge {
             Debug.Console(1, DspDevice, "Linking to Trilist '{0}'", trilist.ID.ToString("X"));
             ushort x = 1;
             //var comm = DspDevice as IBasicCommunication;
+
+
             DspDevice.CommunicationMonitor.IsOnlineFeedback.LinkInputSig(trilist.BooleanInput[deviceJoinMap.IsOnline]);
             DspDevice.CommandPassthruFeedback.LinkInputSig(trilist.StringInput[deviceJoinMap.CommandPassthruRx]);
             trilist.SetStringSigAction(deviceJoinMap.DirectPreset, s => DspDevice.RunPreset(s));
@@ -115,11 +117,11 @@ namespace Tesira_DSP_EPI.Bridge {
             
 
             //Presets 
-            x = 0;
+            x = 1;
             foreach (var preset in DspDevice.PresetList) {
                 var temp = x;
-                trilist.StringInput[presetJoinMap.PresetName + temp + 1].StringValue = preset.label;
-                trilist.SetSigTrueAction(presetJoinMap.PresetSelection + temp + 1, () => DspDevice.RunPresetNumber(temp));
+                trilist.StringInput[presetJoinMap.PresetName + temp].StringValue = preset.label;
+                trilist.SetSigTrueAction(presetJoinMap.PresetSelection + temp, () => DspDevice.RunPresetNumber(temp));
                 x++;
             }
 
@@ -145,7 +147,7 @@ namespace Tesira_DSP_EPI.Bridge {
                 trilist.SetSigTrueAction((dialerJoinMap.KeypadClear + dialerLineOffset), () => dialer.Value.SendKeypad(Tesira_DSP_EPI.TesiraDspDialer.eKeypadKeys.Clear));
                 trilist.SetSigTrueAction((dialerJoinMap.KeypadBackspace + dialerLineOffset), () => dialer.Value.SendKeypad(Tesira_DSP_EPI.TesiraDspDialer.eKeypadKeys.Backspace));
 
-                trilist.StringInput[dialerJoinMap.label + x].StringValue = dialer.Value.Label;
+                trilist.StringInput[dialerJoinMap.Label + x].StringValue = dialer.Value.Label;
 
                 trilist.SetSigTrueAction(dialerJoinMap.Dial + dialerLineOffset, () => dialer.Value.Dial());
                 trilist.SetSigTrueAction(dialerJoinMap.DoNotDisturbToggle + dialerLineOffset, () => dialer.Value.DoNotDisturbToggle());

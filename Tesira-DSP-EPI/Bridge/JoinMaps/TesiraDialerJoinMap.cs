@@ -10,29 +10,40 @@ using PepperDash.Essentials.Core;
 namespace Tesira_DSP_EPI.Bridge.JoinMaps {
     public class TesiraDialerJoinMap : JoinMapBase {
 
-        public uint DialStringCmd { get; set; }
-        public uint Keypad0 { get; set; }
-        public uint Keypad1 { get; set; }
-        public uint Keypad2 { get; set; }
-        public uint Keypad3 { get; set; }
-        public uint Keypad4 { get; set; }
-        public uint Keypad5 { get; set; }
-        public uint Keypad6 { get; set; }
-        public uint Keypad7 { get; set; }
-        public uint Keypad8 { get; set; }
-        public uint Keypad9 { get; set; }
-        public uint KeypadStar { get; set; }
-        public uint KeypadPound { get; set; }
-        public uint KeypadClear { get; set; }
-        public uint KeypadBackspace { get; set; }
-        public uint Dial { get; set; }
-        public uint DialFb { get; set; }
-        public uint DoNotDisturbToggle { get; set; }
-        public uint DoNotDisturbOn { get; set; }
-        public uint DoNotDisturbOff { get; set; }
+        public uint DialString { get; set; }
+        public uint DialStringFb { get; set; }
+        public uint Label { get; set; }
+        public uint CallerIDNumberFB { get; set; }
+        public uint CallerIDNameFB { get; set; }
+
+        //Digitals
+        public uint IncomingCall { get; set; }//
+        public uint Answer { get; set; }//
+        public uint EndCall { get; set; }//
+        public uint Keypad0 { get; set; }//
+        public uint Keypad1 { get; set; }//
+        public uint Keypad2 { get; set; }//
+        public uint Keypad3 { get; set; }//
+        public uint Keypad4 { get; set; }//
+        public uint Keypad5 { get; set; }//
+        public uint Keypad6 { get; set; }//
+        public uint Keypad7 { get; set; }//
+        public uint Keypad8 { get; set; }//
+        public uint Keypad9 { get; set; }//
+        public uint KeypadStar { get; set; }//
+        public uint KeypadPound { get; set; }//
+        public uint KeypadClear { get; set; }//
+        public uint KeypadBackspace { get; set; }//
+        public uint Dial { get; set; }//
+        public uint DialFb { get; set; }//
+        public uint AutoAnswerOn { get; set; }//
+        public uint AutoAnswerOff { get; set; }//
         public uint AutoAnswerToggle { get; set; }
-        public uint AutoAnswerOn { get; set; }
-        public uint AutoAnswerOff { get; set; }
+        public uint OnHook { get; set; }
+        public uint OffHookFb { get; set; }
+        public uint DoNotDisturbToggle { get; set; }//
+        public uint DoNotDisturbOn { get; set; }//
+        public uint DoNotDisturbOff { get; set; }//
         public uint DoNotDisturbToggleFb { get; set; }
         public uint DoNotDisturbOnFb { get; set; }
         public uint DoNotDisturbOffFb { get; set; }
@@ -40,14 +51,8 @@ namespace Tesira_DSP_EPI.Bridge.JoinMaps {
         public uint AutoAnswerOnFb { get; set; }
         public uint AutoAnswerOffFb { get; set; }
         public uint OffHook { get; set; }
-        public uint OnHook { get; set; }
-        public uint OffHookFb { get; set; }
         public uint OnHookFb { get; set; }
-        public uint CallerIDNumberFB { get; set; }
-        public uint CallerIDNameFB { get; set; }
-        public uint Answer { get; set; }
-        public uint EndCall { get; set; }
-        public uint IncomingCall { get; set; }
+        
 
 
 
@@ -74,30 +79,35 @@ namespace Tesira_DSP_EPI.Bridge.JoinMaps {
             KeypadPound = 3121;
             KeypadClear = 3122;
             KeypadBackspace = 3123;
-            DoNotDisturbToggle = 3132;
-            DoNotDisturbOn = 3133;
-            DoNotDisturbOff = 3134;
-            AutoAnswerToggle = 3127;
-            AutoAnswerOn = 3125;
-            AutoAnswerOff = 3126;
-            DoNotDisturbToggleFb = 3132;
-            DoNotDisturbOnFb = 3133;
-            DoNotDisturbOffFb = 3134;
-            AutoAnswerToggleFb = 3127;
-            AutoAnswerOnFb = 3125;
-            AutoAnswerOffFb = 3126;
-
             Dial = 3124;
             DialFb = 3124;
-            OffHook = 3130;
+            AutoAnswerOn = 3125;
+            AutoAnswerOff = 3126;
+            AutoAnswerToggle = 3127;
+            AutoAnswerOnFb = 3125;
+            AutoAnswerOffFb = 3126;
+            AutoAnswerToggleFb = 3127;
             OnHook = 3129;
-            OffHookFb = 3130;
             OnHookFb = 3129;
+            OffHook = 3130;
+            OffHookFb = 3130;
+            DoNotDisturbToggle = 3132;
+            DoNotDisturbToggleFb = 3132;
+            DoNotDisturbOn = 3133;
+            DoNotDisturbOnFb = 3133;
+            DoNotDisturbOff = 3134;
+            DoNotDisturbOffFb = 3134;
+
+
+            
+
 
             //Analog
 
             //String
-            DialStringCmd = 3100;
+            DialString = 3100;
+            DialStringFb = 3100;
+            Label = 3101;
             CallerIDNumberFB = 3104;
             CallerIDNameFB = 3105;
 

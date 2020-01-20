@@ -89,6 +89,7 @@ namespace Tesira_DSP_EPI {
 
             // Custom monitoring, will check the heartbeat tracker count every 20s and reset. Heartbeat sbould be coming in every 20s if subscriptions are valid
             CommunicationMonitor = new GenericCommunicationMonitor(this, Communication, 20000, 120000, 300000, "SESSION set verbose false\x0D\x0A");
+            //DeviceManager.AddDevice(CommunicationMonitor);
 
             LevelControlPoints = new Dictionary<string, TesiraDspLevelControl>();
 			Dialers = new Dictionary<string, TesiraDspDialer>();
@@ -101,7 +102,6 @@ namespace Tesira_DSP_EPI {
         {
             Communication.Connect();
 			CommunicationMonitor.StatusChange += (o, a) => { Debug.Console(2, this, "Communication monitor state: {0}", CommunicationMonitor.Status); };
-            CommunicationMonitor.Start();
 
             CrestronConsole.AddNewConsoleCommand(SendLine, "send" + Key, "", ConsoleAccessLevelEnum.AccessOperator);
             CrestronConsole.AddNewConsoleCommand(s => Communication.Connect(), "con" + Key, "", ConsoleAccessLevelEnum.AccessOperator);
@@ -221,6 +221,8 @@ namespace Tesira_DSP_EPI {
 
                 if (args.Text.IndexOf("Welcome to the Tesira Text Protocol Server...") > -1) {
                     // Indicates a new TTP session
+                    CommunicationMonitor.Start();
+
                     SubscribeToAttributes();
                 }
                 else if (args.Text.IndexOf("! ") > -1) {
