@@ -26,9 +26,10 @@ namespace Tesira_DSP_EPI.Bridge {
 
             Debug.Console(1, DspDevice, "Linking to Trilist '{0}'", trilist.ID.ToString("X"));
             ushort x = 1;
-            var comm = DspDevice as ICommunicationMonitor;
+            //var comm = DspDevice as IBasicCommunication;
             DspDevice.CommunicationMonitor.IsOnlineFeedback.LinkInputSig(trilist.BooleanInput[deviceJoinMap.IsOnline]);
             DspDevice.CommandPassthruFeedback.LinkInputSig(trilist.StringInput[deviceJoinMap.CommandPassthruRx]);
+            trilist.SetStringSigAction(deviceJoinMap.DirectPreset, s => DspDevice.RunPreset(s));
 
             trilist.SetStringSigAction(deviceJoinMap.CommandPassthruTx, s => DspDevice.SendLineRaw(s));
 
@@ -42,7 +43,7 @@ namespace Tesira_DSP_EPI.Bridge {
                 var genericChannel = channel.Value as IBasicVolumeWithFeedback;
                 if (channel.Value.Enabled) {
                     Debug.Console(2, DspDevice, "TesiraChannel {0} Is Enabled", x);
-                    trilist.StringInput[levelJoinMap.Name + x].StringValue = channel.Value.Label;
+                    trilist.StringInput[levelJoinMap.Label + x].StringValue = channel.Value.Label;
                     trilist.UShortInput[levelJoinMap.Type + x].UShortValue = (ushort)channel.Value.Type;
                     trilist.UShortInput[levelJoinMap.Status + x].UShortValue = (ushort)channel.Value.ControlType;
                     trilist.UShortInput[levelJoinMap.Permissions + x].UShortValue = (ushort)channel.Value.Permissions;
@@ -115,7 +116,6 @@ namespace Tesira_DSP_EPI.Bridge {
 
             //Presets 
             x = 0;
-            trilist.SetStringSigAction(presetJoinMap.DirectPreset, s => DspDevice.RunPreset(s));
             foreach (var preset in DspDevice.PresetList) {
                 var temp = x;
                 trilist.StringInput[presetJoinMap.PresetName + temp + 1].StringValue = preset.label;
@@ -145,6 +145,8 @@ namespace Tesira_DSP_EPI.Bridge {
                 trilist.SetSigTrueAction((dialerJoinMap.KeypadClear + dialerLineOffset), () => dialer.Value.SendKeypad(Tesira_DSP_EPI.TesiraDspDialer.eKeypadKeys.Clear));
                 trilist.SetSigTrueAction((dialerJoinMap.KeypadBackspace + dialerLineOffset), () => dialer.Value.SendKeypad(Tesira_DSP_EPI.TesiraDspDialer.eKeypadKeys.Backspace));
 
+                trilist.StringInput[dialerJoinMap.label + x].StringValue = dialer.Value.Label;
+
                 trilist.SetSigTrueAction(dialerJoinMap.Dial + dialerLineOffset, () => dialer.Value.Dial());
                 trilist.SetSigTrueAction(dialerJoinMap.DoNotDisturbToggle + dialerLineOffset, () => dialer.Value.DoNotDisturbToggle());
                 trilist.SetSigTrueAction(dialerJoinMap.DoNotDisturbOn + dialerLineOffset, () => dialer.Value.DoNotDisturbOn());
@@ -157,7 +159,7 @@ namespace Tesira_DSP_EPI.Bridge {
                 trilist.SetSigTrueAction(dialerJoinMap.OnHook + dialerLineOffset, () => dialer.Value.OnHook());
                 trilist.SetSigTrueAction(dialerJoinMap.OffHook + dialerLineOffset, () => dialer.Value.OffHook());
 
-                trilist.SetStringSigAction(dialerJoinMap.DialStringCmd + dialerLineOffset, s => dialer.Value.SetDialString(s));
+                trilist.SetStringSigAction(dialerJoinMap.DialString + dialerLineOffset, s => dialer.Value.SetDialString(s));
 
                 dialer.Value.DoNotDisturbFeedback.LinkInputSig(trilist.BooleanInput[dialerJoinMap.DoNotDisturbToggleFb + dialerLineOffset]);
                 dialer.Value.DoNotDisturbFeedback.LinkInputSig(trilist.BooleanInput[dialerJoinMap.DoNotDisturbOnFb + dialerLineOffset]);
@@ -172,7 +174,7 @@ namespace Tesira_DSP_EPI.Bridge {
                 dialer.Value.OffHookFeedback.LinkInputSig(trilist.BooleanInput[dialerJoinMap.DialFb + dialerLineOffset]);
                 dialer.Value.OffHookFeedback.LinkInputSig(trilist.BooleanInput[dialerJoinMap.OffHookFb + dialerLineOffset]);
                 dialer.Value.OffHookFeedback.LinkComplementInputSig(trilist.BooleanInput[dialerJoinMap.OnHookFb + dialerLineOffset]);
-                dialer.Value.DialStringFeedback.LinkInputSig(trilist.StringInput[dialerJoinMap.DialStringCmd + dialerLineOffset]);
+                dialer.Value.DialStringFeedback.LinkInputSig(trilist.StringInput[dialerJoinMap.DialStringFb + dialerLineOffset]);
                 dialer.Value.IncomingCallFeedback.LinkInputSig(trilist.BooleanInput[dialerJoinMap.IncomingCall + dialerLineOffset]);
 
                 lineOffset += 50;

@@ -185,6 +185,7 @@ namespace Tesira_DSP_EPI {
             VoipIsSubscribed = false;
             AutoAnswerIsSubscribed = false;
 
+            Label = config.label;
             IsVoip = config.isVoip;
             LineNumber = config.index;
             AppendDtmf = config.appendDtmf;
@@ -371,7 +372,8 @@ namespace Tesira_DSP_EPI {
                     }
                 }
                 else if (!OffHookStatus) {
-                    SendFullCommand(null, "dial", DialString, 1);
+                    if(!String.IsNullOrEmpty(DialString))
+                        SendFullCommand(null, "dial", DialString, 1);
                 }
             }
 

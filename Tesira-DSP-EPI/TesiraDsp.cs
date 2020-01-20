@@ -18,7 +18,7 @@ using Crestron.SimplSharpPro.Diagnostics;
 using Tesira_DSP_EPI.Bridge;
 
 namespace Tesira_DSP_EPI {
-    public class TesiraDsp : ReconfigurableDevice, IBridge{
+    public class TesiraDsp : ReconfigurableDevice, IBridge {
 
         public static void LoadPlugin() {
             DeviceFactory.AddFactoryForType("tesiradsp", TesiraDsp.BuildDevice);
@@ -101,6 +101,7 @@ namespace Tesira_DSP_EPI {
         {
             Communication.Connect();
 			CommunicationMonitor.StatusChange += (o, a) => { Debug.Console(2, this, "Communication monitor state: {0}", CommunicationMonitor.Status); };
+            CommunicationMonitor.Start();
 
             CrestronConsole.AddNewConsoleCommand(SendLine, "send" + Key, "", ConsoleAccessLevelEnum.AccessOperator);
             CrestronConsole.AddNewConsoleCommand(s => Communication.Connect(), "con" + Key, "", ConsoleAccessLevelEnum.AccessOperator);
@@ -220,7 +221,6 @@ namespace Tesira_DSP_EPI {
 
                 if (args.Text.IndexOf("Welcome to the Tesira Text Protocol Server...") > -1) {
                     // Indicates a new TTP session
-                    CommunicationMonitor.Start();
                     SubscribeToAttributes();
                 }
                 else if (args.Text.IndexOf("! ") > -1) {
