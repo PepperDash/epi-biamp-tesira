@@ -14,6 +14,10 @@ namespace Tesira_DSP_EPI.Bridge.JoinMaps {
         public uint MuteOn { get; set; }
         public uint MuteOff { get; set; }
         public uint Volume { get; set; }
+        public uint MuteToggleFb { get; set; }
+        public uint MuteOnFb { get; set; }
+        public uint MuteOffFb { get; set; }
+        public uint VolumeFb { get; set; }
         public uint Type { get; set; }
         public uint Name { get; set; }
         public uint VolumeUp { get; set; }
@@ -29,14 +33,18 @@ namespace Tesira_DSP_EPI.Bridge.JoinMaps {
 
             //Digital
             MuteToggle = 400;
+            MuteToggleFb = 400;
             MuteOn = 600;
+            MuteOnFb = 600;
             MuteOff = 800;
+            MuteOffFb = 800;
             VolumeUp = 1000;
             VolumeDown = 1200;
             Visible = 200;
 
             //Analog
             Volume = 200;
+            VolumeFb = 200;
             Type = 400;
             Status = 600;
             Permissions = 800;

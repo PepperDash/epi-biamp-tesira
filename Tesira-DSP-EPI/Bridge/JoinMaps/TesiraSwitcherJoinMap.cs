@@ -11,6 +11,7 @@ namespace Tesira_DSP_EPI.Bridge.JoinMaps {
     public class TesiraSwitcherJoinMap : JoinMapBase {
 
         public uint SourceSelectorIndex { get; set; }
+        public uint SourceSelectorIndexFb { get; set; }
         public uint SourceSelectorLabel { get; set; }
 
         public TesiraSwitcherJoinMap(uint JoinStart) {
@@ -20,6 +21,7 @@ namespace Tesira_DSP_EPI.Bridge.JoinMaps {
 
             //Analog
             SourceSelectorIndex = 150;
+            SourceSelectorIndexFb = 150;
 
 
             //String

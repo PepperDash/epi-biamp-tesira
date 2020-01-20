@@ -46,6 +46,14 @@
     <GenerateSerializationAssemblies>off</GenerateSerializationAssemblies>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="Crestron.SimplSharpPro.DeviceSupport, Version=1.0.0.0, Culture=neutral, PublicKeyToken=1099c178b3b54c3b, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\..\ProgramData\Crestron\SDK\SSPDevices\Crestron.SimplSharpPro.DeviceSupport.dll</HintPath>
+    </Reference>
+    <Reference Include="Crestron.SimplSharpPro.UI, Version=1.0.0.0, Culture=neutral, PublicKeyToken=1099c178b3b54c3b, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\..\ProgramData\Crestron\SDK\SSPDevices\Crestron.SimplSharpPro.UI.dll</HintPath>
+    </Reference>
     <Reference Include="Essentials Devices Common, Version=1.4.7293.29469, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\Essentials\Essentials Devices Common.dll</HintPath>
@@ -97,6 +105,7 @@
   <ItemGroup>
     <Compile Include="Bridge\JoinMaps\TesiraDeviceJoinMap.cs" />
     <Compile Include="Bridge\JoinMaps\TesiraDialerJoinMap.cs" />
+    <Compile Include="Extensions\DictionaryExtensions.cs" />
     <Compile Include="Interfaces\IRoutingWithFeedback.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Bridge\JoinMaps\TesiraSwitcherJoinMap.cs" />

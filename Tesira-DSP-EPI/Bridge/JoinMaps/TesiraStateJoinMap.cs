@@ -12,6 +12,9 @@ namespace Tesira_DSP_EPI.Bridge.JoinMaps {
         public uint Toggle { get; set; }
         public uint On { get; set; }
         public uint Off { get; set; }
+        public uint ToggleFb { get; set; }
+        public uint OnFb { get; set; }
+        public uint OffFb { get; set; }
         public uint Label { get; set; }
 
 
@@ -23,6 +26,9 @@ namespace Tesira_DSP_EPI.Bridge.JoinMaps {
             Toggle = 1300;
             On = 1450;
             Off = 1600;
+            ToggleFb = 1300;
+            OnFb = 1450;
+            OffFb = 1600;
 
             //Analog
 

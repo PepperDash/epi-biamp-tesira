@@ -26,14 +26,23 @@ namespace Tesira_DSP_EPI.Bridge.JoinMaps {
         public uint KeypadClear { get; set; }
         public uint KeypadBackspace { get; set; }
         public uint Dial { get; set; }
+        public uint DialFb { get; set; }
         public uint DoNotDisturbToggle { get; set; }
         public uint DoNotDisturbOn { get; set; }
         public uint DoNotDisturbOff { get; set; }
         public uint AutoAnswerToggle { get; set; }
         public uint AutoAnswerOn { get; set; }
         public uint AutoAnswerOff { get; set; }
+        public uint DoNotDisturbToggleFb { get; set; }
+        public uint DoNotDisturbOnFb { get; set; }
+        public uint DoNotDisturbOffFb { get; set; }
+        public uint AutoAnswerToggleFb { get; set; }
+        public uint AutoAnswerOnFb { get; set; }
+        public uint AutoAnswerOffFb { get; set; }
         public uint OffHook { get; set; }
         public uint OnHook { get; set; }
+        public uint OffHookFb { get; set; }
+        public uint OnHookFb { get; set; }
         public uint CallerIDNumberFB { get; set; }
         public uint CallerIDNameFB { get; set; }
         public uint Answer { get; set; }
@@ -71,9 +80,19 @@ namespace Tesira_DSP_EPI.Bridge.JoinMaps {
             AutoAnswerToggle = 3127;
             AutoAnswerOn = 3125;
             AutoAnswerOff = 3126;
+            DoNotDisturbToggleFb = 3132;
+            DoNotDisturbOnFb = 3133;
+            DoNotDisturbOffFb = 3134;
+            AutoAnswerToggleFb = 3127;
+            AutoAnswerOnFb = 3125;
+            AutoAnswerOffFb = 3126;
+
             Dial = 3124;
+            DialFb = 3124;
             OffHook = 3130;
             OnHook = 3129;
+            OffHookFb = 3130;
+            OnHookFb = 3129;
 
             //Analog
 

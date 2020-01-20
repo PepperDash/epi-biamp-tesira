@@ -33,9 +33,13 @@ namespace Tesira_DSP_EPI {
             return newMe;
         }
 
+        public string DeviceRx { get; set; }
+
         public IBasicCommunication Communication { get; private set; }
         public CommunicationGather PortGather { get; private set; }
         public GenericCommunicationMonitor CommunicationMonitor { get; private set; }
+
+        public StringFeedback CommandPassthruFeedback { get; set; }
 
         public bool isSubscribed;
 
@@ -80,6 +84,8 @@ namespace Tesira_DSP_EPI {
             }
             PortGather = new CommunicationGather(Communication, "\x0D\x0A");
             PortGather.LineReceived += this.Port_LineReceived;
+
+            CommandPassthruFeedback = new StringFeedback(() => DeviceRx);
 
             // Custom monitoring, will check the heartbeat tracker count every 20s and reset. Heartbeat sbould be coming in every 20s if subscriptions are valid
             CommunicationMonitor = new GenericCommunicationMonitor(this, Communication, 20000, 120000, 300000, "SESSION set verbose false\x0D\x0A");
@@ -207,6 +213,10 @@ namespace Tesira_DSP_EPI {
             Debug.Console(1, this, "RX: '{0}'", args.Text);
 
             try {
+
+                DeviceRx = args.Text;
+
+                this.CommandPassthruFeedback.FireUpdate();
 
                 if (args.Text.IndexOf("Welcome to the Tesira Text Protocol Server...") > -1) {
                     // Indicates a new TTP session
@@ -337,6 +347,16 @@ namespace Tesira_DSP_EPI {
         public void SendLine(string s) {
             Debug.Console(1, this, "TX: '{0}'", s);
             Communication.SendText(s + "\x0D");
+        }
+
+        /// <summary>
+        /// Sends a command to the DSP (without delimiter appended)
+        /// </summary>
+        /// <param name="s">Command to send</param>
+        public void SendLineRaw(string s)
+        {
+            Debug.Console(1, this, "TX: '{0}'", s);
+            Communication.SendText(s);
         }
 
         /// <summary>
