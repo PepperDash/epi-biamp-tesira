@@ -80,8 +80,8 @@ This Join map represents a control that is part of an array of controls.  Each j
 | Join | Type (RW) | Description                                    |
 | ---- | --------- | -----------                                    |
 | 200  | RW        | Volume Level                                   |
-| 400  | R         | Type (0 - Level, 1 - Mic)                      |
-| 600  | R         | Status (0 Mute/Level, 1 LevelOnly, 2 MuteOnly) |
+| 400  | R         | Icon (0 - Level, 1 - Mic)                      |
+| 600  | R         | ControlType (0 Mute/Level, 1 LevelOnly, 2 MuteOnly) |
 | 800  | R         | Permissions (Pass From Config)                 |
 
 #### Serials
@@ -115,9 +115,9 @@ This Join map represents a control that is part of an array of controls.  Each j
 
 > **enabled** - enables the control to be subscribed and controlled.
 **label** - Passed directly across the eisc as the *Label* value.
-**isMic** - drives the "type" feedback.
-**hasLevel** - in conjunction with *hasMute*, sets the status of the control.
-**hasMute** - in conjunction with *hasStatus*, sets the status of the control.
+**isMic** - drives the *icon* feedback.
+**hasLevel** - in conjunction with *hasMute*, sets the *ControlType*.
+**hasMute** - in conjunction with *hasStatus*, sets the *ControlType*.
 **index1** - Index 1 of the control point.
 **index2** - Index 2 of the control point.
 **levelInstanceTag** - Instance tag of the level control.
