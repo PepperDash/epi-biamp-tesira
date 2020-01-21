@@ -92,7 +92,7 @@ This Join map represents a control that is part of an array of controls.  Each j
 
 #### Config Example
 
-> All Level/Mute configs must be part of a dictionary called **levelControlBlocks**.  Each individual entry must also conform numerically - the first number of each control maps to the index of the control.  For this reason, it may be beneficial to prefix all object names with a number.
+> All Level/Mute configs must be part of a dictionary called **levelControlBlocks**.  
 
 ``` javascript
 "levelControlBlocks": {
@@ -153,7 +153,7 @@ None
 
 #### Config Example
 
-> All sourceSelector configs must be part of a dictionary called **switcherControlBlocks**.  Each individual entry must also conform numerically - the first number of each control maps to the index of the control.  For this reason, it may be beneficial to prefix all object names with a number.
+> All sourceSelector configs must be part of a dictionary called **switcherControlBlocks**.  
 
 ``` javascript
 "switcherControlBlocks" : {
@@ -201,7 +201,7 @@ None
 
 #### Config Example
 
-> All state configs must be part of a dictionary called **stateControlBlocks**.  Each individual entry must also conform numerically - the first number of each control maps to the index of the control.  For this reason, it may be beneficial to prefix all object names with a number.
+> All state configs must be part of a dictionary called **stateControlBlocks**.  
 
 ``` javascript
 "stateControlBlocks" : {
@@ -226,7 +226,7 @@ None
 
 ### Presets
 
-> All state configs must be part of a dictionary called **presets**.  Each individual entry must also conform numerically - the first number of each control maps to the index of the control.  For this reason, it may be beneficial to prefix all object names with a number.
+> All state configs must be part of a dictionary called **presets**.  
 
 > I fyou intend to ONLY do direct preset calling by string, this object is NOT required to recall presets. This activity is provided by the base level device object for the Tesira DSP.
 
@@ -309,7 +309,9 @@ For example, Incoming Call for Line 1 would be at join 3101, while the incoming 
 
 #### Analogs
 
-None
+| Join | Type (RW) | Description     |
+| ---- | --------- | -----------     |
+| 3100 | R         | CallState Value |
 
 #### Serials
 
@@ -321,7 +323,7 @@ None
 
 #### Config Example
 
-> All dialer configs must be part of a dictionary called **dialerControlBlocks**.  Each individual entry must also conform numerically - the first number of each control maps to the index of the control.  For this reason, it may be beneficial to prefix all object names with a number.
+> All dialer configs must be part of a dictionary called **dialerControlBlocks**.  
 
 ``` javascript
 "dialerControlBlocks" : {

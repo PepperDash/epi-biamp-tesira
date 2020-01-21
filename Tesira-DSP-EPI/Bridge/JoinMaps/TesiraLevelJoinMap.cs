@@ -19,7 +19,7 @@ namespace Tesira_DSP_EPI.Bridge.JoinMaps {
         public uint MuteOffFb { get; set; }
         public uint VolumeFb { get; set; }
         public uint Type { get; set; }
-        public uint Name { get; set; }
+        public uint Label { get; set; }
         public uint VolumeUp { get; set; }
         public uint VolumeDown { get; set; }
         public uint Status { get; set; }
@@ -50,7 +50,7 @@ namespace Tesira_DSP_EPI.Bridge.JoinMaps {
             Permissions = 800;
 
             //Serial
-            Name = 200;
+            Label = 200;
 
             OffsetJoinNumbers(JoinStart);
 

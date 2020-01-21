@@ -11,7 +11,7 @@ namespace Tesira_DSP_EPI.Bridge.JoinMaps {
     public class TesiraPresetJoinMap : JoinMapBase {
         public uint PresetSelection { get; set; }
         public uint PresetName { get; set; }
-        public uint DirectPreset { get; set; }
+        //public uint DirectPreset { get; set; }
 
         public TesiraPresetJoinMap(uint JoinStart) {
             //101 is directPreset call
@@ -24,7 +24,7 @@ namespace Tesira_DSP_EPI.Bridge.JoinMaps {
             //Analog
 
             //Serial
-            DirectPreset = 100;
+            //DirectPreset = 100;
             PresetName = 100;
 
             OffsetJoinNumbers(JoinStart);

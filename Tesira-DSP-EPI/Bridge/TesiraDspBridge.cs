@@ -170,14 +170,16 @@ namespace Tesira_DSP_EPI.Bridge {
                 dialer.Value.AutoAnswerFeedback.LinkInputSig(trilist.BooleanInput[dialerJoinMap.AutoAnswerToggleFb + dialerLineOffset]);
                 dialer.Value.AutoAnswerFeedback.LinkInputSig(trilist.BooleanInput[dialerJoinMap.AutoAnswerOnFb + dialerLineOffset]);
                 dialer.Value.AutoAnswerFeedback.LinkComplementInputSig(trilist.BooleanInput[dialerJoinMap.AutoAnswerOffFb + dialerLineOffset]);
-                dialer.Value.CallerIDNumberFB.LinkInputSig(trilist.StringInput[dialerJoinMap.CallerIDNumberFB + dialerLineOffset]);
-                dialer.Value.CallerIDNameFB.LinkInputSig(trilist.StringInput[dialerJoinMap.CallerIDNameFB + dialerLineOffset]);
+                dialer.Value.CallerIDNumberFeedback.LinkInputSig(trilist.StringInput[dialerJoinMap.CallerIDNumberFB + dialerLineOffset]);
+                dialer.Value.CallerIDNameFeedback.LinkInputSig(trilist.StringInput[dialerJoinMap.CallerIDNameFB + dialerLineOffset]);
 
                 dialer.Value.OffHookFeedback.LinkInputSig(trilist.BooleanInput[dialerJoinMap.DialFb + dialerLineOffset]);
                 dialer.Value.OffHookFeedback.LinkInputSig(trilist.BooleanInput[dialerJoinMap.OffHookFb + dialerLineOffset]);
                 dialer.Value.OffHookFeedback.LinkComplementInputSig(trilist.BooleanInput[dialerJoinMap.OnHookFb + dialerLineOffset]);
                 dialer.Value.DialStringFeedback.LinkInputSig(trilist.StringInput[dialerJoinMap.DialStringFb + dialerLineOffset]);
                 dialer.Value.IncomingCallFeedback.LinkInputSig(trilist.BooleanInput[dialerJoinMap.IncomingCall + dialerLineOffset]);
+
+                dialer.Value.CallStateFeedback.LinkInputSig(trilist.UShortInput[dialerJoinMap.CallState + dialerLineOffset]);
 
                 lineOffset += 50;
             }

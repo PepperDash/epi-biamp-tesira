@@ -52,6 +52,9 @@ namespace Tesira_DSP_EPI.Bridge.JoinMaps {
         public uint AutoAnswerOffFb { get; set; }
         public uint OffHook { get; set; }
         public uint OnHookFb { get; set; }
+
+        //Analogs
+        public uint CallState { get; set; }
         
 
 
@@ -103,6 +106,7 @@ namespace Tesira_DSP_EPI.Bridge.JoinMaps {
 
 
             //Analog
+            CallState = 3100;
 
             //String
             DialString = 3100;

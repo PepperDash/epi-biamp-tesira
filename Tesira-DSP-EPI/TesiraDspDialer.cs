@@ -31,7 +31,6 @@ namespace Tesira_DSP_EPI {
             }
         }
 
-
         private int CallAppearance { get; set; }
 
         private bool AppendDtmf { get; set; }
@@ -84,6 +83,7 @@ namespace Tesira_DSP_EPI {
                             this.DialStringFeedback.FireUpdate();
                         }
                 }
+                CallStateFeedback.FireUpdate();
             }
         }
 
@@ -107,7 +107,7 @@ namespace Tesira_DSP_EPI {
             }
             set {
                 _CallerIDNumber = value;
-                CallerIDNumberFB.FireUpdate();
+                CallerIDNumberFeedback.FireUpdate();
             }
         }
 
@@ -118,7 +118,7 @@ namespace Tesira_DSP_EPI {
             }
             set {
                 _CallerIDName = value;
-                CallerIDNameFB.FireUpdate();
+                CallerIDNameFeedback.FireUpdate();
             }
         }
 
@@ -126,9 +126,10 @@ namespace Tesira_DSP_EPI {
         public BoolFeedback AutoAnswerFeedback;
         public BoolFeedback DoNotDisturbFeedback;
         public StringFeedback DialStringFeedback;
-        public StringFeedback CallerIDNumberFB;
-        public StringFeedback CallerIDNameFB;
+        public StringFeedback CallerIDNumberFeedback;
+        public StringFeedback CallerIDNameFeedback;
         public BoolFeedback IncomingCallFeedback;
+        public IntFeedback CallStateFeedback;
 
         public override bool IsSubscribed {
             get {
@@ -165,9 +166,10 @@ namespace Tesira_DSP_EPI {
             OffHookFeedback = new BoolFeedback(() => { return OffHookStatus; });
             AutoAnswerFeedback = new BoolFeedback(() => { return AutoAnswerState; });
             DoNotDisturbFeedback = new BoolFeedback(() => { return DoNotDisturbState; });
-            CallerIDNumberFB = new StringFeedback(() => { return CallerIDNumber; });
-            CallerIDNameFB = new StringFeedback(() => { return CallerIDName; });
+            CallerIDNumberFeedback = new StringFeedback(() => { return CallerIDNumber; });
+            CallerIDNameFeedback = new StringFeedback(() => { return CallerIDName; });
             IncomingCallFeedback = new BoolFeedback(() => { return IncomingCallState; });
+            CallStateFeedback = new IntFeedback(() => { return (int)CallStatusEnum; });
 
             Initialize(key, config);
 
@@ -275,7 +277,7 @@ namespace Tesira_DSP_EPI {
                             CallerIDName = match3.Groups["name"].Value;
                             if (lineNumber == LineNumber) {
                                 Debug.Console(2, this, "CallState Complete - Firing Updates");
-                                this.CallerIDNumberFB.FireUpdate();
+                                this.CallerIDNumberFeedback.FireUpdate();
                                 this.OffHookFeedback.FireUpdate();
                                 if(IsVoip)
                                     VoipIsSubscribed = true;

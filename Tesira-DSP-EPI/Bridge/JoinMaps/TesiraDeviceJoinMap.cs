@@ -11,12 +11,14 @@ namespace Tesira_DSP_EPI.Bridge.JoinMaps {
         public uint IsOnline { get; set; }
         public uint CommandPassthruTx { get; set; }
         public uint CommandPassthruRx { get; set; }
+        public uint DirectPreset { get; set; }
 
         public TesiraDspDeviceJoinMap(uint JoinStart) {
 
 
             //Digital
             IsOnline = 1;
+            DirectPreset = 100;
 
             //Serial
             CommandPassthruTx = 1;
