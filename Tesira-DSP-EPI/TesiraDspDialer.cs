@@ -31,6 +31,8 @@ namespace Tesira_DSP_EPI {
             }
         }
 
+        private string _LastDialed { get; set; }
+
         private int CallAppearance { get; set; }
 
         private bool AppendDtmf { get; set; }
@@ -38,6 +40,7 @@ namespace Tesira_DSP_EPI {
 
         private bool _AutoAnswerState { get; set; }
         public bool AutoAnswerState { get; set; }
+
 
 
         private bool _DoNotDisturbState { get; set; }
@@ -48,6 +51,8 @@ namespace Tesira_DSP_EPI {
         public string AutoAnswerCustomName { get; set; }
         public string HookStateCustomName { get; set; }
         public string PotsDialerCustomName { get; set; }
+        public string LastDialedCustomName { get; set; }
+
 
         public string CallStatus {
             get {
@@ -130,6 +135,7 @@ namespace Tesira_DSP_EPI {
         public StringFeedback CallerIDNameFeedback;
         public BoolFeedback IncomingCallFeedback;
         public IntFeedback CallStateFeedback;
+        public StringFeedback LastDialedFeedback;
 
         public override bool IsSubscribed {
             get {
@@ -170,6 +176,7 @@ namespace Tesira_DSP_EPI {
             CallerIDNameFeedback = new StringFeedback(() => { return CallerIDName; });
             IncomingCallFeedback = new BoolFeedback(() => { return IncomingCallState; });
             CallStateFeedback = new IntFeedback(() => { return (int)CallStatusEnum; });
+            LastDialedFeedback = new StringFeedback(() => { return _LastDialed; });
 
             Initialize(key, config);
 
@@ -214,18 +221,26 @@ namespace Tesira_DSP_EPI {
                 DialerCustomName = string.Format("{0}~VoIPDialer{1}", this.InstanceTag1, this.Index1);
                 AutoAnswerCustomName = string.Format("{0}~VoIPDialerAutoAnswer{1}", this.InstanceTag1, this.Index1);
                 ControlStatusCustomName = string.Format("{0}~VoIPControl{1}", this.InstanceTag2, this.Index1);
+                LastDialedCustomName = string.Format("{0}~VoIPLastNumber{1}", this.InstanceTag1, this.Index1);
+
 
                 SendSubscriptionCommand(ControlStatusCustomName, "callState", 250, 2);
 
                 SendSubscriptionCommand(AutoAnswerCustomName, "autoAnswer", 500, 1);
+
+                SendSubscriptionCommand(LastDialedCustomName, "lastNum", 500, 1);
             }
             else if (!IsVoip) {
                 PotsDialerCustomName = string.Format("{0}~PotsDialer{1}", this.InstanceTag1, this.Index1);
+                LastDialedCustomName = string.Format("{0}~PotsLastNumber{1}", this.InstanceTag1, this.Index1);
+
                 HookStateCustomName = string.Format("{0}~HookState{1}", this.InstanceTag1, this.Index1);
 
                 SendSubscriptionCommand(DialerCustomName, "callState", 250, 1);
 
                 SendSubscriptionCommand(HookStateCustomName, "hookState", 500, 1);
+
+                SendSubscriptionCommand(LastDialedCustomName, "lastNum", 500, 1);
 
                 SendFullCommand("get", "autoAnswer", null, 1);
             }
@@ -238,10 +253,13 @@ namespace Tesira_DSP_EPI {
         /// </summary>
         /// <param name="customName"></param>
         /// <param name="value"></param>
-        public void ParseSubscriptionMessage(string customName, string value) {
-            try {
+        public void ParseSubscriptionMessage(string customName, string value)
+        {
+            try
+            {
                 Debug.Console(2, this, "New Subscription Message to Dialer");
-                if (customName == ControlStatusCustomName || customName == PotsDialerCustomName) {
+                if (customName == ControlStatusCustomName || customName == PotsDialerCustomName)
+                {
                     //Pulls Entire Value "array" and seperates call appearances
                     string pattern1 = "\\[([^\\[\\]]+)\\]";
                     //Seperates each call appearance into their constituent parts
@@ -255,31 +273,35 @@ namespace Tesira_DSP_EPI {
 
                     Match match = myMatches[CallAppearance - 1];
                     Match match2 = Regex.Match(match.Value, pattern2);
-                    if (match2.Success) {
+                    if (match2.Success)
+                    {
                         Debug.Console(2, this, "VoIPControlStatus Subscribed Response = {0}", match.Value);
                         int lineNumber = (int)(ushort.Parse(match2.Groups["line"].Value) + 1);
                         var CallStatusInt = int.Parse(match2.Groups["state"].Value.ToString());
                         CallStatusEnum = (eCallStatus)(CallStatusInt);
                         Debug.Console(2, this, "Callstate for Line {0} is {1}", lineNumber, int.Parse(match2.Groups["state"].Value));
                         Debug.Console(2, this, "Callstate Enum for Line {0} is {1}", lineNumber, (int)CallStatusEnum);
-                        if (CallStatusEnum == eCallStatus.RINGING) {
+                        if (CallStatusEnum == eCallStatus.RINGING)
+                        {
                             IncomingCallState = true;
                         }
                         else
                             IncomingCallState = false;
                         this.IncomingCallFeedback.FireUpdate();
-                        
+
                         this.OffHookFeedback.FireUpdate();
 
                         Match match3 = Regex.Match(match2.Groups["cid"].Value, pattern3);
-                        if (match3.Success) {
+                        if (match3.Success)
+                        {
                             CallerIDNumber = match3.Groups["number"].Value;
                             CallerIDName = match3.Groups["name"].Value;
-                            if (lineNumber == LineNumber) {
+                            if (lineNumber == LineNumber)
+                            {
                                 Debug.Console(2, this, "CallState Complete - Firing Updates");
                                 this.CallerIDNumberFeedback.FireUpdate();
                                 this.OffHookFeedback.FireUpdate();
-                                if(IsVoip)
+                                if (IsVoip)
                                     VoipIsSubscribed = true;
                                 if (!IsVoip)
                                     PotsIsSubscribed = true;
@@ -288,18 +310,21 @@ namespace Tesira_DSP_EPI {
                     }
                 }
             }
-            catch (Exception e) {
+            catch (Exception e)
+            {
                 Debug.Console(0, this, "Error in ParseSubscriptioMessage - {0}", e.Message);
             }
-            if (customName == AutoAnswerCustomName) {
-                AutoAnswerState = bool.Parse(value);          
-                    
+            if (customName == AutoAnswerCustomName)
+            {
+                AutoAnswerState = bool.Parse(value);
+
                 AutoAnswerIsSubscribed = true;
 
                 this.AutoAnswerFeedback.FireUpdate();
             }
 
-            if (customName == HookStateCustomName) {
+            if (customName == HookStateCustomName)
+            {
 
                 if (value.IndexOf("OFF") > -1)
                     OffHookStatus = true;
@@ -307,6 +332,11 @@ namespace Tesira_DSP_EPI {
                     OffHookStatus = false;
 
                 this.OffHookFeedback.FireUpdate();
+            }
+            if (customName == LastDialedCustomName)
+            {
+                _LastDialed = value;
+                this.LastDialedFeedback.FireUpdate();
             }
 
         }
@@ -374,8 +404,10 @@ namespace Tesira_DSP_EPI {
                     }
                 }
                 else if (!OffHookStatus) {
-                    if(!String.IsNullOrEmpty(DialString))
+                    if (!String.IsNullOrEmpty(DialString))
+                    {
                         SendFullCommand(null, "dial", DialString, 1);
+                    }
                 }
             }
 

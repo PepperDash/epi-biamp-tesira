@@ -315,11 +315,13 @@ For example, Incoming Call for Line 1 would be at join 3101, while the incoming 
 
 #### Serials
 
-| Join | Type (RW) | Description      |
-| ---- | --------- | -----------      |
-| 3100 | RW        | Dial String      |
-| 3104 | R         | Caller ID Number |
-| 3105 | R         | Caller ID Name   |
+| Join | Type (RW) | Description        |
+| ---- | --------- | -----------        |
+| 3100 | RW        | Dial String        |
+| 3101 | RW        | Dialer Label      |
+| 3102 | RW        | Last Number Dialed |
+| 3104 | R         | Caller ID Number   |
+| 3105 | R         | Caller ID Name     |
 
 #### Config Example
 
