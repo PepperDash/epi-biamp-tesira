@@ -172,19 +172,28 @@ namespace Tesira_DSP_EPI {
         }
 
         public override void Subscribe() {
-            //Subscribe to Level
-            if (this.HasLevel) {
-                LevelCustomName = string.Format("{0}~level{1}", this.InstanceTag1, this.Index1);
+			////Subscribe to Level
+			//if (this.HasLevel) {
+			//    LevelCustomName = string.Format("{0}~level{1}", this.InstanceTag1, this.Index1);
 
-                SendFullCommand("get", "minLevel", null, 1);
-            }
+			//    SendFullCommand("get", "minLevel", null, 1);
+			//}
 
             //Subscribe to Mute
             if (this.HasMute) {
-                MuteCustomName = string.Format("{0}~mute{1}", this.InstanceTag1, this.Index1);
+				// MUST use InstanceTag2 for mute, it is the second instance tag in the JSON config
+                MuteCustomName = string.Format("{0}~mute{1}", this.InstanceTag2, this.Index1);
 
                 SendSubscriptionCommand(MuteCustomName, "mute", 500, 2);
             }
+
+			//Subscribe to Level
+			if (this.HasLevel)
+			{
+				// MUST use InstanceTag1 for levels, it is the first instance tag in the JSON config
+				LevelCustomName = string.Format("{0}~level{1}", this.InstanceTag1, this.Index1);
+				SendFullCommand("get", "minLevel", null, 1);
+			}
         }
 
         /// <summary>
@@ -347,7 +356,7 @@ namespace Tesira_DSP_EPI {
                     SendFullCommand("decrement", "level", IncrementAmount, 1);
                 }
                 else if (!VolDownPressTracker) {
-                    VolumeDownRepeatDelayTimer.Reset(1500);
+                    VolumeDownRepeatDelayTimer.Reset(750);
                     SendFullCommand("decrement", "level", IncrementAmount, 1);
                 }
                 
@@ -372,7 +381,7 @@ namespace Tesira_DSP_EPI {
                     SendFullCommand("increment", "level", IncrementAmount, 1);
                 }
                 else if(!VolUpPressTracker){
-                    VolumeUpRepeatDelayTimer.Reset(1500);
+                    VolumeUpRepeatDelayTimer.Reset(750);
                     SendFullCommand("increment", "level", IncrementAmount, 1);
                     if (AutomaticUnmuteOnVolumeUp) {
                         if (_IsMuted) {
