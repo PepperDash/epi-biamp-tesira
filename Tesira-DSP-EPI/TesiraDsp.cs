@@ -353,7 +353,7 @@ namespace Tesira_DSP_EPI
 					{
 						case "-ERR ALREADY_SUBSCRIBED":
 							{
-								ResetSubscriptionTimer();
+								//StartWatchdogTimer();
 								break;
 							}
 						default:
@@ -465,13 +465,6 @@ namespace Tesira_DSP_EPI
 		{
 			SendLine("SESSION set verbose false");
 
-			Debug.Console(2, this, "There are {0} Level Objects", LevelControlPoints.Count());
-			foreach (KeyValuePair<string, TesiraDspLevelControl> level in LevelControlPoints)
-			{
-				Debug.Console(2, this, "Made it to Object - {0}", level.Value.InstanceTag1);
-				if (level.Value.Enabled)
-					level.Value.Subscribe();
-			}
 			foreach (KeyValuePair<string, TesiraDspDialer> dialer in Dialers)
 			{
 				Debug.Console(2, this, "Made it to Object - {0}", dialer.Value.InstanceTag1);
@@ -486,24 +479,33 @@ namespace Tesira_DSP_EPI
 					switcher.Value.Subscribe();
 			}
 
-			foreach (KeyValuePair<string, TesiraDspDialer> dialer in Dialers)
+			foreach (KeyValuePair<string, TesiraDspStateControl > state in States)
 			{
-				Debug.Console(2, this, "Made it to Object - {0}", dialer.Value.InstanceTag1);
-				if (dialer.Value.Enabled)
-					dialer.Value.Subscribe();
+				Debug.Console(2, this, "Made it to Object - {0}", state.Value.InstanceTag1);
+				if (state.Value.Enabled)
+					state.Value.Subscribe();
 			}
+
+            Debug.Console(2, this, "There are {0} Level Objects", LevelControlPoints.Count());
+            foreach (KeyValuePair<string, TesiraDspLevelControl> level in LevelControlPoints) {
+                Debug.Console(2, this, "Made it to Object - {0}", level.Value.InstanceTag1);
+                if (level.Value.Enabled)
+                    level.Value.Subscribe();
+            }
 
 			if (!CommandQueueInProgress)
 				SendNextQueuedCommand();
 
-			ResetSubscriptionTimer();
+            if (WatchdogTimer == null) {
+                WatchdogTimer = new CTimer(o => SubscribeToAttributes(), 90000, 90000);
+            }
 
 		}
 
 		/// <summary>
 		/// Resets or Sets the subscription timer
 		/// </summary>
-		void ResetSubscriptionTimer()
+		void StartWatchdogTimer()
 		{
 			Debug.Console(2, this, "Reset Subscription Timer Fired");
 			isSubscribed = true;

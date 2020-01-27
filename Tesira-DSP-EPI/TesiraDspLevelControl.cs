@@ -172,12 +172,12 @@ namespace Tesira_DSP_EPI {
         }
 
         public override void Subscribe() {
-			////Subscribe to Level
-			//if (this.HasLevel) {
-			//    LevelCustomName = string.Format("{0}~level{1}", this.InstanceTag1, this.Index1);
-
-			//    SendFullCommand("get", "minLevel", null, 1);
-			//}
+            //Subscribe to Level
+            if (this.HasLevel) {
+                // MUST use InstanceTag1 for levels, it is the first instance tag in the JSON config
+                LevelCustomName = string.Format("{0}~level{1}", this.InstanceTag1, this.Index1);
+                SendFullCommand("get", "minLevel", null, 1);
+            }
 
             //Subscribe to Mute
             if (this.HasMute) {
@@ -187,13 +187,7 @@ namespace Tesira_DSP_EPI {
                 SendSubscriptionCommand(MuteCustomName, "mute", 500, 2);
             }
 
-			//Subscribe to Level
-			if (this.HasLevel)
-			{
-				// MUST use InstanceTag1 for levels, it is the first instance tag in the JSON config
-				LevelCustomName = string.Format("{0}~level{1}", this.InstanceTag1, this.Index1);
-				SendFullCommand("get", "minLevel", null, 1);
-			}
+			
         }
 
         /// <summary>
