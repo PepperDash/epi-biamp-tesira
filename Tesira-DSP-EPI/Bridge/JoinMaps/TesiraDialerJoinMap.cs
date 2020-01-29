@@ -10,9 +10,11 @@ using PepperDash.Essentials.Core;
 namespace Tesira_DSP_EPI.Bridge.JoinMaps {
     public class TesiraDialerJoinMap : JoinMapBase {
 
+        //Strings
         public uint DialString { get; set; }
         public uint DialStringFb { get; set; }
         public uint Label { get; set; }
+        public uint DisplayNumber { get; set; }
         public uint CallerIDNumberFB { get; set; }
         public uint CallerIDNameFB { get; set; }
 
@@ -116,6 +118,7 @@ namespace Tesira_DSP_EPI.Bridge.JoinMaps {
             LastNumberDialedFb = 3102;
             CallerIDNumberFB = 3104;
             CallerIDNameFB = 3105;
+            DisplayNumber = 3106;
 
             OffsetJoinNumbers(JoinStart);
         }

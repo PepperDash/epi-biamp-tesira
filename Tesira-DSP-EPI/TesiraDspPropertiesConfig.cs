@@ -48,6 +48,7 @@ namespace Tesira_DSP_EPI {
         public bool enabled { get; set; }
         public bool isVoip { get; set; }
         public string label { get; set; }
+        public string displayNumber { get; set; }
 
         public string dialerInstanceTag { get; set; }
         public string controlStatusInstanceTag { get; set; }

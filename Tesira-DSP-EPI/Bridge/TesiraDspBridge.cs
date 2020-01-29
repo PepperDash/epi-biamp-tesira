@@ -148,6 +148,7 @@ namespace Tesira_DSP_EPI.Bridge {
                 trilist.SetSigTrueAction((dialerJoinMap.KeypadBackspace + dialerLineOffset), () => dialer.Value.SendKeypad(Tesira_DSP_EPI.TesiraDspDialer.eKeypadKeys.Backspace));
 
                 trilist.StringInput[dialerJoinMap.Label + x].StringValue = dialer.Value.Label;
+                trilist.StringInput[dialerJoinMap.DisplayNumber + x].StringValue = dialer.Value.DisplayNumber;
 
                 trilist.SetSigTrueAction(dialerJoinMap.Dial + dialerLineOffset, () => dialer.Value.Dial());
                 trilist.SetSigTrueAction(dialerJoinMap.DoNotDisturbToggle + dialerLineOffset, () => dialer.Value.DoNotDisturbToggle());

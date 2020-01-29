@@ -41,6 +41,8 @@ namespace Tesira_DSP_EPI {
         private bool _AutoAnswerState { get; set; }
         public bool AutoAnswerState { get; set; }
 
+        public string DisplayNumber { get; set; }
+
 
 
         private bool _DoNotDisturbState { get; set; }
@@ -201,6 +203,7 @@ namespace Tesira_DSP_EPI {
             ClearOnHangup = config.clearOnHangup;
             Enabled = config.enabled;
             CallAppearance = config.callAppearance;
+            DisplayNumber = config.displayNumber;
         }
 
         public void AcceptCall(CodecActiveCallItem item) {
