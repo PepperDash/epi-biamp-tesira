@@ -117,11 +117,12 @@ namespace Tesira_DSP_EPI.Bridge {
             
 
             //Presets 
-            x = 1;
+            x = 0;
             foreach (var preset in DspDevice.PresetList) {
+                var p = preset;
                 var temp = x;
-                trilist.StringInput[presetJoinMap.PresetName + temp].StringValue = preset.label;
-                trilist.SetSigTrueAction(presetJoinMap.PresetSelection + temp, () => DspDevice.RunPresetNumber(temp));
+                trilist.StringInput[presetJoinMap.PresetNameFeedback + temp + 1].StringValue = p.preset;
+                trilist.SetSigTrueAction(presetJoinMap.PresetSelection + temp + 1, () => DspDevice.RunPresetNumber(temp));
                 x++;
             }
 

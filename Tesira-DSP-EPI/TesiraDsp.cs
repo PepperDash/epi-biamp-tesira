@@ -569,7 +569,11 @@ namespace Tesira_DSP_EPI
 
 		public void RunPresetNumber(ushort n)
 		{
-			RunPreset(PresetList[n].preset);
+            Debug.Console(2, this, "Attempting to run preset {0}", n);
+            if (n < PresetList.Count() && n >= 0) 
+            {
+                RunPreset(PresetList[n].preset);
+            }
 		}
 
 		public void addPreset(TesiraDspPresets s)
