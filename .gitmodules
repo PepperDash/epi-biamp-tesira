@@ -1,3 +1,7 @@
 [submodule "Essentials"]
 	path = Essentials
 	url = https://t-payne@bitbucket.org/Pepperdash_Products/Essentials-builds
+[submodule "Essentials-Builds"]
+	path = Essentials-Builds
+	url = https://github.com/PepperDash/Essentials-Builds.git
+	branch = release
