@@ -514,12 +514,12 @@ namespace Tesira_DSP_EPI
 			{
 				WatchdogTimer.Stop();
 				WatchdogTimer = null;
-				WatchdogTimer = new CTimer(o => SubscribeToAttributes(), 90000);
+				WatchdogTimer = new CTimer(o => SubscribeToAttributes(), null, 90000, 90000);
 				//SubscriptionTimer.Reset();
 			}
 			else
 			{
-				WatchdogTimer = new CTimer(o => SubscribeToAttributes(), 90000);
+				WatchdogTimer = new CTimer(o => SubscribeToAttributes(), null, 90000, 90000);
 				//SubscriptionTimer.Reset();
 			}
 		}
