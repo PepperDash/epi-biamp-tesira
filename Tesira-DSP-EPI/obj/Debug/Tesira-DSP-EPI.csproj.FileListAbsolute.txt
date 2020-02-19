@@ -65,3 +65,17 @@ C:\_pdt-bb\PepperDash_Modules\tesira-dsp-epi\Tesira-DSP-EPI\bin\Debug\Crestron.S
 C:\_pdt-bb\PepperDash_Modules\tesira-dsp-epi\Tesira-DSP-EPI\obj\Debug\ResolveAssemblyReference.cache
 C:\_pdt-bb\PepperDash_Modules\tesira-dsp-epi\Tesira-DSP-EPI\obj\Debug\Tesira-DSP-EPI.dll
 C:\_pdt-bb\PepperDash_Modules\tesira-dsp-epi\Tesira-DSP-EPI\obj\Debug\Tesira-DSP-EPI.pdb
+C:\Users\ngenovese\source\fmac-sln001-mpr\_EssentialsPlugins\epi-dsp-tesira\Tesira-DSP-EPI\obj\Debug\ResolveAssemblyReference.cache
+C:\Users\ngenovese\source\fmac-sln001-mpr\_EssentialsPlugins\epi-dsp-tesira\Tesira-DSP-EPI\obj\Debug\Tesira-DSP-EPI.dll
+C:\Users\ngenovese\source\fmac-sln001-mpr\_EssentialsPlugins\epi-dsp-tesira\Tesira-DSP-EPI\bin\Debug\Tesira-DSP-EPI.dll
+C:\Users\ngenovese\source\fmac-sln001-mpr\_EssentialsPlugins\epi-dsp-tesira\Tesira-DSP-EPI\bin\Debug\Tesira-DSP-EPI.pdb
+C:\Users\ngenovese\source\fmac-sln001-mpr\_EssentialsPlugins\epi-dsp-tesira\Tesira-DSP-EPI\bin\Debug\Crestron.SimplSharpPro.Lighting.dll
+C:\Users\ngenovese\source\fmac-sln001-mpr\_EssentialsPlugins\epi-dsp-tesira\Tesira-DSP-EPI\bin\Debug\SimplSharpSQLHelperInterface.dll
+C:\Users\ngenovese\source\fmac-sln001-mpr\_EssentialsPlugins\epi-dsp-tesira\Tesira-DSP-EPI\bin\Debug\Crestron.SimplSharpPro.Fusion.dll
+C:\Users\ngenovese\source\fmac-sln001-mpr\_EssentialsPlugins\epi-dsp-tesira\Tesira-DSP-EPI\bin\Debug\Crestron.SimplSharpPro.Shades.dll
+C:\Users\ngenovese\source\fmac-sln001-mpr\_EssentialsPlugins\epi-dsp-tesira\Tesira-DSP-EPI\bin\Debug\Crestron.SimplSharpPro.EthernetCommunications.dll
+C:\Users\ngenovese\source\fmac-sln001-mpr\_EssentialsPlugins\epi-dsp-tesira\Tesira-DSP-EPI\bin\Debug\SimplSharpTimerEventInterface.dll
+C:\Users\ngenovese\source\fmac-sln001-mpr\_EssentialsPlugins\epi-dsp-tesira\Tesira-DSP-EPI\bin\Debug\Crestron.SimplSharpPro.Gateways.dll
+C:\Users\ngenovese\source\fmac-sln001-mpr\_EssentialsPlugins\epi-dsp-tesira\Tesira-DSP-EPI\bin\Debug\Crestron.SimplSharpPro.GeneralIO.dll
+C:\Users\ngenovese\source\fmac-sln001-mpr\_EssentialsPlugins\epi-dsp-tesira\Tesira-DSP-EPI\bin\Debug\Crestron.SimplSharpPro.DM.dll
+C:\Users\ngenovese\source\fmac-sln001-mpr\_EssentialsPlugins\epi-dsp-tesira\Tesira-DSP-EPI\obj\Debug\Tesira-DSP-EPI.pdb

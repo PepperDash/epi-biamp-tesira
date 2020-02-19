@@ -26,7 +26,9 @@ namespace Tesira_DSP_EPI {
         public Dictionary<string, TesiraDspPresets> presets { get; set; }
         public Dictionary<string, TesiraStateControlBlockConfig> stateControlBlocks { get; set; }
         // public Dictionary<string, BiampTesiraForteDialerControlBlockConfig> DialerControlBlocks {get; set;}
+        public Dictionary<string, TesiraMeterBlockConfig> meterControlBlocks { get; set; }
     }
+
     public class TesiraLevelControlBlockConfig {
         public bool enabled { get; set; }
         public string label { get; set; }
@@ -96,4 +98,12 @@ namespace Tesira_DSP_EPI {
         }
     }
 
+    public class TesiraMeterBlockConfig
+    {
+        public bool enabled { get; set; }
+        public string label { get; set; }
+
+        public string meterInstanceTag { get; set; }
+        public int index { get; set; }
+    }
 }

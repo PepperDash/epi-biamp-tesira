@@ -55,6 +55,7 @@ namespace Tesira_DSP_EPI
 		public Dictionary<string, TesiraDspDialer> Dialers { get; private set; }
 		public Dictionary<string, TesiraDspSwitcher> Switchers { get; private set; }
 		public Dictionary<string, TesiraDspStateControl> States { get; private set; }
+        public Dictionary<string, TesiraDspMeter> Meters { get; private set; }
 		public List<TesiraDspPresets> PresetList = new List<TesiraDspPresets>();
 
 		DeviceConfig _Dc;
@@ -100,6 +101,8 @@ namespace Tesira_DSP_EPI
 			Dialers = new Dictionary<string, TesiraDspDialer>();
 			Switchers = new Dictionary<string, TesiraDspSwitcher>();
 			States = new Dictionary<string, TesiraDspStateControl>();
+            Meters = new Dictionary<string, TesiraDspMeter>();
+
 			CreateDspObjects();
 		}
 
@@ -148,8 +151,6 @@ namespace Tesira_DSP_EPI
 			Dialers.Clear();
 			States.Clear();
 			Switchers.Clear();
-
-
 
 			if (props.levelControlBlocks != null)
 			{
@@ -223,6 +224,16 @@ namespace Tesira_DSP_EPI
 				}
 			}
 
+            if (props.meterControlBlocks != null)
+            {
+                foreach (var meterConfig in props.meterControlBlocks)
+                {
+                    var key = meterConfig.Key;
+                    var value = meterConfig.Value;
+                    Meters.Add(key, new TesiraDspMeter(key, value, this));
+                    Debug.Console(2, this, "Adding Meter {0} InstanceTag: {1}", key, value.meterInstanceTag);
+                }
+            }
 		}
 
 		void Port_LineReceived(object dev, GenericCommMethodReceiveTextArgs args)
@@ -308,6 +319,14 @@ namespace Tesira_DSP_EPI
 								controlPoint.Value.ParseSubscriptionMessage(customName, value);
 							}
 						}
+
+                        foreach (KeyValuePair<string, TesiraDspMeter> controlPoint in Meters)
+                        {
+                            if (customName == controlPoint.Value.MeterCustomName)
+                            {
+                                controlPoint.Value.ParseSubscriptionMessage(customName, value);
+                            }
+                        }
 					}
 
 					/// same for dialers

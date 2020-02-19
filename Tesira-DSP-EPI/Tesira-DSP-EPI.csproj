@@ -77,12 +77,12 @@
     </Reference>
     <Reference Include="SimplSharpCustomAttributesInterface, Version=1.0.0.0, Culture=neutral, PublicKeyToken=1099c178b3b54c3b, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\..\..\ProgramData\Crestron\SDK\SimplSharpCustomAttributesInterface.dll</HintPath>
+      <HintPath>..\..\..\..\..\..\..\ProgramData\Crestron\SDK\SimplSharpCustomAttributesInterface.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="SimplSharpHelperInterface, Version=1.0.0.0, Culture=neutral, PublicKeyToken=1099c178b3b54c3b, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\..\..\ProgramData\Crestron\SDK\SimplSharpHelperInterface.dll</HintPath>
+      <HintPath>..\..\..\..\..\..\..\ProgramData\Crestron\SDK\SimplSharpHelperInterface.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="SimplSharpNewtonsoft, Version=1.0.0.0, Culture=neutral, PublicKeyToken=1099c178b3b54c3b, processorArchitecture=MSIL">
@@ -91,7 +91,7 @@
     </Reference>
     <Reference Include="SimplSharpPro, Version=1.5.3.17, Culture=neutral, PublicKeyToken=1099c178b3b54c3b, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\..\..\ProgramData\Crestron\SDK\SimplSharpPro.exe</HintPath>
+      <HintPath>..\..\..\..\..\..\..\ProgramData\Crestron\SDK\SimplSharpPro.exe</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="SimplSharpReflectionInterface, Version=1.0.5583.25238, Culture=neutral, PublicKeyToken=1099c178b3b54c3b, processorArchitecture=MSIL">
@@ -105,7 +105,9 @@
   <ItemGroup>
     <Compile Include="Bridge\JoinMaps\TesiraDeviceJoinMap.cs" />
     <Compile Include="Bridge\JoinMaps\TesiraDialerJoinMap.cs" />
+    <Compile Include="Bridge\JoinMaps\TesiraMeterJoinMap.cs" />
     <Compile Include="Extensions\DictionaryExtensions.cs" />
+    <Compile Include="Extensions\ScalingExtensions.cs" />
     <Compile Include="Interfaces\IRoutingWithFeedback.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Bridge\JoinMaps\TesiraSwitcherJoinMap.cs" />
@@ -114,6 +116,7 @@
     <Compile Include="TesiraDspControlPoint.cs" />
     <Compile Include="TesiraDspDialer.cs" />
     <Compile Include="TesiraDspLevelControl.cs" />
+    <Compile Include="TesiraDspMeter.cs" />
     <Compile Include="TesiraDspPropertiesConfig.cs" />
     <Compile Include="TesiraDspStateControl.cs" />
     <Compile Include="TesiraDspSwitcher.cs" />
