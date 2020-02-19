@@ -56,6 +56,7 @@ namespace Tesira_DSP_EPI
 		public Dictionary<string, TesiraDspSwitcher> Switchers { get; private set; }
 		public Dictionary<string, TesiraDspStateControl> States { get; private set; }
         public Dictionary<string, TesiraDspMeter> Meters { get; private set; }
+        public Dictionary<string, TesiraDspMatrixMixer> MatrixMixers { get; private set; }
 		public List<TesiraDspPresets> PresetList = new List<TesiraDspPresets>();
 
 		DeviceConfig _Dc;
@@ -102,6 +103,7 @@ namespace Tesira_DSP_EPI
 			Switchers = new Dictionary<string, TesiraDspSwitcher>();
 			States = new Dictionary<string, TesiraDspStateControl>();
             Meters = new Dictionary<string, TesiraDspMeter>();
+            MatrixMixers = new Dictionary<string, TesiraDspMatrixMixer>();
 
 			CreateDspObjects();
 		}
@@ -233,6 +235,17 @@ namespace Tesira_DSP_EPI
                     Meters.Add(key, new TesiraDspMeter(key, value, this));
                     Debug.Console(2, this, "Adding Meter {0} InstanceTag: {1}", key, value.meterInstanceTag);
                 }
+            }
+
+            if (props.matrixMixerControlBlocks != null)
+            {
+                props.matrixMixerControlBlocks
+                    .ToList()
+                    .ForEach(c => 
+                        {
+                            MatrixMixers.Add(c.Key, new TesiraDspMatrixMixer(c.Key, c.Value, this));
+                            Debug.Console(2, this, "Adding MixerControlPoint {0} InstanceTag: {1}", c.Key, c.Value.matrixInstanceTag);
+                        });
             }
 		}
 

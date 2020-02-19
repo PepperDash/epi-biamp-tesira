@@ -105,6 +105,7 @@
   <ItemGroup>
     <Compile Include="Bridge\JoinMaps\TesiraDeviceJoinMap.cs" />
     <Compile Include="Bridge\JoinMaps\TesiraDialerJoinMap.cs" />
+    <Compile Include="Bridge\JoinMaps\TesiraMatrixMixerJoinMap.cs" />
     <Compile Include="Bridge\JoinMaps\TesiraMeterJoinMap.cs" />
     <Compile Include="Extensions\DictionaryExtensions.cs" />
     <Compile Include="Extensions\ScalingExtensions.cs" />
@@ -116,6 +117,7 @@
     <Compile Include="TesiraDspControlPoint.cs" />
     <Compile Include="TesiraDspDialer.cs" />
     <Compile Include="TesiraDspLevelControl.cs" />
+    <Compile Include="TesiraDspMatrixMixer.cs" />
     <Compile Include="TesiraDspMeter.cs" />
     <Compile Include="TesiraDspPropertiesConfig.cs" />
     <Compile Include="TesiraDspStateControl.cs" />

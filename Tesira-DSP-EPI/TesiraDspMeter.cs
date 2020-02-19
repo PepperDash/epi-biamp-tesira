@@ -32,7 +32,7 @@ namespace Tesira_DSP_EPI
         public TesiraDspMeter(string key, TesiraMeterBlockConfig config, TesiraDsp parent)
             : base(config.meterInstanceTag, string.Empty, config.index, 0, parent)
         {
-            Key = key;
+            Key = string.Format("{0}--{1}", Parent.Key, key);
             DeviceManager.AddDevice(this);
 
             Label = config.label;
@@ -45,8 +45,8 @@ namespace Tesira_DSP_EPI
 
             LabelFeedback.FireUpdate();
 
-            CrestronConsole.AddNewConsoleCommand(s => Subscribe(), "enablemeters", "", ConsoleAccessLevelEnum.AccessOperator);
-            CrestronConsole.AddNewConsoleCommand(s => UnSubscribe(), "disablemeters", "", ConsoleAccessLevelEnum.AccessOperator);
+            /*CrestronConsole.AddNewConsoleCommand(s => Subscribe(), "enablemeters", "", ConsoleAccessLevelEnum.AccessOperator);
+            CrestronConsole.AddNewConsoleCommand(s => UnSubscribe(), "disablemeters", "", ConsoleAccessLevelEnum.AccessOperator);*/
         }
 
         public override void Subscribe()

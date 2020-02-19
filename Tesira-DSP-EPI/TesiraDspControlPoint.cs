@@ -116,18 +116,30 @@ namespace Tesira_DSP_EPI
 				}
 			}
 
-			else
-			{
-				//Command does not require Index
-				if (String.IsNullOrEmpty(value))
-				{
-					cmd = string.Format("{0} {1} {2}", instanceTag, command, attributeCode);
-				}
-				else
-				{
-					cmd = string.Format("{0} {1} {2} {3}", instanceTag, command, attributeCode, value);
-				}
-			}
+            else if (attributeCode == TesiraDspMatrixMixer.AttributeCode)
+            {
+                if (string.IsNullOrEmpty(value))
+                {
+                    cmd = string.Format("{0} {1} {2} {3} {4}", instanceTag, command, TesiraDspMatrixMixer.AttributeCode, Index1, Index2);
+                }
+                else
+                {
+                    cmd = string.Format("{0} {1} {2} {3} {4} {5}", instanceTag, command, TesiraDspMatrixMixer.AttributeCode, Index1, Index2, value);
+                }
+            }
+
+            else
+            {
+                //Command does not require Index
+                if (String.IsNullOrEmpty(value))
+                {
+                    cmd = string.Format("{0} {1} {2}", instanceTag, command, attributeCode);
+                }
+                else
+                {
+                    cmd = string.Format("{0} {1} {2} {3}", instanceTag, command, attributeCode, value);
+                }
+            }
 
 			if (command == "get")
 			{
