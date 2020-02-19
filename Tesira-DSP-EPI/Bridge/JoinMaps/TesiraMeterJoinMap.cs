@@ -14,11 +14,11 @@ namespace Tesira_DSP_EPI.Bridge.JoinMaps
 
         TesiraMeterJoinMap()
         {
-            MeterJoin = 3500;
+            MeterJoin = 3501;
         }
 
         public TesiraMeterJoinMap(uint joinStart)
-            : base()
+            : this()
         {
             OffsetJoinNumbers(joinStart);
         }

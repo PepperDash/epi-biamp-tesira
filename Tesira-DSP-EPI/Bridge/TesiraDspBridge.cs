@@ -188,8 +188,21 @@ namespace Tesira_DSP_EPI.Bridge {
 
                 lineOffset += 50;
             }
-            
 
+            var meterJoinMap = new TesiraMeterJoinMap(joinStart);
+            for (int meterJoin = 0; meterJoin < DspDevice.Meters.Count; meterJoin++)
+            {
+                var joinActual = meterJoinMap.MeterJoin + meterJoin;                
+                var meter = DspDevice.Meters.ElementAt(meterJoin);
+
+                Debug.Console(2, DspDevice, "AddingMeterBridge {0} | Join:{1}", meter.Key, joinActual);
+                meter.Value.MeterFeedback.LinkInputSig(trilist.UShortInput[(uint)joinActual]);
+                meter.Value.LabelFeedback.LinkInputSig(trilist.StringInput[(uint)joinActual]);
+                meter.Value.SubscribedFeedback.LinkInputSig(trilist.BooleanInput[(uint)joinActual]);
+
+                trilist.SetSigTrueAction((uint)joinActual, meter.Value.Subscribe);
+                trilist.SetSigFalseAction((uint)joinActual, meter.Value.UnSubscribe);
+            }
         }
     }
     /*
