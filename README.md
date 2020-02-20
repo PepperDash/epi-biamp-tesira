@@ -357,6 +357,55 @@ For example, Incoming Call for Line 1 would be at join 3101, while the incoming 
 
 ***
 
+### Meter
+
+Enables metering on the sepecified meter.  
+Using this is a bad idea, please avoid unless specifically requested.  
+
+This Join map represents a control that is part of an array of controls.  Each join number = Join Map Number + State Index as defined by the config.
+
+#### Digitals
+
+| Join | Type (RW) | Description  |
+| ---- | --------- | -----------  |
+| 3501 | RW        | Meter Toggle |
+
+#### Analogs
+
+| Join | Type (RW) | Description  |
+| ---- | --------- | -----------  |
+| 3501 | R         | Meter Feedback |
+
+#### Serials
+
+| Join | Type (RW) | Description                      |
+| ---- | --------- | -----------                      |
+| 3501 | R         | Control Label (Pass From Config) |
+
+#### Config Example
+
+> All state configs must be part of a dictionary called **meterControlBlocks**.  
+
+``` javascript
+"meterControlBlocks" : {
+    "meter01" : {
+        "enabled" : true,
+        "label" : "State01",
+        "meterInstanceTag" : "Meter1",
+        "index" : 1
+    }
+}
+```
+
+#### Config Notes
+
+**enabled** - enables the control to be subscribed and controlled  
+**label** - Passed directly across the eisc as the *Label* value  
+**index** - Index of the control point  
+**stateInstanceTag** - Instance tag of the meter block  
+
+***
+
 ## Full Example EFS Config
 
 >This config will create an internal loopback EISC on IPID D1 for a ssh-controlled tesira.
