@@ -397,11 +397,50 @@ This Join map represents a control that is part of an array of controls.  Each j
 }
 ```
 
+### MatrixMixer ControssPoint
+
+Provides a control point for a single crosspoint on a MatrixMixer.  
+
+This Join map represents a control that is part of an array of controls.  Each join number = Join Map Number + State Index as defined by the config.
+
+#### Digitals
+
+| Join | Type (RW) | Description  |
+| ---- | --------- | -----------  |
+| 2001 | RW        | Crosspoint Toggle  |
+| 2002 | W         | Crosspoint On      |
+| 2003 | W         | Crosspoint Off     |
+
+#### Analogs
+
+#### Serials
+
+| Join | Type (RW) | Description                      |
+| ---- | --------- | -----------                      |
+| 2001 | R         | Control Label (Pass From Config) |
+
+#### Config Example
+
+> All state configs must be part of a dictionary called **meterControlBlocks**.  
+
+``` javascript
+"meterControlBlocks" : {
+    "meter01" : {
+        "enabled" : true,
+        "label" : "Crosspoint1-2",
+        "matrixInstanceTag" : "Meter1",
+        "index1" : 1,
+        "index2" : 2
+    }
+}
+```
+
 #### Config Notes
 
 **enabled** - enables the control to be subscribed and controlled  
 **label** - Passed directly across the eisc as the *Label* value  
-**index** - Index of the control point  
+**index1** - Input of the crosspoint to be controlled  
+**index2** - Output of the crosspoint to be controlled  
 **stateInstanceTag** - Instance tag of the meter block  
 
 ***
