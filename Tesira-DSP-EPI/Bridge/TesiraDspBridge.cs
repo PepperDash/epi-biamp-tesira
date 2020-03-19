@@ -99,12 +99,17 @@ namespace Tesira_DSP_EPI.Bridge {
                 Debug.Console(2, DspDevice, "Tesira Switcher {0} connect to {1}", switcher.Key, x);
                 if (switcher.Value.Enabled) {
                     ushort y = (ushort)((x * 2) + 1);
+                    //3 switchers
+                    //(0 * 2) + 1 = 1
+                    //(1 * 2) + 1 = 3
+                    //(2 * 2) + 1 = 5
                     Debug.Console(2, DspDevice, "Tesira Switcher {0} is Enabled", x);
 
                     var s = switcher.Value as IRoutingWithFeedback;
+                    var tempSwitcher = switcher.Value;
                     s.SourceIndexFeedback.LinkInputSig(trilist.UShortInput[switcherJoinMap.SourceSelectorIndexFb + y]);
 
-                    trilist.SetUShortSigAction(switcherJoinMap.SourceSelectorIndex + y, u => switcher.Value.SetSource(u));
+                    trilist.SetUShortSigAction(switcherJoinMap.SourceSelectorIndex + y, u => tempSwitcher.SetSource(u));
 
                     trilist.StringInput[switcherJoinMap.SourceSelectorLabel + y].StringValue = switcher.Value.Label;
 
