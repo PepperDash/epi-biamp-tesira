@@ -49,8 +49,6 @@ namespace Tesira_DSP_EPI
 
 		//public TesiraDspWatchdog Watchdog;
 
-		private CTimer WatchdogTimer;
-
 		public Dictionary<string, TesiraDspLevelControl> LevelControlPoints { get; private set; }
 		public Dictionary<string, TesiraDspDialer> Dialers { get; private set; }
 		public Dictionary<string, TesiraDspSwitcher> Switchers { get; private set; }
@@ -96,9 +94,10 @@ namespace Tesira_DSP_EPI
 
 			CommandPassthruFeedback = new StringFeedback(() => DeviceRx);
 
+            CommunicationMonitor = new GenericCommunicationMonitor(this, Communication, 20000, 120000, 300000, CheckWatchDog);
+
 			// Custom monitoring, will check the heartbeat tracker count every 20s and reset. Heartbeat sbould be coming in every 20s if subscriptions are valid
-			CommunicationMonitor = new GenericCommunicationMonitor(this, Communication, 20000, 120000, 300000, CheckWatchDog);
-			//DeviceManager.AddDevice(CommunicationMonitor);
+			DeviceManager.AddDevice(CommunicationMonitor);
 
 			LevelControlPoints = new Dictionary<string, TesiraDspLevelControl>();
 			Dialers = new Dictionary<string, TesiraDspDialer>();
@@ -113,6 +112,7 @@ namespace Tesira_DSP_EPI
 			Communication.Connect();
 			CommunicationMonitor.StatusChange += (o, a) => { Debug.Console(2, this, "Communication monitor state: {0}", CommunicationMonitor.Status); };
 			CommunicationMonitor.Start();
+            SubscribeToAttributes();
 
 			CrestronConsole.AddNewConsoleCommand(SendLine, "send" + Key, "", ConsoleAccessLevelEnum.AccessOperator);
 			CrestronConsole.AddNewConsoleCommand(s => Communication.Connect(), "con" + Key, "", ConsoleAccessLevelEnum.AccessOperator);
@@ -157,74 +157,80 @@ namespace Tesira_DSP_EPI
 
 
 
-			if (props.levelControlBlocks != null)
-			{
-				Debug.Console(2, this, "levelControlBlocks is not null - There are {0} of them", props.levelControlBlocks.Count());
-				foreach (KeyValuePair<string, TesiraLevelControlBlockConfig> block in props.levelControlBlocks)
-				{
-					string key = block.Key;
-					Debug.Console(2, this, "LevelControlBlock Key - {0}", key);
-					var value = block.Value;
-					//value.levelInstanceTag = value.levelInstanceTag;
-					//value.muteInstanceTag = value.muteInstanceTag;
+            if (props.levelControlBlocks != null)
+            {
+                Debug.Console(2, this, "levelControlBlocks is not null - There are {0} of them", props.levelControlBlocks.Count());
+                foreach (KeyValuePair<string, TesiraLevelControlBlockConfig> block in props.levelControlBlocks)
+                {
+                    string key = block.Key;
+                    Debug.Console(2, this, "LevelControlBlock Key - {0}", key);
+                    var value = block.Value;
+                    //value.levelInstanceTag = value.levelInstanceTag;
+                    //value.muteInstanceTag = value.muteInstanceTag;
 
-					this.LevelControlPoints.Add(key, new TesiraDspLevelControl(key, value, this));
-                    ControlPointList.Add(LevelControlPoints[key]);
-					Debug.Console(2, this, "Added LevelControlPoint {0} LevelTag: {1} MuteTag: {2}", key, value.levelInstanceTag, value.muteInstanceTag);
-                    DeviceManager.AddDevice(LevelControlPoints[key]);
-				}
-			}
+                    this.LevelControlPoints.Add(key, new TesiraDspLevelControl(key, value, this));
+                    Debug.Console(2, this, "Added LevelControlPoint {0} LevelTag: {1} MuteTag: {2}", key, value.levelInstanceTag, value.muteInstanceTag);
+                    if (block.Value.enabled)
+                    {
+                        DeviceManager.AddDevice(LevelControlPoints[key]);
+                        ControlPointList.Add(LevelControlPoints[key]);
+                    }
+                }
+            }
 
-			if (props.switcherControlBlocks != null)
-			{
-				Debug.Console(2, this, "switcherControlBlocks is not null - There are {0} of them", props.levelControlBlocks.Count());
-				foreach (KeyValuePair<string, TesiraSwitcherControlBlockConfig> block in props.switcherControlBlocks)
-				{
-					string key = block.Key;
-					Debug.Console(2, this, "SwitcherControlBlock Key - {0}", key);
-					var value = block.Value;
+            if (props.switcherControlBlocks != null)
+            {
+                Debug.Console(2, this, "switcherControlBlocks is not null - There are {0} of them", props.levelControlBlocks.Count());
+                foreach (KeyValuePair<string, TesiraSwitcherControlBlockConfig> block in props.switcherControlBlocks)
+                {
+                    string key = block.Key;
+                    Debug.Console(2, this, "SwitcherControlBlock Key - {0}", key);
+                    var value = block.Value;
 
-					this.Switchers.Add(key, new TesiraDspSwitcher(key, value, this));
-                    ControlPointList.Add(Switchers[key]);
+                    this.Switchers.Add(key, new TesiraDspSwitcher(key, value, this));
+                    Debug.Console(2, this, "Added TesiraSwitcher {0} InstanceTag {1}", key, value.switcherInstanceTag);
 
-					Debug.Console(2, this, "Added TesiraSwitcher {0} InstanceTag {1}", key, value.switcherInstanceTag);
-				}
-			}
+                    if (block.Value.enabled)
+                        ControlPointList.Add(Switchers[key]);
+                }
+            }
 
-			if (props.dialerControlBlocks != null)
-			{
-				Debug.Console(2, this, "dialerControlBlocks is not null - There are {0} of them", props.dialerControlBlocks.Count());
-				foreach (KeyValuePair<string, TesiraDialerControlBlockConfig> block in props.dialerControlBlocks)
-				{
-					string key = block.Key;
-					Debug.Console(2, this, "LevelControlBlock Key - {0}", key);
-					var value = block.Value;
-					//value.controlStatusInstanceTag = value.controlStatusInstanceTag;
-					//value.dialerInstanceTag = value.dialerInstanceTag;
+            if (props.dialerControlBlocks != null)
+            {
+                Debug.Console(2, this, "dialerControlBlocks is not null - There are {0} of them", props.dialerControlBlocks.Count());
+                foreach (KeyValuePair<string, TesiraDialerControlBlockConfig> block in props.dialerControlBlocks)
+                {
 
-					this.Dialers.Add(key, new TesiraDspDialer(key, value, this));
-                    DeviceManager.AddDevice(Dialers[key]);
+                    string key = block.Key;
+                    Debug.Console(2, this, "LevelControlBlock Key - {0}", key);
+                    var value = block.Value;
+                    //value.controlStatusInstanceTag = value.controlStatusInstanceTag;
+                    //value.dialerInstanceTag = value.dialerInstanceTag;
 
-					Debug.Console(2, this, "Added DspDialer {0} ControlStatusTag: {1} DialerTag: {2}", key, value.controlStatusInstanceTag, value.dialerInstanceTag);
+                    this.Dialers.Add(key, new TesiraDspDialer(key, value, this));
+                    Debug.Console(2, this, "Added DspDialer {0} ControlStatusTag: {1} DialerTag: {2}", key, value.controlStatusInstanceTag, value.dialerInstanceTag);
 
-				}
-			}
+                    if (block.Value.enabled)
+                        DeviceManager.AddDevice(Dialers[key]);
+                }
+            }
 
-			if (props.stateControlBlocks != null)
-			{
-				Debug.Console(2, this, "stateControlBlocks is not null - There are {0} of them", props.stateControlBlocks.Count());
-				foreach (KeyValuePair<string, TesiraStateControlBlockConfig> block in props.stateControlBlocks)
-				{
-					string key = block.Key;
-					var value = block.Value;
-					//value.stateInstanceTag = value.stateInstanceTag;
-					this.States.Add(key, new TesiraDspStateControl(key, value, this));
-                    ControlPointList.Add(States[key]);
+            if (props.stateControlBlocks != null)
+            {
+                Debug.Console(2, this, "stateControlBlocks is not null - There are {0} of them", props.stateControlBlocks.Count());
+                foreach (KeyValuePair<string, TesiraStateControlBlockConfig> block in props.stateControlBlocks)
+                {
 
+                    string key = block.Key;
+                    var value = block.Value;
+                    //value.stateInstanceTag = value.stateInstanceTag;
+                    this.States.Add(key, new TesiraDspStateControl(key, value, this));
                     Debug.Console(2, this, "Added DspState {0} InstanceTag: {1}", key, value.stateInstanceTag);
 
-				}
-			}
+                    if (block.Value.enabled)
+                        ControlPointList.Add(States[key]);
+                }
+            }
 
 			if (props.presets != null)
 			{
@@ -236,7 +242,6 @@ namespace Tesira_DSP_EPI
 					Debug.Console(2, this, "Added Preset {0} {1}", value.label, value.preset);
 				}
 			}
-
 		}
 
 		void Port_LineReceived(object dev, GenericCommMethodReceiveTextArgs args)
@@ -260,7 +265,6 @@ namespace Tesira_DSP_EPI
 					// moved to CustomActivate() method
 					//CommunicationMonitor.Start();
 
-					SubscribeToAttributes();
 				}
 				else if (args.Text.IndexOf("! ") > -1)
 				{
@@ -372,6 +376,7 @@ namespace Tesira_DSP_EPI
 							}
 						default:
 							{
+                                WatchDogSniffer = false;
 								Debug.Console(0, this, "Error From DSP: '{0}'", args.Text);
 								break;
 							}
@@ -390,16 +395,19 @@ namespace Tesira_DSP_EPI
 		public void Resubscribe()
 		{
 			Debug.Console(0, this, "Issue Detected with device subscriptions - resubscribing to all controls");
-			CreateDspObjects();
+            SubscribeToAttributes();
 		}
 
         public void CheckWatchDog()
         {
+            Debug.Console(2, this, "Checking Watchdog!");
             if (!WatchDogSniffer)
             {
                 Random random = new Random(DateTime.Now.Millisecond);
 
-                var WatchDogSubject = ControlPointList[random.Next(0, ControlPointList.Count - 1)];
+                var WatchDogSubject = ControlPointList[random.Next(0, ControlPointList.Count)];
+
+                Debug.Console(2, this, "Watchdog is checking {0}", WatchDogSubject.Key);
 
                 WatchDogSniffer = true;
 
@@ -528,11 +536,6 @@ namespace Tesira_DSP_EPI
 
 			if (!CommandQueueInProgress)
 				SendNextQueuedCommand();
-
-            if (WatchdogTimer == null) {
-                WatchdogTimer = new CTimer(o => SubscribeToAttributes(), 90000, 90000);
-            }
-
 		}
 
 

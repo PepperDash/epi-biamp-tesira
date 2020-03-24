@@ -11,7 +11,7 @@ namespace Tesira_DSP_EPI {
     public class TesiraDspPropertiesConfig {
         public CommunicationMonitorConfig CommunicationMonitorProperties { get; set; }
 
-        public ControlPropertiesConfig Control { get; set; }
+        public EssentialsControlPropertiesConfig Control { get; set; }
 
         /// <summary>
         /// These are key-value pairs, string id, string type.  
