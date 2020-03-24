@@ -8,7 +8,7 @@ using PepperDash.Essentials.Devices.Common.DSP;
 
 namespace Tesira_DSP_EPI
 {
-	public class TesiraDspControlPoint : IKeyed
+    public class TesiraDspControlPoint : IKeyed, IParseMessage
 	{
 		public string Key { get; protected set; }
 		public string InstanceTag1 { get; set; }

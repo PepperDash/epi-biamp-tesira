@@ -1,4 +1,8 @@
+<<<<<<< Updated upstream
 ﻿MainAssembly=Tesira-DSP-EPI.dll:a5fd06309e04e1f2d2d8bf4df4dd9904
+=======
+﻿MainAssembly=Tesira-DSP-EPI.dll:a73c13c50d9e566ea304279d1ff6ce70
+>>>>>>> Stashed changes
 MainAssemblyMinFirmwareVersion=1.009.0029
 MainAssemblyResource=SimplSharpData.dat:820b61c48c8a2cace82957eed4cc377c
 MainAssemblyResource=SimplSharpData.dat.der:bf862965c00f3e6ec535e4e00e82d30c

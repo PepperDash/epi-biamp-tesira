@@ -12,9 +12,9 @@ using PepperDash.Essentials.Devices;
 using System.Text.RegularExpressions;
 
 namespace Tesira_DSP_EPI {
-    public class TesiraDspDialer : TesiraDspControlPoint, IHasDialer, IKeyed {
+    public class TesiraDspDialer : TesiraDspDialerControlPoint
+    {
 
-        public bool IsInCall { get; private set; }
         //public TesiraDsp Parent { get; private set; }
         public bool IsVoip { get; private set; }
         public string DialString { get; private set; }
@@ -64,11 +64,14 @@ namespace Tesira_DSP_EPI {
         }
 
         private eCallStatus _CallStatusEnum { get; set; }
-        private eCallStatus CallStatusEnum {
-            get {
+        private eCallStatus CallStatusEnum
+        {
+            get
+            {
                 return _CallStatusEnum;
             }
-            set {
+            set
+            {
                 _CallStatusEnum = value;
                 if (CallStatusEnum == eCallStatus.DIAL_TONE ||
                     CallStatusEnum == eCallStatus.DIALING ||
@@ -77,20 +80,114 @@ namespace Tesira_DSP_EPI {
                     CallStatusEnum == eCallStatus.ACTIVE_MUTED ||
                     CallStatusEnum == eCallStatus.BUSY ||
                     CallStatusEnum == eCallStatus.INVALID_NUMBER ||
-                    CallStatusEnum == eCallStatus.ON_HOLD) {
-                    if(IsVoip)
+                    CallStatusEnum == eCallStatus.ON_HOLD)
+                {
+                    if (IsVoip)
                         OffHookStatus = true;
                 }
                 else
-                    if(IsVoip)
+                    if (IsVoip)
                         OffHookStatus = false;
-                if (value == eCallStatus.IDLE && IsVoip) {
-                        if (ClearOnHangup) {
-                            DialString = String.Empty;
-                            this.DialStringFeedback.FireUpdate();
-                        }
+                if (value == eCallStatus.IDLE && IsVoip)
+                {
+                    if (ClearOnHangup)
+                    {
+                        DialString = String.Empty;
+                        this.DialStringFeedback.FireUpdate();
+                    }
                 }
                 CallStateFeedback.FireUpdate();
+                switch (CallStatusEnum)
+                {
+                    case eCallStatus.INIT:
+                        ActiveCalls.First().Status = eCodecCallStatus.Unknown;
+                        break;
+                    case eCallStatus.FAULT:
+                        ActiveCalls.First().Status = eCodecCallStatus.Unknown;
+                        break;
+                    case eCallStatus.IDLE:
+                        ActiveCalls.First().Status = eCodecCallStatus.Idle;
+                        break;
+                    case eCallStatus.DIAL_TONE:
+                        ActiveCalls.First().Status = eCodecCallStatus.Idle;
+                        break;
+                    case eCallStatus.SILENT:
+                        ActiveCalls.First().Status = eCodecCallStatus.Unknown;
+                        break;
+                    case eCallStatus.DIALING:
+                        ActiveCalls.First().Status = eCodecCallStatus.Connecting;
+                        ActiveCalls.First().Direction = eCodecCallDirection.Outgoing;
+                        break;
+                    case eCallStatus.RINGBACK:
+                        ActiveCalls.First().Status = eCodecCallStatus.Connecting;
+                        break;
+                    case eCallStatus.RINGING:
+                        ActiveCalls.First().Status = eCodecCallStatus.Ringing;
+                        ActiveCalls.First().Direction = eCodecCallDirection.Incoming;
+                        break;
+                    case eCallStatus.BUSY:
+                        ActiveCalls.First().Status = eCodecCallStatus.Disconnecting;
+                        break;
+                    case eCallStatus.REJECT:
+                        ActiveCalls.First().Status = eCodecCallStatus.Disconnecting;
+                        break;
+                    case eCallStatus.INVALID_NUMBER:
+                        ActiveCalls.First().Status = eCodecCallStatus.Disconnecting;
+                        break;
+                    case eCallStatus.ACTIVE:
+                        ActiveCalls.First().Status = eCodecCallStatus.Connected;
+                        break;
+                    case eCallStatus.ACTIVE_MUTED:
+                        ActiveCalls.First().Status = eCodecCallStatus.Connected;
+                        break;
+                    case eCallStatus.ON_HOLD:
+                        ActiveCalls.First().Status = eCodecCallStatus.OnHold;
+                        break;
+                    case eCallStatus.WAITING_RING:
+                        ActiveCalls.First().Status = eCodecCallStatus.Connected;
+                        break;
+                    case eCallStatus.CONF_ACTIVE:
+                        ActiveCalls.First().Status = eCodecCallStatus.Connected;
+                        break;
+                    case eCallStatus.CONF_HOLD:
+                        ActiveCalls.First().Status = eCodecCallStatus.OnHold;
+                        break;
+                    case eCallStatus.XFER_INIT:
+                        ActiveCalls.First().Status = eCodecCallStatus.Unknown;
+                        break;
+                    case eCallStatus.XFER_Silent:
+                        ActiveCalls.First().Status = eCodecCallStatus.Unknown;
+                        break;
+                    case eCallStatus.XFER_ReqDialing:
+                        ActiveCalls.First().Status = eCodecCallStatus.Unknown;
+                        break;
+                    case eCallStatus.XFER_Process:
+                        ActiveCalls.First().Status = eCodecCallStatus.Unknown;
+                        break;
+                    case eCallStatus.XFER_ReplacesProcess:
+                        ActiveCalls.First().Status = eCodecCallStatus.Unknown;
+                        break;
+                    case eCallStatus.XFER_Active:
+                        ActiveCalls.First().Status = eCodecCallStatus.Unknown;
+                        break;
+                    case eCallStatus.XFER_RingBack:
+                        ActiveCalls.First().Status = eCodecCallStatus.Unknown;
+                        break;
+                    case eCallStatus.XFER_OnHold:
+                        ActiveCalls.First().Status = eCodecCallStatus.Unknown;
+                        break;
+                    case eCallStatus.XFER_Decision:
+                        ActiveCalls.First().Status = eCodecCallStatus.Unknown;
+                        break;
+                    case eCallStatus.XFER_InitError:
+                        ActiveCalls.First().Status = eCodecCallStatus.Unknown;
+                        break;
+                    case eCallStatus.XFER_WAIT:
+                        ActiveCalls.First().Status = eCodecCallStatus.Unknown;
+                        break;
+                    default:
+                        break;
+                }
             }
         }
 
@@ -168,7 +265,7 @@ namespace Tesira_DSP_EPI {
         private bool PotsIsSubscribed { get; set; }               
 
         public TesiraDspDialer(string key, TesiraDialerControlBlockConfig config, TesiraDsp parent)
-            : base(config.dialerInstanceTag, config.controlStatusInstanceTag, config.index, config.callAppearance, parent) {
+            : base(key, config.dialerInstanceTag, config.controlStatusInstanceTag, config.index, config.callAppearance, parent) {
 
             DialStringFeedback = new StringFeedback(() => { return DialString; });
             OffHookFeedback = new BoolFeedback(() => { return OffHookStatus; });
@@ -204,19 +301,21 @@ namespace Tesira_DSP_EPI {
             Enabled = config.enabled;
             CallAppearance = config.callAppearance;
             DisplayNumber = config.displayNumber;
+
+            base.ActiveCalls = new List<CodecActiveCallItem>();
+            CodecActiveCallItem ActiveCall = new CodecActiveCallItem();
+            ActiveCall.Name = "";
+            ActiveCall.Number = "";
+            ActiveCall.Type = eCodecCallType.Audio;
+            ActiveCall.Status = eCodecCallStatus.Idle;
+            ActiveCall.Direction = eCodecCallDirection.Unknown;
+            ActiveCall.Id = this.Key;
+
+            ActiveCalls.Add(ActiveCall);
         }
 
-        public void AcceptCall(CodecActiveCallItem item) {
-
-        }
-
-        public event EventHandler<CodecCallStatusItemChangeEventArgs> CallStatusChange;
-
-        void onCallStatusChange(CodecCallStatusItemChangeEventArgs args) {
-            var handler = CallStatusChange;
-            if (handler != null) {
-                CallStatusChange(this, args);
-            }
+        public override void AcceptCall(CodecActiveCallItem item) {
+            SendFullCommand(null, "answer", null, 1);
         }
 
         public override void Subscribe() {
@@ -299,6 +398,8 @@ namespace Tesira_DSP_EPI {
                         {
                             CallerIDNumber = match3.Groups["number"].Value;
                             CallerIDName = match3.Groups["name"].Value;
+                            ActiveCalls.First().Name = CallerIDName;
+                            ActiveCalls.First().Number = CallerIDNumber;
                             if (lineNumber == LineNumber)
                             {
                                 Debug.Console(2, this, "CallState Complete - Firing Updates");
@@ -309,6 +410,11 @@ namespace Tesira_DSP_EPI {
                                 if (!IsVoip)
                                     PotsIsSubscribed = true;
                             }
+                        }
+                        else
+                        {
+                            ActiveCalls.First().Name = "";
+                            ActiveCalls.First().Number = "";
                         }
                     }
                 }
@@ -459,25 +565,9 @@ namespace Tesira_DSP_EPI {
                 SendFullCommand(null, "answer", null, 1);
         }
 
-        public void Dial(string number) {
-            throw new NotImplementedException();
-        }
+        
 
-        public void EndAllCalls() {
-            SendFullCommand(null, "end", null, 1);
-            /*if (ClearOnHangup) {
-                DialString = String.Empty;
-                this.DialStringFeedback.FireUpdate();
-            }*/
-        }
-
-        public void EndCall(CodecActiveCallItem activeCall) {
-            SendFullCommand(null, "end", null, 1);
-            /*if (ClearOnHangup) {
-                DialString = String.Empty;
-                this.DialStringFeedback.FireUpdate();
-            }*/
-        }
+        
 
         public void AutoAnswerOn() {
             SendFullCommand("set", "autoAnswer", "true", 1);
@@ -514,11 +604,11 @@ namespace Tesira_DSP_EPI {
         }
 
 
-        public void RejectCall(CodecActiveCallItem item) {
-            throw new NotImplementedException();
+        public override void RejectCall(CodecActiveCallItem item) {
+            SendFullCommand(null, "end", null, 1);
         }
 
-        public void SendDtmf(string digit) {
+        public override void SendDtmf(string digit) {
             throw new NotImplementedException();
         }
 
@@ -683,67 +773,34 @@ namespace Tesira_DSP_EPI {
 
         private enum eCallStatus {
             INIT = 1,
-
             FAULT,
-
             IDLE,
-
             DIAL_TONE,
-
             SILENT,
-
             DIALING,
-
             RINGBACK,
-
             RINGING,
-
             ANSWERING,
-
             BUSY,
-
             REJECT,
-
             INVALID_NUMBER,
-
             ACTIVE,
-
             ACTIVE_MUTED,
-
             ON_HOLD,
-
             WAITING_RING,
-
             CONF_ACTIVE,
-
             CONF_HOLD,
-
             XFER_INIT,
-
             XFER_Silent,
-
             XFER_ReqDialing,
-
             XFER_Process,
-
             XFER_ReplacesProcess,
-
             XFER_Active,
-
             XFER_RingBack,
-
             XFER_OnHold,
-
             XFER_Decision,
-
             XFER_InitError,
-
             XFER_WAIT
-
-            
-
-            
-            
         }
 
         public enum eKeypadKeys {

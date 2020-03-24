@@ -65,6 +65,7 @@ C:\_pdt-bb\PepperDash_Modules\tesira-dsp-epi\Tesira-DSP-EPI\bin\Debug\Crestron.S
 C:\_pdt-bb\PepperDash_Modules\tesira-dsp-epi\Tesira-DSP-EPI\obj\Debug\ResolveAssemblyReference.cache
 C:\_pdt-bb\PepperDash_Modules\tesira-dsp-epi\Tesira-DSP-EPI\obj\Debug\Tesira-DSP-EPI.dll
 C:\_pdt-bb\PepperDash_Modules\tesira-dsp-epi\Tesira-DSP-EPI\obj\Debug\Tesira-DSP-EPI.pdb
+<<<<<<< Updated upstream
 C:\Users\awelker\Documents\PD\epi-dsp-tesira\Tesira-DSP-EPI\bin\Debug\Tesira-DSP-EPI.dll
 C:\Users\awelker\Documents\PD\epi-dsp-tesira\Tesira-DSP-EPI\bin\Debug\Tesira-DSP-EPI.pdb
 C:\Users\awelker\Documents\PD\epi-dsp-tesira\Tesira-DSP-EPI\bin\Debug\Crestron.SimplSharpPro.Lighting.dll
@@ -79,3 +80,23 @@ C:\Users\awelker\Documents\PD\epi-dsp-tesira\Tesira-DSP-EPI\bin\Debug\Crestron.S
 C:\Users\awelker\Documents\PD\epi-dsp-tesira\Tesira-DSP-EPI\obj\Debug\ResolveAssemblyReference.cache
 C:\Users\awelker\Documents\PD\epi-dsp-tesira\Tesira-DSP-EPI\obj\Debug\Tesira-DSP-EPI.dll
 C:\Users\awelker\Documents\PD\epi-dsp-tesira\Tesira-DSP-EPI\obj\Debug\Tesira-DSP-EPI.pdb
+=======
+C:\Development\epi-dsp-tesira\Tesira-DSP-EPI\bin\Debug\Tesira-DSP-EPI.dll
+C:\Development\epi-dsp-tesira\Tesira-DSP-EPI\bin\Debug\Tesira-DSP-EPI.pdb
+C:\Development\epi-dsp-tesira\Tesira-DSP-EPI\bin\Debug\Crestron.SimplSharpPro.DeviceSupport.dll
+C:\Development\epi-dsp-tesira\Tesira-DSP-EPI\bin\Debug\Crestron.SimplSharpPro.UI.dll
+C:\Development\epi-dsp-tesira\Tesira-DSP-EPI\bin\Debug\SimplSharpNewtonsoft.dll
+C:\Development\epi-dsp-tesira\Tesira-DSP-EPI\bin\Debug\SimplSharpReflectionInterface.dll
+C:\Development\epi-dsp-tesira\Tesira-DSP-EPI\bin\Debug\Crestron.SimplSharpPro.Lighting.dll
+C:\Development\epi-dsp-tesira\Tesira-DSP-EPI\bin\Debug\SimplSharpSQLHelperInterface.dll
+C:\Development\epi-dsp-tesira\Tesira-DSP-EPI\bin\Debug\Crestron.SimplSharpPro.Fusion.dll
+C:\Development\epi-dsp-tesira\Tesira-DSP-EPI\bin\Debug\Crestron.SimplSharpPro.Shades.dll
+C:\Development\epi-dsp-tesira\Tesira-DSP-EPI\bin\Debug\Crestron.SimplSharpPro.EthernetCommunications.dll
+C:\Development\epi-dsp-tesira\Tesira-DSP-EPI\bin\Debug\SimplSharpTimerEventInterface.dll
+C:\Development\epi-dsp-tesira\Tesira-DSP-EPI\bin\Debug\Crestron.SimplSharpPro.Gateways.dll
+C:\Development\epi-dsp-tesira\Tesira-DSP-EPI\bin\Debug\Crestron.SimplSharpPro.GeneralIO.dll
+C:\Development\epi-dsp-tesira\Tesira-DSP-EPI\bin\Debug\Crestron.SimplSharpPro.DM.dll
+C:\Development\epi-dsp-tesira\Tesira-DSP-EPI\obj\Debug\ResolveAssemblyReference.cache
+C:\Development\epi-dsp-tesira\Tesira-DSP-EPI\obj\Debug\Tesira-DSP-EPI.dll
+C:\Development\epi-dsp-tesira\Tesira-DSP-EPI\obj\Debug\Tesira-DSP-EPI.pdb
+>>>>>>> Stashed changes

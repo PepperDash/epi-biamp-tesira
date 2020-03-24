@@ -57,6 +57,10 @@ namespace Tesira_DSP_EPI
 		public Dictionary<string, TesiraDspStateControl> States { get; private set; }
 		public List<TesiraDspPresets> PresetList = new List<TesiraDspPresets>();
 
+        public List<TesiraDspControlPoint> ControlPointList { get; private set; }
+
+        private bool WatchDogSniffer { get; set; }
+
 		DeviceConfig _Dc;
 
 		CrestronQueue CommandQueue;
@@ -93,13 +97,14 @@ namespace Tesira_DSP_EPI
 			CommandPassthruFeedback = new StringFeedback(() => DeviceRx);
 
 			// Custom monitoring, will check the heartbeat tracker count every 20s and reset. Heartbeat sbould be coming in every 20s if subscriptions are valid
-			CommunicationMonitor = new GenericCommunicationMonitor(this, Communication, 20000, 120000, 300000, "SESSION set verbose false\x0D\x0A");
+			CommunicationMonitor = new GenericCommunicationMonitor(this, Communication, 20000, 120000, 300000, CheckWatchDog);
 			//DeviceManager.AddDevice(CommunicationMonitor);
 
 			LevelControlPoints = new Dictionary<string, TesiraDspLevelControl>();
 			Dialers = new Dictionary<string, TesiraDspDialer>();
 			Switchers = new Dictionary<string, TesiraDspSwitcher>();
 			States = new Dictionary<string, TesiraDspStateControl>();
+            ControlPointList = new List<TesiraDspControlPoint>();
 			CreateDspObjects();
 		}
 
@@ -148,6 +153,7 @@ namespace Tesira_DSP_EPI
 			Dialers.Clear();
 			States.Clear();
 			Switchers.Clear();
+            ControlPointList.Clear();
 
 
 
@@ -163,7 +169,9 @@ namespace Tesira_DSP_EPI
 					//value.muteInstanceTag = value.muteInstanceTag;
 
 					this.LevelControlPoints.Add(key, new TesiraDspLevelControl(key, value, this));
+                    ControlPointList.Add(LevelControlPoints[key]);
 					Debug.Console(2, this, "Added LevelControlPoint {0} LevelTag: {1} MuteTag: {2}", key, value.levelInstanceTag, value.muteInstanceTag);
+                    DeviceManager.AddDevice(LevelControlPoints[key]);
 				}
 			}
 
@@ -177,6 +185,8 @@ namespace Tesira_DSP_EPI
 					var value = block.Value;
 
 					this.Switchers.Add(key, new TesiraDspSwitcher(key, value, this));
+                    ControlPointList.Add(Switchers[key]);
+
 					Debug.Console(2, this, "Added TesiraSwitcher {0} InstanceTag {1}", key, value.switcherInstanceTag);
 				}
 			}
@@ -193,6 +203,8 @@ namespace Tesira_DSP_EPI
 					//value.dialerInstanceTag = value.dialerInstanceTag;
 
 					this.Dialers.Add(key, new TesiraDspDialer(key, value, this));
+                    DeviceManager.AddDevice(Dialers[key]);
+
 					Debug.Console(2, this, "Added DspDialer {0} ControlStatusTag: {1} DialerTag: {2}", key, value.controlStatusInstanceTag, value.dialerInstanceTag);
 
 				}
@@ -204,11 +216,13 @@ namespace Tesira_DSP_EPI
 				foreach (KeyValuePair<string, TesiraStateControlBlockConfig> block in props.stateControlBlocks)
 				{
 					string key = block.Key;
-					Debug.Console(2, this, "StateControlBlock Key - {0}", key);
 					var value = block.Value;
 					//value.stateInstanceTag = value.stateInstanceTag;
-					Debug.Console(2, this, "Adding DspState {0} InstanceTag: {1}", key, value.stateInstanceTag);
 					this.States.Add(key, new TesiraDspStateControl(key, value, this));
+                    ControlPointList.Add(States[key]);
+
+                    Debug.Console(2, this, "Added DspState {0} InstanceTag: {1}", key, value.stateInstanceTag);
+
 				}
 			}
 
@@ -353,7 +367,7 @@ namespace Tesira_DSP_EPI
 					{
 						case "-ERR ALREADY_SUBSCRIBED":
 							{
-								//StartWatchdogTimer();
+                                WatchDogSniffer = false;
 								break;
 							}
 						default:
@@ -378,6 +392,25 @@ namespace Tesira_DSP_EPI
 			Debug.Console(0, this, "Issue Detected with device subscriptions - resubscribing to all controls");
 			CreateDspObjects();
 		}
+
+        public void CheckWatchDog()
+        {
+            if (!WatchDogSniffer)
+            {
+                Random random = new Random(DateTime.Now.Millisecond);
+
+                var WatchDogSubject = ControlPointList[random.Next(0, ControlPointList.Count - 1)];
+
+                WatchDogSniffer = true;
+
+                WatchDogSubject.Subscribe();
+            }
+            else
+            {
+                CommunicationMonitor.Stop();
+                Resubscribe();
+            }
+        }
 
 
 
@@ -502,33 +535,12 @@ namespace Tesira_DSP_EPI
 
 		}
 
-		/// <summary>
-		/// Resets or Sets the subscription timer
-		/// </summary>
-		void StartWatchdogTimer()
-		{
-			Debug.Console(2, this, "Reset Subscription Timer Fired");
-			isSubscribed = true;
-
-			if (WatchdogTimer != null)
-			{
-				WatchdogTimer.Stop();
-				WatchdogTimer = null;
-				WatchdogTimer = new CTimer(o => SubscribeToAttributes(), null, 90000, 90000);
-				//SubscriptionTimer.Reset();
-			}
-			else
-			{
-				WatchdogTimer = new CTimer(o => SubscribeToAttributes(), null, 90000, 90000);
-				//SubscriptionTimer.Reset();
-			}
-		}
 
 		public class QueuedCommand
 		{
 			public string Command { get; set; }
 			public string AttributeCode { get; set; }
-			public TesiraDspControlPoint ControlPoint { get; set; }
+            public IParseMessage ControlPoint { get; set; }
 		}
 
 		protected override void CustomSetConfig(DeviceConfig config)
