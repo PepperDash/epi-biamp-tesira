@@ -57,6 +57,8 @@ namespace Tesira_DSP_EPI
 		public Dictionary<string, TesiraDspDialer> Dialers { get; private set; }
 		public Dictionary<string, TesiraDspSwitcher> Switchers { get; private set; }
 		public Dictionary<string, TesiraDspStateControl> States { get; private set; }
+        public Dictionary<string, TesiraDspMeter> Meters { get; private set; }
+        public Dictionary<string, TesiraDspMatrixMixer> MatrixMixers { get; private set; }
 		public List<TesiraDspPresets> PresetList = new List<TesiraDspPresets>();
 
         public List<TesiraDspControlPoint> ControlPointList { get; private set; }
@@ -110,6 +112,9 @@ namespace Tesira_DSP_EPI
 			Switchers = new Dictionary<string, TesiraDspSwitcher>();
 			States = new Dictionary<string, TesiraDspStateControl>();
             ControlPointList = new List<TesiraDspControlPoint>();
+            Meters = new Dictionary<string, TesiraDspMeter>();
+            MatrixMixers = new Dictionary<string, TesiraDspMatrixMixer>();
+
 			CreateDspObjects();
 		}
 
@@ -279,6 +284,28 @@ namespace Tesira_DSP_EPI
 					Debug.Console(2, this, "Added Preset {0} {1}", value.label, value.preset);
 				}
 			}
+
+            if (props.meterControlBlocks != null)
+            {
+                foreach (var meterConfig in props.meterControlBlocks)
+                {
+                    var key = meterConfig.Key;
+                    var value = meterConfig.Value;
+                    Meters.Add(key, new TesiraDspMeter(key, value, this));
+                    Debug.Console(2, this, "Adding Meter {0} InstanceTag: {1}", key, value.meterInstanceTag);
+                }
+            }
+
+            if (props.matrixMixerControlBlocks != null)
+            {
+                props.matrixMixerControlBlocks
+                    .ToList()
+                    .ForEach(c =>
+                        {
+                            MatrixMixers.Add(c.Key, new TesiraDspMatrixMixer(c.Key, c.Value, this));
+                            Debug.Console(2, this, "Adding MixerControlPoint {0} InstanceTag: {1}", c.Key, c.Value.matrixInstanceTag);
+                        });
+            }
 		}
 
 		void Port_LineReceived(object dev, GenericCommMethodReceiveTextArgs args)
@@ -362,6 +389,14 @@ namespace Tesira_DSP_EPI
 								controlPoint.Value.ParseSubscriptionMessage(customName, value);
 							}
 						}
+
+                        foreach (KeyValuePair<string, TesiraDspMeter> controlPoint in Meters)
+                        {
+                            if (customName == controlPoint.Value.MeterCustomName)
+                            {
+                                controlPoint.Value.ParseSubscriptionMessage(customName, value);
+                            }
+                        }
 					}
 
 					/// same for dialers
@@ -443,7 +478,7 @@ namespace Tesira_DSP_EPI
             Debug.Console(2, this, "Checking Watchdog!");
             if (!WatchDogSniffer)
             {
-                Random random = new Random(DateTime.Now.Millisecond + DateTime.Now.Second + DateTime.Now.Minute 
+                Random random = new Random(DateTime.Now.Millisecond + DateTime.Now.Second + DateTime.Now.Minute
                     + DateTime.Now.Hour + DateTime.Now.Day + DateTime.Now.Month + DateTime.Now.Year);
 
                 var WatchDogSubject = ControlPointList[random.Next(0, ControlPointList.Count)];
@@ -677,7 +712,7 @@ namespace Tesira_DSP_EPI
 		public void RunPresetNumber(ushort n)
 		{
             Debug.Console(2, this, "Attempting to run preset {0}", n);
-            if (n < PresetList.Count() && n >= 0) 
+            if (n < PresetList.Count() && n >= 0)
             {
                 RunPreset(PresetList[n].preset);
             }
