@@ -47,6 +47,10 @@ namespace Tesira_DSP_EPI
 
 		public bool isSubscribed;
 
+        private CTimer WatchDogTimer;
+
+        private bool IsSerialComm = false;
+
 		//public TesiraDspWatchdog Watchdog;
 
 		public Dictionary<string, TesiraDspLevelControl> LevelControlPoints { get; private set; }
@@ -84,17 +88,19 @@ namespace Tesira_DSP_EPI
 			{
 				// This instance uses IP control
 				socket.ConnectionChange += new EventHandler<GenericSocketStatusChageEventArgs>(socket_ConnectionChange);
+                IsSerialComm = false;
 			}
 			else
 			{
 				// This instance uses RS-232 control
+                IsSerialComm = true;
 			}
 			PortGather = new CommunicationGather(Communication, "\x0D\x0A");
 			PortGather.LineReceived += this.Port_LineReceived;
 
 			CommandPassthruFeedback = new StringFeedback(() => DeviceRx);
 
-            CommunicationMonitor = new GenericCommunicationMonitor(this, Communication, 20000, 120000, 300000, CheckWatchDog);
+            CommunicationMonitor = new GenericCommunicationMonitor(this, Communication, 20000, 120000, 300000, () => SendLine("SESSION set verbose false"));
 
 			// Custom monitoring, will check the heartbeat tracker count every 20s and reset. Heartbeat sbould be coming in every 20s if subscriptions are valid
 			DeviceManager.AddDevice(CommunicationMonitor);
@@ -110,14 +116,29 @@ namespace Tesira_DSP_EPI
 		public override bool CustomActivate()
 		{
 			Communication.Connect();
-			CommunicationMonitor.StatusChange += (o, a) => { Debug.Console(2, this, "Communication monitor state: {0}", CommunicationMonitor.Status); };
-			CommunicationMonitor.Start();
-            SubscribeToAttributes();
+            CommunicationMonitor.StatusChange += new EventHandler<MonitorStatusChangeEventArgs>(CommunicationMonitor_StatusChange);
 
+            if (IsSerialComm)
+            {
+                CommunicationMonitor.Start();
+            }
 			CrestronConsole.AddNewConsoleCommand(SendLine, "send" + Key, "", ConsoleAccessLevelEnum.AccessOperator);
 			CrestronConsole.AddNewConsoleCommand(s => Communication.Connect(), "con" + Key, "", ConsoleAccessLevelEnum.AccessOperator);
 			return true;
 		}
+
+        void CommunicationMonitor_StatusChange(object sender, MonitorStatusChangeEventArgs e)
+        {
+            Debug.Console(2, this, "Communication monitor state: {0}", CommunicationMonitor.Status);
+            if (e.Status == MonitorStatus.IsOk)
+            {
+                SubscribeToAttributes();
+            }
+            else if (e.Status != MonitorStatus.IsOk)
+            {
+                StopWatchDog();
+            }
+        }
 
 		void socket_ConnectionChange(object sender, GenericSocketStatusChageEventArgs e)
 		{
@@ -135,7 +156,23 @@ namespace Tesira_DSP_EPI
 			}
 		}
 
+        private void StartWatchDog()
+        {
+            if (WatchDogTimer != null)
+            {
+                WatchDogTimer = new CTimer((o) => CheckWatchDog(), null, 20000, 20000);
+            }
+        }
 
+        private void StopWatchDog()
+        {
+            if (WatchDogTimer != null)
+            {
+                WatchDogTimer.Stop();
+                WatchDogTimer.Dispose();
+                WatchDogTimer = null;
+            }
+        }
 
 		public void CreateDspObjects()
 		{
@@ -263,8 +300,7 @@ namespace Tesira_DSP_EPI
 				{
 					// Indicates a new TTP session
 					// moved to CustomActivate() method
-					//CommunicationMonitor.Start();
-
+					CommunicationMonitor.Start();
 				}
 				else if (args.Text.IndexOf("! ") > -1)
 				{
@@ -337,6 +373,9 @@ namespace Tesira_DSP_EPI
 					if (args.Text == "+OK")       // Check for a simple "+OK" only 'ack' repsonse or a list response and ignore
 						return;
 					// response is not from a subscribed attribute.  From a get/set/toggle/increment/decrement command
+                    //string pattern = "(?<=\" )(.*?)(?=\\+)";
+                    //string data = Regex.Replace(args.Text, pattern, "");
+                    string data = args.Text;
 
 					if (!CommandQueue.IsEmpty)
 					{
@@ -346,7 +385,7 @@ namespace Tesira_DSP_EPI
 							QueuedCommand tempCommand = (QueuedCommand)CommandQueue.TryToDequeue();
 							//Debug.Console(1, this, "Command Dequeued. CommandQueue Size: {0}", CommandQueue.Count);
 
-							tempCommand.ControlPoint.ParseGetMessage(tempCommand.AttributeCode, args.Text);
+							tempCommand.ControlPoint.ParseGetMessage(tempCommand.AttributeCode, data);
 						}
 						else
 						{
@@ -395,6 +434,7 @@ namespace Tesira_DSP_EPI
 		public void Resubscribe()
 		{
 			Debug.Console(0, this, "Issue Detected with device subscriptions - resubscribing to all controls");
+            StopWatchDog();
             SubscribeToAttributes();
 		}
 
@@ -403,7 +443,8 @@ namespace Tesira_DSP_EPI
             Debug.Console(2, this, "Checking Watchdog!");
             if (!WatchDogSniffer)
             {
-                Random random = new Random(DateTime.Now.Millisecond);
+                Random random = new Random(DateTime.Now.Millisecond + DateTime.Now.Second + DateTime.Now.Minute 
+                    + DateTime.Now.Hour + DateTime.Now.Day + DateTime.Now.Month + DateTime.Now.Year);
 
                 var WatchDogSubject = ControlPointList[random.Next(0, ControlPointList.Count)];
 
@@ -506,34 +547,85 @@ namespace Tesira_DSP_EPI
 		{
 			SendLine("SESSION set verbose false");
 
+            //Unsubscribe
 			foreach (KeyValuePair<string, TesiraDspDialer> dialer in Dialers)
 			{
 				Debug.Console(2, this, "Made it to Object - {0}", dialer.Value.InstanceTag1);
-				if (dialer.Value.Enabled)
-					dialer.Value.Subscribe();
+                if (dialer.Value.Enabled)
+                {
+                    dialer.Value.UnSubscribe();
+
+                }
 			}
 
 			foreach (KeyValuePair<string, TesiraDspSwitcher> switcher in Switchers)
 			{
 				Debug.Console(2, this, "Made it to Object - {0}", switcher.Value.InstanceTag1);
-				if (switcher.Value.Enabled)
-					switcher.Value.Subscribe();
+                if (switcher.Value.Enabled)
+                {
+                    switcher.Value.Unsubscribe();
+
+                }
 			}
 
 			foreach (KeyValuePair<string, TesiraDspStateControl > state in States)
 			{
 				Debug.Console(2, this, "Made it to Object - {0}", state.Value.InstanceTag1);
-				if (state.Value.Enabled)
-					state.Value.Subscribe();
+                if (state.Value.Enabled)
+                {
+                    state.Value.Unsubscribe();
+
+                }
 			}
 
             Debug.Console(2, this, "There are {0} Level Objects", LevelControlPoints.Count());
             foreach (KeyValuePair<string, TesiraDspLevelControl> level in LevelControlPoints) {
                 Debug.Console(2, this, "Made it to Object - {0}", level.Value.InstanceTag1);
                 if (level.Value.Enabled)
-                    level.Value.Subscribe();
+                {
+                    level.Value.Unsubscribe();
+                }
             }
 
+            //Subscribe
+            foreach (KeyValuePair<string, TesiraDspDialer> dialer in Dialers)
+            {
+                Debug.Console(2, this, "Made it to Object - {0}", dialer.Value.InstanceTag1);
+                if (dialer.Value.Enabled)
+                {
+                    dialer.Value.Subscribe();
+                }
+            }
+
+            foreach (KeyValuePair<string, TesiraDspSwitcher> switcher in Switchers)
+            {
+                Debug.Console(2, this, "Made it to Object - {0}", switcher.Value.InstanceTag1);
+                if (switcher.Value.Enabled)
+                {
+                    switcher.Value.Subscribe();
+                }
+            }
+
+            foreach (KeyValuePair<string, TesiraDspStateControl> state in States)
+            {
+                Debug.Console(2, this, "Made it to Object - {0}", state.Value.InstanceTag1);
+                if (state.Value.Enabled)
+                {
+                    state.Value.Subscribe();
+                }
+            }
+
+            Debug.Console(2, this, "There are {0} Level Objects", LevelControlPoints.Count());
+            foreach (KeyValuePair<string, TesiraDspLevelControl> level in LevelControlPoints)
+            {
+                Debug.Console(2, this, "Made it to Object - {0}", level.Value.InstanceTag1);
+                if (level.Value.Enabled)
+                {
+
+                    level.Value.Subscribe();
+                }
+            }
+            StartWatchDog();
 			if (!CommandQueueInProgress)
 				SendNextQueuedCommand();
 		}

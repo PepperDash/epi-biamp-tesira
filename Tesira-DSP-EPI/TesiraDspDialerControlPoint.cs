@@ -42,6 +42,11 @@ namespace Tesira_DSP_EPI
 
         }
 
+        virtual public void UnSubscribe()
+        {
+
+        }
+
         /// <summary>
         /// Sends a command to the DSP
         /// </summary>
@@ -193,6 +198,44 @@ namespace Tesira_DSP_EPI
             Parent.SendLine(cmd);
         }
 
+        public virtual void SendUnSubscriptionCommand(string customName, string attributeCode, int InstanceTag)
+        {
+            // Subscription string format: InstanceTag subscribe attributeCode Index1 customName responseRate
+            // Ex: "RoomLevel subscribe level 1 MyRoomLevel 500"
+            if (string.IsNullOrEmpty(customName) || string.IsNullOrEmpty(attributeCode))
+            {
+                Debug.Console(2, this, "SendUnSubscriptionCommand({0}, {1}, {2}) Error: CustomName or AttributeCode are null or empty", customName, attributeCode, InstanceTag);
+                return;
+            }
+
+            string cmd;
+            string instanceTag;
+            switch (InstanceTag)
+            {
+                case 1:
+                    instanceTag = InstanceTag1;
+                    break;
+                case 2:
+                    instanceTag = InstanceTag2;
+                    break;
+
+                default:
+                    instanceTag = InstanceTag1;
+                    break;
+            }
+            if (attributeCode == "callState" || attributeCode == "sourceSelection")
+            {
+                cmd = string.Format("\"{0}\" unsubscribe {1} {2}", instanceTag, attributeCode, customName);
+            }
+
+            else
+            {
+                cmd = string.Format("\"{0}\" unsubscribe {1} {2} {3}", instanceTag, attributeCode, Index1, customName);
+            }
+
+            //Parent.WatchDogList.Add(customName,cmd);
+            Parent.SendLine(cmd);
+        }
         public virtual void DoPoll()
         {
 

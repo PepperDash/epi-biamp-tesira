@@ -9,8 +9,32 @@ using System.Text.RegularExpressions;
 
 namespace Tesira_DSP_EPI {
     public class TesiraDspLevelControl : TesiraDspControlPoint, IBasicVolumeWithFeedback, IKeyed {
-        bool _IsMuted;
-        ushort _VolumeLevel;
+        private bool _IsMuted { get; set; }
+        protected bool IsMuted
+        {
+            get
+            {
+                return _IsMuted;
+            }
+            set
+            {
+                _IsMuted = value;
+                MuteFeedback.FireUpdate();
+            }
+        }
+        private int _VolumeLevel { get; set; }
+        protected int VolumeLevel
+        {
+            get
+            {
+                return _VolumeLevel;
+            }
+            set
+            {
+                _VolumeLevel = value;
+                VolumeLevelFeedback.FireUpdate();
+            }
+        }
         public int Permissions { get; set; }
 
         public int ControlType { get; set; }
@@ -27,6 +51,8 @@ namespace Tesira_DSP_EPI {
         CTimer VolumeDownRepeatTimer;
         CTimer VolumeUpRepeatDelayTimer;
         CTimer VolumeDownRepeatDelayTimer;
+
+        //private bool LevelSubscribed { get; set; }
 
         bool VolDownPressTracker;
         bool VolUpPressTracker;
@@ -65,6 +91,7 @@ namespace Tesira_DSP_EPI {
             }
             set {
                 _MaxLevel = value;
+                //LevelSubscribed = true;
                 SendSubscriptionCommand(LevelCustomName, "level", 250, 1);
             }
         }
@@ -122,9 +149,9 @@ namespace Tesira_DSP_EPI {
 
             IsSubscribed = false;
 
-            MuteFeedback = new BoolFeedback(() => _IsMuted);
+            MuteFeedback = new BoolFeedback(() => IsMuted);
 
-            VolumeLevelFeedback = new IntFeedback(() => _VolumeLevel);
+            VolumeLevelFeedback = new IntFeedback(() => VolumeLevel);
 
             Label = config.label;
             HasMute = config.hasMute;
@@ -172,22 +199,44 @@ namespace Tesira_DSP_EPI {
         }
 
         public override void Subscribe() {
-            //Subscribe to Level
-            if (this.HasLevel) {
-                // MUST use InstanceTag1 for levels, it is the first instance tag in the JSON config
-                LevelCustomName = string.Format("{0}~level{1}", this.InstanceTag1, this.Index1);
-                SendFullCommand("get", "minLevel", null, 1);
-            }
-
             //Subscribe to Mute
             if (this.HasMute) {
 				// MUST use InstanceTag2 for mute, it is the second instance tag in the JSON config
                 MuteCustomName = string.Format("{0}~mute{1}", this.InstanceTag2, this.Index1);
 
+
                 SendSubscriptionCommand(MuteCustomName, "mute", 500, 2);
             }
 
-			
+            //Subscribe to Level
+            if (this.HasLevel)
+            {
+                // MUST use InstanceTag1 for levels, it is the first instance tag in the JSON config
+                LevelCustomName = string.Format("{0}~level{1}", this.InstanceTag1, this.Index1);
+                SendFullCommand("get", "minLevel", null, 1);
+            }	
+        }
+
+        public override void Unsubscribe()
+        {
+            //Subscribe to Mute
+            if (this.HasMute)
+            {
+                // MUST use InstanceTag2 for mute, it is the second instance tag in the JSON config
+                MuteCustomName = string.Format("{0}~mute{1}", this.InstanceTag2, this.Index1);
+
+
+                SendUnSubscriptionCommand(MuteCustomName, "mute", 2);
+            }
+
+            //Subscribe to Level
+            if (this.HasLevel)
+            {
+                // MUST use InstanceTag1 for levels, it is the first instance tag in the JSON config
+                LevelCustomName = string.Format("{0}~level{1}", this.InstanceTag1, this.Index1);
+                SendUnSubscriptionCommand(LevelCustomName, "level", 2);
+
+            }
         }
 
         /// <summary>
@@ -208,22 +257,17 @@ namespace Tesira_DSP_EPI {
                 //    value = value.Substring(0, value.Length - (value.Length - (pointer - 1)));
                 //}
 
-                _IsMuted = bool.Parse(value);
+                IsMuted = bool.Parse(value);
                 MuteIsSubscribed = true;
-                
-
-                MuteFeedback.FireUpdate();
             }
             else if (this.HasLevel && customName == LevelCustomName) {
 
 
                 var _value = Double.Parse(value);
 
-                _VolumeLevel = (ushort)Scale(_value, MinLevel, MaxLevel, 0, 65535);
+                VolumeLevel = (ushort)Scale(_value, MinLevel, MaxLevel, 0, 65535);
 
                 LevelIsSubscribed = true;
-
-                VolumeLevelFeedback.FireUpdate();
             }
 
         }
