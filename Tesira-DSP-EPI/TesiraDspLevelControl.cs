@@ -139,7 +139,7 @@ namespace Tesira_DSP_EPI {
         /// <param name="hasMute">defines if the control has a mute</param>
         /// <param name="hasLevel">defines if the control has a level</param>
         public void Initialize(string key, TesiraLevelControlBlockConfig config) {
-            Key = string.Format("{0}--{1}", Parent.Key, key);
+            Key = string.Format("{0}-{1}", Parent.Key, key);
 
             DeviceManager.AddDevice(this);
 
