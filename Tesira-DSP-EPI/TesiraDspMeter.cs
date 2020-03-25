@@ -57,7 +57,7 @@ namespace Tesira_DSP_EPI
 
         public void UnSubscribe()
         {
-            SendUnSubscribeCommand(MeterCustomName, meterAttributeCode, 0);
+            SendUnSubscriptionCommand(MeterCustomName, meterAttributeCode, 0);
             IsSubscribed = false;
             SubscribedFeedback.FireUpdate();
         }
