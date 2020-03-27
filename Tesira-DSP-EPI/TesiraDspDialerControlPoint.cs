@@ -195,7 +195,8 @@ namespace Tesira_DSP_EPI
             }
 
             //Parent.WatchDogList.Add(customName,cmd);
-            Parent.SendLine(cmd);
+            //Parent.SendLine(cmd);
+			Parent.EnqueueCommand(new TesiraDsp.QueuedCommand { Command = cmd, AttributeCode = attributeCode, ControlPoint = this });
         }
 
         public virtual void SendUnSubscriptionCommand(string customName, string attributeCode, int InstanceTag)
@@ -234,7 +235,8 @@ namespace Tesira_DSP_EPI
             }
 
             //Parent.WatchDogList.Add(customName,cmd);
-            Parent.SendLine(cmd);
+            //Parent.SendLine(cmd);
+			Parent.EnqueueCommand(new TesiraDsp.QueuedCommand { Command = cmd, AttributeCode = attributeCode, ControlPoint = this });
         }
         public virtual void DoPoll()
         {

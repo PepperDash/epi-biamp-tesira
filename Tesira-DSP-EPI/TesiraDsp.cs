@@ -307,14 +307,37 @@ namespace Tesira_DSP_EPI
                         });
             }
 		}
+		private void AdvanceQueue(string cmd)
+		{
+			if (!CommandQueue.IsEmpty)
+			{
+				if (CommandQueue.Peek() is QueuedCommand)
+				{
+					// Expected response belongs to a child class
+					QueuedCommand tempCommand = (QueuedCommand)CommandQueue.TryToDequeue();
+					Debug.Console(1, this, "Command Dequeued. CommandQueue Size: {0} {1}", CommandQueue.Count, tempCommand.Command);
+					tempCommand.ControlPoint.ParseGetMessage(tempCommand.AttributeCode, cmd);
+				}
+				else
+				{
+					// Expected response belongs to this class
+					string temp = (string)CommandQueue.TryToDequeue();
+				}
 
+				if (CommandQueue.IsEmpty)
+					CommandQueueInProgress = false;
+				else
+					SendNextQueuedCommand();
+
+			}
+		}
 		void Port_LineReceived(object dev, GenericCommMethodReceiveTextArgs args)
 		{
 			if (Debug.Level == 2)
 				Debug.Console(2, this, "RX: '{0}'",
 					ShowHexResponse ? ComTextHelper.GetEscapedText(args.Text) : args.Text);
 
-			Debug.Console(1, this, "RX: '{0}'", args.Text);
+			//Debug.Console(1, this, "RX: '{0}'", args.Text);
 
 			try
 			{
@@ -352,7 +375,8 @@ namespace Tesira_DSP_EPI
 						key = customName.Substring(0, customName.IndexOf("~", 0) - 1);
 
 						value = match.Groups[2].Value;
-
+						AdvanceQueue(args.Text);
+						
 						foreach (KeyValuePair<string, TesiraDspLevelControl> controlPoint in LevelControlPoints)
 						{
 							if (customName == controlPoint.Value.LevelCustomName || customName == controlPoint.Value.MuteCustomName)
@@ -397,6 +421,7 @@ namespace Tesira_DSP_EPI
                                 controlPoint.Value.ParseSubscriptionMessage(customName, value);
                             }
                         }
+						
 					}
 
 					/// same for dialers
@@ -410,37 +435,14 @@ namespace Tesira_DSP_EPI
 					// response is not from a subscribed attribute.  From a get/set/toggle/increment/decrement command
                     //string pattern = "(?<=\" )(.*?)(?=\\+)";
                     //string data = Regex.Replace(args.Text, pattern, "");
-                    string data = args.Text;
 
-					if (!CommandQueue.IsEmpty)
-					{
-						if (CommandQueue.Peek() is QueuedCommand)
-						{
-							// Expected response belongs to a child class
-							QueuedCommand tempCommand = (QueuedCommand)CommandQueue.TryToDequeue();
-							//Debug.Console(1, this, "Command Dequeued. CommandQueue Size: {0}", CommandQueue.Count);
-
-							tempCommand.ControlPoint.ParseGetMessage(tempCommand.AttributeCode, data);
-						}
-						else
-						{
-							// Expected response belongs to this class
-							string temp = (string)CommandQueue.TryToDequeue();
-							//Debug.Console(1, this, "Command Dequeued. CommandQueue Size: {0}", CommandQueue.Count);
-
-						}
-
-						if (CommandQueue.IsEmpty)
-							CommandQueueInProgress = false;
-						else
-							SendNextQueuedCommand();
-
-					}
+					AdvanceQueue(args.Text);
+					
 				}
 				else if (args.Text.IndexOf("-ERR") > -1)
 				{
 					// Error response
-
+					Debug.Console(2, this, "Error From DSP: '{0}'", args.Text);
 					switch (args.Text)
 					{
 						case "-ERR ALREADY_SUBSCRIBED":
@@ -448,10 +450,13 @@ namespace Tesira_DSP_EPI
                                 WatchDogSniffer = false;
 								break;
 							}
+
+
 						default:
 							{
                                 WatchDogSniffer = false;
-								Debug.Console(0, this, "Error From DSP: '{0}'", args.Text);
+
+								AdvanceQueue(args.Text);
 								break;
 							}
 					}
@@ -533,7 +538,7 @@ namespace Tesira_DSP_EPI
 		public void EnqueueCommand(QueuedCommand commandToEnqueue)
 		{
 			CommandQueue.Enqueue(commandToEnqueue);
-			//Debug.Console(1, this, "Command (QueuedCommand) Enqueued '{0}'.  CommandQueue has '{1}' Elements.", commandToEnqueue.Command, CommandQueue.Count);
+			Debug.Console(1, this, "Command (QueuedCommand) Enqueued '{0}'.  CommandQueue has '{1}' Elements.", commandToEnqueue.Command, CommandQueue.Count);
 
 			if (!CommandQueueInProgress)
 				SendNextQueuedCommand();
