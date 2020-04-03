@@ -350,6 +350,38 @@ namespace Tesira_DSP_EPI {
             SendFullCommand("get", "dndEnable", null, 1);
         }
 
+        public override void UnSubscribe()
+        {
+            if (IsVoip)
+            {
+                DialerCustomName = string.Format("{0}~VoIPDialer{1}", this.InstanceTag1, this.Index1);
+                AutoAnswerCustomName = string.Format("{0}~VoIPDialerAutoAnswer{1}", this.InstanceTag1, this.Index1);
+                ControlStatusCustomName = string.Format("{0}~VoIPControl{1}", this.InstanceTag2, this.Index1);
+                LastDialedCustomName = string.Format("{0}~VoIPLastNumber{1}", this.InstanceTag1, this.Index1);
+
+
+                SendUnSubscriptionCommand(ControlStatusCustomName, "callState", 2);
+
+                SendUnSubscriptionCommand(AutoAnswerCustomName, "autoAnswer", 1);
+
+                SendUnSubscriptionCommand(LastDialedCustomName, "lastNum", 1);
+            }
+            else if (!IsVoip)
+            {
+                PotsDialerCustomName = string.Format("{0}~PotsDialer{1}", this.InstanceTag1, this.Index1);
+                LastDialedCustomName = string.Format("{0}~PotsLastNumber{1}", this.InstanceTag1, this.Index1);
+
+                HookStateCustomName = string.Format("{0}~HookState{1}", this.InstanceTag1, this.Index1);
+
+                SendUnSubscriptionCommand(DialerCustomName, "callState", 1);
+
+                SendUnSubscriptionCommand(HookStateCustomName, "hookState", 1);
+
+                SendUnSubscriptionCommand(LastDialedCustomName, "lastNum", 1);
+
+            }
+        }
+
         // <summary>
         /// Parses the response from the DspBase
         /// </summary>
