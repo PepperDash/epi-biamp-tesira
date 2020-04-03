@@ -284,7 +284,10 @@ namespace Tesira_DSP_EPI {
         public void Initialize(string key, TesiraDialerControlBlockConfig config) {
             Key = string.Format("{0}--{1}", Parent.Key, key);
 
-            DeviceManager.AddDevice(this);
+            if (config.enabled)
+            {
+                DeviceManager.AddDevice(this);
+            }
 
             Debug.Console(2, this, "Adding LevelControl '{0}'", Key);
 

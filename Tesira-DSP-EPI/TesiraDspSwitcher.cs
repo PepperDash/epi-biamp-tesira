@@ -37,7 +37,7 @@ namespace Tesira_DSP_EPI {
         public void Initialize(string key, TesiraSwitcherControlBlockConfig config) {
             Key = string.Format("{0}--{1}", Parent.Key, key);
 
-            DeviceManager.AddDevice(this);
+            //DeviceManager.AddDevice(this);
 
             Debug.Console(2, this, "Adding SourceSelector '{0}'", Key);
 

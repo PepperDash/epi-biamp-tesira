@@ -141,7 +141,10 @@ namespace Tesira_DSP_EPI {
         public void Initialize(string key, TesiraLevelControlBlockConfig config) {
             Key = string.Format("{0}-{1}", Parent.Key, key);
 
-            DeviceManager.AddDevice(this);
+            if (config.enabled)
+            {
+                DeviceManager.AddDevice(this);
+            }
 
             this.Type = config.isMic ? ePdtLevelTypes.microphone : ePdtLevelTypes.speaker;
 

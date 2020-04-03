@@ -33,7 +33,10 @@ namespace Tesira_DSP_EPI {
         /// <param name="hasLevel">defines if the control has a level</param>
         public void Initialize(string key, TesiraStateControlBlockConfig config) {
             Key = string.Format("{0}--{1}", Parent.Key, key);
-            DeviceManager.AddDevice(this);
+            if (config.enabled)
+            {
+                DeviceManager.AddDevice(this);
+            }
 
             Debug.Console(2, this, "Adding StateControl '{0}'", Key);
 

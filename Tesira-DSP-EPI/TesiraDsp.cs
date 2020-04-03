@@ -214,7 +214,7 @@ namespace Tesira_DSP_EPI
                     Debug.Console(2, this, "Added LevelControlPoint {0} LevelTag: {1} MuteTag: {2}", key, value.levelInstanceTag, value.muteInstanceTag);
                     if (block.Value.enabled)
                     {
-                        DeviceManager.AddDevice(LevelControlPoints[key]);
+                        //DeviceManager.AddDevice(LevelControlPoints[key]);
                         ControlPointList.Add(LevelControlPoints[key]);
                     }
                 }
@@ -251,9 +251,6 @@ namespace Tesira_DSP_EPI
 
                     this.Dialers.Add(key, new TesiraDspDialer(key, value, this));
                     Debug.Console(2, this, "Added DspDialer {0} ControlStatusTag: {1} DialerTag: {2}", key, value.controlStatusInstanceTag, value.dialerInstanceTag);
-
-                    if (block.Value.enabled)
-                        DeviceManager.AddDevice(Dialers[key]);
                 }
             }
 
