@@ -214,7 +214,7 @@ namespace Tesira_DSP_EPI
                     Debug.Console(2, this, "Added LevelControlPoint {0} LevelTag: {1} MuteTag: {2}", key, value.levelInstanceTag, value.muteInstanceTag);
                     if (block.Value.enabled)
                     {
-                        // DeviceManager.AddDevice(LevelControlPoints[key]);
+                        DeviceManager.AddDevice(LevelControlPoints[key]);
                         ControlPointList.Add(LevelControlPoints[key]);
                     }
                 }
