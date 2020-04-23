@@ -17,7 +17,7 @@ namespace Tesira_DSP_EPI
     {
         static readonly double meterMinimum = -100;
         static readonly double meterMaximum = 49;
-        static readonly int defaultPollTime = 200;
+        static readonly int defaultPollTime = 500;
         static readonly string meterAttributeCode = "level";
 
         public string MeterCustomName { get; set; }

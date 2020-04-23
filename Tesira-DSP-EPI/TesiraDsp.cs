@@ -198,6 +198,7 @@ namespace Tesira_DSP_EPI
 			States.Clear();
 			Switchers.Clear();
             ControlPointList.Clear();
+			Meters.Clear();
 
 
 
@@ -664,6 +665,16 @@ namespace Tesira_DSP_EPI
 					{
 
 						level.Value.Subscribe();
+					}
+				}
+				
+				foreach (KeyValuePair<string, TesiraDspMeter> meter in Meters)
+				{
+					Debug.Console(2, this, "Made it to Object - {0}", meter.Value.InstanceTag1);
+					if (meter.Value.Enabled)
+					{
+
+						meter.Value.Subscribe();
 					}
 				}
 				StartWatchDog();
