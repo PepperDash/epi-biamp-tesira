@@ -6,14 +6,17 @@ using Crestron.SimplSharp;
 using Crestron.SimplSharp.Reflection;
 using PepperDash.Essentials.Core;
 
-namespace Tesira_DSP_EPI.Bridge.JoinMaps {
-    public class TesiraDspDeviceJoinMap : JoinMapBase {
+namespace Tesira_DSP_EPI.Bridge.JoinMaps
+{
+    public class TesiraDspDeviceJoinMap : JoinMapBase
+    {
         public uint IsOnline { get; set; }
         public uint CommandPassthruTx { get; set; }
         public uint CommandPassthruRx { get; set; }
         public uint DirectPreset { get; set; }
 
-        public TesiraDspDeviceJoinMap(uint JoinStart) {
+        public TesiraDspDeviceJoinMap(uint JoinStart)
+        {
 
 
             //Digital
@@ -28,12 +31,14 @@ namespace Tesira_DSP_EPI.Bridge.JoinMaps {
 
         }
 
-        public override void OffsetJoinNumbers(uint joinStart) {
+        public override void OffsetJoinNumbers(uint joinStart)
+        {
             var joinOffset = joinStart - 1;
-            var properties = this.GetType().GetCType().GetProperties().Where(o => o.PropertyType == typeof(uint)).ToList();
-            foreach (var property in properties) {
-                property.SetValue(this, (uint)property.GetValue(this, null) + joinOffset, null);
-            }
+
+            IsOnline += joinOffset;
+            DirectPreset += joinOffset;
+            CommandPassthruRx += joinOffset;
+            CommandPassthruTx += joinOffset;
         }
     }
 }

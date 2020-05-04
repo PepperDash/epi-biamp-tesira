@@ -82,7 +82,9 @@ namespace Tesira_DSP_EPI
 			if (attributeCode == "level" || attributeCode == "mute" || attributeCode == "minLevel" ||
 				attributeCode == "maxLevel" || attributeCode == "label" || attributeCode == "rampInterval" ||
 				attributeCode == "rampStep" || attributeCode == "autoAnswer" || attributeCode == "dndEnable" ||
-				attributeCode == "dtmf" || attributeCode == "state")
+				attributeCode == "dtmf" || attributeCode == "state" || attributeCode == "levelOut" || 
+                attributeCode == "maxLevelOut" || attributeCode == "minLevelOut" || attributeCode == "muteOut" ||
+                attributeCode == "group" )
 			{
 				//Command requires Index
 				if (String.IsNullOrEmpty(value))
@@ -173,7 +175,6 @@ namespace Tesira_DSP_EPI
 				case 2:
 					instanceTag = InstanceTag2;
 					break;
-
 				default:
 					instanceTag = InstanceTag1;
 					break;

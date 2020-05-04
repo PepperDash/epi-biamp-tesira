@@ -7,8 +7,10 @@ using Crestron.SimplSharp.Reflection;
 using PepperDash.Essentials.Core;
 
 
-namespace Tesira_DSP_EPI.Bridge.JoinMaps {
-    public class TesiraDialerJoinMap : JoinMapBase {
+namespace Tesira_DSP_EPI.Bridge.JoinMaps
+{
+    public class TesiraDialerJoinMap : JoinMapBase
+    {
 
         //Strings
         public uint DialString { get; set; }
@@ -58,12 +60,13 @@ namespace Tesira_DSP_EPI.Bridge.JoinMaps {
 
         //Analogs
         public uint CallState { get; set; }
-        
 
 
 
 
-        public TesiraDialerJoinMap(uint JoinStart) {
+
+        public TesiraDialerJoinMap(uint JoinStart)
+        {
             //Is an array - all members start at value + 1
             //Each additional line appearance starts at Value + 1 + (50 * (LineAppearance - 1))
 
@@ -105,7 +108,7 @@ namespace Tesira_DSP_EPI.Bridge.JoinMaps {
             DoNotDisturbOffFb = 3134;
 
 
-            
+
 
 
             //Analog
@@ -123,12 +126,54 @@ namespace Tesira_DSP_EPI.Bridge.JoinMaps {
             OffsetJoinNumbers(JoinStart);
         }
 
-        public  override void OffsetJoinNumbers(uint joinStart) {
+        public override void OffsetJoinNumbers(uint joinStart)
+        {
             var joinOffset = joinStart - 1;
-            var properties = this.GetType().GetCType().GetProperties().Where(o => o.PropertyType == typeof(uint)).ToList();
-            foreach (var property in properties) {
-                property.SetValue(this, (uint)property.GetValue(this, null) + joinOffset, null);
-            }
+
+            IncomingCall += joinOffset;
+            Answer += joinOffset;
+            EndCall += joinOffset;
+            Keypad0 += joinOffset;
+            Keypad1 += joinOffset;
+            Keypad2 += joinOffset;
+            Keypad3 += joinOffset;
+            Keypad4 += joinOffset;
+            Keypad5 += joinOffset;
+            Keypad6 += joinOffset;
+            Keypad7 += joinOffset;
+            Keypad8 += joinOffset;
+            Keypad9 += joinOffset;
+            KeypadStar += joinOffset;
+            KeypadPound += joinOffset;
+            KeypadClear += joinOffset;
+            KeypadBackspace += joinOffset;
+            Dial += joinOffset;
+            DialFb += joinOffset;
+            AutoAnswerOn += joinOffset;
+            AutoAnswerOnFb += joinOffset;
+            AutoAnswerOff += joinOffset;
+            AutoAnswerOffFb += joinOffset;
+            AutoAnswerToggle += joinOffset;
+            AutoAnswerToggleFb += joinOffset;
+            OnHook += joinOffset;
+            OnHookFb += joinOffset;
+            OffHook += joinOffset;
+            OffHookFb += joinOffset;
+            DoNotDisturbToggle += joinOffset;
+            DoNotDisturbToggleFb += joinOffset;
+            DoNotDisturbOn += joinOffset;
+            DoNotDisturbOnFb += joinOffset;
+            DoNotDisturbOff += joinOffset;
+            DoNotDisturbOffFb += joinOffset;
+
+            CallState += joinOffset;
+            DialString += joinOffset;
+            DialStringFb += joinOffset;
+            Label += joinOffset;
+            LastNumberDialedFb += joinOffset;
+            CallerIDNumberFB += joinOffset;
+            CallerIDNameFB += joinOffset;
+            DisplayNumber += joinOffset;
         }
     }
 }

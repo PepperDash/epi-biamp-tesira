@@ -28,6 +28,7 @@ namespace Tesira_DSP_EPI {
         // public Dictionary<string, BiampTesiraForteDialerControlBlockConfig> DialerControlBlocks {get; set;}
         public Dictionary<string, TesiraMeterBlockConfig> meterControlBlocks { get; set; }
         public Dictionary<string, TesiraMatrixMixerBlockConfig> matrixMixerControlBlocks { get; set; }
+        public Dictionary<string, TesiraRoomCombinerBlockConfig> roomCombinerControlBlocks { get; set; }
     }
 
     public class TesiraLevelControlBlockConfig {
@@ -116,5 +117,22 @@ namespace Tesira_DSP_EPI {
         public string matrixInstanceTag { get; set; }
         public int index1 { get; set; }
         public int index2 { get; set; }
+    }
+
+    public class TesiraRoomCombinerBlockConfig
+    {
+        public bool enabled { get; set; }
+        public string label { get; set; }
+
+        public string roomCombinerInstanceTag { get; set; }
+        public int roomIndex { get; set; }
+        public bool preferredRoom { get; set; }
+
+        public bool hasMute { get; set; }
+        public bool hasLevel { get; set; }
+        public bool useAbsoluteValue { get; set; }
+        public bool unmuteOnVolChange { get; set; }
+        public string incrementAmount { get; set; }
+        public int permissions { get; set; }
     }
 }

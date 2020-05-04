@@ -19,7 +19,7 @@ namespace Tesira_DSP_EPI {
         public bool IsVoip { get; private set; }
         public string DialString { get; private set; }
 
-        private bool _OffHookStatus { get; set; }
+        private bool _OffHookStatus;
         public bool OffHookStatus {
             get {
                 return _OffHookStatus;
@@ -62,6 +62,16 @@ namespace Tesira_DSP_EPI {
             }
             set { }
         }
+
+        public BoolFeedback OffHookFeedback;
+        public BoolFeedback AutoAnswerFeedback;
+        public BoolFeedback DoNotDisturbFeedback;
+        public StringFeedback DialStringFeedback;
+        public StringFeedback CallerIDNumberFeedback;
+        public StringFeedback CallerIDNameFeedback;
+        public BoolFeedback IncomingCallFeedback;
+        public IntFeedback CallStateFeedback;
+        public StringFeedback LastDialedFeedback;
 
         private eCallStatus _CallStatusEnum { get; set; }
         private eCallStatus CallStatusEnum
@@ -225,16 +235,6 @@ namespace Tesira_DSP_EPI {
                 CallerIDNameFeedback.FireUpdate();
             }
         }
-
-        public BoolFeedback OffHookFeedback;
-        public BoolFeedback AutoAnswerFeedback;
-        public BoolFeedback DoNotDisturbFeedback;
-        public StringFeedback DialStringFeedback;
-        public StringFeedback CallerIDNumberFeedback;
-        public StringFeedback CallerIDNameFeedback;
-        public BoolFeedback IncomingCallFeedback;
-        public IntFeedback CallStateFeedback;
-        public StringFeedback LastDialedFeedback;
 
         public override bool IsSubscribed {
             get {

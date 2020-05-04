@@ -103,6 +103,7 @@
     <Compile Include="Bridge\JoinMaps\TesiraDialerJoinMap.cs" />
     <Compile Include="Bridge\JoinMaps\TesiraMatrixMixerJoinMap.cs" />
     <Compile Include="Bridge\JoinMaps\TesiraMeterJoinMap.cs" />
+    <Compile Include="Bridge\JoinMaps\TesiraRoomCombinerJoinMap.cs" />
     <Compile Include="Extensions\DictionaryExtensions.cs" />
     <Compile Include="Extensions\ScalingExtensions.cs" />
     <Compile Include="Interfaces\IRoutingWithFeedback.cs" />
@@ -118,6 +119,7 @@
     <Compile Include="TesiraDspMatrixMixer.cs" />
     <Compile Include="TesiraDspMeter.cs" />
     <Compile Include="TesiraDspPropertiesConfig.cs" />
+    <Compile Include="TesiraDspRoomCombiner.cs" />
     <Compile Include="TesiraDspStateControl.cs" />
     <Compile Include="TesiraDspSwitcher.cs" />
     <Compile Include="Bridge\JoinMaps\TesiraLevelJoinMap.cs" />

@@ -23,6 +23,11 @@ namespace Tesira_DSP_EPI.Bridge {
             TesiraStateJoinMap stateJoinMap = new TesiraStateJoinMap(joinStart);
             TesiraSwitcherJoinMap switcherJoinMap = new TesiraSwitcherJoinMap(joinStart);
             TesiraPresetJoinMap presetJoinMap = new TesiraPresetJoinMap(joinStart);
+            TesiraMeterJoinMap meterJoinMap = new TesiraMeterJoinMap(joinStart);
+            TesiraMatrixMixerJoinMap matrixMixerJoinMap = new TesiraMatrixMixerJoinMap(joinStart);
+
+
+            TesiraRoomCombinerJoinMap roomCombinerJoinMap = new TesiraRoomCombinerJoinMap(joinStart);
 
             Debug.Console(1, DspDevice, "Linking to Trilist '{0}'", trilist.ID.ToString("X"));
             ushort x = 1;
@@ -193,7 +198,6 @@ namespace Tesira_DSP_EPI.Bridge {
                 lineOffset += 50;
             }
 
-            var meterJoinMap = new TesiraMeterJoinMap(joinStart);
             Debug.Console(2, DspDevice, "There are {0} Meter Control Points", DspDevice.Meters.Count);
             for (int meterJoin = 0; meterJoin < DspDevice.Meters.Count; meterJoin++)
             {
@@ -210,7 +214,6 @@ namespace Tesira_DSP_EPI.Bridge {
                 trilist.SetSigFalseAction((uint)joinActual, meter.Value.UnSubscribe);
             }
 
-            var matrixMixerJoinMap = new TesiraMatrixMixerJoinMap(joinStart);
             Debug.Console(2, DspDevice, "There are {0} MatrixMixer Control Points", DspDevice.MatrixMixers.Count);
             for (int matrixMixer = 0; matrixMixer < DspDevice.MatrixMixers.Count; matrixMixer++)
             {
@@ -227,6 +230,41 @@ namespace Tesira_DSP_EPI.Bridge {
                 trilist.SetSigTrueAction((uint)toggleJoin, mixer.Value.StateToggle);
                 trilist.SetSigTrueAction((uint)onJoin, mixer.Value.StateOn);
                 trilist.SetSigTrueAction((uint)offJoin, mixer.Value.StateOff);
+            }
+
+            Debug.Console(2, DspDevice, "There are {0} Room Combiner Control Points", DspDevice.RoomCombiners.Count);
+            x = 0;
+            foreach (KeyValuePair<string, TesiraDspRoomCombiner> roomCombiner in DspDevice.RoomCombiners)
+            {
+                Debug.Console(2, "Tesira Room Combiner {0} connect", x);
+                var genericChannel = roomCombiner.Value as IBasicVolumeWithFeedback;
+                if (roomCombiner.Value.Enabled)
+                {
+                    Debug.Console(2, DspDevice, "TesiraChannel {0} Is Enabled", x);
+                    trilist.StringInput[roomCombinerJoinMap.Label + x].StringValue = roomCombiner.Value.Label;
+                    trilist.UShortInput[roomCombinerJoinMap.Permissions + x].UShortValue = (ushort)roomCombiner.Value.Permissions;
+                    trilist.BooleanInput[roomCombinerJoinMap.Visible + x].BoolValue = true;
+
+                    genericChannel.MuteFeedback.LinkInputSig(trilist.BooleanInput[roomCombinerJoinMap.MuteToggleFb + x]);
+                    genericChannel.MuteFeedback.LinkInputSig(trilist.BooleanInput[roomCombinerJoinMap.MuteOnFb + x]);
+                    genericChannel.MuteFeedback.LinkComplementInputSig(trilist.BooleanInput[roomCombinerJoinMap.MuteOffFb + x]);
+                    genericChannel.VolumeLevelFeedback.LinkInputSig(trilist.UShortInput[roomCombinerJoinMap.VolumeFb + x]);
+
+                    trilist.SetSigTrueAction(roomCombinerJoinMap.MuteToggle + x, () => genericChannel.MuteToggle());
+                    trilist.SetSigTrueAction(roomCombinerJoinMap.MuteOn + x, () => genericChannel.MuteOn());
+                    trilist.SetSigTrueAction(roomCombinerJoinMap.MuteOff + x, () => genericChannel.MuteOff());
+
+                    trilist.SetBoolSigAction(roomCombinerJoinMap.VolumeUp + x, b => genericChannel.VolumeUp(b));
+                    trilist.SetBoolSigAction(roomCombinerJoinMap.VolumeDown + x, b => genericChannel.VolumeDown(b));
+
+                    trilist.SetUShortSigAction(roomCombinerJoinMap.Volume + x, u => { if (u > 0) { genericChannel.SetVolume(u); } });
+
+                    trilist.SetUShortSigAction(roomCombinerJoinMap.Group + x, u => { if (u > 0) { roomCombiner.Value.SetRoomGroup(u); } });
+
+                    roomCombiner.Value.RoomGroupFeedback.LinkInputSig(trilist.UShortInput[roomCombinerJoinMap.GroupFb + x]);
+
+                }
+                x++;
             }
         }
     }

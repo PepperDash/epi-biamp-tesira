@@ -42,10 +42,13 @@ namespace Tesira_DSP_EPI.Bridge.JoinMaps {
 
         public override void OffsetJoinNumbers(uint joinStart) {
             var joinOffset = joinStart - 1;
-            var properties = this.GetType().GetCType().GetProperties().Where(o => o.PropertyType == typeof(uint)).ToList();
-            foreach (var property in properties) {
-                property.SetValue(this, (uint)property.GetValue(this, null) + joinOffset, null);
-            }
+
+            Toggle += joinStart; ;
+            On += joinStart;
+            Off += joinOffset;
+            ToggleFb += joinOffset;
+            OnFb += joinOffset;
+            OffFb += joinOffset;
         }
     }
 }

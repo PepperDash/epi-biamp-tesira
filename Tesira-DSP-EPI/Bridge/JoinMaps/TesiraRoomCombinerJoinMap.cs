@@ -6,10 +6,10 @@ using Crestron.SimplSharp;
 using Crestron.SimplSharp.Reflection;
 using PepperDash.Essentials.Core;
 
-
-namespace Tesira_DSP_EPI.Bridge.JoinMaps {
-    public class TesiraLevelJoinMap : JoinMapBase {
-        
+namespace Tesira_DSP_EPI.Bridge.JoinMaps
+{
+    public class TesiraRoomCombinerJoinMap : JoinMapBase
+    {
         public uint MuteToggle { get; set; }
         public uint MuteOn { get; set; }
         public uint MuteOff { get; set; }
@@ -22,42 +22,42 @@ namespace Tesira_DSP_EPI.Bridge.JoinMaps {
         public uint Label { get; set; }
         public uint VolumeUp { get; set; }
         public uint VolumeDown { get; set; }
-        public uint Status { get; set; }
         public uint Permissions { get; set; }
         public uint Visible { get; set; }
+        public uint Group { get; set; }
+        public uint GroupFb { get; set; }
 
 
-        public TesiraLevelJoinMap(uint JoinStart) {
-
-            //These Are Arrays - They all start at Join + IndexOfFader/Mute
-
+        public TesiraRoomCombinerJoinMap(uint joinStart)
+        {
             //Digital
-            MuteToggle = 400;
-            MuteToggleFb = 400;
-            MuteOn = 600;
-            MuteOnFb = 600;
-            MuteOff = 800;
-            MuteOffFb = 800;
-            VolumeUp = 1000;
-            VolumeDown = 1200;
-            Visible = 200;
+            VolumeUp = 2201;
+            VolumeDown = 2202;
+            MuteToggle = 2203;
+            MuteToggleFb = 2203;
+            MuteOn = 2204;
+            MuteOnFb = 2204;
+            MuteOff = 2205;
+            MuteOffFb = 2205;
+            Visible = 2206;
+            
+            //String
+            Label = 2201;
 
             //Analog
-            Volume = 200;
-            VolumeFb = 200;
-            Type = 400;
-            Status = 600;
-            Permissions = 800;
+            Volume = 2201;
+            VolumeFb = 2201;
+            Type = 2202;
+            Permissions = 2203; 
+            Group = 2204;
+            GroupFb = 2204;
 
-            //Serial
-            Label = 200;
-
-            OffsetJoinNumbers(JoinStart);
+            OffsetJoinNumbers(joinStart);
 
         }
 
-
-        public override void OffsetJoinNumbers(uint joinStart) {
+        public override void OffsetJoinNumbers(uint joinStart)
+        {
             var joinOffset = joinStart - 1;
 
             MuteToggle += joinOffset;
@@ -73,13 +73,10 @@ namespace Tesira_DSP_EPI.Bridge.JoinMaps {
             Volume += joinOffset;
             VolumeFb += joinOffset;
             Type += joinOffset;
-            Status += joinOffset;
             Permissions += joinOffset;
             Label += joinOffset;
+            Group += joinOffset;
+            GroupFb += joinOffset;
         }
-
-
-        
-
     }
 }
