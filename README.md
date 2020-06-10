@@ -331,7 +331,7 @@ For example, Incoming Call for Line 1 would be at join 3101, while the incoming 
 "dialerControlBlocks" : {
     "audioDialer01" : {
         "enabled" : true,
-        "label" : "Dialer 01"
+        "label" : "Dialer 01",
         "isVoip" : true,
         "dialerInstanceTag" : "Dialer1",
         "controlStatusInstanceTag" : "VoIPControlStatus1",
