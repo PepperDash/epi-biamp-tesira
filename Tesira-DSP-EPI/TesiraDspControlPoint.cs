@@ -84,7 +84,7 @@ namespace Tesira_DSP_EPI
 				attributeCode == "rampStep" || attributeCode == "autoAnswer" || attributeCode == "dndEnable" ||
 				attributeCode == "dtmf" || attributeCode == "state" || attributeCode == "levelOut" || 
                 attributeCode == "maxLevelOut" || attributeCode == "minLevelOut" || attributeCode == "muteOut" ||
-                attributeCode == "group" )
+				attributeCode == "group" || attributeCode == "input" && command == "set")
 			{
 				//Command requires Index
 				if (String.IsNullOrEmpty(value))
@@ -109,7 +109,7 @@ namespace Tesira_DSP_EPI
 
 
 			else if (attributeCode == "dial" || attributeCode == "end" || attributeCode == "onHook" ||
-				attributeCode == "offHook" || attributeCode == "answer")
+				attributeCode == "offHook" || attributeCode == "answer" )
 			{
 				//requires index, but does not require command
 				if (String.IsNullOrEmpty(value))
