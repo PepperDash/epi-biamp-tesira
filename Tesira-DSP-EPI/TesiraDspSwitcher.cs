@@ -12,8 +12,9 @@ namespace Tesira_DSP_EPI {
         private int _sourceIndex { get; set; }
 
         public string SelectorCustomName { get; private set; }
-
+		
         private int Source { get; set; }
+		private string Type { get; set; } 
         private int Destination { get; set; }
         private int SourceIndex {
             get {
@@ -36,7 +37,7 @@ namespace Tesira_DSP_EPI {
 
         public void Initialize(string key, TesiraSwitcherControlBlockConfig config) {
             Key = string.Format("{0}--{1}", Parent.Key, key);
-
+			Type = "";
             //DeviceManager.AddDevice(this);
 
             Debug.Console(2, this, "Adding SourceSelector '{0}'", Key);
@@ -44,7 +45,14 @@ namespace Tesira_DSP_EPI {
             IsSubscribed = false;
 
             Label = config.label;
-
+			if (config.type != null)
+			{
+				Type = config.type;
+			}
+			else
+			{
+				
+			}
             SourceIndexFeedback = new IntFeedback(() => _sourceIndex);
 
             Enabled = config.enabled;
@@ -92,6 +100,12 @@ namespace Tesira_DSP_EPI {
 
                     Debug.Console(1, this, "Response: '{0}' Value: '{1}'", attributeCode, value);
 
+					if (message.Contains("-ERR address not found"))
+					{
+						Debug.ConsoleWithLog(2, this, "Baimp Error Address not found: '{0}'\n", InstanceTag1);
+						return;
+					}
+
                     if (message.IndexOf("+OK") > -1) {
                         if (attributeCode == "sourceSelection") {
                             SourceIndex = int.Parse(value);
@@ -99,6 +113,10 @@ namespace Tesira_DSP_EPI {
                             SourceIndexFeedback.FireUpdate();
                         }
                     }
+					if (attributeCode == "input")
+					{
+						Source = int.Parse(value);
+					}
                 }
             }
             catch (Exception e) {
@@ -120,10 +138,20 @@ namespace Tesira_DSP_EPI {
         #region IRouting Members
 
         public void ExecuteSwitch(object inputSelector, object outputSelector, eRoutingSignalType signalType) {
-            if (signalType == eRoutingSignalType.Audio) {
-                if (Destination == 0)
-                    SendFullCommand("set", "sourceSelection", Convert.ToString(inputSelector), 1);
-            }
+			if (signalType == eRoutingSignalType.Audio)
+			{
+				if (Destination == 0)
+					if (Type == "router")
+					{
+						SendFullCommand("set", "input", Convert.ToString(inputSelector), 1);
+						SendFullCommand("get", "input", this.Index1.ToString(), 1);
+
+					}
+					else
+					{
+						SendFullCommand("set", "sourceSelection", Convert.ToString(inputSelector), 1);
+					}
+			}
         }
 
         #endregion

@@ -67,7 +67,7 @@ namespace Tesira_DSP_EPI {
     public class TesiraSwitcherControlBlockConfig {
         public bool enabled { get; set; }
         public string label { get; set; }
-
+		public string type { get; set; } 
         public string switcherInstanceTag { get; set; }
         public int index1 { get; set; }
     }

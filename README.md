@@ -153,7 +153,7 @@ None
 
 #### Config Example
 
-> All sourceSelector configs must be part of a dictionary called **switcherControlBlocks**.  
+> All sourceSelector and router configs must be part of a dictionary called **switcherControlBlocks**. ROuter configs reuqire that the "type" be set to "router" 
 
 ``` javascript
 "switcherControlBlocks" : {
@@ -162,6 +162,7 @@ None
         "label" : "switcher01",
         "index1" : 1
         "switcherInstanceTag" : "SourceSelector1",
+        "type:": ]"router"
     }
 }
 ```
