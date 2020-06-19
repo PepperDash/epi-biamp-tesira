@@ -109,14 +109,16 @@ namespace Tesira_DSP_EPI {
                     if (message.IndexOf("+OK") > -1) {
                         if (attributeCode == "sourceSelection") {
                             SourceIndex = int.Parse(value);
-
-                            SourceIndexFeedback.FireUpdate();
+							
+                            
                         }
+						else if (attributeCode == "input")
+						{
+							SourceIndex = int.Parse(value);
+						}
+						SourceIndexFeedback.FireUpdate();
                     }
-					if (attributeCode == "input")
-					{
-						Source = int.Parse(value);
-					}
+					
                 }
             }
             catch (Exception e) {
