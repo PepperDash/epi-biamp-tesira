@@ -262,9 +262,9 @@ namespace Tesira_DSP_EPI {
         private bool DndIsSubscribed { get; set; }
         private bool AutoAnswerIsSubscribed { get; set; }
         private bool HookStateIsSubscribed { get; set; }
-        private bool PotsIsSubscribed { get; set; }               
+        private bool PotsIsSubscribed { get; set; }
 
-        public TesiraDspDialer(string key, TesiraDialerControlBlockConfig config, TesiraDsp parent)
+		public TesiraDspDialer(uint key, TesiraDialerControlBlockConfig config, TesiraDsp parent)
             : base(key, config.dialerInstanceTag, config.controlStatusInstanceTag, config.index, config.callAppearance, parent) {
 
             DialStringFeedback = new StringFeedback(() => { return DialString; });
@@ -281,7 +281,8 @@ namespace Tesira_DSP_EPI {
 
         }
 
-        public void Initialize(string key, TesiraDialerControlBlockConfig config) {
+		public void Initialize(uint key, TesiraDialerControlBlockConfig config)
+		{
             Key = string.Format("{0}--{1}", Parent.Key, key);
 
             if (config.enabled)

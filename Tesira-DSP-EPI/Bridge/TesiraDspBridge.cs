@@ -30,8 +30,8 @@ namespace Tesira_DSP_EPI.Bridge {
             TesiraRoomCombinerJoinMap roomCombinerJoinMap = new TesiraRoomCombinerJoinMap(joinStart);
 
             Debug.Console(1, DspDevice, "Linking to Trilist '{0}'", trilist.ID.ToString("X"));
-            ushort x = 1;
-            //var comm = DspDevice as IBasicCommunication;
+            
+			//var comm = DspDevice as IBasicCommunication;
 
 
             DspDevice.CommunicationMonitor.IsOnlineFeedback.LinkInputSig(trilist.BooleanInput[deviceJoinMap.IsOnline]);
@@ -43,7 +43,9 @@ namespace Tesira_DSP_EPI.Bridge {
 
             //Level and Mute Control
             Debug.Console(2, DspDevice, "There are {0} Level Control Points", DspDevice.LevelControlPoints.Count());
-            foreach (var channel in DspDevice.LevelControlPoints) {
+            foreach (var channel in DspDevice.LevelControlPoints)
+            {
+	            var x = channel.Key;
                 //var TesiraChannel = channel.Value as Tesira.DSP.EPI.TesiraDspLevelControl;
                 Debug.Console(2, "TesiraChannel {0} connect", x);
 
@@ -71,13 +73,13 @@ namespace Tesira_DSP_EPI.Bridge {
                     trilist.SetUShortSigAction(levelJoinMap.Volume + x, u => { if (u > 0) { genericChannel.SetVolume(u); } });
                     //channel.Value.DoPoll();
                 }
-                x++;
             }
 
             //states
-            x = 1;
             Debug.Console(2, DspDevice, "There are {0} State Control Points", DspDevice.States.Count());
-            foreach (var state in DspDevice.States) {
+            foreach (var state in DspDevice.States)
+            {
+	            var x = state.Key;
                 Debug.Console(2, DspDevice, "Tesira State {0} connect to {1}", state.Key, x);
                 if (state.Value.Enabled) {
                     Debug.Console(2, DspDevice, "Tesira State {0} at {1} is Enabled", state.Key, x);
@@ -93,14 +95,14 @@ namespace Tesira_DSP_EPI.Bridge {
                     trilist.SetSigTrueAction(stateJoinMap.On + x, () => s.Value.StateOn());
                     trilist.SetSigTrueAction(stateJoinMap.Off + x, () => s.Value.StateOff());
                 }
-                x++;
             }
             
             
             //Source Selectors
-            x = 0;
             Debug.Console(2, DspDevice, "There are {0} SourceSelector Control Points", DspDevice.Switchers.Count());
-            foreach (var item in DspDevice.Switchers) {
+            foreach (var item in DspDevice.Switchers)
+            {
+	            var x = item.Key;
                 var switcher = item;
                 Debug.Console(2, DspDevice, "Tesira Switcher {0} connect to {1}", switcher.Key, x);
                 if (switcher.Value.Enabled) {
@@ -120,25 +122,26 @@ namespace Tesira_DSP_EPI.Bridge {
                     trilist.StringInput[switcherJoinMap.SourceSelectorLabel + y].StringValue = switcher.Value.Label;
 
                 }
-                x++;
             }
 
             
 
             //Presets 
-            x = 0;
+            uint presetIndex = 0;
             foreach (var preset in DspDevice.PresetList) {
                 var p = preset;
-                var temp = x;
+				ushort temp = (ushort)presetIndex;
                 trilist.StringInput[presetJoinMap.PresetNameFeedback + temp + 1].StringValue = p.preset;
                 trilist.SetSigTrueAction(presetJoinMap.PresetSelection + temp + 1, () => DspDevice.RunPresetNumber(temp));
-                x++;
+				presetIndex++;
             }
 
             // VoIP Dialer
             
             uint lineOffset = 0;
-            foreach (var line in DspDevice.Dialers) {
+            foreach (var line in DspDevice.Dialers)
+            {
+	            var x = line.Key;
                 var dialer = line;
                 var dialerLineOffset = lineOffset += 1;
                 Debug.Console(2, "AddingDialerBRidge {0} {1} Offset", dialer.Key, dialerLineOffset);
@@ -233,9 +236,10 @@ namespace Tesira_DSP_EPI.Bridge {
             }
 
             Debug.Console(2, DspDevice, "There are {0} Room Combiner Control Points", DspDevice.RoomCombiners.Count);
-            x = 0;
-            foreach (KeyValuePair<string, TesiraDspRoomCombiner> roomCombiner in DspDevice.RoomCombiners)
-            {
+            //x = 0;
+			foreach (KeyValuePair<uint, TesiraDspRoomCombiner> roomCombiner in DspDevice.RoomCombiners)
+			{
+				var x = roomCombiner.Key;
                 Debug.Console(2, "Tesira Room Combiner {0} connect", x);
                 var genericChannel = roomCombiner.Value as IBasicVolumeWithFeedback;
                 if (roomCombiner.Value.Enabled)
@@ -264,7 +268,6 @@ namespace Tesira_DSP_EPI.Bridge {
                     roomCombiner.Value.RoomGroupFeedback.LinkInputSig(trilist.UShortInput[roomCombinerJoinMap.GroupFb + x]);
 
                 }
-                x++;
             }
         }
     }

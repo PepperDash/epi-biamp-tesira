@@ -1,7 +1,17 @@
-# Tesira-DSP-EPI
+# Tesira-DSP-EPI - feature/uint-dictionaries
 
 > The Tesira plugin provides device control over the Biamp Tesira family of DSPs with regards 
 > to the most commonly used and requested attriute and control types.
+
+## Feature Notes
+
+This branch of the plugin changed the dictionary key from striing to uint.  This allows the key to be used for absolute reference of where the control is passing on the bridge.  Previously using a string key, the control positions on the bridge were relative.
+
+**Important to note this version of the plugin currently implements eiscApi not eiscApiAdvanced.  When troubleshooting issues with controls passing across the bridge verify the type.**
+
+``` javascript
+"type": "eiscApi"
+```
 
 ## Installation
 
@@ -96,7 +106,7 @@ This Join map represents a control that is part of an array of controls.  Each j
 
 ``` javascript
 "levelControlBlocks": {
-    "01-Fader01": {
+    "1": {
         "enabled": true,
         "isMic": false,
         "hasLevel": true,
@@ -157,7 +167,7 @@ None
 
 ``` javascript
 "switcherControlBlocks" : {
-    "Switcher01" : {
+    "1" : {
         "enabled" : true,
         "label" : "switcher01",
         "index1" : 1
@@ -206,7 +216,7 @@ None
 
 ``` javascript
 "stateControlBlocks" : {
-    "state01" : {
+    "1" : {
         "enabled" : true,
         "label" : "State01",
         "stateInstanceTag" : "LogicState1",
@@ -251,7 +261,7 @@ None
 
 ``` javascript
 "presets" : {
-    "Preset01 ": {
+    "1 ": {
         "label" : "Default",
         "preset" : "Default Levels"  
     }
@@ -330,7 +340,7 @@ For example, Incoming Call for Line 1 would be at join 3101, while the incoming 
 
 ``` javascript
 "dialerControlBlocks" : {
-    "audioDialer01" : {
+    "1" : {
         "enabled" : true,
         "label" : "Dialer 01",
         "isVoip" : true,
@@ -389,7 +399,7 @@ This Join map represents a control that is part of an array of controls.  Each j
 
 ``` javascript
 "meterControlBlocks" : {
-    "meter01" : {
+    "1" : {
         "enabled" : true,
         "label" : "State01",
         "meterInstanceTag" : "Meter1",
@@ -426,7 +436,7 @@ This Join map represents a control that is part of an array of controls.  Each j
 
 ``` javascript
 "meterControlBlocks" : {
-    "meter01" : {
+    "1" : {
         "enabled" : true,
         "label" : "Crosspoint1-2",
         "matrixInstanceTag" : "Meter1",
@@ -495,7 +505,7 @@ This Join map represents a control that is part of an array of controls.  Each j
                         }
                     },
                     "levelControlBlocks": {
-                        "Fader01": {
+                        "1": {
                             "enabled": true,
                             "isMic": false,
                             "hasLevel": true,
@@ -509,7 +519,7 @@ This Join map represents a control that is part of an array of controls.  Each j
                             "incrementAmount" : "2.0",
                             "permissions" : 0
                         },
-                        "Fader02": {
+                        "2": {
                             "enabled": true,
                             "isMic": false,
                             "hasLevel": true,
@@ -523,7 +533,7 @@ This Join map represents a control that is part of an array of controls.  Each j
                             "incrementAmount" : "2.0"
                             "permissions" : 1
                         },
-                        "Fader03": {
+                        "3": {
                             "enabled": true,
                             "isMic": false,
                             "hasLevel": true,
@@ -535,9 +545,9 @@ This Join map represents a control that is part of an array of controls.  Each j
                             "muteInstanceTag": "ATCRXVOL",
                             "unmuteOnVolChange" : true,
                             "incrementAmount" : "2.0"
-                            "permissions" : 2"
+                            "permissions" : 2
                         },
-                        "Fader04": {
+                        "4": {
                             "enabled": true,
                             "isMic": false,
                             "hasLevel": true,
@@ -553,7 +563,7 @@ This Join map represents a control that is part of an array of controls.  Each j
                         }
                     },
                     "dialerControlBlocks" : {
-                        "audioDialer01" : {
+                        "1" : {
                             "enabled" : true,
                             "label" : "Dialer 1",
                             "isVoip" : true,
@@ -566,25 +576,25 @@ This Join map represents a control that is part of an array of controls.  Each j
                         }
                     },
                     "stateControlBlocks" : {
-                        "state01" : {
+                        "1" : {
                             "enabled" : true,
                             "label" : "State01",
                             "stateInstanceTag" : "LogicState1",
                             "index" : 1
                         },
-                        "state02" : {
+                        "2" : {
                             "enabled" : true,
                             "label" : "State02",
                             "stateInstanceTag" : "LogicState1",
                             "index" : 2
                         },
-                        "state03" : {
+                        "3" : {
                             "enabled" : true,
                             "label" : "State02",
                             "stateInstanceTag" : "LogicState1",
                             "index" : 3
                         },
-                        "state04" : {
+                        "4" : {
                             "enabled" : true,
                             "label" : "State02",
                             "stateInstanceTag" : "LogicState1",
@@ -592,7 +602,7 @@ This Join map represents a control that is part of an array of controls.  Each j
                         }
                     },
                     "switcherControlBlocks" : {
-                        "Switcher01" : {
+                        "1" : {
                             "enabled" : true,
                             "label" : "switcher01",
                             "switcherInstanceTag" : "SourceSelector1",
@@ -600,11 +610,11 @@ This Join map represents a control that is part of an array of controls.  Each j
                         }
                     },
                     "presets" : {
-                        "Preset01 ": {
+                        "1 ": {
                             "label" : "Default",
                             "preset" : "Default Levels"  
                         },
-                        "Preset02" : {
+                        "2" : {
                             "label" : "High",
                             "Preset" : "Noise Reduction High"
                         }

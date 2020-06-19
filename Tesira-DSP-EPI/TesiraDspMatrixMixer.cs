@@ -18,8 +18,8 @@ namespace Tesira_DSP_EPI
 
         bool _State;
         public BoolFeedback StateFeedback { get; set; }
-        
-        public TesiraDspMatrixMixer(string key, TesiraMatrixMixerBlockConfig config, TesiraDsp parent)
+
+		public TesiraDspMatrixMixer(uint key, TesiraMatrixMixerBlockConfig config, TesiraDsp parent)
             : base(config.matrixInstanceTag, string.Empty, config.index1, config.index2, parent)
         {
             Key = string.Format("{0}--{1}", Parent.Key, key);

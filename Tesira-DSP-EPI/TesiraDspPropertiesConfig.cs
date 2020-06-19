@@ -18,17 +18,16 @@ namespace Tesira_DSP_EPI {
         /// Valid types are level and mute.
         /// Need to include the index values somehow
         /// </summary>
-        /// 
 
-        public Dictionary<string, TesiraLevelControlBlockConfig> levelControlBlocks { get; set; }
-        public Dictionary<string, TesiraDialerControlBlockConfig> dialerControlBlocks { get; set; }
-        public Dictionary<string, TesiraSwitcherControlBlockConfig> switcherControlBlocks { get; set; }
-        public Dictionary<string, TesiraDspPresets> presets { get; set; }
-        public Dictionary<string, TesiraStateControlBlockConfig> stateControlBlocks { get; set; }
-        // public Dictionary<string, BiampTesiraForteDialerControlBlockConfig> DialerControlBlocks {get; set;}
-        public Dictionary<string, TesiraMeterBlockConfig> meterControlBlocks { get; set; }
-        public Dictionary<string, TesiraMatrixMixerBlockConfig> matrixMixerControlBlocks { get; set; }
-        public Dictionary<string, TesiraRoomCombinerBlockConfig> roomCombinerControlBlocks { get; set; }
+        public Dictionary<uint, TesiraLevelControlBlockConfig> levelControlBlocks { get; set; }
+        public Dictionary<uint, TesiraDialerControlBlockConfig> dialerControlBlocks { get; set; }
+        public Dictionary<uint, TesiraSwitcherControlBlockConfig> switcherControlBlocks { get; set; }
+        public Dictionary<uint, TesiraDspPresets> presets { get; set; }
+        public Dictionary<uint, TesiraStateControlBlockConfig> stateControlBlocks { get; set; }
+        // public Dictionary<uint, BiampTesiraForteDialerControlBlockConfig> DialerControlBlocks {get; set;}
+        public Dictionary<uint, TesiraMeterBlockConfig> meterControlBlocks { get; set; }
+        public Dictionary<uint, TesiraMatrixMixerBlockConfig> matrixMixerControlBlocks { get; set; }
+        public Dictionary<uint, TesiraRoomCombinerBlockConfig> roomCombinerControlBlocks { get; set; }
     }
 
     public class TesiraLevelControlBlockConfig {

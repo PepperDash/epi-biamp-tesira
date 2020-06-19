@@ -134,7 +134,7 @@ namespace Tesira_DSP_EPI
 
         bool LevelIsSubscribed;
 
-        public TesiraDspLevelControl(string key, TesiraLevelControlBlockConfig config, TesiraDsp parent)
+        public TesiraDspLevelControl(uint key, TesiraLevelControlBlockConfig config, TesiraDsp parent)
             : base(config.levelInstanceTag, config.muteInstanceTag, config.index1, config.index2, parent)
         {
 
@@ -149,7 +149,7 @@ namespace Tesira_DSP_EPI
         /// <param name="label">friendly name of the control</param>
         /// <param name="hasMute">defines if the control has a mute</param>
         /// <param name="hasLevel">defines if the control has a level</param>
-        public void Initialize(string key, TesiraLevelControlBlockConfig config)
+        public void Initialize(uint key, TesiraLevelControlBlockConfig config)
         {
             Key = string.Format("{0}-{1}", Parent.Key, key);
 

@@ -140,7 +140,7 @@ namespace Tesira_DSP_EPI
         public bool HasLevel { get; private set; }
         bool LevelIsSubscribed;
 
-        public TesiraDspRoomCombiner(string key, TesiraRoomCombinerBlockConfig config, TesiraDsp parent)
+		public TesiraDspRoomCombiner(uint key, TesiraRoomCombinerBlockConfig config, TesiraDsp parent)
             : base(config.roomCombinerInstanceTag, "", config.roomIndex, 0, parent)
         {
             Initialize(key, config);
@@ -153,7 +153,7 @@ namespace Tesira_DSP_EPI
         /// <param name="label">friendly name of the control</param>
         /// <param name="hasMute">defines if the control has a mute</param>
         /// <param name="hasLevel">defines if the control has a level</param>
-        public void Initialize(string key, TesiraRoomCombinerBlockConfig config)
+		public void Initialize(uint key, TesiraRoomCombinerBlockConfig config)
         {
             Key = string.Format("{0}-{1}", Parent.Key, key);
 

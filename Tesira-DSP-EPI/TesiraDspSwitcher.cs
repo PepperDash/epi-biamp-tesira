@@ -28,14 +28,14 @@ namespace Tesira_DSP_EPI {
 
         public IntFeedback SourceIndexFeedback { get; private set; }
 
-        public TesiraDspSwitcher(string key, TesiraSwitcherControlBlockConfig config, TesiraDsp parent)
+        public TesiraDspSwitcher(uint key, TesiraSwitcherControlBlockConfig config, TesiraDsp parent)
             : base(config.switcherInstanceTag, String.Empty, config.index1, 0, parent) {
 
             Initialize(key, config);
 
         }
 
-        public void Initialize(string key, TesiraSwitcherControlBlockConfig config) {
+        public void Initialize(uint key, TesiraSwitcherControlBlockConfig config) {
             Key = string.Format("{0}--{1}", Parent.Key, key);
 			Type = "";
             //DeviceManager.AddDevice(this);

@@ -15,7 +15,7 @@ namespace Tesira_DSP_EPI {
 
         public string StateCustomName { get; set; }
 
-        public TesiraDspStateControl(string key, TesiraStateControlBlockConfig config, TesiraDsp parent)
+		public TesiraDspStateControl(uint key, TesiraStateControlBlockConfig config, TesiraDsp parent)
             : base(config.stateInstanceTag, String.Empty, config.index, 0, parent) {
             Debug.Console(2, this, "New State Instance Tag = {0}", config.stateInstanceTag);
             Debug.Console(2, this, "Starting State {0} Initialize", key);
@@ -31,7 +31,8 @@ namespace Tesira_DSP_EPI {
         /// <param name="label">friendly name of the control</param>
         /// <param name="hasMute">defines if the control has a mute</param>
         /// <param name="hasLevel">defines if the control has a level</param>
-        public void Initialize(string key, TesiraStateControlBlockConfig config) {
+		public void Initialize(uint key, TesiraStateControlBlockConfig config)
+		{
             Key = string.Format("{0}--{1}", Parent.Key, key);
             if (config.enabled)
             {

@@ -29,7 +29,7 @@ namespace Tesira_DSP_EPI
 
         public StringFeedback LabelFeedback { get; set; }
 
-        public TesiraDspMeter(string key, TesiraMeterBlockConfig config, TesiraDsp parent)
+		public TesiraDspMeter(uint key, TesiraMeterBlockConfig config, TesiraDsp parent)
             : base(config.meterInstanceTag, string.Empty, config.index, 0, parent)
         {
             Key = string.Format("{0}--{1}", Parent.Key, key);
