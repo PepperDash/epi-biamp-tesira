@@ -5,6 +5,7 @@
 
 # User-specific files
 *.rsuser
+*.projectinfo
 *.suo
 *.user
 *.userosscache
