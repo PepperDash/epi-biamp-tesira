@@ -6,8 +6,8 @@ using Crestron.SimplSharp;
 using PepperDash.Core;
 using PepperDash.Essentials.Core;
 using PepperDash.Essentials.Core.Devices;
-using PepperDash.Essentials.Devices.Common.Codec;
-using PepperDash.Essentials.Devices.Common.DSP;
+
+
 using System.Text.RegularExpressions;
 using Crestron.SimplSharp.Reflection;
 using Newtonsoft.Json;

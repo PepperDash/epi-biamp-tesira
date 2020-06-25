@@ -6,7 +6,7 @@ using Crestron.SimplSharp;
 using Crestron.SimplSharpPro.DeviceSupport;
 using PepperDash.Core;
 using PepperDash.Essentials.Core;
-using PepperDash.Essentials.Devices.Common;
+
 using PepperDash.Essentials.Bridges;
 using Tesira_DSP_EPI;
 using Newtonsoft.Json;
