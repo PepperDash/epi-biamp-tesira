@@ -122,7 +122,7 @@ namespace Tesira_DSP_EPI
 			CommunicationMonitor.StatusChange += new EventHandler<MonitorStatusChangeEventArgs>(CommunicationMonitor_StatusChange);
 			CrestronConsole.AddNewConsoleCommand(SendLine, "send" + Key, "", ConsoleAccessLevelEnum.AccessOperator);
 			CrestronConsole.AddNewConsoleCommand(s => Communication.Connect(), "con" + Key, "", ConsoleAccessLevelEnum.AccessOperator);
-			CreateDspObjects();
+            CreateDspObjects();
 		}
 
 		public override bool CustomActivate()
@@ -629,7 +629,8 @@ namespace Tesira_DSP_EPI
 			try
 			{
 				//Unsubscribe
-				UnsubscribeFromAttributes();
+                if (_IsSerialComm) UnsubscribeFromAttributes();
+
 
 				//Subscribe
 				SubscribeToAttributes();

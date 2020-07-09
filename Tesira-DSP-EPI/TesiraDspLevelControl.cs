@@ -184,14 +184,18 @@ namespace Tesira_DSP_EPI
             if (HasMute && HasLevel)
             {
                 ControlType = 0;
+                Debug.Console(2, this, "{0} has BOTH Mute and Level", Key);
             }
             else if (!HasMute && HasLevel)
             {
                 ControlType = 1;
+                Debug.Console(2, this, "{0} has Level ONLY", Key);
+
             }
 
             else if (HasMute && !HasLevel)
             {
+                Debug.Console(2, this, "{0} has MUTE ONLY", Key);
                 ControlType = 2;
             }
 
