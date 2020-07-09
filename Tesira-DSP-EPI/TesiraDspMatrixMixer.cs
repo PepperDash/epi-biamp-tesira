@@ -22,7 +22,7 @@ namespace Tesira_DSP_EPI
 		public TesiraDspMatrixMixer(uint key, TesiraMatrixMixerBlockConfig config, TesiraDsp parent)
             : base(config.matrixInstanceTag, string.Empty, config.index1, config.index2, parent)
         {
-            Key = string.Format("{0}--{1}", Parent.Key, key);
+            Key = string.Format("{0}--Matrix{1}", Parent.Key, key);
             Label = config.label;
             Enabled = config.enabled;
 

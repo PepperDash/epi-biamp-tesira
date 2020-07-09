@@ -460,8 +460,8 @@ namespace Tesira_DSP_EPI
 
 					}
 
-					/// same for dialers
-					/// same for switchers
+					// same for dialers
+					// same for switchers
 
 				}
 				else if (args.Text.IndexOf("+OK") > -1)

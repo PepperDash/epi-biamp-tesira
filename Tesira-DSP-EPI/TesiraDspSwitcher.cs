@@ -36,7 +36,7 @@ namespace Tesira_DSP_EPI {
         }
 
         public void Initialize(uint key, TesiraSwitcherControlBlockConfig config) {
-            Key = string.Format("{0}--{1}", Parent.Key, key);
+            Key = string.Format("{0}--Switcher{1}", Parent.Key, key);
 			Type = "";
             //DeviceManager.AddDevice(this);
 

@@ -283,14 +283,14 @@ namespace Tesira_DSP_EPI {
 
 		public void Initialize(uint key, TesiraDialerControlBlockConfig config)
 		{
-            Key = string.Format("{0}--{1}", Parent.Key, key);
+            Key = string.Format("{0}--Dialer{1}", Parent.Key, key);
 
             if (config.enabled)
             {
                 DeviceManager.AddDevice(this);
             }
 
-            Debug.Console(2, this, "Adding LevelControl '{0}'", Key);
+            Debug.Console(2, this, "Adding Dialer '{0}'", Key);
 
             IsSubscribed = false;
             PotsIsSubscribed = false;

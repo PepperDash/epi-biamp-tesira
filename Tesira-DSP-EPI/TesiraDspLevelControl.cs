@@ -151,7 +151,7 @@ namespace Tesira_DSP_EPI
         /// <param name="hasLevel">defines if the control has a level</param>
         public void Initialize(uint key, TesiraLevelControlBlockConfig config)
         {
-            Key = string.Format("{0}-{1}", Parent.Key, key);
+            Key = string.Format("{0}-Fader{1}", Parent.Key, key);
 
             if (config.enabled)
             {

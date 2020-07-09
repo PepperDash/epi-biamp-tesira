@@ -23,7 +23,7 @@ namespace Tesira_DSP_EPI
         public virtual bool IsSubscribed { get; protected set; }
 
 		protected TesiraDspDialerControlPoint(uint key, string instanceTag1, string instanceTag2, int index1, int index2, TesiraDsp parent)
-            : base(string.Format("{0}--{1}", parent.Key, key), key.ToString())
+            : base(string.Format("{0}--DialerBase{1}", parent.Key, key), key.ToString())
         {
             InstanceTag1 = string.IsNullOrEmpty(instanceTag1) ? "" : instanceTag1;
             InstanceTag2 = string.IsNullOrEmpty(instanceTag2) ? "" : instanceTag2;
