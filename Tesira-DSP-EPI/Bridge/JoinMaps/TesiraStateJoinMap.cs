@@ -1,54 +1,103 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using Crestron.SimplSharp;
-using Crestron.SimplSharp.Reflection;
-using PepperDash.Essentials.Core;
+﻿using PepperDash.Essentials.Core;
 
-namespace Tesira_DSP_EPI.Bridge.JoinMaps {
-    public class TesiraStateJoinMap : JoinMapBase {
+namespace Tesira_DSP_EPI.Bridge.JoinMaps
+{
+    /// <summary>
+    /// State Joinmap for Advanced Bridge - Meant for holistic DSP Object
+    /// </summary>
+    public class TesiraStateJoinMapAdvanced : JoinMapBaseAdvanced
+    {
+        [JoinName("Toggle")] public JoinDataComplete Toggle =
+            new JoinDataComplete(new JoinData() {JoinNumber = 1300, JoinSpan = 1},
+                new JoinMetadata()
+                {
+                    Description = "State Toggle and Feedback",
+                    JoinCapabilities = eJoinCapabilities.ToFromSIMPL,
+                    JoinType = eJoinType.Digital
+                });
 
-        public uint Toggle { get; set; }
-        public uint On { get; set; }
-        public uint Off { get; set; }
-        public uint ToggleFb { get; set; }
-        public uint OnFb { get; set; }
-        public uint OffFb { get; set; }
-        public uint Label { get; set; }
+        [JoinName("On")] public JoinDataComplete On =
+            new JoinDataComplete(new JoinData() {JoinNumber = 1450, JoinSpan = 1},
+                new JoinMetadata()
+                {
+                    Description = "State On and Feedback",
+                    JoinCapabilities = eJoinCapabilities.ToFromSIMPL,
+                    JoinType = eJoinType.Digital
+                });
+
+        [JoinName("Off")] public JoinDataComplete Off =
+            new JoinDataComplete(new JoinData() {JoinNumber = 1600, JoinSpan = 1},
+                new JoinMetadata()
+                {
+                    Description = "State On and Feedback",
+                    JoinCapabilities = eJoinCapabilities.ToFromSIMPL,
+                    JoinType = eJoinType.Digital
+                });
+
+        [JoinName("Label")] public JoinDataComplete Label =
+            new JoinDataComplete(new JoinData() {JoinNumber = 1300, JoinSpan = 1},
+                new JoinMetadata()
+                {
+                    Description = "State Label",
+                    JoinCapabilities = eJoinCapabilities.ToSIMPL,
+                    JoinType = eJoinType.Serial
+                });
 
 
-        public TesiraStateJoinMap(uint JoinStart) {
-
-            //These Are Arrays - They all start at Join + IndexOfState
-
-            //Digital
-            Toggle = 1300;
-            On = 1450;
-            Off = 1600;
-            ToggleFb = 1300;
-            OnFb = 1450;
-            OffFb = 1600;
-
-            //Analog
-
-            //Serial
-            Label = 1300;
-
-            OffsetJoinNumbers(JoinStart);
+        public TesiraStateJoinMapAdvanced(uint joinStart)
+            : base(joinStart, typeof (TesiraStateJoinMapAdvanced))
+        {
         }
 
-
-
-        public override void OffsetJoinNumbers(uint joinStart) {
-            var joinOffset = joinStart - 1;
-
-            Toggle += joinStart; ;
-            On += joinStart;
-            Off += joinOffset;
-            ToggleFb += joinOffset;
-            OnFb += joinOffset;
-            OffFb += joinOffset;
-        }
     }
+
+    /// <summary>
+    /// Dialer Joinmap for Advanced Bridge - Meant for bridging the state as a standalone device
+    /// </summary>
+    public class TesiraStateJoinMapAdvancedStandalone : JoinMapBaseAdvanced
+    {
+        [JoinName("Toggle")] public JoinDataComplete Toggle =
+            new JoinDataComplete(new JoinData() {JoinNumber = 1300, JoinSpan = 1},
+                new JoinMetadata()
+                {
+                    Description = "State Toggle and Feedback",
+                    JoinCapabilities = eJoinCapabilities.ToFromSIMPL,
+                    JoinType = eJoinType.Digital
+                });
+
+        [JoinName("On")] public JoinDataComplete On =
+            new JoinDataComplete(new JoinData() {JoinNumber = 1450, JoinSpan = 1},
+                new JoinMetadata()
+                {
+                    Description = "State On and Feedback",
+                    JoinCapabilities = eJoinCapabilities.ToFromSIMPL,
+                    JoinType = eJoinType.Digital
+                });
+
+        [JoinName("Off")] public JoinDataComplete Off =
+            new JoinDataComplete(new JoinData() {JoinNumber = 1600, JoinSpan = 1},
+                new JoinMetadata()
+                {
+                    Description = "State On and Feedback",
+                    JoinCapabilities = eJoinCapabilities.ToFromSIMPL,
+                    JoinType = eJoinType.Digital
+                });
+
+        [JoinName("Label")] public JoinDataComplete Label =
+            new JoinDataComplete(new JoinData() {JoinNumber = 1300, JoinSpan = 1},
+                new JoinMetadata()
+                {
+                    Description = "State Label",
+                    JoinCapabilities = eJoinCapabilities.ToSIMPL,
+                    JoinType = eJoinType.Serial
+                });
+
+
+        public TesiraStateJoinMapAdvancedStandalone(uint joinStart)
+            : base(joinStart, typeof (TesiraStateJoinMapAdvanced))
+        {
+        }
+
+    }
+
 }

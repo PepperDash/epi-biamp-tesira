@@ -1,15 +1,20 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using Crestron.SimplSharp;
+using System.Globalization;
+using Crestron.SimplSharpPro.DeviceSupport;
+using Newtonsoft.Json;
 using PepperDash.Core;
 using PepperDash.Essentials.Core;
 using System.Text.RegularExpressions;
+using PepperDash.Essentials.Core.Bridges;
+using Tesira_DSP_EPI.Bridge.JoinMaps;
 
 namespace Tesira_DSP_EPI {
-    public class TesiraDspSwitcher : TesiraDspControlPoint, IRoutingWithFeedback, IKeyed {
-        private int _sourceIndex { get; set; }
+    public class TesiraDspSwitcher : TesiraDspControlPoint, IRoutingWithFeedback
+    {
+        private int _sourceIndex;
+
+        private const string KeyFormatter = "{0}--{1}";
+
 
         public string SelectorCustomName { get; private set; }
 		
@@ -22,21 +27,27 @@ namespace Tesira_DSP_EPI {
             }
             set {
                 _sourceIndex = value;
-                //Fire an Update
+                SourceIndexFeedback.FireUpdate();
             }
         }
 
         public IntFeedback SourceIndexFeedback { get; private set; }
 
-        public TesiraDspSwitcher(uint key, TesiraSwitcherControlBlockConfig config, TesiraDsp parent)
-            : base(config.switcherInstanceTag, String.Empty, config.index1, 0, parent) {
+        public TesiraDspSwitcher(string key, TesiraSwitcherControlBlockConfig config, TesiraDsp parent)
+            : base(config.SwitcherInstanceTag, String.Empty, config.Index1, 0, parent, string.Format(KeyFormatter, parent.Key, key), config.Label, config.BridgeIndex)
+        {
+            SourceIndexFeedback = new IntFeedback(Key + "-SourceIndexFeedback",() => _sourceIndex);
 
-            Initialize(key, config);
+            Feedbacks.Add(SourceIndexFeedback);
+            Feedbacks.Add(NameFeedback);
+
+            parent.Feedbacks.AddRange(Feedbacks);
+
+            Initialize(config);
 
         }
 
-        public void Initialize(uint key, TesiraSwitcherControlBlockConfig config) {
-            Key = string.Format("{0}--Switcher{1}", Parent.Key, key);
+        public void Initialize(TesiraSwitcherControlBlockConfig config) {
 			Type = "";
             //DeviceManager.AddDevice(this);
 
@@ -44,29 +55,28 @@ namespace Tesira_DSP_EPI {
 
             IsSubscribed = false;
 
-            Label = config.label;
-			if (config.type != null)
+            Label = config.Label;
+			if (config.Type != null)
 			{
-				Type = config.type;
+				Type = config.Type;
 			}
 			else
 			{
 				
 			}
-            SourceIndexFeedback = new IntFeedback(() => _sourceIndex);
 
-            Enabled = config.enabled;
+            Enabled = config.Enabled;
         }
 
         public override void Subscribe() {
-            SelectorCustomName = string.Format("{0}~Selector{1}", this.InstanceTag1, this.Index1);
+            SelectorCustomName = string.Format("{0}~Selector{1}", InstanceTag1, Index1);
 
             SendSubscriptionCommand(SelectorCustomName, "sourceSelection", 250, 1);
         }
 
         public override void Unsubscribe()
         {
-            SelectorCustomName = string.Format("{0}~Selector{1}", this.InstanceTag1, this.Index1);
+            SelectorCustomName = string.Format("{0}~Selector{1}", InstanceTag1, Index1);
 
             SendUnSubscriptionCommand(SelectorCustomName, "sourceSelection", 1);
         }
@@ -75,48 +85,39 @@ namespace Tesira_DSP_EPI {
 
             // Check for valid subscription response
 
-            if (customName == SelectorCustomName) {
+            if (customName != SelectorCustomName) return;
+            SourceIndex = int.Parse(value);
 
-
-                SourceIndex = int.Parse(value);
-
-                SourceIndexFeedback.FireUpdate();
-                IsSubscribed = true;
-            }
-
+            IsSubscribed = true;
         }
 
         public override void ParseGetMessage(string attributeCode, string message) {
             try {
                 Debug.Console(2, this, "Parsing Message - '{0}' : Message has an attributeCode of {1}", message, attributeCode);
                 // Parse an "+OK" message
-                string pattern = "[^ ]* (.*)";
+                const string pattern = "[^ ]* (.*)";
 
-                Match match = Regex.Match(message, pattern);
+                var match = Regex.Match(message, pattern);
 
-                if (match.Success) {
+                if (!match.Success) return;
+                var value = match.Groups[1].Value;
 
-                    string value = match.Groups[1].Value;
+                Debug.Console(1, this, "Response: '{0}' Value: '{1}'", attributeCode, value);
 
-                    Debug.Console(1, this, "Response: '{0}' Value: '{1}'", attributeCode, value);
+                if (message.Contains("-ERR address not found"))
+                {
+                    Debug.ConsoleWithLog(2, this, "Baimp Error Address not found: '{0}'\n", InstanceTag1);
+                    return;
+                }
 
-					if (message.Contains("-ERR address not found"))
-					{
-						Debug.ConsoleWithLog(2, this, "Baimp Error Address not found: '{0}'\n", InstanceTag1);
-						return;
-					}
-
-                    if (message.IndexOf("+OK") > -1) {
-                        if (attributeCode == "sourceSelection") {
-                            SourceIndex = int.Parse(value);
-
-                            SourceIndexFeedback.FireUpdate();
-                        }
+                if (message.IndexOf("+OK", StringComparison.OrdinalIgnoreCase) > -1) {
+                    if (attributeCode == "sourceSelection") {
+                        SourceIndex = int.Parse(value);
                     }
-					if (attributeCode == "input")
-					{
-						Source = int.Parse(value);
-					}
+                }
+                if (attributeCode == "input")
+                {
+                    Source = int.Parse(value);
                 }
             }
             catch (Exception e) {
@@ -137,21 +138,36 @@ namespace Tesira_DSP_EPI {
 
         #region IRouting Members
 
-        public void ExecuteSwitch(object inputSelector, object outputSelector, eRoutingSignalType signalType) {
-			if (signalType == eRoutingSignalType.Audio)
-			{
-				if (Destination == 0)
-					if (Type == "router")
-					{
-						SendFullCommand("set", "input", Convert.ToString(inputSelector), 1);
-						SendFullCommand("get", "input", this.Index1.ToString(), 1);
+        public void ExecuteSwitch(object inputSelector, object outputSelector, eRoutingSignalType signalType)
+        {
+            if (signalType != eRoutingSignalType.Audio) return;
+            if (Destination != 0) return;
+            if (Type == "router")
+            {
+                SendFullCommand("set", "input", Convert.ToString(inputSelector), 1);
+                SendFullCommand("get", "input", Index1.ToString(CultureInfo.InvariantCulture), 1);
 
-					}
-					else
-					{
-						SendFullCommand("set", "sourceSelection", Convert.ToString(inputSelector), 1);
-					}
-			}
+            }
+            else
+            {
+                SendFullCommand("set", "sourceSelection", Convert.ToString(inputSelector), 1);
+            }
+        }
+
+        public void ExecuteNumericSwitch(ushort inputSelector, ushort outputSelector, eRoutingSignalType signalType)
+        {
+            if (signalType != eRoutingSignalType.Audio) return;
+            if (Destination != 0) return;
+            if (Type == "router")
+            {
+                SendFullCommand("set", "input", Convert.ToString(inputSelector), 1);
+                SendFullCommand("get", "input", Index1.ToString(CultureInfo.InvariantCulture), 1);
+
+            }
+            else
+            {
+                SendFullCommand("set", "sourceSelection", Convert.ToString(inputSelector), 1);
+            }
         }
 
         #endregion
@@ -171,5 +187,43 @@ namespace Tesira_DSP_EPI {
         }
 
         #endregion
+
+        public override void LinkToApi(BasicTriList trilist, uint joinStart, string joinMapKey, EiscApiAdvanced bridge)
+        {
+            var joinMap = new TesiraSwitcherJoinMapAdvancedStandalone(joinStart);
+
+            var joinMapSerialized = JoinMapHelper.GetSerializedJoinMapForDevice(joinMapKey);
+
+            if (!string.IsNullOrEmpty(joinMapSerialized))
+                joinMap = JsonConvert.DeserializeObject<TesiraSwitcherJoinMapAdvancedStandalone>(joinMapSerialized);
+
+            if (bridge != null)
+            {
+                bridge.AddJoinMap(Key, joinMap);
+            }
+
+            if (!Enabled) return;
+
+            Debug.Console(2, this, "Tesira Switcher {0} is Enabled", Key);
+
+            var s = this as IRoutingWithFeedback;
+            s.SourceIndexFeedback.LinkInputSig(trilist.UShortInput[joinMap.Index.JoinNumber]);
+
+            trilist.SetUShortSigAction(joinMap.Index.JoinNumber, u => SetSource(u));
+
+            NameFeedback.LinkInputSig(trilist.StringInput[joinMap.Label.JoinNumber]);
+
+            trilist.OnlineStatusChange += (d, args) =>
+            {
+                if (!args.DeviceOnLine) return;
+
+                foreach (var feedback in Feedbacks)
+                {
+                    feedback.FireUpdate();
+                }
+
+            };
+        }
+
     }
 }
