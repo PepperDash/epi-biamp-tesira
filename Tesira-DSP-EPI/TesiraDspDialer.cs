@@ -22,69 +22,154 @@ namespace Tesira_DSP_EPI {
 
         public FeedbackCollection<Feedback> Feedbacks; 
 
-        //public TesiraDsp Parent { get; private set; }
-        public bool IsVoip { get; private set; }
-        public string DialString { get; private set; }
+        private bool IsVoip { get; set; }
+        private string DialString { get; set; }
 
         private bool _offHookStatus;
-        public bool OffHookStatus {
+
+        /// <summary>
+        /// Current Hook Status for component
+        /// </summary>
+        public bool OffHookStatus
+        {
             get {
                 return _offHookStatus;
             }
-            private set {
+            protected set {
                 _offHookStatus = value;
                 Debug.Console(2, this, "_OffHookStatus = {0}", value.ToString());
                 OffHookFeedback.FireUpdate();
             }
         }
 
-        private string LastDialed { get; set; }
+        /// <summary>
+        /// Last Dialed Number for component
+        /// </summary>
+        public string LastDialed { get; protected set; }
 
-        private int CallAppearance { get; set; }
+        /// <summary>
+        /// CallApperance for component
+        /// </summary>
+        public int CallAppearance { get; protected set; }
 
         private bool AppendDtmf { get; set; }
         private bool ClearOnHangup { get; set; }
 
-        public bool AutoAnswerState { get; set; }
 
-        public string DisplayNumber { get; set; }
+        /// <summary>
+        /// Number to be displayed on remote callerId for component
+        /// </summary>
+        public string DisplayNumber { get; protected set; }
 
+        /// <summary>
+        /// Current Do Not Disturb State for component
+        /// </summary>
+        public bool DoNotDisturbState { get; protected set; }
+        /// <summary>
+        /// Current Auto Answer State for component
+        /// </summary>
+        public bool AutoAnswerState { get; protected set; }
+        /// <summary>
+        /// Dialer Subscription Identifier for Component
+        /// </summary>
+        public string DialerCustomName { get; protected set; }
 
-        public bool DoNotDisturbState { get; private set; }
+        /// <summary>
+        /// ControlStatus Subscription Identifier for Component
+        /// </summary>
+        public string ControlStatusCustomName { get; protected set; }
 
-        public string DialerCustomName { get; set; }
-        public string ControlStatusCustomName { get; set; }
-        public string AutoAnswerCustomName { get; set; }
-        public string HookStateCustomName { get; set; }
-        public string PotsDialerCustomName { get; set; }
-        public string LastDialedCustomName { get; set; }
+        /// <summary>
+        /// AutoAnswer Subscription Identifier for Component
+        /// </summary>
+        public string AutoAnswerCustomName { get; protected set; }
 
+        /// <summary>
+        /// HookState Subscription Identifier for Component
+        /// </summary>
+        public string HookStateCustomName { get; protected set; }
 
-        public string CallStatus {
-            get {
-                return CallStatusEnum.ToString();
-            }
+        /// <summary>
+        /// POTS Dialer Subscription Identifier for Component
+        /// </summary>
+        public string PotsDialerCustomName { get; protected set; }
+
+        /// <summary>
+        /// Last Dialed Subscription Identifier for Component
+        /// </summary>
+        public string LastDialedCustomName { get; protected set; }
+
+        /// <summary>
+        /// Current call status of line
+        /// </summary>
+        public string CallStatus
+        {
+            get { return CallStatusEnum.ToString(); }
         }
 
+        /// <summary>
+        /// Boolean Feedback for Hook Status
+        /// </summary>
         public BoolFeedback OffHookFeedback;
+
+        /// <summary>
+        /// Boolean Feedback for Auto Answer Status
+        /// </summary>
         public BoolFeedback AutoAnswerFeedback;
+
+        /// <summary>
+        /// Boolean Feedback for Do Not Disturb Status
+        /// </summary>
         public BoolFeedback DoNotDisturbFeedback;
+
+        /// <summary>
+        /// String Feedback for the current dial string
+        /// </summary>
         public StringFeedback DialStringFeedback;
+
+        /// <summary>
+        /// String Feedback for CallerId Number for current call
+        /// </summary>
         public StringFeedback CallerIdNumberFeedback;
+
+        /// <summary>
+        /// String Feedback for CallerId Name for current call
+        /// </summary>
         public StringFeedback CallerIdNameFeedback;
+
+        /// <summary>
+        /// Boolean Feedback for Incoming Call Status - True when call incoming
+        /// </summary>
         public BoolFeedback IncomingCallFeedback;
+
+        /// <summary>
+        /// Integer Feedback for current Call State - see eCallStatus enumeration
+        /// </summary>
         public IntFeedback CallStateFeedback;
+
+        /// <summary>
+        /// String feedback for the last dialer number
+        /// </summary>
         public StringFeedback LastDialedFeedback;
+
+        /// <summary>
+        /// String Feedback for component Friendly Name
+        /// </summary>
         public StringFeedback NameFeedback;
 
+        /// <summary>
+        /// String feedback for the displayed number
+        /// </summary>
+        public StringFeedback DisplayNumberFeedback;
+
         private eCallStatus _CallStatusEnum { get; set; }
-        private eCallStatus CallStatusEnum
+        public eCallStatus CallStatusEnum
         {
             get
             {
                 return _CallStatusEnum;
             }
-            set
+            protected set
             {
                 _CallStatusEnum = value;
                 if (CallStatusEnum == eCallStatus.DIAL_TONE ||
@@ -205,37 +290,56 @@ namespace Tesira_DSP_EPI {
             }
         }
 
-        public bool IncomingCallState {
+        /// <summary>
+        /// Status of Incoming Call
+        /// </summary>
+        public bool IncomingCallState
+        {
             get
             {
                 return CallStatusEnum == eCallStatus.RINGING;
             }
         }
 
-        public int LineNumber { get; private set; }
+        /// <summary>
+        /// Line Number for component
+        /// </summary>
+        public int LineNumber { get; protected set; }
       
         private string _callerIdNumber { get; set; }
-        public string CallerIdNumber {
+
+        /// <summary>
+        /// CallerId Number
+        /// </summary>
+        public string CallerIdNumber
+        {
             get {
                 return _callerIdNumber;
             }
-            set {
+            protected set {
                 _callerIdNumber = value;
                 CallerIdNumberFeedback.FireUpdate();
             }
         }
 
         private string _callerIdName { get; set; }
+
+        /// <summary>
+        /// CallerId Name
+        /// </summary>
         public string CallerIdName {
             get {
                 return _callerIdName;
             }
-            set {
+            protected set {
                 _callerIdName = value;
                 CallerIdNameFeedback.FireUpdate();
             }
         }
 
+        /// <summary>
+        /// Subscription state of component
+        /// </summary>
         public override bool IsSubscribed {
             get {
                 bool isSubscribed;
@@ -264,6 +368,13 @@ namespace Tesira_DSP_EPI {
         private bool HookStateIsSubscribed { get; set; }
         private bool PotsIsSubscribed { get; set; }
 
+
+        /// <summary>
+        /// Constructor for Tesira DSP Dialer
+        /// </summary>
+        /// <param name="key">Unique Key</param>
+        /// <param name="config">Component Config</param>
+        /// <param name="parent">Parent Device</param>
 		public TesiraDspDialer(string key, TesiraDialerControlBlockConfig config, TesiraDsp parent)
             : base(key, config.DialerInstanceTag, config.ControlStatusInstanceTag, config.Index, config.CallAppearance, parent, config.BridgeIndex)
         {
@@ -282,6 +393,7 @@ namespace Tesira_DSP_EPI {
             CallStateFeedback = new IntFeedback(Key + "-CallStateFeedback", () => (int)CallStatusEnum);
             LastDialedFeedback = new StringFeedback(Key + "-LastDialedFeedback", () => LastDialed);
             NameFeedback = new StringFeedback(Key + "-NameFeedback", () => Name);
+            DisplayNumberFeedback = new StringFeedback(Key + "-DisplayNumberFeedback", () => DisplayNumber);
 
             Feedbacks.Add(DialStringFeedback);
             Feedbacks.Add(OffHookFeedback);
@@ -293,6 +405,7 @@ namespace Tesira_DSP_EPI {
             Feedbacks.Add(CallStateFeedback);
             Feedbacks.Add(LastDialedFeedback);
             Feedbacks.Add(NameFeedback);
+            Feedbacks.Add(DisplayNumberFeedback);
 
             parent.Feedbacks.AddRange(Feedbacks);
 
@@ -300,7 +413,7 @@ namespace Tesira_DSP_EPI {
 
         }
 
-		public void Initialize(string key, TesiraDialerControlBlockConfig config)
+		private void Initialize(string key, TesiraDialerControlBlockConfig config)
 		{
 
             if (config.Enabled)
@@ -336,10 +449,17 @@ namespace Tesira_DSP_EPI {
             ActiveCalls.Add(activeCall);
         }
 
+        /// <summary>
+        /// Accept Incoming Call
+        /// </summary>
+        /// <param name="item">Call Object to Accept</param>
         public override void AcceptCall(CodecActiveCallItem item) {
             SendFullCommand(null, "answer", null, 1);
         }
 
+        /// <summary>
+        /// Subscribe to all component data
+        /// </summary>
         public override void Subscribe() {
             if (IsVoip) {
                 DialerCustomName = string.Format("{0}~VoIPDialer{1}", InstanceTag1, Index1);
@@ -372,6 +492,9 @@ namespace Tesira_DSP_EPI {
             SendFullCommand("get", "dndEnable", null, 1);
         }
 
+        /// <summary>
+        /// Unsubscribe from all component data
+        /// </summary>
         public override void Unsubscribe()
         {
             if (IsVoip)
@@ -404,11 +527,11 @@ namespace Tesira_DSP_EPI {
             }
         }
 
-        // <summary>
-        /// Parses the response from the DspBase
+        /// <summary>
+        /// Parses incoming subscription-related messages directed to this object
         /// </summary>
-        /// <param name="customName"></param>
-        /// <param name="value"></param>
+        /// <param name="customName">CustomName of subscribed control within the component</param>
+        /// <param name="value">Data to be parsed</param>
         public void ParseSubscriptionMessage(string customName, string value)
         {
             try
@@ -417,11 +540,11 @@ namespace Tesira_DSP_EPI {
                 if (customName == ControlStatusCustomName || customName == PotsDialerCustomName)
                 {
                     //Pulls Entire Value "array" and seperates call appearances
-                    var pattern1 = "\\[([^\\[\\]]+)\\]";
+                    const string pattern1 = "\\[([^\\[\\]]+)\\]";
                     //Seperates each call appearance into their constituent parts
-                    var pattern2 = "\\[(?<state>\\d+)\\s+(?<line>\\d+)\\s+(?<call>\\d+)\\s+(?<action>\\d+)\\s+(?<cid>\".+\"|\"\")\\s+(?<prompt>\\d+)\\]";
+                    const string pattern2 = "\\[(?<state>\\d+)\\s+(?<line>\\d+)\\s+(?<call>\\d+)\\s+(?<action>\\d+)\\s+(?<cid>\".+\"|\"\")\\s+(?<prompt>\\d+)\\]";
                     //Pulls CallerID Data
-                    var pattern3 = "(?:(?:\\\\\"(?<time>.*)\\\\\")(?:\\\\\"(?<number>.*)\\\\\")(?:\\\\\"(?<name>.*)\\\\\"))|\"\"";
+                    const string pattern3 = "(?:(?:\\\\\"(?<time>.*)\\\\\")(?:\\\\\"(?<number>.*)\\\\\")(?:\\\\\"(?<name>.*)\\\\\"))|\"\"";
 
                     var myMatches = Regex.Matches(value, pattern1);
 
@@ -497,10 +620,10 @@ namespace Tesira_DSP_EPI {
         }
 
         /// <summary>
-        /// Parses any non-subscribed messages destined for this class
+        /// Parses any subscription-unrelated messages directed to this object
         /// </summary>
-        /// <param name="attributeCode"></param>
-        /// <param name="message"></param>
+        /// <param name="attributeCode">Message attribute code to determine parsing algorithm</param>
+        /// <param name="message">Data to be parsed</param>
         public override void ParseGetMessage(string attributeCode, string message) {
             try {
                 Debug.Console(2, this, "Parsing Message - '{0}' : Message has an attributeCode of {1}", message, attributeCode);
@@ -546,6 +669,9 @@ namespace Tesira_DSP_EPI {
             }
         }
 
+        /// <summary>
+        /// Dials current value of DialString property
+        /// </summary>
         public void Dial() {
             if (IsVoip) {
                 if (OffHookStatus) {
@@ -581,11 +707,18 @@ namespace Tesira_DSP_EPI {
             }
         }
 
+        /// <summary>
+        /// Sets the DialString property for Dialing
+        /// </summary>
+        /// <param name="data">Value to set DialString to</param>
         public void SetDialString(string data) {
             DialString = data;
             DialStringFeedback.FireUpdate();
         }
 
+        /// <summary>
+        /// Place the call "receiver" "on hook" or otherwise end a call
+        /// </summary>
         public void OnHook() {
             if (IsVoip) {
                 SendFullCommand(null, "onHook", null, 1);
@@ -595,66 +728,97 @@ namespace Tesira_DSP_EPI {
             }
         }
 
-        public void OffHook() {
+        /// <summary>
+        /// Take the call "receiver" "off hook", or otherwise answer an incoming call
+        /// </summary>
+        public void OffHook()
+        {
             if (IsVoip)
-                SendFullCommand(null, "answer", null, 1);
+                Answer();
             if (!IsVoip) {
                 SendFullCommand("set", "hookState", "OFFHOOK", 1);
             }
         }
 
+        /// <summary>
+        /// Answer an incoming call
+        /// </summary>
         public void Answer() {
             if (IsVoip)
                 SendFullCommand(null, "answer", null, 1);
         }
-
-        
-
-        
-
+        /// <summary>
+        /// Enable Auto Answer for the component
+        /// </summary>
         public void AutoAnswerOn() {
             SendFullCommand("set", "autoAnswer", "true", 1);
             if (!IsVoip)
                 SendFullCommand("get", "autoAnswer", null, 1);
         }
 
+        /// <summary>
+        /// Disable Auto Answer for the component
+        /// </summary>
         public void AutoAnswerOff() {
             SendFullCommand("set", "autoAnswer", "false", 1);
             if (!IsVoip)
                 SendFullCommand("get", "autoAnswer", null, 1);
         }
 
+        /// <summary>
+        /// Toggle the state of Auto Answer for the component
+        /// </summary>
         public void AutoAnswerToggle() {
             SendFullCommand("toggle", "autoAnswer", null, 1);
             if (!IsVoip)
                 SendFullCommand("get", "autoAnswer", null, 1);
         }
 
+        /// <summary>
+        /// Enable Do Not Disturb for the component
+        /// </summary>
         public void DoNotDisturbOn() {
             SendFullCommand("set", "dndEnable", "true", 1);
             SendFullCommand("get", "dndEnable", null, 1);
         }
+
+        /// <summary>
+        /// Disable Do Not Distrub for the component
+        /// </summary>
         public void DoNotDisturbOff() {
             SendFullCommand("set", "dndEnable", "false", 1);
             SendFullCommand("get", "dndEnable", null, 1);
         }
-        public void DoNotDisturbToggle() {
-            if (DoNotDisturbState) 
-                SendFullCommand("set", "dndEnable", "false", 1);
-            else
-                SendFullCommand("set", "dndEnable", "true", 1);
+
+        /// <summary>
+        /// Toggle Do Not Disturb for the component.
+        /// </summary>
+        public void DoNotDisturbToggle()
+        {
+            SendFullCommand("set", "dndEnable", DoNotDisturbState ? "false" : "true", 1);
             SendFullCommand("get", "dndEnable", null, 1);
         }
 
-
+        /// <summary>
+        /// Reject incoming call
+        /// </summary>
+        /// <param name="item">Call Object to Reject</param>
         public override void RejectCall(CodecActiveCallItem item) {
             SendFullCommand(null, "end", null, 1);
         }
 
+        /// <summary>
+        /// Send DTMF Digit to Component - Use SendKeypad instead
+        /// </summary>
+        /// <param name="digit">Digit to send</param>
         public override void SendDtmf(string digit) {
             throw new NotImplementedException();
         }
 
+        /// <summary>
+        /// Send Keypad Digit to component - Will Send DTMF if call active
+        /// </summary>
+        /// <param name="data">Keypad press to send</param>
         public void SendKeypad(eKeypadKeys data) {
             if (!OffHookStatus) {
                 switch (data) {
@@ -713,8 +877,6 @@ namespace Tesira_DSP_EPI {
                     case eKeypadKeys.Backspace:
                         DialString = DialString.Remove(DialString.Length - 1, 1);
                         DialStringFeedback.FireUpdate();
-                        break;
-                    default:
                         break;
                 }
             }
@@ -810,12 +972,13 @@ namespace Tesira_DSP_EPI {
                     break;
                 case eKeypadKeys.Backspace:
                     break;
-                default:
-                    break;
             }
         }
 
-        private enum eCallStatus {
+        /// <summary>
+        /// List of possible Call Status values returned from component
+        /// </summary>
+        public enum eCallStatus {
             INIT = 1,
             FAULT,
             IDLE,
@@ -847,6 +1010,9 @@ namespace Tesira_DSP_EPI {
             XFER_WAIT
         }
 
+        /// <summary>
+        /// List of valid keypad keys to send to component
+        /// </summary>
         public enum eKeypadKeys {
             Num0 = 0,
             Num1,
@@ -892,9 +1058,6 @@ namespace Tesira_DSP_EPI {
             trilist.SetSigTrueAction((joinMap.KeyPadClear.JoinNumber), () => SendKeypad(eKeypadKeys.Clear));
             trilist.SetSigTrueAction((joinMap.KeyPadBackspace.JoinNumber), () => SendKeypad(eKeypadKeys.Backspace));
 
-            trilist.StringInput[joinMap.Label.JoinNumber].StringValue = Label;
-            trilist.StringInput[joinMap.DisplayNumber.JoinNumber].StringValue = DisplayNumber;
-
             trilist.SetSigTrueAction(joinMap.KeyPadDial.JoinNumber, Dial);
             trilist.SetSigTrueAction(joinMap.DoNotDisturbToggle.JoinNumber, DoNotDisturbToggle);
             trilist.SetSigTrueAction(joinMap.DoNotDisturbOn.JoinNumber, DoNotDisturbOn);
@@ -908,6 +1071,9 @@ namespace Tesira_DSP_EPI {
             trilist.SetSigTrueAction(joinMap.OffHook.JoinNumber, OffHook);
 
             trilist.SetStringSigAction(joinMap.DialString.JoinNumber, SetDialString);
+
+            DisplayNumberFeedback.LinkInputSig(trilist.StringInput[joinMap.DisplayNumber.JoinNumber]);
+            NameFeedback.LinkInputSig(trilist.StringInput[joinMap.Label.JoinNumber]);
 
             DoNotDisturbFeedback.LinkInputSig(trilist.BooleanInput[joinMap.DoNotDisturbToggle.JoinNumber]);
             DoNotDisturbFeedback.LinkInputSig(trilist.BooleanInput[joinMap.DoNotDisturbOn.JoinNumber]);

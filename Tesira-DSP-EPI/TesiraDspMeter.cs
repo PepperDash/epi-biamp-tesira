@@ -23,9 +23,14 @@ namespace Tesira_DSP_EPI
 
         private const string KeyFormatter = "{0}--{1}";
 
-
+        /// <summary>
+        /// Subscription Identifer for Meter Data
+        /// </summary>
         public string MeterCustomName { get; set; }
 
+        /// <summary>
+        /// Integer Feedback for Meter
+        /// </summary>
         public IntFeedback MeterFeedback { get; set; }
         int _currentMeter;
 

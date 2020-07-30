@@ -55,22 +55,51 @@ namespace Tesira_DSP_EPI
         }
 
         private const string KeyFormatter = "{0}--{1}";
-
+        /// <summary>
+        /// Component Permissions
+        /// </summary>
         public int Permissions { get; set; }
 
+        /// <summary>
+        /// Component ControlType
+        /// </summary>
         public int ControlType;
 
+        /// <summary>
+        /// Boolean Feedback for Mute State
+        /// </summary>
         public BoolFeedback MuteFeedback { get; private set; }
+
+        /// <summary>
+        /// Boolean Feedback for Visbility State
+        /// </summary>
         public BoolFeedback VisibleFeedback { get; private set; }
+
+        /// <summary>
+        /// Integer Feedback for Volume Level
+        /// </summary>
         public IntFeedback VolumeLevelFeedback { get; private set; }
+
+        /// <summary>
+        /// Integer Feedback for Control Type
+        /// </summary>
         public IntFeedback ControlTypeFeedback { get; private set; }
+
+        /// <summary>
+        /// Integer Feedback for Permissions
+        /// </summary>
         public IntFeedback PermissionsFeedback { get; private set; }
+
+        /// <summary>
+        /// Integer Feedback for RoomGroup
+        /// </summary>
         public IntFeedback RoomGroupFeedback { get; private set; }
 
 
-        public string IncrementAmount { get; set; }
-        public bool UseAbsoluteValue { get; set; }
-        public string LevelControlPointTag { get { return InstanceTag1; } }
+        private string IncrementAmount { get; set; }
+        private bool UseAbsoluteValue { get; set; }
+        private string LevelControlPointTag { get { return InstanceTag1; } }
+
         CTimer _volumeUpRepeatTimer;
         CTimer _volumeDownRepeatTimer;
         CTimer _volumeUpRepeatDelayTimer;
@@ -82,7 +111,7 @@ namespace Tesira_DSP_EPI
         bool _volUpPressTracker;
 
         /// <summary>
-        /// Used to identify level subscription values
+        /// Subscription identifier for Room Combiner
         /// </summary>
         public string LevelCustomName { get; private set; }
 
@@ -135,13 +164,25 @@ namespace Tesira_DSP_EPI
             protected set { }
         }
 
-        public bool AutomaticUnmuteOnVolumeUp { get; private set; }
+        private bool AutomaticUnmuteOnVolumeUp { get; set; }
 
+        /// <summary>
+        /// Componenet Has Mute
+        /// </summary>
         public bool HasMute { get; private set; }
 
+        /// <summary>
+        /// Component Has Level
+        /// </summary>
         public bool HasLevel { get; private set; }
         bool _levelIsSubscribed;
 
+        /// <summary>
+        /// Constructor for Tesira Dsp Room Combiner Component
+        /// </summary>
+        /// <param name="key">Unique Key</param>
+        /// <param name="config">configuration object</param>
+        /// <param name="parent">Parent Object</param>
 		public TesiraDspRoomCombiner(string key, TesiraRoomCombinerBlockConfig config, TesiraDsp parent)
             : base(config.RoomCombinerInstanceTag, "", config.RoomIndex, 0, parent, string.Format(KeyFormatter, parent.Key, key), config.Label, config.BridgeIndex)
         {
@@ -152,7 +193,7 @@ namespace Tesira_DSP_EPI
         /// Initializes this attribute based on config values and generates subscriptions commands and adds commands to the parent's queue.
         /// </summary>
         /// <param name="config">Configuration Object</param>
-		public void Initialize(TesiraRoomCombinerBlockConfig config)
+		private void Initialize(TesiraRoomCombinerBlockConfig config)
         {
 
             if (config.Enabled)
@@ -211,28 +252,32 @@ namespace Tesira_DSP_EPI
             Parent.Feedbacks.AddRange(Feedbacks);
         }
 
-        public void VolumeUpRepeat()
+
+        private void VolumeUpRepeat()
         {
             if (_volUpPressTracker)
                 VolumeUp(true);
         }
-        public void VolumeDownRepeat()
+        private void VolumeDownRepeat()
         {
             if (_volDownPressTracker)
                 VolumeDown(true);
         }
 
-        public void VolumeUpRepeatDelay()
+        private void VolumeUpRepeatDelay()
         {
             _volUpPressTracker = true;
             VolumeUp(true);
         }
-        public void VolumeDownRepeatDelay()
+        private void VolumeDownRepeatDelay()
         {
             _volDownPressTracker = true;
             VolumeDown(true);
         }
 
+        /// <summary>
+        /// Subscribe to component
+        /// </summary>
         public override void Subscribe()
         {
             //Subsribe to Level
@@ -244,13 +289,14 @@ namespace Tesira_DSP_EPI
             SendFullCommand("get", "group", null, 1);
         }
 
+        /// <summary>
+        /// Unsubscribe from component
+        /// </summary>
         public override void Unsubscribe()
         {
-            if (HasLevel)
-            {
-                LevelCustomName = string.Format("{0}~roomCombiner{1}", InstanceTag1, Index1);
-                SendUnSubscriptionCommand(LevelCustomName, "levelOut", 1);
-            }
+            if (!HasLevel) return;
+            LevelCustomName = string.Format("{0}~roomCombiner{1}", InstanceTag1, Index1);
+            SendUnSubscriptionCommand(LevelCustomName, "levelOut", 1);
         }
 
         /// <summary>
@@ -495,14 +541,14 @@ namespace Tesira_DSP_EPI
 
 
         /// <summary>
-        /// Scales the input from the input range to the output range
+        /// Scales two relative values given two sets of relative ranges
         /// </summary>
-        /// <param name="input"></param>
-        /// <param name="inMin"></param>
-        /// <param name="inMax"></param>
-        /// <param name="outMin"></param>
-        /// <param name="outMax"></param>
-        /// <returns></returns>
+        /// <param name="input">Relative Input Value</param>
+        /// <param name="inMin">Minimum Input Value</param>
+        /// <param name="inMax">Maximum Input Value</param>
+        /// <param name="outMin">Minimum Output Value</param>
+        /// <param name="outMax">Maximum Output Value</param>
+        /// <returns>Relative output value</returns>
         double Scale(double input, double inMin, double inMax, double outMin, double outMax)
         {
             Debug.Console(1, this, "Scaling (double) input '{0}' with min '{1}'/max '{2}' to output range min '{3}'/max '{4}'", input, inMin, inMax, outMin, outMax);

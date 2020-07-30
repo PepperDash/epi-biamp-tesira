@@ -44,9 +44,13 @@ namespace Tesira_DSP_EPI
 
         private const string KeyFormatter = "{0}--{1}";
 
-        public int Permissions { get; set; }
+        private int Permissions { get; set; }
+        private int ControlType { get; set; }
 
-        public int ControlType { get; set; }
+        private string IncrementAmount { get; set; }
+        private bool UseAbsoluteValue { get; set; }
+        private ePdtLevelTypes _type;
+        private string LevelControlPointTag { get { return InstanceTag1; } }
 
         public BoolFeedback MuteFeedback { get; private set; }
         public BoolFeedback VisibleFeedback { get; private set; }
@@ -56,10 +60,7 @@ namespace Tesira_DSP_EPI
         public IntFeedback PermissionsFeedback { get; private set; }
 
 
-        public string IncrementAmount { get; set; }
-        public bool UseAbsoluteValue { get; set; }
-        public ePdtLevelTypes Type;
-        public string LevelControlPointTag { get { return InstanceTag1; } }
+        
         CTimer _volumeUpRepeatTimer;
         CTimer _volumeDownRepeatTimer;
         CTimer _volumeUpRepeatDelayTimer;
@@ -73,12 +74,12 @@ namespace Tesira_DSP_EPI
         /// <summary>
         /// Used to identify level subscription values
         /// </summary>
-        public string LevelCustomName { get; private set; }
+        public string LevelCustomName { get; protected set; }
 
         /// <summary>
         /// Used to identify mute subscription value
         /// </summary>
-        public string MuteCustomName { get; private set; }
+        public string MuteCustomName { get; protected set; }
 
         private double _minLevel;
         /// <summary>
@@ -132,16 +133,28 @@ namespace Tesira_DSP_EPI
             protected set { }
         }
 
-        public bool AutomaticUnmuteOnVolumeUp { get; private set; }
+        private bool AutomaticUnmuteOnVolumeUp { get; set; }
 
+        /// <summary>
+        /// Component has Mute
+        /// </summary>
         public bool HasMute { get; private set; }
 
+        /// <summary>
+        /// Component Has Level
+        /// </summary>
         public bool HasLevel { get; private set; }
 
         private bool _muteIsSubscribed;
 
         private bool _levelIsSubscribed;
 
+        /// <summary>
+        /// Constructor for Component
+        /// </summary>
+        /// <param name="key">Unique Identifier for component</param>
+        /// <param name="config">Config Object of Component</param>
+        /// <param name="parent">Parent object of Component</param>
         public TesiraDspFaderControl(string key, TesiraFaderControlBlockConfig config, TesiraDsp parent)
             : base(config.LevelInstanceTag, config.MuteInstanceTag, config.Index1, config.Index2, parent, String.Format(KeyFormatter, parent.Key, key), config.Label, config.BridgeIndex)
         {
@@ -157,7 +170,7 @@ namespace Tesira_DSP_EPI
                 DeviceManager.AddDevice(this);
             }
 
-            Type = config.IsMic ? ePdtLevelTypes.Microphone : ePdtLevelTypes.Speaker;
+            _type = config.IsMic ? ePdtLevelTypes.Microphone : ePdtLevelTypes.Speaker;
 
             Debug.Console(2, this, "Adding LevelControl '{0}'", Key);
 
@@ -200,7 +213,7 @@ namespace Tesira_DSP_EPI
             VisibleFeedback = new BoolFeedback(Key + "-VisibleFeedback", () => Enabled);
 
             VolumeLevelFeedback = new IntFeedback(Key + "-LevelFeedback", () => VolumeLevel);
-            TypeFeedback = new IntFeedback(Key + "-TypeFeedback", () => (ushort)Type);
+            TypeFeedback = new IntFeedback(Key + "-TypeFeedback", () => (ushort)_type);
             ControlTypeFeedback = new IntFeedback(Key + "-ControlTypeFeedback", () => ControlType);
             PermissionsFeedback = new IntFeedback(Key + "-PermissionsFeedback", () => Permissions);
 
@@ -239,6 +252,9 @@ namespace Tesira_DSP_EPI
             VolumeDown(true);
         }
 
+        /// <summary>
+        /// Subscribe to component
+        /// </summary>
         public override void Subscribe()
         {
             //Subscribe to Mute
@@ -260,6 +276,9 @@ namespace Tesira_DSP_EPI
             }
         }
 
+        /// <summary>
+        /// Unsubscribe from component
+        /// </summary>
         public override void Unsubscribe()
         {
             //Subscribe to Mute
@@ -281,10 +300,10 @@ namespace Tesira_DSP_EPI
         }
 
         /// <summary>
-        /// Parses the response from the DspBase
+        /// Parses subscription response data for the component
         /// </summary>
-        /// <param name="customName"></param>
-        /// <param name="value"></param>
+        /// <param name="customName">Subscription Identifier for component</param>
+        /// <param name="value">Component data to be parsed</param>
         public void ParseSubscriptionMessage(string customName, string value)
         {
 
@@ -307,10 +326,10 @@ namespace Tesira_DSP_EPI
         }
 
         /// <summary>
-        /// Parses a non subscription response
+        /// Parses non-subscription response data for the component
         /// </summary>
-        /// <param name="attributeCode">The attribute code of the command</param>
-        /// <param name="message">The message to parse</param>
+        /// <param name="attributeCode">The attribute code of the command for the parsing algorithm</param>
+        /// <param name="message">Component data to be parsed</param>
         public override void ParseGetMessage(string attributeCode, string message)
         {
             try
@@ -361,7 +380,7 @@ namespace Tesira_DSP_EPI
         }
 
         /// <summary>
-        /// Turns the mute off
+        /// Disable Mute
         /// </summary>
         public void MuteOff()
         {
@@ -369,7 +388,7 @@ namespace Tesira_DSP_EPI
         }
 
         /// <summary>
-        /// Turns the mute on
+        /// Enable Mute
         /// </summary>
         public void MuteOn()
         {
@@ -377,9 +396,9 @@ namespace Tesira_DSP_EPI
         }
 
         /// <summary>
-        /// Sets the volume to a specified level
+        /// Set level to specified value
         /// </summary>
-        /// <param name="level"></param>
+        /// <param name="level">Level from 0 - 100, as a percentage of the total range</param>
         public void SetVolume(ushort level)
         {
             Debug.Console(1, this, "volume: {0}", level);
@@ -394,7 +413,7 @@ namespace Tesira_DSP_EPI
         }
 
         /// <summary>
-        /// Polls all data for this control
+        /// Polls all data for component
         /// </summary>
         public override void DoPoll()
         {
@@ -409,7 +428,7 @@ namespace Tesira_DSP_EPI
         }
 
         /// <summary>
-        /// Polls the current volume level
+        /// Polls the current volume level of component
         /// </summary>
         public void GetVolume()
         {
@@ -417,7 +436,7 @@ namespace Tesira_DSP_EPI
         }
 
         /// <summary>
-        /// Polls the current mute state
+        /// Polls the current mute state of Component
         /// </summary>
         public void GetMute()
         {
@@ -425,7 +444,7 @@ namespace Tesira_DSP_EPI
         }
 
         /// <summary>
-        /// Toggles mute status
+        /// Toggle component mute
         /// </summary>
         public void MuteToggle()
         {
@@ -433,9 +452,9 @@ namespace Tesira_DSP_EPI
         }
 
         /// <summary>
-        /// Decrements volume level
+        /// Decrements component level
         /// </summary>
-        /// <param name="press"></param>
+        /// <param name="press">Trigger map to bridge or UI component</param>
         public void VolumeDown(bool press)
         {
             Debug.Console(2, "VolumeDown Sent for {0}", LevelControlPointTag);
@@ -460,9 +479,9 @@ namespace Tesira_DSP_EPI
         }
 
         /// <summary>
-        /// Increments volume level
+        /// Increments component level
         /// </summary>
-        /// <param name="press"></param>
+        /// <param name="press">Trigger map to bridge or UI component</param>
         public void VolumeUp(bool press)
         {
             Debug.Console(2, "VolumeUp Sent for {0}", LevelControlPointTag);
@@ -494,14 +513,14 @@ namespace Tesira_DSP_EPI
         }
 
         /// <summary>
-        /// Scales the input from the input range to the output range
+        /// Scales two relative values given two sets of relative ranges
         /// </summary>
-        /// <param name="input"></param>
-        /// <param name="inMin"></param>
-        /// <param name="inMax"></param>
-        /// <param name="outMin"></param>
-        /// <param name="outMax"></param>
-        /// <returns></returns>
+        /// <param name="input">Relative Input Value</param>
+        /// <param name="inMin">Minimum Input Value</param>
+        /// <param name="inMax">Maximum Input Value</param>
+        /// <param name="outMin">Minimum Output Value</param>
+        /// <param name="outMax">Maximum Output Value</param>
+        /// <returns>Relative output value</returns>
         double Scale(double input, double inMin, double inMax, double outMin, double outMax)
         {
             Debug.Console(1, this, "Scaling (double) input '{0}' with min '{1}'/max '{2}' to output range min '{3}'/max '{4}'", input, inMin, inMax, outMin, outMax);
@@ -522,6 +541,9 @@ namespace Tesira_DSP_EPI
             return output;
         }
 
+        /// <summary>
+        /// Possible LevelType enums
+        /// </summary>
         public enum ePdtLevelTypes
         {
             Speaker = 0,

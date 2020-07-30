@@ -28,7 +28,7 @@ namespace Tesira_DSP_EPI
 
 		public virtual bool IsSubscribed { get; protected set; }
 
-		protected TesiraDspControlPoint(string instanceTag1, string instanceTag2, int index1, int index2, TesiraDsp parent, string key, string name, uint bridgeIndex)
+		protected TesiraDspControlPoint(string instanceTag1, string instanceTag2, int index1, int index2, TesiraDsp parent, string key, string name, uint? bridgeIndex)
             : base(key, name)
 		{
             BridgeIndex = bridgeIndex;

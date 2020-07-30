@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Globalization;
+using System.Linq;
 using Crestron.SimplSharpPro.DeviceSupport;
+using Crestron.SimplSharpPro.DM;
 using Newtonsoft.Json;
 using PepperDash.Core;
 using PepperDash.Essentials.Core;
@@ -15,10 +17,22 @@ namespace Tesira_DSP_EPI {
 
         private const string KeyFormatter = "{0}--{1}";
 
+        /// <summary>
+        /// Collection of IRouting Input Ports
+        /// </summary>
+        public RoutingPortCollection<RoutingInputPort> InputPorts { get; private set; }
 
+        /// <summary>
+        /// Collection of IRouting Output Ports
+        /// </summary>
+        public RoutingPortCollection<RoutingOutputPort> OutputPorts { get; private set; }
+
+        /// <summary>
+        /// Subscription Identifier for Switcher
+        /// </summary>
         public string SelectorCustomName { get; private set; }
-		
-        private int Source { get; set; }
+
+        private int _source;
 		private string Type { get; set; } 
         private int Destination { get; set; }
         private int SourceIndex {
@@ -31,12 +45,24 @@ namespace Tesira_DSP_EPI {
             }
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
         public IntFeedback SourceIndexFeedback { get; private set; }
 
+        /// <summary>
+        /// Constructor for Tesira Dsp Switcher Component
+        /// </summary>
+        /// <param name="key">Unique Key</param>
+        /// <param name="config">Sqitcher Config Object</param>
+        /// <param name="parent">Parent Object</param>
         public TesiraDspSwitcher(string key, TesiraSwitcherControlBlockConfig config, TesiraDsp parent)
             : base(config.SwitcherInstanceTag, String.Empty, config.Index1, 0, parent, string.Format(KeyFormatter, parent.Key, key), config.Label, config.BridgeIndex)
         {
-            SourceIndexFeedback = new IntFeedback(Key + "-SourceIndexFeedback",() => _sourceIndex);
+            SourceIndexFeedback = new IntFeedback(Key + "-SourceIndexFeedback", () => SourceIndex);
+
+            InputPorts = new RoutingPortCollection<RoutingInputPort>();
+            OutputPorts = new RoutingPortCollection<RoutingOutputPort>();
 
             Feedbacks.Add(SourceIndexFeedback);
             Feedbacks.Add(NameFeedback);
@@ -47,7 +73,7 @@ namespace Tesira_DSP_EPI {
 
         }
 
-        public void Initialize(TesiraSwitcherControlBlockConfig config) {
+        private void Initialize(TesiraSwitcherControlBlockConfig config) {
 			Type = "";
             //DeviceManager.AddDevice(this);
 
@@ -60,20 +86,47 @@ namespace Tesira_DSP_EPI {
 			{
 				Type = config.Type;
 			}
-			else
-			{
-				
-			}
 
             Enabled = config.Enabled;
+
+            if (config.SwitcherInputs != null)
+            {
+                foreach (
+                    var input in
+                        from input in config.SwitcherInputs
+                        let inputPort = input.Value
+                        let inputPortKey = input.Key
+                        select input)
+                {
+                    InputPorts.Add(new RoutingInputPort(input.Value, eRoutingSignalType.Audio,
+                        eRoutingPortConnectionType.BackplaneOnly, input.Key, this));
+                }
+            }
+            if (config.SwitcherOutputs == null) return;
+            foreach (
+                var output in
+                    from output in config.SwitcherOutputs
+                    let outputPort = output.Value
+                    let outputPortKey = output.Key
+                    select output)
+            {
+                OutputPorts.Add(new RoutingOutputPort(output.Value, eRoutingSignalType.Audio,
+                    eRoutingPortConnectionType.BackplaneOnly, output.Key, this));
+            }
         }
 
+        /// <summary>
+        /// Subscribe to component
+        /// </summary>
         public override void Subscribe() {
             SelectorCustomName = string.Format("{0}~Selector{1}", InstanceTag1, Index1);
 
             SendSubscriptionCommand(SelectorCustomName, "sourceSelection", 250, 1);
         }
 
+        /// <summary>
+        /// Unsubscribe from component
+        /// </summary>
         public override void Unsubscribe()
         {
             SelectorCustomName = string.Format("{0}~Selector{1}", InstanceTag1, Index1);
@@ -81,6 +134,11 @@ namespace Tesira_DSP_EPI {
             SendUnSubscriptionCommand(SelectorCustomName, "sourceSelection", 1);
         }
 
+        /// <summary>
+        /// Parse subscription-related responses
+        /// </summary>
+        /// <param name="customName">Subscription Identifier</param>
+        /// <param name="value">Response to parse</param>
         public void ParseSubscriptionMessage(string customName, string value) {
 
             // Check for valid subscription response
@@ -91,6 +149,11 @@ namespace Tesira_DSP_EPI {
             IsSubscribed = true;
         }
 
+        /// <summary>
+        /// parse non-subscription-related responses
+        /// </summary>
+        /// <param name="attributeCode">Attribute Code Identifier</param>
+        /// <param name="message">Response to parse</param>
         public override void ParseGetMessage(string attributeCode, string message) {
             try {
                 Debug.Console(2, this, "Parsing Message - '{0}' : Message has an attributeCode of {1}", message, attributeCode);
@@ -117,7 +180,7 @@ namespace Tesira_DSP_EPI {
                 }
                 if (attributeCode == "input")
                 {
-                    Source = int.Parse(value);
+                    _source = int.Parse(value);
                 }
             }
             catch (Exception e) {
@@ -126,18 +189,30 @@ namespace Tesira_DSP_EPI {
 
         }
 
-
+        /// <summary>
+        /// Set Source to route
+        /// </summary>
+        /// <param name="data">Source to route</param>
         public void SetSource(int data) {
             ExecuteSwitch(data, 0, eRoutingSignalType.Audio);
         }
 
-        //future use
+        /// <summary>
+        /// Future use - to set Destination
+        /// </summary>
+        /// <param name="data"></param>
         public void SetDestination(int data) {
             Destination = data;
         }
 
         #region IRouting Members
 
+        /// <summary>
+        /// Execute Switch with Essentials MagicRouting
+        /// </summary>
+        /// <param name="inputSelector">Input Object Data</param>
+        /// <param name="outputSelector">Output Object Data</param>
+        /// <param name="signalType">Signal Type to Route</param>
         public void ExecuteSwitch(object inputSelector, object outputSelector, eRoutingSignalType signalType)
         {
             if (signalType != eRoutingSignalType.Audio) return;
@@ -154,6 +229,12 @@ namespace Tesira_DSP_EPI {
             }
         }
 
+        /// <summary>
+        /// Execute Numeric Switch with Essentials Magic Routing
+        /// </summary>
+        /// <param name="inputSelector">Numeric Input Selector</param>
+        /// <param name="outputSelector">Numeric Output Selector</param>
+        /// <param name="signalType">Signal Type to Route</param>
         public void ExecuteNumericSwitch(ushort inputSelector, ushort outputSelector, eRoutingSignalType signalType)
         {
             if (signalType != eRoutingSignalType.Audio) return;
@@ -172,21 +253,6 @@ namespace Tesira_DSP_EPI {
 
         #endregion
 
-        #region IRoutingInputs Members
-
-        public RoutingPortCollection<RoutingInputPort> InputPorts {
-            get { throw new NotImplementedException(); }
-        }
-
-        #endregion
-
-        #region IRoutingOutputs Members
-
-        public RoutingPortCollection<RoutingOutputPort> OutputPorts {
-            get { throw new NotImplementedException(); }
-        }
-
-        #endregion
 
         public override void LinkToApi(BasicTriList trilist, uint joinStart, string joinMapKey, EiscApiAdvanced bridge)
         {

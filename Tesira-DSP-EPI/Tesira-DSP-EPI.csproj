@@ -115,7 +115,7 @@
     <Compile Include="TesiraDspDialer.cs" />
     <Compile Include="TesiraDspDialerControlPoint.cs" />
     <Compile Include="TesiraDspFaderControl.cs" />
-    <Compile Include="TesiraDspMatrixMixer.cs" />
+    <Compile Include="TesiraDspCrosspointState.cs" />
     <Compile Include="TesiraDspMeter.cs" />
     <Compile Include="TesiraDspPropertiesConfig.cs" />
     <Compile Include="TesiraDspRoomCombiner.cs" />

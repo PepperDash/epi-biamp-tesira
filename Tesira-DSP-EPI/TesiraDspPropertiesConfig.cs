@@ -39,7 +39,7 @@ namespace Tesira_DSP_EPI {
         public Dictionary<string, TesiraMeterBlockConfig> MeterControlBlocks { get; set; }
 
         [JsonProperty("matrixMixerControlBlocks")]
-        public Dictionary<string, TesiraMatrixMixerBlockConfig> MatrixMixerControlBlocks { get; set; }
+        public Dictionary<string, TesiraCrosspointStateBlockConfig> CrosspointStateControlBlocks { get; set; }
 
         [JsonProperty("roomCombinerControlBlocks")]
         public Dictionary<string, TesiraRoomCombinerBlockConfig> RoomCombinerControlBlocks { get; set; }
@@ -87,72 +87,95 @@ namespace Tesira_DSP_EPI {
         public int Permissions { get; set; }
 
         [JsonProperty("bridgeIndex")]
-        public uint BridgeIndex { get; set; }
+        public uint? BridgeIndex { get; set; }
     }
 
 
-    public class TesiraDialerControlBlockConfig {
+    public class TesiraDialerControlBlockConfig
+    {
         [JsonProperty("enabled")]
         public bool Enabled { get; set; }
+
         [JsonProperty("isVoip")]
         public bool IsVoip { get; set; }
+
         [JsonProperty("label")]
         public string Label { get; set; }
+
         [JsonProperty("displayNumber")]
         public string DisplayNumber { get; set; }
 
         [JsonProperty("dialerInstanceTag")]
         public string DialerInstanceTag { get; set; }
+
         [JsonProperty("controlStatusInstanceTag")]
         public string ControlStatusInstanceTag { get; set; }
+
         [JsonProperty("index")]
         public int Index { get; set; }
+
         [JsonProperty("callAppearance")]
         public int CallAppearance { get; set; }
+
         [JsonProperty("clearOnHangup")]
         public bool ClearOnHangup { get; set; }
+
         [JsonProperty("appendDtmf")]
         public bool AppendDtmf { get; set; }
+
         [JsonProperty("bridgeIndex")]
-        public uint BridgeIndex { get; set; }
-
-
+        public uint? BridgeIndex { get; set; }
     }
 
-    public class TesiraSwitcherControlBlockConfig {
+    public class TesiraSwitcherControlBlockConfig
+    {
         [JsonProperty("enabled")]
         public bool Enabled { get; set; }
+
         [JsonProperty("label")]
         public string Label { get; set; }
+
         [JsonProperty("type")]
-		public string Type { get; set; }
+        public string Type { get; set; }
+
         [JsonProperty("switcherInstanceTag")]
         public string SwitcherInstanceTag { get; set; }
+
         [JsonProperty("index1")]
         public int Index1 { get; set; }
-        [JsonProperty("bridgeIndex")]
-        public uint BridgeIndex { get; set; }
 
+        [JsonProperty("bridgeIndex")]
+        public uint? BridgeIndex { get; set; }
+
+        [JsonProperty("switcherInputs")]
+        public Dictionary<uint, string> SwitcherInputs { get; set; }
+
+        [JsonProperty("switcherOutputs")]
+        public Dictionary<uint, string> SwitcherOutputs { get; set; } 
     }
 
-    public class TesiraStateControlBlockConfig {
+    public class TesiraStateControlBlockConfig
+    {
         [JsonProperty("enabled")]
         public bool Enabled { get; set; }
+
         [JsonProperty("label")]
         public string Label { get; set; }
 
         [JsonProperty("stateInstanceTag")]
         public string StateInstanceTag { get; set; }
+
         [JsonProperty("index")]
         public int Index { get; set; }
-        [JsonProperty("bridgeIndex")]
-        public uint BridgeIndex { get; set; }
 
+        [JsonProperty("bridgeIndex")]
+        public uint? BridgeIndex { get; set; }
     }
 
     public class TesiraDspPresets
     {
         private string _label;
+
         [JsonProperty("label")]
         public string Label
         {
@@ -163,10 +186,13 @@ namespace Tesira_DSP_EPI {
                 LabelFeedback.FireUpdate();
             }
         }
+
         [JsonProperty("preset")]
         public string Preset { get; set; }
+
         [JsonProperty("number")]
         public int Number { get; set; }
+
         public StringFeedback LabelFeedback;
 
         public TesiraDspPresets()
@@ -179,78 +205,94 @@ namespace Tesira_DSP_EPI {
     {
         [JsonProperty("enabled")]
         public bool Enabled { get; set; }
+
         [JsonProperty("label")]
         public string Label { get; set; }
 
         [JsonProperty("meterInstanceTag")]
         public string MeterInstanceTag { get; set; }
+
         [JsonProperty("index")]
         public int Index { get; set; }
 
         [JsonProperty("meterData")]
         public MeterMetadata MeterData { get; set; }
-        [JsonProperty("bridgeIndex")]
-        public uint BridgeIndex { get; set; }
 
+        [JsonProperty("bridgeIndex")]
+        public uint? BridgeIndex { get; set; }
     }
-        
+
 
 
     public class MeterMetadata
     {
         [JsonProperty("meterMinimum")]
         public double MeterMimimum { get; set; }
+
         [JsonProperty("meterMaximum")]
         public double MeterMaxiumum { get; set; }
+
         [JsonProperty("defaultPollTime")]
         public int DefaultPollTime { get; set; }
     }
 
-    public class TesiraMatrixMixerBlockConfig
+    public class TesiraCrosspointStateBlockConfig
     {
         [JsonProperty("enabled")]
         public bool Enabled { get; set; }
+
         [JsonProperty("label")]
         public string Label { get; set; }
+
         [JsonProperty("matrixInstanceTag")]
         public string MatrixInstanceTag { get; set; }
+
         [JsonProperty("index1")]
         public int Index1 { get; set; }
+
         [JsonProperty("index2")]
         public int Index2 { get; set; }
-        [JsonProperty("bridgeIndex")]
-        public uint BridgeIndex { get; set; }
 
+        [JsonProperty("bridgeIndex")]
+        public uint? BridgeIndex { get; set; }
     }
 
     public class TesiraRoomCombinerBlockConfig
     {
         [JsonProperty("enabled")]
         public bool Enabled { get; set; }
+
         [JsonProperty("label")]
         public string Label { get; set; }
 
         [JsonProperty("roomCombinerInstanceTag")]
         public string RoomCombinerInstanceTag { get; set; }
+
         [JsonProperty("roomIndex")]
         public int RoomIndex { get; set; }
+
         [JsonProperty("preferredRoom")]
         public bool PreferredRoom { get; set; }
 
         [JsonProperty("hasMute")]
         public bool HasMute { get; set; }
+
         [JsonProperty("hasLevel")]
         public bool HasLevel { get; set; }
+
         [JsonProperty("useAbsoluteValue")]
         public bool UseAbsoluteValue { get; set; }
+
         [JsonProperty("umuteOnVolChange")]
         public bool UnmuteOnVolChange { get; set; }
+
         [JsonProperty("incerementAmount")]
         public string IncrementAmount { get; set; }
+
         [JsonProperty("permissions")]
         public int Permissions { get; set; }
-        [JsonProperty("bridgeIndex")]
-        public uint BridgeIndex { get; set; }
 
+        [JsonProperty("bridgeIndex")]
+        public uint? BridgeIndex { get; set; }
     }
 }

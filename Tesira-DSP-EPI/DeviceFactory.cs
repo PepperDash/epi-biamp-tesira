@@ -9,7 +9,7 @@ namespace Tesira_DSP_EPI
     {
         public TesiraFactory()
         {
-            MinimumEssentialsFrameworkVersion = "1.5.6";
+            MinimumEssentialsFrameworkVersion = "1.5.8";
 
             TypeNames = new List<string> { "tesira", "tesiraforte", "tesiraserver", "tesira-dsp", "tesiradsp" };
         }

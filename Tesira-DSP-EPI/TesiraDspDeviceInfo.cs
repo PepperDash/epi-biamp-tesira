@@ -10,12 +10,21 @@ namespace Tesira_DSP_EPI
 {
     public class TesiraDspDeviceInfo : EssentialsBridgeableDevice
     {
+        /// <summary>
+        /// Feedback Collection for Component
+        /// </summary>
         public FeedbackCollection<Feedback> Feedbacks;
 
         readonly TesiraDsp _parent;
 
         public StringFeedback NameFeedback { get; set; }
 
+        /// <summary>
+        /// Constructor for Device Info Object
+        /// </summary>
+        /// <param name="key">Unique Key</param>
+        /// <param name="name">Friendly Name</param>
+        /// <param name="parent">Parent Device</param>
         TesiraDspDeviceInfo(string key, string name, TesiraDsp parent)
             : base(key, name)
         {
