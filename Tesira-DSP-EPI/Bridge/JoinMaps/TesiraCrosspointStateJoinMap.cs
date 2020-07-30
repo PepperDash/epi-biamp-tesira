@@ -5,7 +5,7 @@ namespace Tesira_DSP_EPI.Bridge.JoinMaps
     /// <summary>
     /// Matrix Mixer Joinmap for Advanced Bridge - Meant for holistic DSP Object
     /// </summary>
-    public class TesiraMatrixMixerJoinMapAdvanced : JoinMapBaseAdvanced
+    public class TesiraCrosspointStateJoinMapAdvanced : JoinMapBaseAdvanced
     {
         [JoinName("Toggle")]
         public JoinDataComplete Toggle = new JoinDataComplete(new JoinData() { JoinNumber = 2001, JoinSpan = 1 },
@@ -24,15 +24,15 @@ namespace Tesira_DSP_EPI.Bridge.JoinMaps
             new JoinMetadata() { Description = "State Label", JoinCapabilities = eJoinCapabilities.ToSIMPL, JoinType = eJoinType.Serial });
 
 
-        public TesiraMatrixMixerJoinMapAdvanced(uint joinStart)
-            : base(joinStart, typeof(TesiraMatrixMixerJoinMapAdvanced)) { }
+        public TesiraCrosspointStateJoinMapAdvanced(uint joinStart)
+            : base(joinStart, typeof(TesiraCrosspointStateJoinMapAdvanced)) { }
 
     }
 
     /// <summary>
     /// Matrix Mixer Joinmap for Advanced Bridge - Meant for bridging the matrix mixer as a standalone device
     /// </summary>
-    public class TesiraMatrixMixerJoinMapAdvancedStandalone : JoinMapBaseAdvanced
+    public class TesiraCrosspointStateJoinMapAdvancedStandalone : JoinMapBaseAdvanced
     {
         [JoinName("On")]
         public JoinDataComplete On = new JoinDataComplete(new JoinData() { JoinNumber = 1, JoinSpan = 1 },
@@ -51,8 +51,8 @@ namespace Tesira_DSP_EPI.Bridge.JoinMaps
             new JoinMetadata() { Description = "State Label", JoinCapabilities = eJoinCapabilities.ToSIMPL, JoinType = eJoinType.Serial });
 
 
-        public TesiraMatrixMixerJoinMapAdvancedStandalone(uint joinStart)
-            : base(joinStart, typeof(TesiraMatrixMixerJoinMapAdvancedStandalone)) { }
+        public TesiraCrosspointStateJoinMapAdvancedStandalone(uint joinStart)
+            : base(joinStart, typeof(TesiraCrosspointStateJoinMapAdvancedStandalone)) { }
 
     }
 

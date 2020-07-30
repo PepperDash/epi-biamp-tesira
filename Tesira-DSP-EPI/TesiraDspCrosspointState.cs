@@ -122,12 +122,12 @@ namespace Tesira_DSP_EPI
 
         public override void LinkToApi(BasicTriList trilist, uint joinStart, string joinMapKey, EiscApiAdvanced bridge)
         {
-            var joinMap = new TesiraMatrixMixerJoinMapAdvancedStandalone(joinStart);
+            var joinMap = new TesiraCrosspointStateJoinMapAdvancedStandalone(joinStart);
 
             var joinMapSerialized = JoinMapHelper.GetSerializedJoinMapForDevice(joinMapKey);
 
             if (!string.IsNullOrEmpty(joinMapSerialized))
-                joinMap = JsonConvert.DeserializeObject<TesiraMatrixMixerJoinMapAdvancedStandalone>(joinMapSerialized);
+                joinMap = JsonConvert.DeserializeObject<TesiraCrosspointStateJoinMapAdvancedStandalone>(joinMapSerialized);
 
             if (bridge != null)
             {

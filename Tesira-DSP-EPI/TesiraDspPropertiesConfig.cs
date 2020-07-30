@@ -190,9 +190,6 @@ namespace Tesira_DSP_EPI {
         [JsonProperty("preset")]
         public string Preset { get; set; }
 
-        [JsonProperty("number")]
-        public int Number { get; set; }
-
         public StringFeedback LabelFeedback;
 
         public TesiraDspPresets()

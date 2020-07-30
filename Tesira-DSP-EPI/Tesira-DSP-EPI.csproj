@@ -101,7 +101,7 @@
   <ItemGroup>
     <Compile Include="Bridge\JoinMaps\TesiraDeviceJoinMap.cs" />
     <Compile Include="Bridge\JoinMaps\TesiraDialerJoinMap.cs" />
-    <Compile Include="Bridge\JoinMaps\TesiraMatrixMixerJoinMap.cs" />
+    <Compile Include="Bridge\JoinMaps\TesiraCrosspointStateJoinMap.cs" />
     <Compile Include="Bridge\JoinMaps\TesiraMeterJoinMap.cs" />
     <Compile Include="Bridge\JoinMaps\TesiraRoomCombinerJoinMap.cs" />
     <Compile Include="DeviceFactory.cs" />

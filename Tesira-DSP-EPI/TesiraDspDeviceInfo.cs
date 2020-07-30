@@ -1,4 +1,5 @@
-﻿using Newtonsoft.Json;
+﻿using System.Collections.Generic;
+using Newtonsoft.Json;
 using PepperDash.Core;
 using PepperDash.Essentials.Core;
 using Crestron.SimplSharpPro.DeviceSupport;
@@ -15,6 +16,8 @@ namespace Tesira_DSP_EPI
         /// </summary>
         public FeedbackCollection<Feedback> Feedbacks;
 
+        private readonly Dictionary<uint, TesiraDspPresets> Presets; 
+
         readonly TesiraDsp _parent;
 
         public StringFeedback NameFeedback { get; set; }
@@ -25,9 +28,10 @@ namespace Tesira_DSP_EPI
         /// <param name="key">Unique Key</param>
         /// <param name="name">Friendly Name</param>
         /// <param name="parent">Parent Device</param>
-        TesiraDspDeviceInfo(string key, string name, TesiraDsp parent)
+        public TesiraDspDeviceInfo(string key, string name, TesiraDsp parent, Dictionary<uint, TesiraDspPresets> presets)
             : base(key, name)
         {
+            Presets = presets;
             _parent = parent;
 
             NameFeedback = new StringFeedback(() => _parent.Name);
@@ -45,14 +49,35 @@ namespace Tesira_DSP_EPI
             if (!string.IsNullOrEmpty(joinMapSerialized))
                 joinMap = JsonConvert.DeserializeObject<TesiraDspDeviceJoinMapAdvancedStandalone>(joinMapSerialized);
 
+            var presetJoinMap = new TesiraPresetJoinMapAdvancedStandalone(joinStart);
+            var presetJoinMapSerialized = JoinMapHelper.GetSerializedJoinMapForDevice(joinMapKey);
+
+            if (!string.IsNullOrEmpty(presetJoinMapSerialized))
+            {
+                presetJoinMap =
+                    JsonConvert.DeserializeObject<TesiraPresetJoinMapAdvancedStandalone>(presetJoinMapSerialized);
+            }
+
             if (bridge != null)
             {
                 bridge.AddJoinMap(Key, joinMap);
+                bridge.AddJoinMap(Key, presetJoinMap);
             }
 
             Debug.Console(1, this, "Linking to Trilist '{0}'", trilist.ID.ToString("X"));
 
             //var comm = DspDevice as IBasicCommunication;
+
+            trilist.SetStringSigAction(presetJoinMap.PresetName.JoinNumber, _parent.RunPreset);
+
+            foreach (var preset in Presets)
+            {
+                var p = preset;
+                var runPresetIndex = preset.Key;
+                var presetIndex = runPresetIndex - 1;
+                trilist.StringInput[presetJoinMap.PresetNameFeedback.JoinNumber - presetIndex].StringValue = p.Value.Label;
+                trilist.SetSigTrueAction(presetJoinMap.PresetSelection.JoinNumber + presetIndex, () => _parent.RunPresetNumber((ushort)runPresetIndex));
+            }
 
 
             _parent.CommunicationMonitor.IsOnlineFeedback.LinkInputSig(trilist.BooleanInput[joinMap.IsOnline.JoinNumber]);

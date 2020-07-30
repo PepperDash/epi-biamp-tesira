@@ -38,6 +38,20 @@
                             "autoReconnectIntervalMs": 5000
                         }
                     },
+                    "presets" : {
+                        "1" : {
+                            "label" : "System On",
+                            "preset" : "systemOn"
+                        },
+                        "2" : {
+                            "label" : "System Off",
+                            "preset" : "systemOff"
+                        },
+                        "3" : {
+                            "label" : "System Default",
+                            "preset" : "default"
+                        }
+                    },
                     "faderControlBlocks": {
                         "Mic": {
                             "enabled": true,
@@ -88,7 +102,7 @@
                 }
             },
             {
-                "key": "dspBridge",
+                "key": "dspBridge-1",
                 "uid": 5,
                 "name": "Essentials DSP Bridge 1",
                 "group": "api",
@@ -114,8 +128,35 @@
                         {
                             "deviceKey": "dsp-1--Source",
                             "joinStart": 41
+                        },
+                        {
+                            "deviceKey": "dsp-1--DeviceInfo",
+                            "joinStart" : 101
                         }
 
+                    ]
+                }
+            },
+            {
+                "key": "dspBridge-2",
+                "uid": 5,
+                "name": "Essentials DSP Bridge 2",
+                "group": "api",
+                "type": "eiscApiAdvanced",
+                "properties": {
+                    "control": {
+                        "tcpSshProperties": {
+                            "address": "127.0.0.2",
+                            "port": 0
+                        },
+                        "ipid": "B1",
+                        "method": "ipidTcp"
+                    },
+                    "devices": [
+                        {
+                            "deviceKey": "dsp-1",
+                            "joinStart": 1
+                        }
                     ]
                 }
             }

@@ -152,14 +152,14 @@ namespace Tesira_DSP_EPI
         {
             Debug.Console(2, "Creating DSP Objects");
 
-
-
             var props = JsonConvert.DeserializeObject<TesiraDspPropertiesConfig>(_dc.Properties.ToString());
 
             if (props == null) return;
 
             Debug.Console(2, this, "Props Exists");
             Debug.Console(2, this, "Here's the props string\n {0}", _dc.Properties.ToString());
+
+
 
 
             Faders.Clear();
@@ -304,6 +304,9 @@ namespace Tesira_DSP_EPI
                     ControlPointList.Add(RoomCombiners[key]);
                 }
             }
+
+            //Keep me at the end of this method!
+            DeviceManager.AddDevice(new TesiraDspDeviceInfo(String.Format("{0}--DeviceInfo", Key), String.Format("{0}--DeviceInfo", Name, Presets), this, Presets));
         }
 
 
@@ -610,10 +613,14 @@ namespace Tesira_DSP_EPI
 
 		public void RunPresetNumber(ushort n)
 		{
+            TesiraDspPresets presetValue;
+
+		    Presets.TryGetValue(n, out presetValue);
+
 			Debug.Console(2, this, "Attempting to run preset {0}", n);
-			if (n < Presets.Count() && n > 0)
+			if (presetValue != null)
 			{
-				RunPreset(Presets[n].Preset);
+				RunPreset(presetValue.Preset);
 			}
 		}
 
@@ -759,20 +766,20 @@ namespace Tesira_DSP_EPI
             var switcherJoinMap = new TesiraSwitcherJoinMapAdvanced(joinStart);
             var presetJoinMap = new TesiraPresetJoinMapAdvanced(joinStart);
             var meterJoinMap = new TesiraMeterJoinMapAdvanced(joinStart);
-            var matrixMixerJoinMap = new TesiraMatrixMixerJoinMapAdvanced(joinStart);
+            var crosspointStateJoinMap = new TesiraCrosspointStateJoinMapAdvanced(joinStart);
             var roomCombinerJoinMap = new TesiraRoomCombinerJoinMapAdvanced(joinStart);
 
             if (bridge != null)
             {
-                bridge.AddJoinMap(Key, deviceJoinMap);
-                bridge.AddJoinMap(Key, dialerJoinMap);
-                bridge.AddJoinMap(Key, faderJoinMap);
-                bridge.AddJoinMap(Key, stateJoinMap);
-                bridge.AddJoinMap(Key, switcherJoinMap);
-                bridge.AddJoinMap(Key, presetJoinMap);
-                bridge.AddJoinMap(Key, meterJoinMap);
-                bridge.AddJoinMap(Key, matrixMixerJoinMap);
-                bridge.AddJoinMap(Key, roomCombinerJoinMap);
+                bridge.AddJoinMap(String.Format("{0}--DeviceInfoJoinMap", Key), deviceJoinMap);
+                bridge.AddJoinMap(String.Format("{0}--DialerJoinMap", Key), dialerJoinMap);
+                bridge.AddJoinMap(String.Format("{0}--FaderJoinMap", Key), faderJoinMap);
+                bridge.AddJoinMap(String.Format("{0}--StateJoinMap", Key), stateJoinMap);
+                bridge.AddJoinMap(String.Format("{0}--SwitcherJoinMap", Key), switcherJoinMap);
+                bridge.AddJoinMap(String.Format("{0}--PresetsJoinMap", Key), presetJoinMap);
+                bridge.AddJoinMap(String.Format("{0}--MeterJoinMap", Key), meterJoinMap);
+                bridge.AddJoinMap(String.Format("{0}--CrosspointStateJoinMap", Key), crosspointStateJoinMap);
+                bridge.AddJoinMap(String.Format("{0}--RoomCombinerJoinMap", Key), roomCombinerJoinMap);
             }
 
             Debug.Console(1, this, "Linking to Trilist '{0}'", trilist.ID.ToString("X"));
@@ -884,14 +891,16 @@ namespace Tesira_DSP_EPI
 
 
             //Presets 
-            uint presetIndex = 0;
+
+            trilist.SetStringSigAction(presetJoinMap.PresetName.JoinNumber, RunPreset);
+
             foreach (var preset in Presets)
             {
                 var p = preset;
-                var temp = (ushort)presetIndex;
-                trilist.StringInput[presetJoinMap.PresetNameFeedback.JoinNumber + temp + 1].StringValue = p.Value.Label;
-                trilist.SetSigTrueAction(presetJoinMap.PresetSelection.JoinNumber + temp + 1, () => RunPresetNumber(temp));
-                presetIndex++;
+                var runPresetIndex = preset.Key;
+                var presetIndex = runPresetIndex - 1;
+                trilist.StringInput[presetJoinMap.PresetNameFeedback.JoinNumber - presetIndex].StringValue = p.Value.Label;
+                trilist.SetSigTrueAction(presetJoinMap.PresetSelection.JoinNumber + presetIndex, () => RunPresetNumber((ushort)runPresetIndex));
             }
 
             // VoIP Dialer
@@ -988,13 +997,13 @@ namespace Tesira_DSP_EPI
 
                 var x = y > 1 ? ((y - 1) * 3) : 0;
 
-                Debug.Console(2, this, "Adding Crosspoint State ControlPoint {0} | JoinStart:{1}", xpointState.Key, matrixMixerJoinMap.Label.JoinNumber);
-                xpointState.CrosspointStateFeedback.LinkInputSig(trilist.BooleanInput[matrixMixerJoinMap.Toggle.JoinNumber]);
-                xpointState.CrosspointStateFeedback.LinkInputSig(trilist.BooleanInput[matrixMixerJoinMap.On.JoinNumber]);
+                Debug.Console(2, this, "Adding Crosspoint State ControlPoint {0} | JoinStart:{1}", xpointState.Key, crosspointStateJoinMap.Label.JoinNumber);
+                xpointState.CrosspointStateFeedback.LinkInputSig(trilist.BooleanInput[crosspointStateJoinMap.Toggle.JoinNumber]);
+                xpointState.CrosspointStateFeedback.LinkInputSig(trilist.BooleanInput[crosspointStateJoinMap.On.JoinNumber]);
 
-                trilist.SetSigTrueAction(matrixMixerJoinMap.Toggle.JoinNumber, xpointState.StateToggle);
-                trilist.SetSigTrueAction(matrixMixerJoinMap.On.JoinNumber, xpointState.StateOn);
-                trilist.SetSigTrueAction(matrixMixerJoinMap.Off.JoinNumber, xpointState.StateOff);
+                trilist.SetSigTrueAction(crosspointStateJoinMap.Toggle.JoinNumber, xpointState.StateToggle);
+                trilist.SetSigTrueAction(crosspointStateJoinMap.On.JoinNumber, xpointState.StateOn);
+                trilist.SetSigTrueAction(crosspointStateJoinMap.Off.JoinNumber, xpointState.StateOff);
 
             }
 
