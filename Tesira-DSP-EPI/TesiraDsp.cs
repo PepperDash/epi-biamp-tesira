@@ -119,6 +119,7 @@ namespace Tesira_DSP_EPI
             //Initialize Dictionaries
             Feedbacks = new FeedbackCollection<Feedback>();
             Faders = new Dictionary<string, TesiraDspFaderControl>();
+            Presets = new Dictionary<uint, TesiraDspPresets>();
             Dialers = new Dictionary<string, TesiraDspDialer>();
             Switchers = new Dictionary<string, TesiraDspSwitcher>();
             States = new Dictionary<string, TesiraDspStateControl>();
