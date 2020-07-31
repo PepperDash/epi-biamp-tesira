@@ -38,7 +38,7 @@ namespace Tesira_DSP_EPI {
         [JsonProperty("meterControlBlocks")]
         public Dictionary<string, TesiraMeterBlockConfig> MeterControlBlocks { get; set; }
 
-        [JsonProperty("matrixMixerControlBlocks")]
+        [JsonProperty("crosspointStateControlBlocks")]
         public Dictionary<string, TesiraCrosspointStateBlockConfig> CrosspointStateControlBlocks { get; set; }
 
         [JsonProperty("roomCombinerControlBlocks")]
@@ -148,10 +148,10 @@ namespace Tesira_DSP_EPI {
         public uint? BridgeIndex { get; set; }
 
         [JsonProperty("switcherInputs")]
-        public Dictionary<uint, string> SwitcherInputs { get; set; }
+        public Dictionary<uint, RoutingPort> SwitcherInputs { get; set; }
 
         [JsonProperty("switcherOutputs")]
-        public Dictionary<uint, string> SwitcherOutputs { get; set; } 
+        public Dictionary<uint, RoutingPort> SwitcherOutputs { get; set; } 
     }
 
     public class TesiraStateControlBlockConfig
@@ -291,5 +291,11 @@ namespace Tesira_DSP_EPI {
 
         [JsonProperty("bridgeIndex")]
         public uint? BridgeIndex { get; set; }
+    }
+
+    public class RoutingPort
+    {
+        [JsonProperty("label")]
+        public string Label { get; set; }
     }
 }

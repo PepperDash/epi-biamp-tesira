@@ -98,7 +98,7 @@ namespace Tesira_DSP_EPI {
                         let inputPortKey = input.Key
                         select input)
                 {
-                    InputPorts.Add(new RoutingInputPort(input.Value, eRoutingSignalType.Audio,
+                    InputPorts.Add(new RoutingInputPort(input.Value.Label, eRoutingSignalType.Audio,
                         eRoutingPortConnectionType.BackplaneOnly, input.Key, this));
                 }
             }
@@ -110,7 +110,7 @@ namespace Tesira_DSP_EPI {
                     let outputPortKey = output.Key
                     select output)
             {
-                OutputPorts.Add(new RoutingOutputPort(output.Value, eRoutingSignalType.Audio,
+                OutputPorts.Add(new RoutingOutputPort(output.Value.Label, eRoutingSignalType.Audio,
                     eRoutingPortConnectionType.BackplaneOnly, output.Key, this));
             }
         }

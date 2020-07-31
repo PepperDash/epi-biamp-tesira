@@ -57,7 +57,7 @@ namespace Tesira_DSP_EPI.Bridge.JoinMaps
     public class TesiraStateJoinMapAdvancedStandalone : JoinMapBaseAdvanced
     {
         [JoinName("Toggle")] public JoinDataComplete Toggle =
-            new JoinDataComplete(new JoinData() {JoinNumber = 1300, JoinSpan = 1},
+            new JoinDataComplete(new JoinData() {JoinNumber = 1, JoinSpan = 1},
                 new JoinMetadata()
                 {
                     Description = "State Toggle and Feedback",
@@ -66,7 +66,7 @@ namespace Tesira_DSP_EPI.Bridge.JoinMaps
                 });
 
         [JoinName("On")] public JoinDataComplete On =
-            new JoinDataComplete(new JoinData() {JoinNumber = 1450, JoinSpan = 1},
+            new JoinDataComplete(new JoinData() {JoinNumber = 2, JoinSpan = 1},
                 new JoinMetadata()
                 {
                     Description = "State On and Feedback",
@@ -75,7 +75,7 @@ namespace Tesira_DSP_EPI.Bridge.JoinMaps
                 });
 
         [JoinName("Off")] public JoinDataComplete Off =
-            new JoinDataComplete(new JoinData() {JoinNumber = 1600, JoinSpan = 1},
+            new JoinDataComplete(new JoinData() {JoinNumber = 3, JoinSpan = 1},
                 new JoinMetadata()
                 {
                     Description = "State On and Feedback",
@@ -84,7 +84,7 @@ namespace Tesira_DSP_EPI.Bridge.JoinMaps
                 });
 
         [JoinName("Label")] public JoinDataComplete Label =
-            new JoinDataComplete(new JoinData() {JoinNumber = 1300, JoinSpan = 1},
+            new JoinDataComplete(new JoinData() {JoinNumber = 1, JoinSpan = 1},
                 new JoinMetadata()
                 {
                     Description = "State Label",
