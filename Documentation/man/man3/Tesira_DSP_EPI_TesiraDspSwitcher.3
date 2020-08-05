@@ -1,0 +1,206 @@
+.TH "Tesira_DSP_EPI.TesiraDspSwitcher" 3 "Wed Aug 5 2020" "Version 2.0.0.x" "Biamp Tesira Essentials Plugin" \" -*- nroff -*-
+.ad l
+.nh
+.SH NAME
+Tesira_DSP_EPI.TesiraDspSwitcher
+.SH SYNOPSIS
+.br
+.PP
+.PP
+Inherits \fBTesira_DSP_EPI\&.TesiraDspControlPoint\fP, and IRoutingWithFeedback\&.
+.SS "Public Member Functions"
+
+.in +1c
+.ti -1c
+.RI "\fBTesiraDspSwitcher\fP (string key, \fBTesiraSwitcherControlBlockConfig\fP config, \fBTesiraDsp\fP parent)"
+.br
+.RI "Constructor for Tesira Dsp Switcher Component "
+.ti -1c
+.RI "override void \fBSubscribe\fP ()"
+.br
+.RI "Subscribe to component "
+.ti -1c
+.RI "override void \fBUnsubscribe\fP ()"
+.br
+.RI "Unsubscribe from component "
+.ti -1c
+.RI "void \fBParseSubscriptionMessage\fP (string customName, string value)"
+.br
+.RI "Parse subscription-related responses "
+.ti -1c
+.RI "override void \fBParseGetMessage\fP (string attributeCode, string message)"
+.br
+.RI "parse non-subscription-related responses "
+.ti -1c
+.RI "void \fBSetSource\fP (int data)"
+.br
+.RI "Set Source to route "
+.ti -1c
+.RI "void \fBSetDestination\fP (int data)"
+.br
+.RI "Future use - to set Destination "
+.ti -1c
+.RI "void \fBExecuteSwitch\fP (object inputSelector, object outputSelector, eRoutingSignalType signalType)"
+.br
+.RI "Execute Switch with Essentials MagicRouting "
+.ti -1c
+.RI "void \fBExecuteNumericSwitch\fP (ushort inputSelector, ushort outputSelector, eRoutingSignalType signalType)"
+.br
+.RI "Execute Numeric Switch with Essentials Magic Routing "
+.ti -1c
+.RI "override void \fBLinkToApi\fP (BasicTriList trilist, uint joinStart, string joinMapKey, EiscApiAdvanced bridge)"
+.br
+.in -1c
+.SS "Properties"
+
+.in +1c
+.ti -1c
+.RI "RoutingPortCollection< RoutingInputPort > \fBInputPorts\fP\fC [get]\fP"
+.br
+.RI "Collection of IRouting Input Ports "
+.ti -1c
+.RI "RoutingPortCollection< RoutingOutputPort > \fBOutputPorts\fP\fC [get]\fP"
+.br
+.RI "Collection of IRouting Output Ports "
+.ti -1c
+.RI "string \fBSelectorCustomName\fP\fC [get]\fP"
+.br
+.RI "Subscription Identifier for Switcher "
+.ti -1c
+.RI "IntFeedback \fBSourceIndexFeedback\fP\fC [get]\fP"
+.br
+.in -1c
+.SS "Additional Inherited Members"
+.SH "Constructor & Destructor Documentation"
+.PP 
+.SS "Tesira_DSP_EPI\&.TesiraDspSwitcher\&.TesiraDspSwitcher (string key, \fBTesiraSwitcherControlBlockConfig\fP config, \fBTesiraDsp\fP parent)"
+
+.PP
+Constructor for Tesira Dsp Switcher Component 
+.PP
+\fBParameters\fP
+.RS 4
+\fIkey\fP Unique Key
+.br
+\fIconfig\fP Sqitcher Config Object
+.br
+\fIparent\fP Parent Object
+.RE
+.PP
+
+.SH "Member Function Documentation"
+.PP 
+.SS "void Tesira_DSP_EPI\&.TesiraDspSwitcher\&.ExecuteNumericSwitch (ushort inputSelector, ushort outputSelector, eRoutingSignalType signalType)"
+
+.PP
+Execute Numeric Switch with Essentials Magic Routing 
+.PP
+\fBParameters\fP
+.RS 4
+\fIinputSelector\fP Numeric Input Selector
+.br
+\fIoutputSelector\fP Numeric Output Selector
+.br
+\fIsignalType\fP Signal Type to Route
+.RE
+.PP
+
+.SS "void Tesira_DSP_EPI\&.TesiraDspSwitcher\&.ExecuteSwitch (object inputSelector, object outputSelector, eRoutingSignalType signalType)"
+
+.PP
+Execute Switch with Essentials MagicRouting 
+.PP
+\fBParameters\fP
+.RS 4
+\fIinputSelector\fP Input Object Data
+.br
+\fIoutputSelector\fP Output Object Data
+.br
+\fIsignalType\fP Signal Type to Route
+.RE
+.PP
+
+.SS "override void Tesira_DSP_EPI\&.TesiraDspSwitcher\&.ParseGetMessage (string attributeCode, string message)\fC [virtual]\fP"
+
+.PP
+parse non-subscription-related responses 
+.PP
+\fBParameters\fP
+.RS 4
+\fIattributeCode\fP Attribute Code Identifier
+.br
+\fImessage\fP Response to parse
+.RE
+.PP
+
+.PP
+Reimplemented from \fBTesira_DSP_EPI\&.TesiraDspControlPoint\fP\&.
+.SS "void Tesira_DSP_EPI\&.TesiraDspSwitcher\&.ParseSubscriptionMessage (string customName, string value)"
+
+.PP
+Parse subscription-related responses 
+.PP
+\fBParameters\fP
+.RS 4
+\fIcustomName\fP Subscription Identifier
+.br
+\fIvalue\fP Response to parse
+.RE
+.PP
+
+.SS "void Tesira_DSP_EPI\&.TesiraDspSwitcher\&.SetDestination (int data)"
+
+.PP
+Future use - to set Destination 
+.PP
+\fBParameters\fP
+.RS 4
+\fIdata\fP 
+.RE
+.PP
+
+.SS "void Tesira_DSP_EPI\&.TesiraDspSwitcher\&.SetSource (int data)"
+
+.PP
+Set Source to route 
+.PP
+\fBParameters\fP
+.RS 4
+\fIdata\fP Source to route
+.RE
+.PP
+
+.SS "override void Tesira_DSP_EPI\&.TesiraDspSwitcher\&.Subscribe ()\fC [virtual]\fP"
+
+.PP
+Subscribe to component 
+.PP
+Reimplemented from \fBTesira_DSP_EPI\&.TesiraDspControlPoint\fP\&.
+.SS "override void Tesira_DSP_EPI\&.TesiraDspSwitcher\&.Unsubscribe ()\fC [virtual]\fP"
+
+.PP
+Unsubscribe from component 
+.PP
+Reimplemented from \fBTesira_DSP_EPI\&.TesiraDspControlPoint\fP\&.
+.SH "Property Documentation"
+.PP 
+.SS "RoutingPortCollection<RoutingInputPort> Tesira_DSP_EPI\&.TesiraDspSwitcher\&.InputPorts\fC [get]\fP"
+
+.PP
+Collection of IRouting Input Ports 
+.SS "RoutingPortCollection<RoutingOutputPort> Tesira_DSP_EPI\&.TesiraDspSwitcher\&.OutputPorts\fC [get]\fP"
+
+.PP
+Collection of IRouting Output Ports 
+.SS "string Tesira_DSP_EPI\&.TesiraDspSwitcher\&.SelectorCustomName\fC [get]\fP"
+
+.PP
+Subscription Identifier for Switcher 
+.SS "IntFeedback Tesira_DSP_EPI\&.TesiraDspSwitcher\&.SourceIndexFeedback\fC [get]\fP"
+
+.PP
+
+
+.SH "Author"
+.PP 
+Generated automatically by Doxygen for Biamp Tesira Essentials Plugin from the source code\&.

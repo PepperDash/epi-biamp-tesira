@@ -1,0 +1,525 @@
+.TH "Tesira_DSP_EPI.TesiraDspDialer" 3 "Wed Aug 5 2020" "Version 2.0.0.x" "Biamp Tesira Essentials Plugin" \" -*- nroff -*-
+.ad l
+.nh
+.SH NAME
+Tesira_DSP_EPI.TesiraDspDialer
+.SH SYNOPSIS
+.br
+.PP
+.PP
+Inherits \fBTesira_DSP_EPI\&.TesiraDspDialerControlPoint\fP, and IBridgeAdvanced\&.
+.SS "Public Types"
+
+.in +1c
+.ti -1c
+.RI "enum \fBeCallStatus\fP { \fBINIT\fP = 1, \fBFAULT\fP, \fBIDLE\fP, \fBDIAL_TONE\fP, \fBSILENT\fP, \fBDIALING\fP, \fBRINGBACK\fP, \fBRINGING\fP, \fBANSWERING\fP, \fBBUSY\fP, \fBREJECT\fP, \fBINVALID_NUMBER\fP, \fBACTIVE\fP, \fBACTIVE_MUTED\fP, \fBON_HOLD\fP, \fBWAITING_RING\fP, \fBCONF_ACTIVE\fP, \fBCONF_HOLD\fP, \fBXFER_INIT\fP, \fBXFER_Silent\fP, \fBXFER_ReqDialing\fP, \fBXFER_Process\fP, \fBXFER_ReplacesProcess\fP, \fBXFER_Active\fP, \fBXFER_RingBack\fP, \fBXFER_OnHold\fP, \fBXFER_Decision\fP, \fBXFER_InitError\fP, \fBXFER_WAIT\fP }"
+.br
+.RI "List of possible Call Status values returned from component "
+.ti -1c
+.RI "enum \fBeKeypadKeys\fP { \fBNum0\fP = 0, \fBNum1\fP, \fBNum2\fP, \fBNum3\fP, \fBNum4\fP, \fBNum5\fP, \fBNum6\fP, \fBNum7\fP, \fBNum8\fP, \fBNum9\fP, \fBStar\fP, \fBPound\fP, \fBClear\fP, \fBBackspace\fP }"
+.br
+.RI "List of valid keypad keys to send to component "
+.in -1c
+.SS "Public Member Functions"
+
+.in +1c
+.ti -1c
+.RI "\fBTesiraDspDialer\fP (string key, \fBTesiraDialerControlBlockConfig\fP config, \fBTesiraDsp\fP parent)"
+.br
+.RI "Constructor for Tesira DSP Dialer "
+.ti -1c
+.RI "override void \fBAcceptCall\fP (CodecActiveCallItem item)"
+.br
+.RI "Accept Incoming Call "
+.ti -1c
+.RI "override void \fBSubscribe\fP ()"
+.br
+.RI "Subscribe to all component data "
+.ti -1c
+.RI "override void \fBUnsubscribe\fP ()"
+.br
+.RI "Unsubscribe from all component data "
+.ti -1c
+.RI "void \fBParseSubscriptionMessage\fP (string customName, string value)"
+.br
+.RI "Parses incoming subscription-related messages directed to this object "
+.ti -1c
+.RI "override void \fBParseGetMessage\fP (string attributeCode, string message)"
+.br
+.RI "Parses any subscription-unrelated messages directed to this object "
+.ti -1c
+.RI "void \fBDial\fP ()"
+.br
+.RI "Dials current value of DialString property "
+.ti -1c
+.RI "void \fBSetDialString\fP (string data)"
+.br
+.RI "Sets the DialString property for Dialing "
+.ti -1c
+.RI "void \fBOnHook\fP ()"
+.br
+.RI "Place the call 'receiver' 'on hook' or otherwise end a call "
+.ti -1c
+.RI "void \fBOffHook\fP ()"
+.br
+.RI "Take the call 'receiver' 'off hook', or otherwise answer an incoming call "
+.ti -1c
+.RI "void \fBAnswer\fP ()"
+.br
+.RI "Answer an incoming call "
+.ti -1c
+.RI "void \fBAutoAnswerOn\fP ()"
+.br
+.RI "Enable Auto Answer for the component "
+.ti -1c
+.RI "void \fBAutoAnswerOff\fP ()"
+.br
+.RI "Disable Auto Answer for the component "
+.ti -1c
+.RI "void \fBAutoAnswerToggle\fP ()"
+.br
+.RI "Toggle the state of Auto Answer for the component "
+.ti -1c
+.RI "void \fBDoNotDisturbOn\fP ()"
+.br
+.RI "Enable Do Not Disturb for the component "
+.ti -1c
+.RI "void \fBDoNotDisturbOff\fP ()"
+.br
+.RI "Disable Do Not Distrub for the component "
+.ti -1c
+.RI "void \fBDoNotDisturbToggle\fP ()"
+.br
+.RI "Toggle Do Not Disturb for the component\&. "
+.ti -1c
+.RI "override void \fBRejectCall\fP (CodecActiveCallItem item)"
+.br
+.RI "Reject incoming call "
+.ti -1c
+.RI "override void \fBSendDtmf\fP (string digit)"
+.br
+.RI "Send DTMF Digit to Component - Use SendKeypad instead "
+.ti -1c
+.RI "void \fBSendKeypad\fP (\fBeKeypadKeys\fP data)"
+.br
+.RI "Send Keypad Digit to component - Will Send DTMF if call active "
+.in -1c
+.SS "Public Attributes"
+
+.in +1c
+.ti -1c
+.RI "FeedbackCollection< Feedback > \fBFeedbacks\fP"
+.br
+.ti -1c
+.RI "BoolFeedback \fBOffHookFeedback\fP"
+.br
+.RI "Boolean Feedback for Hook Status "
+.ti -1c
+.RI "BoolFeedback \fBAutoAnswerFeedback\fP"
+.br
+.RI "Boolean Feedback for Auto Answer Status "
+.ti -1c
+.RI "BoolFeedback \fBDoNotDisturbFeedback\fP"
+.br
+.RI "Boolean Feedback for Do Not Disturb Status "
+.ti -1c
+.RI "StringFeedback \fBDialStringFeedback\fP"
+.br
+.RI "String Feedback for the current dial string "
+.ti -1c
+.RI "StringFeedback \fBCallerIdNumberFeedback\fP"
+.br
+.RI "String Feedback for CallerId Number for current call "
+.ti -1c
+.RI "StringFeedback \fBCallerIdNameFeedback\fP"
+.br
+.RI "String Feedback for CallerId Name for current call "
+.ti -1c
+.RI "BoolFeedback \fBIncomingCallFeedback\fP"
+.br
+.RI "Boolean Feedback for Incoming Call Status - True when call incoming "
+.ti -1c
+.RI "IntFeedback \fBCallStateFeedback\fP"
+.br
+.RI "Integer Feedback for current Call State - see eCallStatus enumeration "
+.ti -1c
+.RI "StringFeedback \fBLastDialedFeedback\fP"
+.br
+.RI "String feedback for the last dialer number "
+.ti -1c
+.RI "StringFeedback \fBNameFeedback\fP"
+.br
+.RI "String Feedback for component Friendly Name "
+.ti -1c
+.RI "StringFeedback \fBDisplayNumberFeedback\fP"
+.br
+.RI "String feedback for the displayed number "
+.in -1c
+.SS "Properties"
+
+.in +1c
+.ti -1c
+.RI "bool \fBOffHookStatus\fP\fC [get, protected set]\fP"
+.br
+.RI "Current Hook Status for component "
+.ti -1c
+.RI "string \fBLastDialed\fP\fC [get, protected set]\fP"
+.br
+.RI "Last Dialed Number for component "
+.ti -1c
+.RI "int \fBCallAppearance\fP\fC [get, protected set]\fP"
+.br
+.RI "CallApperance for component "
+.ti -1c
+.RI "string \fBDisplayNumber\fP\fC [get, protected set]\fP"
+.br
+.RI "Number to be displayed on remote callerId for component "
+.ti -1c
+.RI "bool \fBDoNotDisturbState\fP\fC [get, protected set]\fP"
+.br
+.RI "Current Do Not Disturb State for component "
+.ti -1c
+.RI "bool \fBAutoAnswerState\fP\fC [get, protected set]\fP"
+.br
+.RI "Current Auto Answer State for component "
+.ti -1c
+.RI "string \fBDialerCustomName\fP\fC [get, protected set]\fP"
+.br
+.RI "Dialer Subscription Identifier for Component "
+.ti -1c
+.RI "string \fBControlStatusCustomName\fP\fC [get, protected set]\fP"
+.br
+.RI "ControlStatus Subscription Identifier for Component "
+.ti -1c
+.RI "string \fBAutoAnswerCustomName\fP\fC [get, protected set]\fP"
+.br
+.RI "AutoAnswer Subscription Identifier for Component "
+.ti -1c
+.RI "string \fBHookStateCustomName\fP\fC [get, protected set]\fP"
+.br
+.RI "HookState Subscription Identifier for Component "
+.ti -1c
+.RI "string \fBPotsDialerCustomName\fP\fC [get, protected set]\fP"
+.br
+.RI "POTS Dialer Subscription Identifier for Component "
+.ti -1c
+.RI "string \fBLastDialedCustomName\fP\fC [get, protected set]\fP"
+.br
+.RI "Last Dialed Subscription Identifier for Component "
+.ti -1c
+.RI "string \fBCallStatus\fP\fC [get]\fP"
+.br
+.RI "Current call status of line "
+.ti -1c
+.RI "\fBeCallStatus\fP \fBCallStatusEnum\fP\fC [get, protected set]\fP"
+.br
+.ti -1c
+.RI "bool \fBIncomingCallState\fP\fC [get]\fP"
+.br
+.RI "Status of Incoming Call "
+.ti -1c
+.RI "int \fBLineNumber\fP\fC [get, protected set]\fP"
+.br
+.RI "Line Number for component "
+.ti -1c
+.RI "string \fBCallerIdNumber\fP\fC [get, protected set]\fP"
+.br
+.RI "CallerId Number "
+.ti -1c
+.RI "string \fBCallerIdName\fP\fC [get, protected set]\fP"
+.br
+.RI "CallerId Name "
+.ti -1c
+.RI "override bool \fBIsSubscribed\fP\fC [get, protected set]\fP"
+.br
+.RI "Subscription state of component "
+.in -1c
+.SS "Additional Inherited Members"
+.SH "Member Enumeration Documentation"
+.PP 
+.SS "enum \fBTesira_DSP_EPI\&.TesiraDspDialer\&.eCallStatus\fP\fC [strong]\fP"
+
+.PP
+List of possible Call Status values returned from component 
+.SS "enum \fBTesira_DSP_EPI\&.TesiraDspDialer\&.eKeypadKeys\fP\fC [strong]\fP"
+
+.PP
+List of valid keypad keys to send to component 
+.SH "Constructor & Destructor Documentation"
+.PP 
+.SS "Tesira_DSP_EPI\&.TesiraDspDialer\&.TesiraDspDialer (string key, \fBTesiraDialerControlBlockConfig\fP config, \fBTesiraDsp\fP parent)"
+
+.PP
+Constructor for Tesira DSP Dialer 
+.PP
+\fBParameters\fP
+.RS 4
+\fIkey\fP Unique Key
+.br
+\fIconfig\fP Component Config
+.br
+\fIparent\fP Parent Device
+.RE
+.PP
+
+.SH "Member Function Documentation"
+.PP 
+.SS "override void Tesira_DSP_EPI\&.TesiraDspDialer\&.AcceptCall (CodecActiveCallItem item)"
+
+.PP
+Accept Incoming Call 
+.PP
+\fBParameters\fP
+.RS 4
+\fIitem\fP Call Object to Accept
+.RE
+.PP
+
+.SS "void Tesira_DSP_EPI\&.TesiraDspDialer\&.Answer ()"
+
+.PP
+Answer an incoming call 
+.SS "void Tesira_DSP_EPI\&.TesiraDspDialer\&.AutoAnswerOff ()"
+
+.PP
+Disable Auto Answer for the component 
+.SS "void Tesira_DSP_EPI\&.TesiraDspDialer\&.AutoAnswerOn ()"
+
+.PP
+Enable Auto Answer for the component 
+.SS "void Tesira_DSP_EPI\&.TesiraDspDialer\&.AutoAnswerToggle ()"
+
+.PP
+Toggle the state of Auto Answer for the component 
+.SS "void Tesira_DSP_EPI\&.TesiraDspDialer\&.Dial ()"
+
+.PP
+Dials current value of DialString property 
+.SS "void Tesira_DSP_EPI\&.TesiraDspDialer\&.DoNotDisturbOff ()"
+
+.PP
+Disable Do Not Distrub for the component 
+.SS "void Tesira_DSP_EPI\&.TesiraDspDialer\&.DoNotDisturbOn ()"
+
+.PP
+Enable Do Not Disturb for the component 
+.SS "void Tesira_DSP_EPI\&.TesiraDspDialer\&.DoNotDisturbToggle ()"
+
+.PP
+Toggle Do Not Disturb for the component\&. 
+.SS "void Tesira_DSP_EPI\&.TesiraDspDialer\&.OffHook ()"
+
+.PP
+Take the call 'receiver' 'off hook', or otherwise answer an incoming call 
+.SS "void Tesira_DSP_EPI\&.TesiraDspDialer\&.OnHook ()"
+
+.PP
+Place the call 'receiver' 'on hook' or otherwise end a call 
+.SS "override void Tesira_DSP_EPI\&.TesiraDspDialer\&.ParseGetMessage (string attributeCode, string message)\fC [virtual]\fP"
+
+.PP
+Parses any subscription-unrelated messages directed to this object 
+.PP
+\fBParameters\fP
+.RS 4
+\fIattributeCode\fP Message attribute code to determine parsing algorithm
+.br
+\fImessage\fP Data to be parsed
+.RE
+.PP
+
+.PP
+Reimplemented from \fBTesira_DSP_EPI\&.TesiraDspDialerControlPoint\fP\&.
+.SS "void Tesira_DSP_EPI\&.TesiraDspDialer\&.ParseSubscriptionMessage (string customName, string value)"
+
+.PP
+Parses incoming subscription-related messages directed to this object 
+.PP
+\fBParameters\fP
+.RS 4
+\fIcustomName\fP CustomName of subscribed control within the component
+.br
+\fIvalue\fP Data to be parsed
+.RE
+.PP
+
+.SS "override void Tesira_DSP_EPI\&.TesiraDspDialer\&.RejectCall (CodecActiveCallItem item)"
+
+.PP
+Reject incoming call 
+.PP
+\fBParameters\fP
+.RS 4
+\fIitem\fP Call Object to Reject
+.RE
+.PP
+
+.SS "override void Tesira_DSP_EPI\&.TesiraDspDialer\&.SendDtmf (string digit)"
+
+.PP
+Send DTMF Digit to Component - Use SendKeypad instead 
+.PP
+\fBParameters\fP
+.RS 4
+\fIdigit\fP Digit to send
+.RE
+.PP
+
+.SS "void Tesira_DSP_EPI\&.TesiraDspDialer\&.SendKeypad (\fBeKeypadKeys\fP data)"
+
+.PP
+Send Keypad Digit to component - Will Send DTMF if call active 
+.PP
+\fBParameters\fP
+.RS 4
+\fIdata\fP Keypad press to send
+.RE
+.PP
+
+.SS "void Tesira_DSP_EPI\&.TesiraDspDialer\&.SetDialString (string data)"
+
+.PP
+Sets the DialString property for Dialing 
+.PP
+\fBParameters\fP
+.RS 4
+\fIdata\fP Value to set DialString to
+.RE
+.PP
+
+.SS "override void Tesira_DSP_EPI\&.TesiraDspDialer\&.Subscribe ()\fC [virtual]\fP"
+
+.PP
+Subscribe to all component data 
+.PP
+Reimplemented from \fBTesira_DSP_EPI\&.TesiraDspDialerControlPoint\fP\&.
+.SS "override void Tesira_DSP_EPI\&.TesiraDspDialer\&.Unsubscribe ()\fC [virtual]\fP"
+
+.PP
+Unsubscribe from all component data 
+.PP
+Reimplemented from \fBTesira_DSP_EPI\&.TesiraDspDialerControlPoint\fP\&.
+.SH "Member Data Documentation"
+.PP 
+.SS "BoolFeedback Tesira_DSP_EPI\&.TesiraDspDialer\&.AutoAnswerFeedback"
+
+.PP
+Boolean Feedback for Auto Answer Status 
+.SS "StringFeedback Tesira_DSP_EPI\&.TesiraDspDialer\&.CallerIdNameFeedback"
+
+.PP
+String Feedback for CallerId Name for current call 
+.SS "StringFeedback Tesira_DSP_EPI\&.TesiraDspDialer\&.CallerIdNumberFeedback"
+
+.PP
+String Feedback for CallerId Number for current call 
+.SS "IntFeedback Tesira_DSP_EPI\&.TesiraDspDialer\&.CallStateFeedback"
+
+.PP
+Integer Feedback for current Call State - see eCallStatus enumeration 
+.SS "StringFeedback Tesira_DSP_EPI\&.TesiraDspDialer\&.DialStringFeedback"
+
+.PP
+String Feedback for the current dial string 
+.SS "StringFeedback Tesira_DSP_EPI\&.TesiraDspDialer\&.DisplayNumberFeedback"
+
+.PP
+String feedback for the displayed number 
+.SS "BoolFeedback Tesira_DSP_EPI\&.TesiraDspDialer\&.DoNotDisturbFeedback"
+
+.PP
+Boolean Feedback for Do Not Disturb Status 
+.SS "BoolFeedback Tesira_DSP_EPI\&.TesiraDspDialer\&.IncomingCallFeedback"
+
+.PP
+Boolean Feedback for Incoming Call Status - True when call incoming 
+.SS "StringFeedback Tesira_DSP_EPI\&.TesiraDspDialer\&.LastDialedFeedback"
+
+.PP
+String feedback for the last dialer number 
+.SS "StringFeedback Tesira_DSP_EPI\&.TesiraDspDialer\&.NameFeedback"
+
+.PP
+String Feedback for component Friendly Name 
+.SS "BoolFeedback Tesira_DSP_EPI\&.TesiraDspDialer\&.OffHookFeedback"
+
+.PP
+Boolean Feedback for Hook Status 
+.SH "Property Documentation"
+.PP 
+.SS "string Tesira_DSP_EPI\&.TesiraDspDialer\&.AutoAnswerCustomName\fC [get]\fP, \fC [protected set]\fP"
+
+.PP
+AutoAnswer Subscription Identifier for Component 
+.SS "bool Tesira_DSP_EPI\&.TesiraDspDialer\&.AutoAnswerState\fC [get]\fP, \fC [protected set]\fP"
+
+.PP
+Current Auto Answer State for component 
+.SS "int Tesira_DSP_EPI\&.TesiraDspDialer\&.CallAppearance\fC [get]\fP, \fC [protected set]\fP"
+
+.PP
+CallApperance for component 
+.SS "string Tesira_DSP_EPI\&.TesiraDspDialer\&.CallerIdName\fC [get]\fP, \fC [protected set]\fP"
+
+.PP
+CallerId Name 
+.SS "string Tesira_DSP_EPI\&.TesiraDspDialer\&.CallerIdNumber\fC [get]\fP, \fC [protected set]\fP"
+
+.PP
+CallerId Number 
+.SS "string Tesira_DSP_EPI\&.TesiraDspDialer\&.CallStatus\fC [get]\fP"
+
+.PP
+Current call status of line 
+.SS "string Tesira_DSP_EPI\&.TesiraDspDialer\&.ControlStatusCustomName\fC [get]\fP, \fC [protected set]\fP"
+
+.PP
+ControlStatus Subscription Identifier for Component 
+.SS "string Tesira_DSP_EPI\&.TesiraDspDialer\&.DialerCustomName\fC [get]\fP, \fC [protected set]\fP"
+
+.PP
+Dialer Subscription Identifier for Component 
+.SS "string Tesira_DSP_EPI\&.TesiraDspDialer\&.DisplayNumber\fC [get]\fP, \fC [protected set]\fP"
+
+.PP
+Number to be displayed on remote callerId for component 
+.SS "bool Tesira_DSP_EPI\&.TesiraDspDialer\&.DoNotDisturbState\fC [get]\fP, \fC [protected set]\fP"
+
+.PP
+Current Do Not Disturb State for component 
+.SS "string Tesira_DSP_EPI\&.TesiraDspDialer\&.HookStateCustomName\fC [get]\fP, \fC [protected set]\fP"
+
+.PP
+HookState Subscription Identifier for Component 
+.SS "bool Tesira_DSP_EPI\&.TesiraDspDialer\&.IncomingCallState\fC [get]\fP"
+
+.PP
+Status of Incoming Call 
+.SS "override bool Tesira_DSP_EPI\&.TesiraDspDialer\&.IsSubscribed\fC [get]\fP, \fC [protected set]\fP"
+
+.PP
+Subscription state of component 
+.SS "string Tesira_DSP_EPI\&.TesiraDspDialer\&.LastDialed\fC [get]\fP, \fC [protected set]\fP"
+
+.PP
+Last Dialed Number for component 
+.SS "string Tesira_DSP_EPI\&.TesiraDspDialer\&.LastDialedCustomName\fC [get]\fP, \fC [protected set]\fP"
+
+.PP
+Last Dialed Subscription Identifier for Component 
+.SS "int Tesira_DSP_EPI\&.TesiraDspDialer\&.LineNumber\fC [get]\fP, \fC [protected set]\fP"
+
+.PP
+Line Number for component 
+.SS "bool Tesira_DSP_EPI\&.TesiraDspDialer\&.OffHookStatus\fC [get]\fP, \fC [protected set]\fP"
+
+.PP
+Current Hook Status for component 
+.SS "string Tesira_DSP_EPI\&.TesiraDspDialer\&.PotsDialerCustomName\fC [get]\fP, \fC [protected set]\fP"
+
+.PP
+POTS Dialer Subscription Identifier for Component 
+
+.SH "Author"
+.PP 
+Generated automatically by Doxygen for Biamp Tesira Essentials Plugin from the source code\&.

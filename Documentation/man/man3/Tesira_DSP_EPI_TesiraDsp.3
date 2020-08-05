@@ -1,0 +1,203 @@
+.TH "Tesira_DSP_EPI.TesiraDsp" 3 "Wed Aug 5 2020" "Version 2.0.0.x" "Biamp Tesira Essentials Plugin" \" -*- nroff -*-
+.ad l
+.nh
+.SH NAME
+Tesira_DSP_EPI.TesiraDsp
+.SH SYNOPSIS
+.br
+.PP
+.PP
+Inherits EssentialsBridgeableDevice\&.
+.SS "Classes"
+
+.in +1c
+.ti -1c
+.RI "class \fBQueuedCommand\fP"
+.br
+.RI "Contains all data for a component command "
+.in -1c
+.SS "Public Member Functions"
+
+.in +1c
+.ti -1c
+.RI "\fBTesiraDsp\fP (string key, string name, IBasicCommunication comm, DeviceConfig dc)"
+.br
+.RI "Consturctor for base Tesira DSP Device "
+.ti -1c
+.RI "void \fBSendLine\fP (string s)"
+.br
+.RI "Sends a command to the DSP (with delimiter appended) "
+.ti -1c
+.RI "void \fBSendLineRaw\fP (string s)"
+.br
+.RI "Sends a command to the DSP (without delimiter appended) "
+.ti -1c
+.RI "void \fBEnqueueCommand\fP (\fBQueuedCommand\fP commandToEnqueue)"
+.br
+.RI "Adds a command from a child module to the queue "
+.ti -1c
+.RI "void \fBEnqueueCommand\fP (string command)"
+.br
+.RI "Adds a raw string command to the queue "
+.ti -1c
+.RI "void \fBRunPresetNumber\fP (ushort n)"
+.br
+.ti -1c
+.RI "void \fBRunPreset\fP (string name)"
+.br
+.RI "Sends a command to execute a preset "
+.ti -1c
+.RI "override void \fBLinkToApi\fP (BasicTriList trilist, uint joinStart, string joinMapKey, EiscApiAdvanced bridge)"
+.br
+.in -1c
+.SS "Public Attributes"
+
+.in +1c
+.ti -1c
+.RI "FeedbackCollection< Feedback > \fBFeedbacks\fP"
+.br
+.RI "Collection of all Device Feedbacks "
+.ti -1c
+.RI "bool \fBIsSubscribed\fP"
+.br
+.RI "True when all components have been subscribed "
+.in -1c
+.SS "Properties"
+
+.in +1c
+.ti -1c
+.RI "string \fBDeviceRx\fP\fC [get, set]\fP"
+.br
+.RI "Date Returning from Device "
+.ti -1c
+.RI "IBasicCommunication \fBCommunication\fP\fC [get]\fP"
+.br
+.RI "Communication Object for Device "
+.ti -1c
+.RI "CommunicationGather \fBPortGather\fP\fC [get]\fP"
+.br
+.RI "Communication Response Gather for Device "
+.ti -1c
+.RI "GenericCommunicationMonitor \fBCommunicationMonitor\fP\fC [get]\fP"
+.br
+.RI "Communication Monitor for Device "
+.ti -1c
+.RI "StringFeedback \fBCommandPassthruFeedback\fP\fC [get, set]\fP"
+.br
+.RI "COmmand Responses from Device "
+.ti -1c
+.RI "bool \fBShowHexResponse\fP\fC [get, set]\fP"
+.br
+.in -1c
+.SH "Constructor & Destructor Documentation"
+.PP 
+.SS "Tesira_DSP_EPI\&.TesiraDsp\&.TesiraDsp (string key, string name, IBasicCommunication comm, DeviceConfig dc)"
+
+.PP
+Consturctor for base Tesira DSP Device 
+.PP
+\fBParameters\fP
+.RS 4
+\fIkey\fP Tesira DSP Device Key
+.br
+\fIname\fP Tesira DSP Device Friendly Name
+.br
+\fIcomm\fP Device Communication Object
+.br
+\fIdc\fP Full device configuration object
+.RE
+.PP
+
+.SH "Member Function Documentation"
+.PP 
+.SS "void Tesira_DSP_EPI\&.TesiraDsp\&.EnqueueCommand (\fBQueuedCommand\fP commandToEnqueue)"
+
+.PP
+Adds a command from a child module to the queue 
+.PP
+\fBParameters\fP
+.RS 4
+\fIcommandToEnqueue\fP Command object from child module
+.RE
+.PP
+
+.SS "void Tesira_DSP_EPI\&.TesiraDsp\&.EnqueueCommand (string command)"
+
+.PP
+Adds a raw string command to the queue 
+.PP
+\fBParameters\fP
+.RS 4
+\fIcommand\fP String to enqueue
+.RE
+.PP
+
+.SS "void Tesira_DSP_EPI\&.TesiraDsp\&.RunPreset (string name)"
+
+.PP
+Sends a command to execute a preset 
+.PP
+\fBParameters\fP
+.RS 4
+\fIname\fP Preset Name
+.RE
+.PP
+
+.SS "void Tesira_DSP_EPI\&.TesiraDsp\&.SendLine (string s)"
+
+.PP
+Sends a command to the DSP (with delimiter appended) 
+.PP
+\fBParameters\fP
+.RS 4
+\fIs\fP Command to send
+.RE
+.PP
+
+.SS "void Tesira_DSP_EPI\&.TesiraDsp\&.SendLineRaw (string s)"
+
+.PP
+Sends a command to the DSP (without delimiter appended) 
+.PP
+\fBParameters\fP
+.RS 4
+\fIs\fP Command to send
+.RE
+.PP
+
+.SH "Member Data Documentation"
+.PP 
+.SS "FeedbackCollection<Feedback> Tesira_DSP_EPI\&.TesiraDsp\&.Feedbacks"
+
+.PP
+Collection of all Device Feedbacks 
+.SS "bool Tesira_DSP_EPI\&.TesiraDsp\&.IsSubscribed"
+
+.PP
+True when all components have been subscribed 
+.SH "Property Documentation"
+.PP 
+.SS "StringFeedback Tesira_DSP_EPI\&.TesiraDsp\&.CommandPassthruFeedback\fC [get]\fP, \fC [set]\fP"
+
+.PP
+COmmand Responses from Device 
+.SS "IBasicCommunication Tesira_DSP_EPI\&.TesiraDsp\&.Communication\fC [get]\fP"
+
+.PP
+Communication Object for Device 
+.SS "GenericCommunicationMonitor Tesira_DSP_EPI\&.TesiraDsp\&.CommunicationMonitor\fC [get]\fP"
+
+.PP
+Communication Monitor for Device 
+.SS "string Tesira_DSP_EPI\&.TesiraDsp\&.DeviceRx\fC [get]\fP, \fC [set]\fP"
+
+.PP
+Date Returning from Device 
+.SS "CommunicationGather Tesira_DSP_EPI\&.TesiraDsp\&.PortGather\fC [get]\fP"
+
+.PP
+Communication Response Gather for Device 
+
+.SH "Author"
+.PP 
+Generated automatically by Doxygen for Biamp Tesira Essentials Plugin from the source code\&.

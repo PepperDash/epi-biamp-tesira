@@ -1,0 +1,280 @@
+.TH "Tesira_DSP_EPI.TesiraDspFaderControl" 3 "Wed Aug 5 2020" "Version 2.0.0.x" "Biamp Tesira Essentials Plugin" \" -*- nroff -*-
+.ad l
+.nh
+.SH NAME
+Tesira_DSP_EPI.TesiraDspFaderControl
+.SH SYNOPSIS
+.br
+.PP
+.PP
+Inherits \fBTesira_DSP_EPI\&.TesiraDspControlPoint\fP, and IBasicVolumeWithFeedback\&.
+.SS "Public Types"
+
+.in +1c
+.ti -1c
+.RI "enum \fBePdtLevelTypes\fP { \fBSpeaker\fP = 0, \fBMicrophone\fP = 1 }"
+.br
+.RI "Possible LevelType enums "
+.in -1c
+.SS "Public Member Functions"
+
+.in +1c
+.ti -1c
+.RI "\fBTesiraDspFaderControl\fP (string key, \fBTesiraFaderControlBlockConfig\fP config, \fBTesiraDsp\fP parent)"
+.br
+.RI "Constructor for Component "
+.ti -1c
+.RI "override void \fBSubscribe\fP ()"
+.br
+.RI "Subscribe to component "
+.ti -1c
+.RI "override void \fBUnsubscribe\fP ()"
+.br
+.RI "Unsubscribe from component "
+.ti -1c
+.RI "void \fBParseSubscriptionMessage\fP (string customName, string value)"
+.br
+.RI "Parses subscription response data for the component "
+.ti -1c
+.RI "override void \fBParseGetMessage\fP (string attributeCode, string message)"
+.br
+.RI "Parses non-subscription response data for the component "
+.ti -1c
+.RI "void \fBMuteOff\fP ()"
+.br
+.RI "Disable Mute "
+.ti -1c
+.RI "void \fBMuteOn\fP ()"
+.br
+.RI "Enable Mute "
+.ti -1c
+.RI "void \fBSetVolume\fP (ushort level)"
+.br
+.RI "Set level to specified value "
+.ti -1c
+.RI "override void \fBDoPoll\fP ()"
+.br
+.RI "Polls all data for component "
+.ti -1c
+.RI "void \fBGetVolume\fP ()"
+.br
+.RI "Polls the current volume level of component "
+.ti -1c
+.RI "void \fBGetMute\fP ()"
+.br
+.RI "Polls the current mute state of Component "
+.ti -1c
+.RI "void \fBMuteToggle\fP ()"
+.br
+.RI "Toggle component mute "
+.ti -1c
+.RI "void \fBVolumeDown\fP (bool press)"
+.br
+.RI "Decrements component level "
+.ti -1c
+.RI "void \fBVolumeUp\fP (bool press)"
+.br
+.RI "Increments component level "
+.ti -1c
+.RI "override void \fBLinkToApi\fP (BasicTriList trilist, uint joinStart, string joinMapKey, EiscApiAdvanced bridge)"
+.br
+.in -1c
+.SS "Properties"
+
+.in +1c
+.ti -1c
+.RI "bool \fBIsMuted\fP\fC [get, set]\fP"
+.br
+.ti -1c
+.RI "int \fBVolumeLevel\fP\fC [get, set]\fP"
+.br
+.ti -1c
+.RI "BoolFeedback \fBMuteFeedback\fP\fC [get]\fP"
+.br
+.ti -1c
+.RI "BoolFeedback \fBVisibleFeedback\fP\fC [get]\fP"
+.br
+.ti -1c
+.RI "IntFeedback \fBVolumeLevelFeedback\fP\fC [get]\fP"
+.br
+.ti -1c
+.RI "IntFeedback \fBTypeFeedback\fP\fC [get]\fP"
+.br
+.ti -1c
+.RI "IntFeedback \fBControlTypeFeedback\fP\fC [get]\fP"
+.br
+.ti -1c
+.RI "IntFeedback \fBPermissionsFeedback\fP\fC [get]\fP"
+.br
+.ti -1c
+.RI "string \fBLevelCustomName\fP\fC [get, protected set]\fP"
+.br
+.RI "Used to identify level subscription values "
+.ti -1c
+.RI "string \fBMuteCustomName\fP\fC [get, protected set]\fP"
+.br
+.RI "Used to identify mute subscription value "
+.ti -1c
+.RI "override bool \fBIsSubscribed\fP\fC [get, protected set]\fP"
+.br
+.RI "Checks if a valid subscription string has been recieved for all subscriptions "
+.ti -1c
+.RI "bool \fBHasMute\fP\fC [get]\fP"
+.br
+.RI "Component has Mute "
+.ti -1c
+.RI "bool \fBHasLevel\fP\fC [get]\fP"
+.br
+.RI "Component Has Level "
+.in -1c
+.SS "Additional Inherited Members"
+.SH "Member Enumeration Documentation"
+.PP 
+.SS "enum \fBTesira_DSP_EPI\&.TesiraDspFaderControl\&.ePdtLevelTypes\fP\fC [strong]\fP"
+
+.PP
+Possible LevelType enums 
+.SH "Constructor & Destructor Documentation"
+.PP 
+.SS "Tesira_DSP_EPI\&.TesiraDspFaderControl\&.TesiraDspFaderControl (string key, \fBTesiraFaderControlBlockConfig\fP config, \fBTesiraDsp\fP parent)"
+
+.PP
+Constructor for Component 
+.PP
+\fBParameters\fP
+.RS 4
+\fIkey\fP Unique Identifier for component
+.br
+\fIconfig\fP Config Object of Component
+.br
+\fIparent\fP Parent object of Component
+.RE
+.PP
+
+.SH "Member Function Documentation"
+.PP 
+.SS "override void Tesira_DSP_EPI\&.TesiraDspFaderControl\&.DoPoll ()\fC [virtual]\fP"
+
+.PP
+Polls all data for component 
+.PP
+Reimplemented from \fBTesira_DSP_EPI\&.TesiraDspControlPoint\fP\&.
+.SS "void Tesira_DSP_EPI\&.TesiraDspFaderControl\&.GetMute ()"
+
+.PP
+Polls the current mute state of Component 
+.SS "void Tesira_DSP_EPI\&.TesiraDspFaderControl\&.GetVolume ()"
+
+.PP
+Polls the current volume level of component 
+.SS "void Tesira_DSP_EPI\&.TesiraDspFaderControl\&.MuteOff ()"
+
+.PP
+Disable Mute 
+.SS "void Tesira_DSP_EPI\&.TesiraDspFaderControl\&.MuteOn ()"
+
+.PP
+Enable Mute 
+.SS "void Tesira_DSP_EPI\&.TesiraDspFaderControl\&.MuteToggle ()"
+
+.PP
+Toggle component mute 
+.SS "override void Tesira_DSP_EPI\&.TesiraDspFaderControl\&.ParseGetMessage (string attributeCode, string message)\fC [virtual]\fP"
+
+.PP
+Parses non-subscription response data for the component 
+.PP
+\fBParameters\fP
+.RS 4
+\fIattributeCode\fP The attribute code of the command for the parsing algorithm
+.br
+\fImessage\fP Component data to be parsed
+.RE
+.PP
+
+.PP
+Reimplemented from \fBTesira_DSP_EPI\&.TesiraDspControlPoint\fP\&.
+.SS "void Tesira_DSP_EPI\&.TesiraDspFaderControl\&.ParseSubscriptionMessage (string customName, string value)"
+
+.PP
+Parses subscription response data for the component 
+.PP
+\fBParameters\fP
+.RS 4
+\fIcustomName\fP Subscription Identifier for component
+.br
+\fIvalue\fP Component data to be parsed
+.RE
+.PP
+
+.SS "void Tesira_DSP_EPI\&.TesiraDspFaderControl\&.SetVolume (ushort level)"
+
+.PP
+Set level to specified value 
+.PP
+\fBParameters\fP
+.RS 4
+\fIlevel\fP Level from 0 - 100, as a percentage of the total range
+.RE
+.PP
+
+.SS "override void Tesira_DSP_EPI\&.TesiraDspFaderControl\&.Subscribe ()\fC [virtual]\fP"
+
+.PP
+Subscribe to component 
+.PP
+Reimplemented from \fBTesira_DSP_EPI\&.TesiraDspControlPoint\fP\&.
+.SS "override void Tesira_DSP_EPI\&.TesiraDspFaderControl\&.Unsubscribe ()\fC [virtual]\fP"
+
+.PP
+Unsubscribe from component 
+.PP
+Reimplemented from \fBTesira_DSP_EPI\&.TesiraDspControlPoint\fP\&.
+.SS "void Tesira_DSP_EPI\&.TesiraDspFaderControl\&.VolumeDown (bool press)"
+
+.PP
+Decrements component level 
+.PP
+\fBParameters\fP
+.RS 4
+\fIpress\fP Trigger map to bridge or UI component
+.RE
+.PP
+
+.SS "void Tesira_DSP_EPI\&.TesiraDspFaderControl\&.VolumeUp (bool press)"
+
+.PP
+Increments component level 
+.PP
+\fBParameters\fP
+.RS 4
+\fIpress\fP Trigger map to bridge or UI component
+.RE
+.PP
+
+.SH "Property Documentation"
+.PP 
+.SS "bool Tesira_DSP_EPI\&.TesiraDspFaderControl\&.HasLevel\fC [get]\fP"
+
+.PP
+Component Has Level 
+.SS "bool Tesira_DSP_EPI\&.TesiraDspFaderControl\&.HasMute\fC [get]\fP"
+
+.PP
+Component has Mute 
+.SS "override bool Tesira_DSP_EPI\&.TesiraDspFaderControl\&.IsSubscribed\fC [get]\fP, \fC [protected set]\fP"
+
+.PP
+Checks if a valid subscription string has been recieved for all subscriptions 
+.SS "string Tesira_DSP_EPI\&.TesiraDspFaderControl\&.LevelCustomName\fC [get]\fP, \fC [protected set]\fP"
+
+.PP
+Used to identify level subscription values 
+.SS "string Tesira_DSP_EPI\&.TesiraDspFaderControl\&.MuteCustomName\fC [get]\fP, \fC [protected set]\fP"
+
+.PP
+Used to identify mute subscription value 
+
+.SH "Author"
+.PP 
+Generated automatically by Doxygen for Biamp Tesira Essentials Plugin from the source code\&.

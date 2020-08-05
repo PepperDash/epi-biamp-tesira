@@ -12,12 +12,12 @@ env:
   # solution path needs slashes (use \). When solution file name and path are put together, it should be a valid path
   # If Solution is in repo root, leave SOLUTION_PATH empty
   # solution name does not include extension. .sln is assumed
-  SOLUTION_PATH: Tesira-DSP-EPI\
+  SOLUTION_PATH: 
   SOLUTION_FILE: Tesira-DSP-EPI
   # Do not edit this, we're just creating it here
   VERSION: 0.0.0-buildtype-buildnumber
   # Defaults to debug for build type
-  BUILD_TYPE: Debug
+  BUILD_TYPE: Release
   # Defaults to master as the release branch.  Change as necessary
   RELEASE_BRANCH: main
 jobs:

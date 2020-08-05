@@ -1,0 +1,343 @@
+.TH "Tesira_DSP_EPI.TesiraDspRoomCombiner" 3 "Wed Aug 5 2020" "Version 2.0.0.x" "Biamp Tesira Essentials Plugin" \" -*- nroff -*-
+.ad l
+.nh
+.SH NAME
+Tesira_DSP_EPI.TesiraDspRoomCombiner
+.SH SYNOPSIS
+.br
+.PP
+.PP
+Inherits \fBTesira_DSP_EPI\&.TesiraDspControlPoint\fP, and IBasicVolumeWithFeedback\&.
+.SS "Public Types"
+
+.in +1c
+.ti -1c
+.RI "enum \fBePdtLevelTypes\fP { \fBSpeaker\fP = 0, \fBMicrophone\fP = 1 }"
+.br
+.in -1c
+.SS "Public Member Functions"
+
+.in +1c
+.ti -1c
+.RI "\fBTesiraDspRoomCombiner\fP (string key, \fBTesiraRoomCombinerBlockConfig\fP config, \fBTesiraDsp\fP parent)"
+.br
+.RI "Constructor for Tesira Dsp Room Combiner Component "
+.ti -1c
+.RI "override void \fBSubscribe\fP ()"
+.br
+.RI "Subscribe to component "
+.ti -1c
+.RI "override void \fBUnsubscribe\fP ()"
+.br
+.RI "Unsubscribe from component "
+.ti -1c
+.RI "void \fBParseSubscriptionMessage\fP (string customName, string data)"
+.br
+.RI "Parses the response from the DspBase "
+.ti -1c
+.RI "override void \fBParseGetMessage\fP (string attributeCode, string message)"
+.br
+.RI "Parses a non subscription response "
+.ti -1c
+.RI "void \fBMuteOff\fP ()"
+.br
+.RI "Turns the mute off "
+.ti -1c
+.RI "void \fBMuteOn\fP ()"
+.br
+.RI "Turns the mute on "
+.ti -1c
+.RI "void \fBSetVolume\fP (ushort level)"
+.br
+.RI "Sets the volume to a specified level "
+.ti -1c
+.RI "void \fBSetRoomGroup\fP (ushort group)"
+.br
+.RI "Set the room group to the specified value "
+.ti -1c
+.RI "override void \fBDoPoll\fP ()"
+.br
+.RI "Polls all data for this control "
+.ti -1c
+.RI "void \fBGetVolume\fP ()"
+.br
+.RI "Polls the current volume level "
+.ti -1c
+.RI "void \fBGetMute\fP ()"
+.br
+.RI "Polls the current mute state "
+.ti -1c
+.RI "void \fBGetRoomGroup\fP ()"
+.br
+.RI "Polls the current room group "
+.ti -1c
+.RI "void \fBMuteToggle\fP ()"
+.br
+.RI "Toggles mute status "
+.ti -1c
+.RI "void \fBVolumeDown\fP (bool press)"
+.br
+.RI "Decrements volume level "
+.ti -1c
+.RI "void \fBVolumeUp\fP (bool press)"
+.br
+.RI "Increments volume level "
+.ti -1c
+.RI "override void \fBLinkToApi\fP (BasicTriList trilist, uint joinStart, string joinMapKey, EiscApiAdvanced bridge)"
+.br
+.in -1c
+.SS "Public Attributes"
+
+.in +1c
+.ti -1c
+.RI "int \fBControlType\fP"
+.br
+.RI "Component ControlType "
+.in -1c
+.SS "Properties"
+
+.in +1c
+.ti -1c
+.RI "bool \fBOutIsMuted\fP\fC [get, set]\fP"
+.br
+.ti -1c
+.RI "int \fBOutVolumeLevel\fP\fC [get, set]\fP"
+.br
+.ti -1c
+.RI "int \fBRoomGroup\fP\fC [get, set]\fP"
+.br
+.ti -1c
+.RI "int \fBPermissions\fP\fC [get, set]\fP"
+.br
+.RI "Component Permissions "
+.ti -1c
+.RI "BoolFeedback \fBMuteFeedback\fP\fC [get]\fP"
+.br
+.RI "Boolean Feedback for Mute State "
+.ti -1c
+.RI "BoolFeedback \fBVisibleFeedback\fP\fC [get]\fP"
+.br
+.RI "Boolean Feedback for Visbility State "
+.ti -1c
+.RI "IntFeedback \fBVolumeLevelFeedback\fP\fC [get]\fP"
+.br
+.RI "Integer Feedback for Volume Level "
+.ti -1c
+.RI "IntFeedback \fBControlTypeFeedback\fP\fC [get]\fP"
+.br
+.RI "Integer Feedback for Control Type "
+.ti -1c
+.RI "IntFeedback \fBPermissionsFeedback\fP\fC [get]\fP"
+.br
+.RI "Integer Feedback for Permissions "
+.ti -1c
+.RI "IntFeedback \fBRoomGroupFeedback\fP\fC [get]\fP"
+.br
+.RI "Integer Feedback for RoomGroup "
+.ti -1c
+.RI "string \fBLevelCustomName\fP\fC [get]\fP"
+.br
+.RI "Subscription identifier for Room Combiner "
+.ti -1c
+.RI "override bool \fBIsSubscribed\fP\fC [get, protected set]\fP"
+.br
+.RI "Checks if a valid subscription string has been recieved for all subscriptions "
+.ti -1c
+.RI "bool \fBHasMute\fP\fC [get]\fP"
+.br
+.RI "Componenet Has Mute "
+.ti -1c
+.RI "bool \fBHasLevel\fP\fC [get]\fP"
+.br
+.RI "Component Has Level "
+.in -1c
+.SS "Additional Inherited Members"
+.SH "Constructor & Destructor Documentation"
+.PP 
+.SS "Tesira_DSP_EPI\&.TesiraDspRoomCombiner\&.TesiraDspRoomCombiner (string key, \fBTesiraRoomCombinerBlockConfig\fP config, \fBTesiraDsp\fP parent)"
+
+.PP
+Constructor for Tesira Dsp Room Combiner Component 
+.PP
+\fBParameters\fP
+.RS 4
+\fIkey\fP Unique Key
+.br
+\fIconfig\fP configuration object
+.br
+\fIparent\fP Parent Object
+.RE
+.PP
+
+.SH "Member Function Documentation"
+.PP 
+.SS "override void Tesira_DSP_EPI\&.TesiraDspRoomCombiner\&.DoPoll ()\fC [virtual]\fP"
+
+.PP
+Polls all data for this control 
+.PP
+Reimplemented from \fBTesira_DSP_EPI\&.TesiraDspControlPoint\fP\&.
+.SS "void Tesira_DSP_EPI\&.TesiraDspRoomCombiner\&.GetMute ()"
+
+.PP
+Polls the current mute state 
+.SS "void Tesira_DSP_EPI\&.TesiraDspRoomCombiner\&.GetRoomGroup ()"
+
+.PP
+Polls the current room group 
+.SS "void Tesira_DSP_EPI\&.TesiraDspRoomCombiner\&.GetVolume ()"
+
+.PP
+Polls the current volume level 
+.SS "void Tesira_DSP_EPI\&.TesiraDspRoomCombiner\&.MuteOff ()"
+
+.PP
+Turns the mute off 
+.SS "void Tesira_DSP_EPI\&.TesiraDspRoomCombiner\&.MuteOn ()"
+
+.PP
+Turns the mute on 
+.SS "void Tesira_DSP_EPI\&.TesiraDspRoomCombiner\&.MuteToggle ()"
+
+.PP
+Toggles mute status 
+.SS "override void Tesira_DSP_EPI\&.TesiraDspRoomCombiner\&.ParseGetMessage (string attributeCode, string message)\fC [virtual]\fP"
+
+.PP
+Parses a non subscription response 
+.PP
+\fBParameters\fP
+.RS 4
+\fIattributeCode\fP The attribute code of the command
+.br
+\fImessage\fP The message to parse
+.RE
+.PP
+
+.PP
+Reimplemented from \fBTesira_DSP_EPI\&.TesiraDspControlPoint\fP\&.
+.SS "void Tesira_DSP_EPI\&.TesiraDspRoomCombiner\&.ParseSubscriptionMessage (string customName, string data)"
+
+.PP
+Parses the response from the DspBase 
+.PP
+\fBParameters\fP
+.RS 4
+\fIcustomName\fP 
+.br
+\fIdata\fP 
+.RE
+.PP
+
+.SS "void Tesira_DSP_EPI\&.TesiraDspRoomCombiner\&.SetRoomGroup (ushort group)"
+
+.PP
+Set the room group to the specified value 
+.PP
+\fBParameters\fP
+.RS 4
+\fIgroup\fP 
+.RE
+.PP
+
+.SS "void Tesira_DSP_EPI\&.TesiraDspRoomCombiner\&.SetVolume (ushort level)"
+
+.PP
+Sets the volume to a specified level 
+.PP
+\fBParameters\fP
+.RS 4
+\fIlevel\fP 
+.RE
+.PP
+
+.SS "override void Tesira_DSP_EPI\&.TesiraDspRoomCombiner\&.Subscribe ()\fC [virtual]\fP"
+
+.PP
+Subscribe to component 
+.PP
+Reimplemented from \fBTesira_DSP_EPI\&.TesiraDspControlPoint\fP\&.
+.SS "override void Tesira_DSP_EPI\&.TesiraDspRoomCombiner\&.Unsubscribe ()\fC [virtual]\fP"
+
+.PP
+Unsubscribe from component 
+.PP
+Reimplemented from \fBTesira_DSP_EPI\&.TesiraDspControlPoint\fP\&.
+.SS "void Tesira_DSP_EPI\&.TesiraDspRoomCombiner\&.VolumeDown (bool press)"
+
+.PP
+Decrements volume level 
+.PP
+\fBParameters\fP
+.RS 4
+\fIpress\fP 
+.RE
+.PP
+
+.SS "void Tesira_DSP_EPI\&.TesiraDspRoomCombiner\&.VolumeUp (bool press)"
+
+.PP
+Increments volume level 
+.PP
+\fBParameters\fP
+.RS 4
+\fIpress\fP 
+.RE
+.PP
+
+.SH "Member Data Documentation"
+.PP 
+.SS "int Tesira_DSP_EPI\&.TesiraDspRoomCombiner\&.ControlType"
+
+.PP
+Component ControlType 
+.SH "Property Documentation"
+.PP 
+.SS "IntFeedback Tesira_DSP_EPI\&.TesiraDspRoomCombiner\&.ControlTypeFeedback\fC [get]\fP"
+
+.PP
+Integer Feedback for Control Type 
+.SS "bool Tesira_DSP_EPI\&.TesiraDspRoomCombiner\&.HasLevel\fC [get]\fP"
+
+.PP
+Component Has Level 
+.SS "bool Tesira_DSP_EPI\&.TesiraDspRoomCombiner\&.HasMute\fC [get]\fP"
+
+.PP
+Componenet Has Mute 
+.SS "override bool Tesira_DSP_EPI\&.TesiraDspRoomCombiner\&.IsSubscribed\fC [get]\fP, \fC [protected set]\fP"
+
+.PP
+Checks if a valid subscription string has been recieved for all subscriptions 
+.SS "string Tesira_DSP_EPI\&.TesiraDspRoomCombiner\&.LevelCustomName\fC [get]\fP"
+
+.PP
+Subscription identifier for Room Combiner 
+.SS "BoolFeedback Tesira_DSP_EPI\&.TesiraDspRoomCombiner\&.MuteFeedback\fC [get]\fP"
+
+.PP
+Boolean Feedback for Mute State 
+.SS "int Tesira_DSP_EPI\&.TesiraDspRoomCombiner\&.Permissions\fC [get]\fP, \fC [set]\fP"
+
+.PP
+Component Permissions 
+.SS "IntFeedback Tesira_DSP_EPI\&.TesiraDspRoomCombiner\&.PermissionsFeedback\fC [get]\fP"
+
+.PP
+Integer Feedback for Permissions 
+.SS "IntFeedback Tesira_DSP_EPI\&.TesiraDspRoomCombiner\&.RoomGroupFeedback\fC [get]\fP"
+
+.PP
+Integer Feedback for RoomGroup 
+.SS "BoolFeedback Tesira_DSP_EPI\&.TesiraDspRoomCombiner\&.VisibleFeedback\fC [get]\fP"
+
+.PP
+Boolean Feedback for Visbility State 
+.SS "IntFeedback Tesira_DSP_EPI\&.TesiraDspRoomCombiner\&.VolumeLevelFeedback\fC [get]\fP"
+
+.PP
+Integer Feedback for Volume Level 
+
+.SH "Author"
+.PP 
+Generated automatically by Doxygen for Biamp Tesira Essentials Plugin from the source code\&.

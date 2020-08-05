@@ -1,0 +1,62 @@
+.TH "Tesira_DSP_EPI.TesiraDspMeter" 3 "Wed Aug 5 2020" "Version 2.0.0.x" "Biamp Tesira Essentials Plugin" \" -*- nroff -*-
+.ad l
+.nh
+.SH NAME
+Tesira_DSP_EPI.TesiraDspMeter
+.SH SYNOPSIS
+.br
+.PP
+.PP
+Inherits \fBTesira_DSP_EPI\&.TesiraDspControlPoint\fP\&.
+.SS "Public Member Functions"
+
+.in +1c
+.ti -1c
+.RI "\fBTesiraDspMeter\fP (string key, \fBTesiraMeterBlockConfig\fP config, \fBTesiraDsp\fP parent)"
+.br
+.ti -1c
+.RI "override void \fBSubscribe\fP ()"
+.br
+.ti -1c
+.RI "void \fBUnSubscribe\fP ()"
+.br
+.ti -1c
+.RI "override void \fBParseGetMessage\fP (string attributeCode, string message)"
+.br
+.ti -1c
+.RI "void \fBParseSubscriptionMessage\fP (string customName, string message)"
+.br
+.ti -1c
+.RI "override void \fBLinkToApi\fP (BasicTriList trilist, uint joinStart, string joinMapKey, EiscApiAdvanced bridge)"
+.br
+.in -1c
+.SS "Properties"
+
+.in +1c
+.ti -1c
+.RI "string \fBMeterCustomName\fP\fC [get, set]\fP"
+.br
+.RI "Subscription Identifer for Meter Data "
+.ti -1c
+.RI "IntFeedback \fBMeterFeedback\fP\fC [get, set]\fP"
+.br
+.RI "Integer Feedback for Meter "
+.ti -1c
+.RI "BoolFeedback \fBSubscribedFeedback\fP\fC [get, set]\fP"
+.br
+.in -1c
+.SS "Additional Inherited Members"
+.SH "Property Documentation"
+.PP 
+.SS "string Tesira_DSP_EPI\&.TesiraDspMeter\&.MeterCustomName\fC [get]\fP, \fC [set]\fP"
+
+.PP
+Subscription Identifer for Meter Data 
+.SS "IntFeedback Tesira_DSP_EPI\&.TesiraDspMeter\&.MeterFeedback\fC [get]\fP, \fC [set]\fP"
+
+.PP
+Integer Feedback for Meter 
+
+.SH "Author"
+.PP 
+Generated automatically by Doxygen for Biamp Tesira Essentials Plugin from the source code\&.

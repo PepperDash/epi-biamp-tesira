@@ -1,0 +1,120 @@
+\hypertarget{class_tesira___d_s_p___e_p_i_1_1_tesira_dsp_dialer_control_point}{}\doxysection{Tesira\+\_\+\+D\+S\+P\+\_\+\+E\+P\+I.\+Tesira\+Dsp\+Dialer\+Control\+Point Class Reference}
+\label{class_tesira___d_s_p___e_p_i_1_1_tesira_dsp_dialer_control_point}\index{Tesira\_DSP\_EPI.TesiraDspDialerControlPoint@{Tesira\_DSP\_EPI.TesiraDspDialerControlPoint}}
+Inheritance diagram for Tesira\+\_\+\+D\+S\+P\+\_\+\+E\+P\+I.\+Tesira\+Dsp\+Dialer\+Control\+Point\+:\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[height=3.000000cm]{class_tesira___d_s_p___e_p_i_1_1_tesira_dsp_dialer_control_point}
+\end{center}
+\end{figure}
+\doxysubsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\mbox{\Hypertarget{class_tesira___d_s_p___e_p_i_1_1_tesira_dsp_dialer_control_point_ae9e718283f1c3dec92e6ee287069efd9}\label{class_tesira___d_s_p___e_p_i_1_1_tesira_dsp_dialer_control_point_ae9e718283f1c3dec92e6ee287069efd9}} 
+virtual void {\bfseries Initialize} ()
+\item 
+\mbox{\Hypertarget{class_tesira___d_s_p___e_p_i_1_1_tesira_dsp_dialer_control_point_a636150787fdc084f9e466d2f5d84805f}\label{class_tesira___d_s_p___e_p_i_1_1_tesira_dsp_dialer_control_point_a636150787fdc084f9e466d2f5d84805f}} 
+virtual void {\bfseries Subscribe} ()
+\item 
+\mbox{\Hypertarget{class_tesira___d_s_p___e_p_i_1_1_tesira_dsp_dialer_control_point_a05ff3a3712567a499245e5a9363454c1}\label{class_tesira___d_s_p___e_p_i_1_1_tesira_dsp_dialer_control_point_a05ff3a3712567a499245e5a9363454c1}} 
+virtual void {\bfseries Unsubscribe} ()
+\item 
+virtual void \mbox{\hyperlink{class_tesira___d_s_p___e_p_i_1_1_tesira_dsp_dialer_control_point_a7c27a706de5877f7dc8e6b925ecabbf9}{Send\+Full\+Command}} (string command, string attribute\+Code, string value, int Instance\+Tag)
+\begin{DoxyCompactList}\small\item\em Sends a command to the D\+SP for a specific control component \end{DoxyCompactList}\item 
+\mbox{\Hypertarget{class_tesira___d_s_p___e_p_i_1_1_tesira_dsp_dialer_control_point_a831a7438d84342402e2ebc7589ce308e}\label{class_tesira___d_s_p___e_p_i_1_1_tesira_dsp_dialer_control_point_a831a7438d84342402e2ebc7589ce308e}} 
+virtual void {\bfseries Parse\+Get\+Message} (string attribute\+Code, string message)
+\item 
+\mbox{\Hypertarget{class_tesira___d_s_p___e_p_i_1_1_tesira_dsp_dialer_control_point_abb05a7a5c9486c84099b062dcccca663}\label{class_tesira___d_s_p___e_p_i_1_1_tesira_dsp_dialer_control_point_abb05a7a5c9486c84099b062dcccca663}} 
+virtual void {\bfseries Send\+Subscription\+Command} (string custom\+Name, string attribute\+Code, int response\+Rate, int instance\+Tag)
+\item 
+\mbox{\Hypertarget{class_tesira___d_s_p___e_p_i_1_1_tesira_dsp_dialer_control_point_aff625d93cd81373fc511f373d15d377b}\label{class_tesira___d_s_p___e_p_i_1_1_tesira_dsp_dialer_control_point_aff625d93cd81373fc511f373d15d377b}} 
+virtual void {\bfseries Send\+Un\+Subscription\+Command} (string custom\+Name, string attribute\+Code, int instance\+Tag)
+\item 
+\mbox{\Hypertarget{class_tesira___d_s_p___e_p_i_1_1_tesira_dsp_dialer_control_point_a7687b0915028064ee72a9ba1b40ab054}\label{class_tesira___d_s_p___e_p_i_1_1_tesira_dsp_dialer_control_point_a7687b0915028064ee72a9ba1b40ab054}} 
+virtual void {\bfseries Do\+Poll} ()
+\item 
+\mbox{\Hypertarget{class_tesira___d_s_p___e_p_i_1_1_tesira_dsp_dialer_control_point_a2538821484e2a93a7a3a967372f8cbc2}\label{class_tesira___d_s_p___e_p_i_1_1_tesira_dsp_dialer_control_point_a2538821484e2a93a7a3a967372f8cbc2}} 
+override void {\bfseries Dial} (string number)
+\item 
+\mbox{\Hypertarget{class_tesira___d_s_p___e_p_i_1_1_tesira_dsp_dialer_control_point_a47af2fcb39c1a64765a27e091d38475a}\label{class_tesira___d_s_p___e_p_i_1_1_tesira_dsp_dialer_control_point_a47af2fcb39c1a64765a27e091d38475a}} 
+override void {\bfseries End\+Call} (Codec\+Active\+Call\+Item active\+Call)
+\item 
+\mbox{\Hypertarget{class_tesira___d_s_p___e_p_i_1_1_tesira_dsp_dialer_control_point_a9de0aca034415c8b107e848998873b71}\label{class_tesira___d_s_p___e_p_i_1_1_tesira_dsp_dialer_control_point_a9de0aca034415c8b107e848998873b71}} 
+override void {\bfseries End\+All\+Calls} ()
+\item 
+\mbox{\Hypertarget{class_tesira___d_s_p___e_p_i_1_1_tesira_dsp_dialer_control_point_a338cf34b1a697db30020edb88c979fe1}\label{class_tesira___d_s_p___e_p_i_1_1_tesira_dsp_dialer_control_point_a338cf34b1a697db30020edb88c979fe1}} 
+override void {\bfseries Accept\+Call} (Codec\+Active\+Call\+Item item)
+\item 
+\mbox{\Hypertarget{class_tesira___d_s_p___e_p_i_1_1_tesira_dsp_dialer_control_point_a1d3058b5fe0b0efb8bb67814cfe941ae}\label{class_tesira___d_s_p___e_p_i_1_1_tesira_dsp_dialer_control_point_a1d3058b5fe0b0efb8bb67814cfe941ae}} 
+override void {\bfseries Reject\+Call} (Codec\+Active\+Call\+Item item)
+\item 
+\mbox{\Hypertarget{class_tesira___d_s_p___e_p_i_1_1_tesira_dsp_dialer_control_point_a364fa7d9d45a62136831231ea0d62a87}\label{class_tesira___d_s_p___e_p_i_1_1_tesira_dsp_dialer_control_point_a364fa7d9d45a62136831231ea0d62a87}} 
+override void {\bfseries Send\+Dtmf} (string digit)
+\item 
+\mbox{\Hypertarget{class_tesira___d_s_p___e_p_i_1_1_tesira_dsp_dialer_control_point_ae237a42934cb78258c0c7c82a61b4013}\label{class_tesira___d_s_p___e_p_i_1_1_tesira_dsp_dialer_control_point_ae237a42934cb78258c0c7c82a61b4013}} 
+void {\bfseries Link\+To\+Api} (Basic\+Tri\+List trilist, uint join\+Start, string join\+Map\+Key, Eisc\+Api\+Advanced bridge)
+\end{DoxyCompactItemize}
+\doxysubsection*{Public Attributes}
+\begin{DoxyCompactItemize}
+\item 
+\mbox{\Hypertarget{class_tesira___d_s_p___e_p_i_1_1_tesira_dsp_dialer_control_point_ade8c5c105210be5e7f9a6ff9c8bb2aad}\label{class_tesira___d_s_p___e_p_i_1_1_tesira_dsp_dialer_control_point_ade8c5c105210be5e7f9a6ff9c8bb2aad}} 
+readonly? uint {\bfseries Bridge\+Index}
+\end{DoxyCompactItemize}
+\doxysubsection*{Protected Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\mbox{\Hypertarget{class_tesira___d_s_p___e_p_i_1_1_tesira_dsp_dialer_control_point_a639ccbeee5bd799b206022028fd3a964}\label{class_tesira___d_s_p___e_p_i_1_1_tesira_dsp_dialer_control_point_a639ccbeee5bd799b206022028fd3a964}} 
+{\bfseries Tesira\+Dsp\+Dialer\+Control\+Point} (string key, string instance\+Tag1, string instance\+Tag2, int index1, int index2, \mbox{\hyperlink{class_tesira___d_s_p___e_p_i_1_1_tesira_dsp}{Tesira\+Dsp}} parent, uint? bridge\+Index)
+\end{DoxyCompactItemize}
+\doxysubsection*{Properties}
+\begin{DoxyCompactItemize}
+\item 
+\mbox{\Hypertarget{class_tesira___d_s_p___e_p_i_1_1_tesira_dsp_dialer_control_point_aba1f98de19c8b60bd2d44152b4ade0b5}\label{class_tesira___d_s_p___e_p_i_1_1_tesira_dsp_dialer_control_point_aba1f98de19c8b60bd2d44152b4ade0b5}} 
+string {\bfseries Instance\+Tag1}\hspace{0.3cm}{\ttfamily  \mbox{[}get, set\mbox{]}}
+\item 
+\mbox{\Hypertarget{class_tesira___d_s_p___e_p_i_1_1_tesira_dsp_dialer_control_point_a3c6950fb7adfeb0e7c48bce166b19343}\label{class_tesira___d_s_p___e_p_i_1_1_tesira_dsp_dialer_control_point_a3c6950fb7adfeb0e7c48bce166b19343}} 
+string {\bfseries Instance\+Tag2}\hspace{0.3cm}{\ttfamily  \mbox{[}get, set\mbox{]}}
+\item 
+\mbox{\Hypertarget{class_tesira___d_s_p___e_p_i_1_1_tesira_dsp_dialer_control_point_aaf37865c70a94c6c308ab8f1cca8131a}\label{class_tesira___d_s_p___e_p_i_1_1_tesira_dsp_dialer_control_point_aaf37865c70a94c6c308ab8f1cca8131a}} 
+int {\bfseries Index1}\hspace{0.3cm}{\ttfamily  \mbox{[}get, set\mbox{]}}
+\item 
+\mbox{\Hypertarget{class_tesira___d_s_p___e_p_i_1_1_tesira_dsp_dialer_control_point_a185502fd7b4656f4e78b32120b4de98d}\label{class_tesira___d_s_p___e_p_i_1_1_tesira_dsp_dialer_control_point_a185502fd7b4656f4e78b32120b4de98d}} 
+int {\bfseries Index2}\hspace{0.3cm}{\ttfamily  \mbox{[}get, set\mbox{]}}
+\item 
+\mbox{\Hypertarget{class_tesira___d_s_p___e_p_i_1_1_tesira_dsp_dialer_control_point_a1bcd10ab2f1bb840aab82d18eaaccd3c}\label{class_tesira___d_s_p___e_p_i_1_1_tesira_dsp_dialer_control_point_a1bcd10ab2f1bb840aab82d18eaaccd3c}} 
+\mbox{\hyperlink{class_tesira___d_s_p___e_p_i_1_1_tesira_dsp}{Tesira\+Dsp}} {\bfseries Parent}\hspace{0.3cm}{\ttfamily  \mbox{[}get\mbox{]}}
+\item 
+\mbox{\Hypertarget{class_tesira___d_s_p___e_p_i_1_1_tesira_dsp_dialer_control_point_ab755da48e2abd03838b71a22c9a70b8e}\label{class_tesira___d_s_p___e_p_i_1_1_tesira_dsp_dialer_control_point_ab755da48e2abd03838b71a22c9a70b8e}} 
+string {\bfseries Label}\hspace{0.3cm}{\ttfamily  \mbox{[}get, set\mbox{]}}
+\item 
+\mbox{\Hypertarget{class_tesira___d_s_p___e_p_i_1_1_tesira_dsp_dialer_control_point_a266806a0289ab58f93cb7b06a77e873c}\label{class_tesira___d_s_p___e_p_i_1_1_tesira_dsp_dialer_control_point_a266806a0289ab58f93cb7b06a77e873c}} 
+virtual bool {\bfseries Is\+Subscribed}\hspace{0.3cm}{\ttfamily  \mbox{[}get, protected set\mbox{]}}
+\end{DoxyCompactItemize}
+
+
+\doxysubsection{Member Function Documentation}
+\mbox{\Hypertarget{class_tesira___d_s_p___e_p_i_1_1_tesira_dsp_dialer_control_point_a7c27a706de5877f7dc8e6b925ecabbf9}\label{class_tesira___d_s_p___e_p_i_1_1_tesira_dsp_dialer_control_point_a7c27a706de5877f7dc8e6b925ecabbf9}} 
+\index{Tesira\_DSP\_EPI.TesiraDspDialerControlPoint@{Tesira\_DSP\_EPI.TesiraDspDialerControlPoint}!SendFullCommand@{SendFullCommand}}
+\index{SendFullCommand@{SendFullCommand}!Tesira\_DSP\_EPI.TesiraDspDialerControlPoint@{Tesira\_DSP\_EPI.TesiraDspDialerControlPoint}}
+\doxysubsubsection{\texorpdfstring{SendFullCommand()}{SendFullCommand()}}
+{\footnotesize\ttfamily virtual void Tesira\+\_\+\+D\+S\+P\+\_\+\+E\+P\+I.\+Tesira\+Dsp\+Dialer\+Control\+Point.\+Send\+Full\+Command (\begin{DoxyParamCaption}\item[{string}]{command,  }\item[{string}]{attribute\+Code,  }\item[{string}]{value,  }\item[{int}]{Instance\+Tag }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [virtual]}}
+
+
+
+Sends a command to the D\+SP for a specific control component 
+
+
+\begin{DoxyParams}{Parameters}
+{\em command} & Command to send\\
+\hline
+{\em attribute\+Code} & Attribute code for control\\
+\hline
+{\em value} & Value for command\\
+\hline
+{\em Instance\+Tag} & Instance Tag of Control\\
+\hline
+\end{DoxyParams}
+
+
+The documentation for this class was generated from the following file\+:\begin{DoxyCompactItemize}
+\item 
+Tesira\+Dsp\+Dialer\+Control\+Point.\+cs\end{DoxyCompactItemize}

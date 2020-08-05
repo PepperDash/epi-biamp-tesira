@@ -1,0 +1,110 @@
+.TH "Tesira_DSP_EPI.TesiraDspControlPoint" 3 "Wed Aug 5 2020" "Version 2.0.0.x" "Biamp Tesira Essentials Plugin" \" -*- nroff -*-
+.ad l
+.nh
+.SH NAME
+Tesira_DSP_EPI.TesiraDspControlPoint
+.SH SYNOPSIS
+.br
+.PP
+.PP
+Inherits EssentialsBridgeableDevice, and ISubscribedComponent\&.
+.PP
+Inherited by \fBTesira_DSP_EPI\&.TesiraDspCrosspointState\fP, \fBTesira_DSP_EPI\&.TesiraDspFaderControl\fP, \fBTesira_DSP_EPI\&.TesiraDspMeter\fP, \fBTesira_DSP_EPI\&.TesiraDspRoomCombiner\fP, \fBTesira_DSP_EPI\&.TesiraDspStateControl\fP, and \fBTesira_DSP_EPI\&.TesiraDspSwitcher\fP\&.
+.SS "Public Member Functions"
+
+.in +1c
+.ti -1c
+.RI "virtual void \fBInitialize\fP ()"
+.br
+.ti -1c
+.RI "virtual void \fBSubscribe\fP ()"
+.br
+.ti -1c
+.RI "virtual void \fBUnsubscribe\fP ()"
+.br
+.ti -1c
+.RI "virtual void \fBSendFullCommand\fP (string command, string attributeCode, string value, int InstanceTag)"
+.br
+.RI "Sends a command to the DSP "
+.ti -1c
+.RI "virtual void \fBParseGetMessage\fP (string attributeCode, string message)"
+.br
+.ti -1c
+.RI "virtual void \fBSendSubscriptionCommand\fP (string customName, string attributeCode, int responseRate, int InstanceTag)"
+.br
+.ti -1c
+.RI "virtual void \fBSendUnSubscriptionCommand\fP (string customName, string attributeCode, int instanceTag)"
+.br
+.ti -1c
+.RI "virtual void \fBDoPoll\fP ()"
+.br
+.ti -1c
+.RI "override void \fBLinkToApi\fP (BasicTriList trilist, uint joinStart, string joinMapKey, EiscApiAdvanced bridge)"
+.br
+.in -1c
+.SS "Public Attributes"
+
+.in +1c
+.ti -1c
+.RI "readonly? uint \fBBridgeIndex\fP"
+.br
+.ti -1c
+.RI "StringFeedback \fBNameFeedback\fP"
+.br
+.ti -1c
+.RI "FeedbackCollection< Feedback > \fBFeedbacks\fP"
+.br
+.in -1c
+.SS "Protected Member Functions"
+
+.in +1c
+.ti -1c
+.RI "\fBTesiraDspControlPoint\fP (string instanceTag1, string instanceTag2, int index1, int index2, \fBTesiraDsp\fP parent, string key, string name, uint? bridgeIndex)"
+.br
+.in -1c
+.SS "Properties"
+
+.in +1c
+.ti -1c
+.RI "string \fBInstanceTag1\fP\fC [get, set]\fP"
+.br
+.ti -1c
+.RI "string \fBInstanceTag2\fP\fC [get, set]\fP"
+.br
+.ti -1c
+.RI "int \fBIndex1\fP\fC [get, set]\fP"
+.br
+.ti -1c
+.RI "int \fBIndex2\fP\fC [get, set]\fP"
+.br
+.ti -1c
+.RI "\fBTesiraDsp\fP \fBParent\fP\fC [get]\fP"
+.br
+.ti -1c
+.RI "string \fBLabel\fP\fC [get, set]\fP"
+.br
+.ti -1c
+.RI "virtual bool \fBIsSubscribed\fP\fC [get, protected set]\fP"
+.br
+.in -1c
+.SH "Member Function Documentation"
+.PP 
+.SS "virtual void Tesira_DSP_EPI\&.TesiraDspControlPoint\&.SendFullCommand (string command, string attributeCode, string value, int InstanceTag)\fC [virtual]\fP"
+
+.PP
+Sends a command to the DSP 
+.PP
+\fBParameters\fP
+.RS 4
+\fIcommand\fP command
+.br
+\fIattribute\fP attribute code
+.br
+\fIvalue\fP value (use '' if not applicable)
+.RE
+.PP
+
+
+.SH "Author"
+.PP 
+Generated automatically by Doxygen for Biamp Tesira Essentials Plugin from the source code\&.
