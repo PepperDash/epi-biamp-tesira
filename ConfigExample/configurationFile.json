@@ -30,7 +30,7 @@
                     "control": {
                         "method": "SSH",
                         "tcpSshProperties": {
-                            "address": "192.168.0.181",
+                            "address": "10.11.50.191",
                             "port": "22",
                             "username": "default",
                             "password": "default",
@@ -39,64 +39,55 @@
                         }
                     },
                     "presets" : {
-                        "1" : {
+                        "SomeUniqueKey01" : {
                             "label" : "System On",
-                            "preset" : "systemOn"
+                            "presetName" : "systemOn",
+                            "presetIndex" : 1,
+                            "presetId" : 1001
                         },
-                        "2" : {
+                        "SomeUniqueKey02" : {
                             "label" : "System Off",
-                            "preset" : "systemOff"
+                            "presetName" : "systemOff",
+                            "presetIndex" : 2,
+                            "presetId" : 1002
                         },
-                        "3" : {
+                        "SomeUniqueKey03" : {
                             "label" : "System Default",
-                            "preset" : "default"
+                            "presetName" : "default",
+                            "presetIndex" : 3,
+                            "presetId" : 1003
                         }
                     },
                     "faderControlBlocks": {
-                        "Mic": {
+                        "Program": {
                             "enabled": true,
                             "isMic": false,
                             "hasLevel": true,
                             "hasMute": true,
                             "index1": 1,
                             "index2": 0,
-                            "label": "Zone A - 1",
-                            "levelInstanceTag": "VolZoneAOut",
-                            "muteInstanceTag": "VolZoneAOut",
+                            "label": "Room A Program",
+                            "levelInstanceTag": "ROOMA_ROOM",
+                            "muteInstanceTag": "ROOMA_ROOM",
                             "unmuteOnVolChange": true,
                             "incrementAmount": "2.0",
                             "permissions" : 0,
                             "bridgeIndex" : 1
                         },
-                        "Program": {
+                        "Speech": {
                             "enabled": true,
-                            "isMic": false,
+                            "isMic": true,
                             "hasLevel": true,
                             "hasMute": true,
-                            "index1": 2,
+                            "index1": 1,
                             "index2": 0,
-                            "label": "Zone A - 2",
-                            "levelInstanceTag": "VolZoneAOut",
-                            "muteInstanceTag": "VolZoneAOut",
+                            "label": "Room A Speech",
+                            "levelInstanceTag": "ROOMA_SPEECH",
+                            "muteInstanceTag": "ROOMA_SPEECH",
                             "unmuteOnVolChange": true,
                             "incrementAmount": "2.0",
                             "permissions" : 0,
                             "bridgeIndex" : 2
-                        },
-                        "Source": {
-                            "enabled": true,
-                            "isMic": false,
-                            "hasLevel": true,
-                            "hasMute": true,
-                            "index1": 3,
-                            "index2": 0,
-                            "label": "Zone A - 3",
-                            "levelInstanceTag": "VolZoneAOut",
-                            "muteInstanceTag": "VolZoneAOut",
-                            "unmuteOnVolChange": true,
-                            "incrementAmount": "2.0",
-                            "permissions" : 0,
-                            "bridgeIndex" : 1
                         }
                     }
                 }

@@ -30,7 +30,7 @@ namespace Tesira_DSP_EPI {
         public Dictionary<string, TesiraSwitcherControlBlockConfig> SwitcherControlBlocks { get; set; }
 
         [JsonProperty("presets")]
-        public Dictionary<uint, TesiraDspPresets> Presets { get; set; }
+        public Dictionary<string, TesiraDspPresets> Presets { get; set; }
 
         [JsonProperty("stateControlBlocks")]
         public Dictionary<string, TesiraStateControlBlockConfig> StateControlBlocks { get; set; }
@@ -187,8 +187,14 @@ namespace Tesira_DSP_EPI {
             }
         }
 
-        [JsonProperty("preset")]
-        public string Preset { get; set; }
+        [JsonProperty("presetName")]
+        public string PresetName { get; set; }
+
+        [JsonProperty("presetId")]
+        public int PresetId { get; set; }
+
+        [JsonProperty("presetIndex")]
+        public int PresetIndex { get; set; }
 
         public StringFeedback LabelFeedback;
 

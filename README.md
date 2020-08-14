@@ -113,10 +113,10 @@ Within the **Standalone** object, this join map represents a single control as d
 
 #### Config Example
 
-> All Level/Mute configs must be part of a dictionary called ```levelControlBlocks```.  
+> All Level/Mute configs must be part of a dictionary called ```faderControlBlocks```.  
 
 ``` javascript
-"levelControlBlocks": {
+"faderControlBlocks": {
     "LevelControl01": {
         "enabled": true,
         "isMic": false,
@@ -297,19 +297,24 @@ None
 
 ``` javascript
 "presets" : {
-    "1": {
+    "SomeUniqueKey": {
         "label" : "Default",
-        "preset" : "Default Levels"  
-    }
+        "presetName" : "Default Levels",
+        "presetId" : 1101,
+        "presetIndex" : 1
+        }
 }
 ```
 
 #### Config Notes
 
 **label** - Passed directly across the eisc as the *Label* value.
-**preset** - the actual name of the preset as defined in biamp software
+**presetName** - the actual name of the preset as defined in biamp software
+**presetID** - the ID of the preset as defined in biamp software
+**presetIndex** - the index of the preset for the digital press recall
 
-> This dictionary MUST be keyed by UINTs.
+> If a `presetName` is defined, you don't need a `presetId` and vice versa.  One or the other will be fine.
+> If you are utilizing the "select preset by name" methodology, no presets need be defined in config.
 
 ***
 
@@ -567,7 +572,7 @@ In the provided example config object, given a base object key of ```dsp-1```, t
                             "password": "default"
                         }
                     },
-                    "levelControlBlocks": {
+                    "faderControlBlocks": {
                         "Fader1": {
                             "enabled": true,
                             "isMic": false,

@@ -16,7 +16,7 @@ namespace Tesira_DSP_EPI
         /// </summary>
         public FeedbackCollection<Feedback> Feedbacks;
 
-        private readonly Dictionary<uint, TesiraDspPresets> Presets; 
+        private readonly Dictionary<string, TesiraDspPresets> Presets; 
 
         readonly TesiraDsp _parent;
 
@@ -28,7 +28,7 @@ namespace Tesira_DSP_EPI
         /// <param name="key">Unique Key</param>
         /// <param name="name">Friendly Name</param>
         /// <param name="parent">Parent Device</param>
-        public TesiraDspDeviceInfo(string key, string name, TesiraDsp parent, Dictionary<uint, TesiraDspPresets> presets)
+        public TesiraDspDeviceInfo(string key, string name, TesiraDsp parent, Dictionary<string, TesiraDspPresets> presets)
             : base(key, name)
         {
             Presets = presets;
@@ -73,10 +73,10 @@ namespace Tesira_DSP_EPI
             foreach (var preset in Presets)
             {
                 var p = preset;
-                var runPresetIndex = preset.Key;
+                var runPresetIndex = preset.Value.PresetIndex;
                 var presetIndex = runPresetIndex - 1;
-                trilist.StringInput[presetJoinMap.PresetNameFeedback.JoinNumber - presetIndex].StringValue = p.Value.Label;
-                trilist.SetSigTrueAction(presetJoinMap.PresetSelection.JoinNumber + presetIndex, () => _parent.RunPresetNumber((ushort)runPresetIndex));
+                trilist.StringInput[(uint)(presetJoinMap.PresetNameFeedback.JoinNumber + presetIndex)].StringValue = p.Value.Label;
+                trilist.SetSigTrueAction((uint)(presetJoinMap.PresetSelection.JoinNumber + presetIndex), () => _parent.RunPresetNumber((ushort)runPresetIndex));
             }
 
 

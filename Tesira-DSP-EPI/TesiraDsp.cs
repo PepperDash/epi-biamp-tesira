@@ -62,7 +62,7 @@ namespace Tesira_DSP_EPI
         private Dictionary<string, TesiraDspMeter> Meters { get; set; }
         private Dictionary<string, TesiraDspCrosspointState> CrosspointStates { get; set; }
         private Dictionary<string, TesiraDspRoomCombiner> RoomCombiners { get; set; }
-        private Dictionary<uint, TesiraDspPresets> Presets { get; set; }
+        private Dictionary<string, TesiraDspPresets> Presets { get; set; }
         private List<ISubscribedComponent> ControlPointList { get; set; }
 
 		private bool WatchDogSniffer { get; set; }
@@ -119,7 +119,7 @@ namespace Tesira_DSP_EPI
             //Initialize Dictionaries
             Feedbacks = new FeedbackCollection<Feedback>();
             Faders = new Dictionary<string, TesiraDspFaderControl>();
-            Presets = new Dictionary<uint, TesiraDspPresets>();
+            Presets = new Dictionary<string, TesiraDspPresets>();
             Dialers = new Dictionary<string, TesiraDspDialer>();
             Switchers = new Dictionary<string, TesiraDspSwitcher>();
             States = new Dictionary<string, TesiraDspStateControl>();
@@ -159,9 +159,6 @@ namespace Tesira_DSP_EPI
             Debug.Console(2, this, "Props Exists");
             Debug.Console(2, this, "Here's the props string\n {0}", _dc.Properties.ToString());
 
-
-
-
             Faders.Clear();
             Presets.Clear();
             Dialers.Clear();
@@ -170,8 +167,6 @@ namespace Tesira_DSP_EPI
             ControlPointList.Clear();
             Meters.Clear();
             RoomCombiners.Clear();
-
-
 
             if (props.FaderControlBlocks != null)
             {
@@ -256,7 +251,7 @@ namespace Tesira_DSP_EPI
                     var value = preset.Value;
                     var key = preset.Key;
                     Presets.Add(key, value);
-                    Debug.Console(2, this, "Added Preset {0} {1}", value.Label, value.Preset);
+                    Debug.Console(2, this, "Added Preset {0} {1}", value.Label, value.PresetName);
                 }
             }
 
@@ -347,9 +342,13 @@ namespace Tesira_DSP_EPI
 
         private void StartWatchDog()
         {
-            if (_watchDogTimer != null)
+            if (_watchDogTimer == null)
             {
                 _watchDogTimer = new CTimer((o) => CheckWatchDog(), null, 20000, 20000);
+            }
+            else
+            {
+                _watchDogTimer.Reset(20000, 20000);
             }
         }
 
@@ -361,27 +360,28 @@ namespace Tesira_DSP_EPI
             _watchDogTimer = null;
         }
 
-		private void CheckWatchDog()
-		{
-			Debug.Console(2, this, "Checking Watchdog!");
-			if (!WatchDogSniffer)
-			{
-				var random = new Random(DateTime.Now.Millisecond + DateTime.Now.Second + DateTime.Now.Minute
-					+ DateTime.Now.Hour + DateTime.Now.Day + DateTime.Now.Month + DateTime.Now.Year);
+        private void CheckWatchDog()
+        {
+            Debug.Console(2, this, "The Watchdog is on the hunt!");
+            if (!WatchDogSniffer)
+            {
+                Debug.Console(2, this, "The Watchdog is picking up a scent!");
+                var random = new Random(DateTime.Now.Millisecond + DateTime.Now.Second + DateTime.Now.Minute
+	                + DateTime.Now.Hour + DateTime.Now.Day + DateTime.Now.Month + DateTime.Now.Year);
 
-				var watchDogSubject = ControlPointList[random.Next(0, ControlPointList.Count)];
+                var watchDogSubject = ControlPointList[random.Next(0, ControlPointList.Count)];
 
-				Debug.Console(2, this, "Watchdog is checking {0}", watchDogSubject.Key);
+                Debug.Console(2, this, "The Watchdog is sniffing {0}", watchDogSubject.Key);
 
-				WatchDogSniffer = true;
+                WatchDogSniffer = true;
 
-				watchDogSubject.Subscribe();
-			}
-			else
-			{
-				CommunicationMonitor.Stop();
-				Resubscribe();
-			}
+                watchDogSubject.Subscribe();
+            }
+            else
+            {
+                Debug.Console(2, this, "The WatchDog smells something foul....let's resubscribe!");
+                Resubscribe();
+            }
         }
 
         #endregion
@@ -434,6 +434,7 @@ namespace Tesira_DSP_EPI
                     // Indicates a new TTP session
                     // moved to CustomActivate() method
                     CommunicationMonitor.Start();
+                    CrestronInvoke.BeginInvoke((o) => HandleAttributeSubscriptions());
                 }
                 else if (args.Text.IndexOf("! ", StringComparison.Ordinal) > -1)
                 {
@@ -504,6 +505,7 @@ namespace Tesira_DSP_EPI
                         case "-ERR ALREADY_SUBSCRIBED":
                             {
                                 WatchDogSniffer = false;
+                                AdvanceQueue(args.Text);
                                 break;
                             }
 
@@ -539,7 +541,6 @@ namespace Tesira_DSP_EPI
 		{
 			_commandQueue.Enqueue(commandToEnqueue);
 			Debug.Console(1, this, "Command (QueuedCommand) Enqueued '{0}'.  CommandQueue has '{1}' Elements.", commandToEnqueue.Command, _commandQueue.Count);
-
 			if (!_commandQueueInProgress)
 				SendNextQueuedCommand();
 		}
@@ -552,7 +553,6 @@ namespace Tesira_DSP_EPI
 		{
 			_commandQueue.Enqueue(command);
 			Debug.Console(1, this, "Command (string) Enqueued '{0}'.  CommandQueue has '{1}' Elements.", command, _commandQueue.Count);
-
 			if (!_commandQueueInProgress)
 				SendNextQueuedCommand();
 		}
@@ -562,6 +562,7 @@ namespace Tesira_DSP_EPI
 		/// </summary>
 		void SendNextQueuedCommand()
 		{
+            Debug.Console(2, this, "Attemption to send a queued commend");
 		    if (!Communication.IsConnected || _commandQueue.IsEmpty) return;
 		    _commandQueueInProgress = true;
 
@@ -590,6 +591,8 @@ namespace Tesira_DSP_EPI
                 tempCommand.ControlPoint.ParseGetMessage(tempCommand.AttributeCode, cmd);
             }
 
+            Debug.Console(2, this, "Commmand queue {0}.", _commandQueue.IsEmpty ? "is empty" : "has entries");
+
             if (_commandQueue.IsEmpty)
                 _commandQueueInProgress = false;
             else
@@ -613,25 +616,38 @@ namespace Tesira_DSP_EPI
 
 		public void RunPresetNumber(ushort n)
 		{
-            TesiraDspPresets presetValue;
-
-		    Presets.TryGetValue(n, out presetValue);
+		    var presetValue = Presets.FirstOrDefault(o => o.Value.PresetIndex == n).Value;
 
 			Debug.Console(2, this, "Attempting to run preset {0}", n);
 			if (presetValue != null)
 			{
-				RunPreset(presetValue.Preset);
+			    if (!String.IsNullOrEmpty(presetValue.PresetName))
+			    {
+			        RunPreset(presetValue.PresetName);
+			    }
+
+                else
+                    RunPreset(presetValue.PresetId);
 			}
 		}
 
 		/// <summary>
 		/// Sends a command to execute a preset
 		/// </summary>
-		/// <param name="name">Preset Name</param>
+        /// <param name="name">Preset Name</param>
 		public void RunPreset(string name)
 		{
-			SendLine(string.Format("DEVICE recallPresetByName \"{0}\"", name));
+            SendLine(string.Format("DEVICE recallPresetByName \"{0}\"", name));
 		}
+
+        /// <summary>
+        /// Sends a command to execute a preset
+        /// </summary>
+        /// <param name="id">Preset Id</param>
+        public void RunPreset(int id)
+        {
+            SendLine(string.Format("DEVICE recallPreset {0}", id));
+        }
 
 		#endregion
 
@@ -669,11 +685,9 @@ namespace Tesira_DSP_EPI
 
         private void UnsubscribeFromComponent(ISubscribedComponent data)
 		{
-			if (data.Enabled)
-			{
-				Debug.Console(2, this, "Unsubscribing From Object - {0}", data.InstanceTag1);
-				data.Unsubscribe();
-			}
+            if (!data.Enabled) return;
+            Debug.Console(2, this, "Unsubscribing From Object - {0}", data.InstanceTag1);
+            data.Unsubscribe();
 		}
 
 		#endregion
@@ -897,10 +911,10 @@ namespace Tesira_DSP_EPI
             foreach (var preset in Presets)
             {
                 var p = preset;
-                var runPresetIndex = preset.Key;
+                var runPresetIndex = preset.Value.PresetIndex;
                 var presetIndex = runPresetIndex - 1;
-                trilist.StringInput[presetJoinMap.PresetNameFeedback.JoinNumber - presetIndex].StringValue = p.Value.Label;
-                trilist.SetSigTrueAction(presetJoinMap.PresetSelection.JoinNumber + presetIndex, () => RunPresetNumber((ushort)runPresetIndex));
+                trilist.StringInput[(uint)(presetJoinMap.PresetNameFeedback.JoinNumber + presetIndex)].StringValue = p.Value.Label;
+                trilist.SetSigTrueAction((uint)(presetJoinMap.PresetSelection.JoinNumber + presetIndex), () => RunPresetNumber((ushort)runPresetIndex));
             }
 
             // VoIP Dialer
