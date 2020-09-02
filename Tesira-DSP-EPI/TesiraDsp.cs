@@ -815,7 +815,7 @@ namespace Tesira_DSP_EPI
                 var channel = item.Value;
                 var data = channel.BridgeIndex;
                 if (data == null) continue;
-                var x = (uint) data - 1;
+                var x = (uint) data;
                 //var TesiraChannel = channel.Value as Tesira.DSP.EPI.TesiraDspLevelControl;
                 Debug.Console(2, "TesiraChannel {0} connect", x);
 
