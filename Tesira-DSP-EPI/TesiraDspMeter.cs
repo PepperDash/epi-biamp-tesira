@@ -1,49 +1,71 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using Crestron.SimplSharp;
+using Crestron.SimplSharpPro.DeviceSupport;
+using Newtonsoft.Json;
 using PepperDash.Core;
 using PepperDash.Essentials.Core;
-using PepperDash.Essentials.Bridges;
-using System.Text.RegularExpressions;
-using Crestron.SimplSharpPro.CrestronThread;
+using PepperDash.Essentials.Core.Bridges;
+using Tesira_DSP_EPI.Bridge.JoinMaps;
 using Tesira_DSP_EPI.Extensions;
 
 namespace Tesira_DSP_EPI
 {
     //AudioMeter1 unsubscribe level 1 SomethingCool
-    public class TesiraDspMeter : TesiraDspControlPoint, IKeyed
+    public class TesiraDspMeter : TesiraDspControlPoint
     {
-        static readonly double meterMinimum = -100;
-        static readonly double meterMaximum = 49;
-        static readonly int defaultPollTime = 500;
-        static readonly string meterAttributeCode = "level";
+        private readonly double _meterMinimum;
+        private readonly double _meterMaximum;
+        private readonly int _defaultPollTime;
 
+        private const string MeterAttributeCode = "level";
+        private const double MeterMinimumDefault = -100;
+        private const double MeterMaximumDefault = 49;
+        private const int DefaultPollTimeDefault = 500;
+
+        private const string KeyFormatter = "{0}--{1}";
+
+        /// <summary>
+        /// Subscription Identifer for Meter Data
+        /// </summary>
         public string MeterCustomName { get; set; }
 
+        /// <summary>
+        /// Integer Feedback for Meter
+        /// </summary>
         public IntFeedback MeterFeedback { get; set; }
-        int currentMeter;
+        int _currentMeter;
 
         public BoolFeedback SubscribedFeedback { get; set; }
 
-        public StringFeedback LabelFeedback { get; set; }
-
-        public TesiraDspMeter(string key, TesiraMeterBlockConfig config, TesiraDsp parent)
-            : base(config.meterInstanceTag, string.Empty, config.index, 0, parent)
+		public TesiraDspMeter(string key, TesiraMeterBlockConfig config, TesiraDsp parent)
+            : base(config.MeterInstanceTag, string.Empty, config.Index, 0, parent, string.Format(KeyFormatter, parent.Key, key), config.Label, config.BridgeIndex)
         {
-            Key = string.Format("{0}--{1}", Parent.Key, key);
             DeviceManager.AddDevice(this);
 
-            Label = config.label;
-            IsSubscribed = false;
-            Enabled = config.enabled;
+            Label = config.Label;
+            Enabled = config.Enabled;
 
-            MeterFeedback = new IntFeedback(() => currentMeter);
-            SubscribedFeedback = new BoolFeedback(() => IsSubscribed);
-            LabelFeedback = new StringFeedback(() => config.label);
+            MeterFeedback = new IntFeedback(Key + "-MeterFeedback",() => _currentMeter);
+            SubscribedFeedback = new BoolFeedback(Key + "-SubscribedFeedback",() => IsSubscribed);
 
-            LabelFeedback.FireUpdate();
+            Feedbacks.Add(MeterFeedback);
+            Feedbacks.Add(SubscribedFeedback);
+            Feedbacks.Add(NameFeedback);
+
+            parent.Feedbacks.AddRange(Feedbacks);
+
+		    if (config.MeterData != null)
+		    {
+		        var data = config.MeterData;
+		        _meterMinimum = data.MeterMimimum;
+		        _meterMaximum = data.MeterMaxiumum;
+		        _defaultPollTime = data.DefaultPollTime;
+		    }
+		    else
+		    {
+                _meterMinimum = MeterMinimumDefault;
+                _meterMaximum = MeterMaximumDefault;
+                _defaultPollTime = DefaultPollTimeDefault;
+		    }
 
             /*CrestronConsole.AddNewConsoleCommand(s => Subscribe(), "enablemeters", "", ConsoleAccessLevelEnum.AccessOperator);
             CrestronConsole.AddNewConsoleCommand(s => UnSubscribe(), "disablemeters", "", ConsoleAccessLevelEnum.AccessOperator);*/
@@ -51,13 +73,13 @@ namespace Tesira_DSP_EPI
 
         public override void Subscribe()
         {
-            MeterCustomName = string.Format("{0}~meter{1}", this.InstanceTag1, this.Index1);
-            SendSubscriptionCommand(MeterCustomName, meterAttributeCode, defaultPollTime, 0);
+            MeterCustomName = string.Format("{0}~meter{1}", InstanceTag1, Index1);
+            SendSubscriptionCommand(MeterCustomName, MeterAttributeCode, _defaultPollTime, 0);
         }
 
         public void UnSubscribe()
         {
-            SendUnSubscriptionCommand(MeterCustomName, meterAttributeCode, 0);
+            SendUnSubscriptionCommand(MeterCustomName, MeterAttributeCode, 0);
             IsSubscribed = false;
             SubscribedFeedback.FireUpdate();
         }
@@ -73,11 +95,46 @@ namespace Tesira_DSP_EPI
             SubscribedFeedback.FireUpdate();
 
             Debug.Console(2, this, "Parsing Message - '{0}'", message);
-            var value = Double.Parse(message).Scale(meterMinimum, meterMaximum, (double)ushort.MinValue, (double)ushort.MaxValue);
-            currentMeter = (ushort)value;
+            var value = Double.Parse(message).Scale(_meterMinimum, _meterMaximum, (double)ushort.MinValue, (double)ushort.MaxValue);
+            _currentMeter = (ushort)value;
 
-            Debug.Console(2, this, "Scaled Meter Value - '{0}'", currentMeter);
+            Debug.Console(2, this, "Scaled Meter Value - '{0}'", _currentMeter);
             MeterFeedback.FireUpdate();
-        }     
+        }
+
+        public override void LinkToApi(BasicTriList trilist, uint joinStart, string joinMapKey, EiscApiAdvanced bridge)
+        {
+            var joinMap = new TesiraMeterJoinMapAdvancedStandalone(joinStart);
+
+            var joinMapSerialized = JoinMapHelper.GetSerializedJoinMapForDevice(joinMapKey);
+
+            if (!string.IsNullOrEmpty(joinMapSerialized))
+                joinMap = JsonConvert.DeserializeObject<TesiraMeterJoinMapAdvancedStandalone>(joinMapSerialized);
+
+            if (bridge != null)
+            {
+                bridge.AddJoinMap(Key, joinMap);
+            }
+
+            Debug.Console(2, this, "AddingMeterBridge {0} | Join:{1}", Key, joinMap.Label.JoinNumber);
+
+            MeterFeedback.LinkInputSig(trilist.UShortInput[joinMap.Meter.JoinNumber]);
+            NameFeedback.LinkInputSig(trilist.StringInput[joinMap.Label.JoinNumber]);
+            SubscribedFeedback.LinkInputSig(trilist.BooleanInput[joinMap.Subscribe.JoinNumber]);
+
+            trilist.SetSigTrueAction(joinMap.Subscribe.JoinNumber, Subscribe);
+            trilist.SetSigFalseAction(joinMap.Subscribe.JoinNumber, UnSubscribe);
+
+            trilist.OnlineStatusChange += (d, args) =>
+            {
+                if (!args.DeviceOnLine) return;
+
+                foreach (var feedback in Feedbacks)
+                {
+                    feedback.FireUpdate();
+                }
+            };
+        }
+
     }
 }

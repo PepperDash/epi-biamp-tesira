@@ -1,179 +1,218 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using Crestron.SimplSharp;
-using Crestron.SimplSharp.Reflection;
-using PepperDash.Essentials.Core;
+﻿using PepperDash.Essentials.Core;
 
 
 namespace Tesira_DSP_EPI.Bridge.JoinMaps
 {
-    public class TesiraDialerJoinMap : JoinMapBase
+    /// <summary>
+    /// Dialer Joinmap for Advanced Bridge - Meant for holistic DSP Object
+    /// </summary>
+    public class TesiraDialerJoinMapAdvanced : JoinMapBaseAdvanced
     {
+        [JoinName("IncomingCall")]
+        public JoinDataComplete IncomingCall = new JoinDataComplete(new JoinData() { JoinNumber = 3100, JoinSpan = 1 },
+            new JoinMetadata() { Description = "Call Incoming", JoinCapabilities = eJoinCapabilities.ToSIMPL, JoinType = eJoinType.Digital });
 
-        //Strings
-        public uint DialString { get; set; }
-        public uint DialStringFb { get; set; }
-        public uint Label { get; set; }
-        public uint DisplayNumber { get; set; }
-        public uint CallerIDNumberFB { get; set; }
-        public uint CallerIDNameFB { get; set; }
+        [JoinName("Answer")]
+        public JoinDataComplete Answer = new JoinDataComplete(new JoinData() { JoinNumber = 3106, JoinSpan = 1 },
+            new JoinMetadata() { Description = "Answer Incoming Call", JoinCapabilities = eJoinCapabilities.FromSIMPL, JoinType = eJoinType.Digital });
 
-        //Digitals
-        public uint IncomingCall { get; set; }//
-        public uint Answer { get; set; }//
-        public uint EndCall { get; set; }//
-        public uint Keypad0 { get; set; }//
-        public uint Keypad1 { get; set; }//
-        public uint Keypad2 { get; set; }//
-        public uint Keypad3 { get; set; }//
-        public uint Keypad4 { get; set; }//
-        public uint Keypad5 { get; set; }//
-        public uint Keypad6 { get; set; }//
-        public uint Keypad7 { get; set; }//
-        public uint Keypad8 { get; set; }//
-        public uint Keypad9 { get; set; }//
-        public uint KeypadStar { get; set; }//
-        public uint KeypadPound { get; set; }//
-        public uint KeypadClear { get; set; }//
-        public uint KeypadBackspace { get; set; }//
-        public uint Dial { get; set; }//
-        public uint DialFb { get; set; }//
-        public uint AutoAnswerOn { get; set; }//
-        public uint AutoAnswerOff { get; set; }//
-        public uint AutoAnswerToggle { get; set; }
-        public uint OnHook { get; set; }
-        public uint OffHookFb { get; set; }
-        public uint DoNotDisturbToggle { get; set; }//
-        public uint DoNotDisturbOn { get; set; }//
-        public uint DoNotDisturbOff { get; set; }//
-        public uint DoNotDisturbToggleFb { get; set; }
-        public uint DoNotDisturbOnFb { get; set; }
-        public uint DoNotDisturbOffFb { get; set; }
-        public uint AutoAnswerToggleFb { get; set; }
-        public uint AutoAnswerOnFb { get; set; }
-        public uint AutoAnswerOffFb { get; set; }
-        public uint OffHook { get; set; }
-        public uint OnHookFb { get; set; }
-        public uint LastNumberDialedFb { get; set; }
+        [JoinName("EndCall")]
+        public JoinDataComplete EndCall = new JoinDataComplete(new JoinData() { JoinNumber = 3107, JoinSpan = 1 },
+            new JoinMetadata() { Description = "End Call", JoinCapabilities = eJoinCapabilities.FromSIMPL, JoinType = eJoinType.Digital });
 
-        //Analogs
-        public uint CallState { get; set; }
+        [JoinName("KeyPadNumeric")]
+        public JoinDataComplete KeyPadNumeric = new JoinDataComplete(new JoinData() { JoinNumber = 3110, JoinSpan = 10 },
+            new JoinMetadata() { Description = "Keypad Digits 0-9", JoinCapabilities = eJoinCapabilities.FromSIMPL, JoinType = eJoinType.Digital });
 
+        [JoinName("KeyPadStar")]
+        public JoinDataComplete KeyPadStar = new JoinDataComplete(new JoinData() { JoinNumber = 3120, JoinSpan = 1 },
+            new JoinMetadata() { Description = "Keypad *", JoinCapabilities = eJoinCapabilities.FromSIMPL, JoinType = eJoinType.Digital });
 
+        [JoinName("KeyPadPound")]
+        public JoinDataComplete KeyPadPound = new JoinDataComplete(new JoinData() { JoinNumber = 3121, JoinSpan = 1 },
+            new JoinMetadata() { Description = "Keypad #", JoinCapabilities = eJoinCapabilities.FromSIMPL, JoinType = eJoinType.Digital });
 
+        [JoinName("KeyPadClear")]
+        public JoinDataComplete KeyPadClear = new JoinDataComplete(new JoinData() { JoinNumber = 3122, JoinSpan = 1 },
+            new JoinMetadata() { Description = "Keypad Clear", JoinCapabilities = eJoinCapabilities.FromSIMPL, JoinType = eJoinType.Digital });
 
+        [JoinName("KeyPadBackspace")]
+        public JoinDataComplete KeyPadBackspace = new JoinDataComplete(new JoinData() { JoinNumber = 3123, JoinSpan = 1 },
+            new JoinMetadata() { Description = "Keypad Backspace", JoinCapabilities = eJoinCapabilities.FromSIMPL, JoinType = eJoinType.Digital });
 
-        public TesiraDialerJoinMap(uint JoinStart)
-        {
-            //Is an array - all members start at value + 1
-            //Each additional line appearance starts at Value + 1 + (50 * (LineAppearance - 1))
+        [JoinName("KeyPadDial")]
+        public JoinDataComplete KeyPadDial = new JoinDataComplete(new JoinData() { JoinNumber = 3124, JoinSpan = 1 },
+            new JoinMetadata() { Description = "Keypad Dial and Feedback", JoinCapabilities = eJoinCapabilities.ToFromSIMPL, JoinType = eJoinType.Digital });
 
-            //Digital
-            IncomingCall = 3100;
-            Answer = 3106;
-            EndCall = 3107;
-            Keypad0 = 3110;
-            Keypad1 = 3111;
-            Keypad2 = 3112;
-            Keypad3 = 3113;
-            Keypad4 = 3114;
-            Keypad5 = 3115;
-            Keypad6 = 3116;
-            Keypad7 = 3117;
-            Keypad8 = 3118;
-            Keypad9 = 3119;
-            KeypadStar = 3120;
-            KeypadPound = 3121;
-            KeypadClear = 3122;
-            KeypadBackspace = 3123;
-            Dial = 3124;
-            DialFb = 3124;
-            AutoAnswerOn = 3125;
-            AutoAnswerOff = 3126;
-            AutoAnswerToggle = 3127;
-            AutoAnswerOnFb = 3125;
-            AutoAnswerOffFb = 3126;
-            AutoAnswerToggleFb = 3127;
-            OnHook = 3129;
-            OnHookFb = 3129;
-            OffHook = 3130;
-            OffHookFb = 3130;
-            DoNotDisturbToggle = 3132;
-            DoNotDisturbToggleFb = 3132;
-            DoNotDisturbOn = 3133;
-            DoNotDisturbOnFb = 3133;
-            DoNotDisturbOff = 3134;
-            DoNotDisturbOffFb = 3134;
+        [JoinName("AutoAnswerOn")]
+        public JoinDataComplete AutoAnswerOn = new JoinDataComplete(new JoinData() { JoinNumber = 3125, JoinSpan = 1 },
+            new JoinMetadata() { Description = "Auto Answer On and Feedback", JoinCapabilities = eJoinCapabilities.ToFromSIMPL, JoinType = eJoinType.Digital });
 
+        [JoinName("AutoAnswerOff")]
+        public JoinDataComplete AutoAnswerOff = new JoinDataComplete(new JoinData() { JoinNumber = 3126, JoinSpan = 1 },
+            new JoinMetadata() { Description = "Auto Answer Off and Feedback", JoinCapabilities = eJoinCapabilities.ToFromSIMPL, JoinType = eJoinType.Digital });
 
+        [JoinName("AutoAnswerToggle")]
+        public JoinDataComplete AutoAnswerToggle = new JoinDataComplete(new JoinData() { JoinNumber = 3127, JoinSpan = 1 },
+            new JoinMetadata() { Description = "Auto Answer Toggle and On Feedback", JoinCapabilities = eJoinCapabilities.ToFromSIMPL, JoinType = eJoinType.Digital });
+
+        [JoinName("OnHook")]
+        public JoinDataComplete OnHook = new JoinDataComplete(new JoinData() { JoinNumber = 3129, JoinSpan = 1 },
+            new JoinMetadata() { Description = "On Hook Set and Feedback", JoinCapabilities = eJoinCapabilities.ToFromSIMPL, JoinType = eJoinType.Digital });
+
+        [JoinName("OffHook")]
+        public JoinDataComplete OffHook = new JoinDataComplete(new JoinData() { JoinNumber = 3130, JoinSpan = 1 },
+            new JoinMetadata() { Description = "Off Hook Set and Feedback", JoinCapabilities = eJoinCapabilities.ToFromSIMPL, JoinType = eJoinType.Digital });
+
+        [JoinName("DoNotDisturbToggle")]
+        public JoinDataComplete DoNotDisturbToggle = new JoinDataComplete(new JoinData() { JoinNumber = 3132, JoinSpan = 1 },
+            new JoinMetadata() { Description = "Do Not Disturb Toggle and Feedback", JoinCapabilities = eJoinCapabilities.ToFromSIMPL, JoinType = eJoinType.Digital });
+
+        [JoinName("DoNotDisturbOn")]
+        public JoinDataComplete DoNotDisturbOn = new JoinDataComplete(new JoinData() { JoinNumber = 3133, JoinSpan = 1 },
+            new JoinMetadata() { Description = "Do Not Disturb On Set and Feedback", JoinCapabilities = eJoinCapabilities.ToFromSIMPL, JoinType = eJoinType.Digital });
+
+        [JoinName("DoNotDisturbOff")]
+        public JoinDataComplete DoNotDisturbOff = new JoinDataComplete(new JoinData() { JoinNumber = 3134, JoinSpan = 1 },
+            new JoinMetadata() { Description = "Do Not Disturb Of Set and Feedback", JoinCapabilities = eJoinCapabilities.ToFromSIMPL, JoinType = eJoinType.Digital });
+
+        [JoinName("CallState")]
+        public JoinDataComplete CallState = new JoinDataComplete(new JoinData() { JoinNumber = 3100, JoinSpan = 1 },
+            new JoinMetadata() { Description = "Call State Feedback", JoinCapabilities = eJoinCapabilities.ToSIMPL, JoinType = eJoinType.Analog });
+
+        [JoinName("DialString")]
+        public JoinDataComplete DialString = new JoinDataComplete(new JoinData() { JoinNumber = 3100, JoinSpan = 1 },
+            new JoinMetadata() { Description = "Dial String Send and Feedback", JoinCapabilities = eJoinCapabilities.ToFromSIMPL, JoinType = eJoinType.Serial });
+
+        [JoinName("Label")]
+        public JoinDataComplete Label = new JoinDataComplete(new JoinData() { JoinNumber = 3101, JoinSpan = 1 },
+            new JoinMetadata() { Description = "Dialer Label", JoinCapabilities = eJoinCapabilities.ToSIMPL, JoinType = eJoinType.Serial });
+
+        [JoinName("LastNumberDialerFb")]
+        public JoinDataComplete LastNumberDialerFb = new JoinDataComplete(new JoinData() { JoinNumber = 3102, JoinSpan = 1 },
+            new JoinMetadata() { Description = "Last Number Dialed Feedback", JoinCapabilities = eJoinCapabilities.ToSIMPL, JoinType = eJoinType.Serial });
+
+        [JoinName("CallerIdNumberFb")]
+        public JoinDataComplete CallerIdNumberFb = new JoinDataComplete(new JoinData() { JoinNumber = 3104, JoinSpan = 1 },
+            new JoinMetadata() { Description = "Caller ID Number", JoinCapabilities = eJoinCapabilities.ToSIMPL, JoinType = eJoinType.Serial });
+
+        [JoinName("CallerIdNameFb")]
+        public JoinDataComplete CallerIdNameFb = new JoinDataComplete(new JoinData() { JoinNumber = 3105, JoinSpan = 1 },
+            new JoinMetadata() { Description = "Caller ID Name", JoinCapabilities = eJoinCapabilities.ToSIMPL, JoinType = eJoinType.Serial });
+
+        [JoinName("DisplayNumber")]
+        public JoinDataComplete DisplayNumber = new JoinDataComplete(new JoinData() { JoinNumber = 3106, JoinSpan = 1 },
+            new JoinMetadata() { Description = "This Line's Number", JoinCapabilities = eJoinCapabilities.ToSIMPL, JoinType = eJoinType.Serial });
 
 
-
-            //Analog
-            CallState = 3100;
-
-            //String
-            DialString = 3100;
-            DialStringFb = 3100;
-            Label = 3101;
-            LastNumberDialedFb = 3102;
-            CallerIDNumberFB = 3104;
-            CallerIDNameFB = 3105;
-            DisplayNumber = 3106;
-
-            OffsetJoinNumbers(JoinStart);
-        }
-
-        public override void OffsetJoinNumbers(uint joinStart)
-        {
-            var joinOffset = joinStart - 1;
-
-            IncomingCall += joinOffset;
-            Answer += joinOffset;
-            EndCall += joinOffset;
-            Keypad0 += joinOffset;
-            Keypad1 += joinOffset;
-            Keypad2 += joinOffset;
-            Keypad3 += joinOffset;
-            Keypad4 += joinOffset;
-            Keypad5 += joinOffset;
-            Keypad6 += joinOffset;
-            Keypad7 += joinOffset;
-            Keypad8 += joinOffset;
-            Keypad9 += joinOffset;
-            KeypadStar += joinOffset;
-            KeypadPound += joinOffset;
-            KeypadClear += joinOffset;
-            KeypadBackspace += joinOffset;
-            Dial += joinOffset;
-            DialFb += joinOffset;
-            AutoAnswerOn += joinOffset;
-            AutoAnswerOnFb += joinOffset;
-            AutoAnswerOff += joinOffset;
-            AutoAnswerOffFb += joinOffset;
-            AutoAnswerToggle += joinOffset;
-            AutoAnswerToggleFb += joinOffset;
-            OnHook += joinOffset;
-            OnHookFb += joinOffset;
-            OffHook += joinOffset;
-            OffHookFb += joinOffset;
-            DoNotDisturbToggle += joinOffset;
-            DoNotDisturbToggleFb += joinOffset;
-            DoNotDisturbOn += joinOffset;
-            DoNotDisturbOnFb += joinOffset;
-            DoNotDisturbOff += joinOffset;
-            DoNotDisturbOffFb += joinOffset;
-
-            CallState += joinOffset;
-            DialString += joinOffset;
-            DialStringFb += joinOffset;
-            Label += joinOffset;
-            LastNumberDialedFb += joinOffset;
-            CallerIDNumberFB += joinOffset;
-            CallerIDNameFB += joinOffset;
-            DisplayNumber += joinOffset;
-        }
+        public TesiraDialerJoinMapAdvanced(uint joinStart)
+            : base(joinStart, typeof(TesiraDialerJoinMapAdvanced)) { }
     }
+
+    /// <summary>
+    /// Dialer Joinmap for Advanced Bridge - Meant for bridging the dialer as a standalone device
+    /// </summary>
+    public class TesiraDialerJoinMapAdvancedStandalone : JoinMapBaseAdvanced
+    {
+        [JoinName("IncomingCall")]
+        public JoinDataComplete IncomingCall = new JoinDataComplete(new JoinData() { JoinNumber = 1, JoinSpan = 1 },
+            new JoinMetadata() { Description = "Call Incoming", JoinCapabilities = eJoinCapabilities.ToSIMPL, JoinType = eJoinType.Digital });
+
+        [JoinName("Answer")]
+        public JoinDataComplete Answer = new JoinDataComplete(new JoinData() { JoinNumber = 2, JoinSpan = 1 },
+            new JoinMetadata() { Description = "Answer Incoming Call", JoinCapabilities = eJoinCapabilities.FromSIMPL, JoinType = eJoinType.Digital });
+
+        [JoinName("EndCall")]
+        public JoinDataComplete EndCall = new JoinDataComplete(new JoinData() { JoinNumber = 3, JoinSpan = 1 },
+            new JoinMetadata() { Description = "End Call", JoinCapabilities = eJoinCapabilities.FromSIMPL, JoinType = eJoinType.Digital });
+
+        [JoinName("KeyPadNumeric")]
+        public JoinDataComplete KeyPadNumeric = new JoinDataComplete(new JoinData() { JoinNumber = 4, JoinSpan = 10 },
+            new JoinMetadata() { Description = "Keypad Digits 0-9", JoinCapabilities = eJoinCapabilities.FromSIMPL, JoinType = eJoinType.Digital });
+
+        [JoinName("KeyPadStar")]
+        public JoinDataComplete KeyPadStar = new JoinDataComplete(new JoinData() { JoinNumber = 14, JoinSpan = 1 },
+            new JoinMetadata() { Description = "Keypad *", JoinCapabilities = eJoinCapabilities.FromSIMPL, JoinType = eJoinType.Digital });
+
+        [JoinName("KeyPadPound")]
+        public JoinDataComplete KeyPadPound = new JoinDataComplete(new JoinData() { JoinNumber = 15, JoinSpan = 1 },
+            new JoinMetadata() { Description = "Keypad #", JoinCapabilities = eJoinCapabilities.FromSIMPL, JoinType = eJoinType.Digital });
+
+        [JoinName("KeyPadClear")]
+        public JoinDataComplete KeyPadClear = new JoinDataComplete(new JoinData() { JoinNumber = 16, JoinSpan = 1 },
+            new JoinMetadata() { Description = "Keypad Clear", JoinCapabilities = eJoinCapabilities.FromSIMPL, JoinType = eJoinType.Digital });
+
+        [JoinName("KeyPadBackspace")]
+        public JoinDataComplete KeyPadBackspace = new JoinDataComplete(new JoinData() { JoinNumber = 17, JoinSpan = 1 },
+            new JoinMetadata() { Description = "Keypad Backspace", JoinCapabilities = eJoinCapabilities.FromSIMPL, JoinType = eJoinType.Digital });
+
+        [JoinName("KeyPadDial")]
+        public JoinDataComplete KeyPadDial = new JoinDataComplete(new JoinData() { JoinNumber = 18, JoinSpan = 1 },
+            new JoinMetadata() { Description = "Keypad Dial and Feedback", JoinCapabilities = eJoinCapabilities.ToFromSIMPL, JoinType = eJoinType.Digital });
+
+        [JoinName("AutoAnswerOn")]
+        public JoinDataComplete AutoAnswerOn = new JoinDataComplete(new JoinData() { JoinNumber = 19, JoinSpan = 1 },
+            new JoinMetadata() { Description = "Auto Answer On and Feedback", JoinCapabilities = eJoinCapabilities.ToFromSIMPL, JoinType = eJoinType.Digital });
+
+        [JoinName("AutoAnswerOff")]
+        public JoinDataComplete AutoAnswerOff = new JoinDataComplete(new JoinData() { JoinNumber = 20, JoinSpan = 1 },
+            new JoinMetadata() { Description = "Auto Answer Off and Feedback", JoinCapabilities = eJoinCapabilities.ToFromSIMPL, JoinType = eJoinType.Digital });
+
+        [JoinName("AutoAnswerToggle")]
+        public JoinDataComplete AutoAnswerToggle = new JoinDataComplete(new JoinData() { JoinNumber = 21, JoinSpan = 1 },
+            new JoinMetadata() { Description = "Auto Answer Toggle and On Feedback", JoinCapabilities = eJoinCapabilities.ToFromSIMPL, JoinType = eJoinType.Digital });
+
+        [JoinName("OnHook")]
+        public JoinDataComplete OnHook = new JoinDataComplete(new JoinData() { JoinNumber = 22, JoinSpan = 1 },
+            new JoinMetadata() { Description = "On Hook Set and Feedback", JoinCapabilities = eJoinCapabilities.ToFromSIMPL, JoinType = eJoinType.Digital });
+
+        [JoinName("OffHook")]
+        public JoinDataComplete OffHook = new JoinDataComplete(new JoinData() { JoinNumber = 23, JoinSpan = 1 },
+            new JoinMetadata() { Description = "Off Hook Set and Feedback", JoinCapabilities = eJoinCapabilities.ToFromSIMPL, JoinType = eJoinType.Digital });
+
+        [JoinName("DoNotDisturbOn")]
+        public JoinDataComplete DoNotDisturbOn = new JoinDataComplete(new JoinData() { JoinNumber = 24, JoinSpan = 1 },
+            new JoinMetadata() { Description = "Do Not Disturb On Set and Feedback", JoinCapabilities = eJoinCapabilities.ToFromSIMPL, JoinType = eJoinType.Digital });
+
+        [JoinName("DoNotDisturbOff")]
+        public JoinDataComplete DoNotDisturbOff = new JoinDataComplete(new JoinData() { JoinNumber = 25, JoinSpan = 1 },
+            new JoinMetadata() { Description = "Do Not Disturb Of Set and Feedback", JoinCapabilities = eJoinCapabilities.ToFromSIMPL, JoinType = eJoinType.Digital });
+
+        [JoinName("DoNotDisturbToggle")]
+        public JoinDataComplete DoNotDisturbToggle = new JoinDataComplete(new JoinData() { JoinNumber = 26, JoinSpan = 1 },
+            new JoinMetadata() { Description = "Do Not Disturb Toggle and Feedback", JoinCapabilities = eJoinCapabilities.ToFromSIMPL, JoinType = eJoinType.Digital });
+
+        [JoinName("CallState")]
+        public JoinDataComplete CallState = new JoinDataComplete(new JoinData() { JoinNumber = 1, JoinSpan = 1 },
+            new JoinMetadata() { Description = "Call State Feedback", JoinCapabilities = eJoinCapabilities.ToSIMPL, JoinType = eJoinType.Analog });
+
+        [JoinName("DialString")]
+        public JoinDataComplete DialString = new JoinDataComplete(new JoinData() { JoinNumber = 1, JoinSpan = 1 },
+            new JoinMetadata() { Description = "Dial String Send and Feedback", JoinCapabilities = eJoinCapabilities.ToFromSIMPL, JoinType = eJoinType.Serial });
+
+        [JoinName("Label")]
+        public JoinDataComplete Label = new JoinDataComplete(new JoinData() { JoinNumber = 2, JoinSpan = 1 },
+            new JoinMetadata() { Description = "Dialer Label", JoinCapabilities = eJoinCapabilities.ToSIMPL, JoinType = eJoinType.Serial });
+
+        [JoinName("LastNumberDialerFb")]
+        public JoinDataComplete LastNumberDialerFb = new JoinDataComplete(new JoinData() { JoinNumber = 3, JoinSpan = 1 },
+            new JoinMetadata() { Description = "Last Number Dialed Feedback", JoinCapabilities = eJoinCapabilities.ToSIMPL, JoinType = eJoinType.Serial });
+
+        [JoinName("CallerIdNumberFb")]
+        public JoinDataComplete CallerIdNumberFb = new JoinDataComplete(new JoinData() { JoinNumber = 4, JoinSpan = 1 },
+            new JoinMetadata() { Description = "Caller ID Number", JoinCapabilities = eJoinCapabilities.ToSIMPL, JoinType = eJoinType.Serial });
+
+        [JoinName("CallerIdNameFb")]
+        public JoinDataComplete CallerIdNameFb = new JoinDataComplete(new JoinData() { JoinNumber = 5, JoinSpan = 1 },
+            new JoinMetadata() { Description = "Caller ID Name", JoinCapabilities = eJoinCapabilities.ToSIMPL, JoinType = eJoinType.Serial });
+
+        [JoinName("DisplayNumber")]
+        public JoinDataComplete DisplayNumber = new JoinDataComplete(new JoinData() { JoinNumber = 6, JoinSpan = 1 },
+            new JoinMetadata() { Description = "This Line's Number", JoinCapabilities = eJoinCapabilities.ToSIMPL, JoinType = eJoinType.Serial });
+
+
+        public TesiraDialerJoinMapAdvancedStandalone(uint joinStart)
+            : base(joinStart, typeof(TesiraDialerJoinMapAdvancedStandalone)) { }
+    }
+
 }
