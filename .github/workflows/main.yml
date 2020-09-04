@@ -86,4 +86,4 @@ jobs:
           asset_name: ${{ env.SOLUTION_FILE}}-${{ env.VERSION}}.zip
           asset_content_type: application/zip
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.DOCKERHUB_PASSWORD }}
