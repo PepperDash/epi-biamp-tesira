@@ -6,7 +6,6 @@ on:
       - feature/*
       - hotfix/*
       - release/*
-      - main
       - dev*
 
 env:
