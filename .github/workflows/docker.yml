@@ -79,6 +79,15 @@ jobs:
         with:
           name: Build
           path: ./${{ env.SOLUTION_FILE}}-${{ env.VERSION}}.zip
+      # Write the version to a file to be consumed by the push jobs
+      - name: Write Version
+        run: Write-Output "$($Env:VERSION)" | Out-File -FilePath "$($Env:GITHUB_HOME)\output\version.txt"
+      # Upload the Version file as an artifact
+      - name: Upload version.txt
+        uses: actions/upload-artifact@v1
+        with:
+          name: Version
+          path: ${{env.GITHUB_HOME}}\output\version.txt
       # Create the release on the source repo
       - name: Create Release
         id: create_release
