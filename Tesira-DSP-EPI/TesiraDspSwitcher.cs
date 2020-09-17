@@ -173,15 +173,17 @@ namespace Tesira_DSP_EPI {
                     return;
                 }
 
-                if (message.IndexOf("+OK", StringComparison.OrdinalIgnoreCase) > -1) {
+                if (message.IndexOf("+OK", StringComparison.OrdinalIgnoreCase) > -1) 
+				{
                     if (attributeCode == "sourceSelection") {
                         SourceIndex = int.Parse(value);
                     }
+					else if (attributeCode == "input")
+					{
+						SourceIndex = int.Parse(value);
+					}
                 }
-                if (attributeCode == "input")
-                {
-                    _source = int.Parse(value);
-                }
+
             }
             catch (Exception e) {
                 Debug.Console(2, this, "Unable to parse message: '{0}'\n{1}", message, e);
