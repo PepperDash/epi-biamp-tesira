@@ -163,6 +163,7 @@ namespace Tesira_DSP_EPI {
         public StringFeedback DisplayNumberFeedback;
 
         private eCallStatus _CallStatusEnum { get; set; }
+
         public eCallStatus CallStatusEnum
         {
             get
@@ -340,30 +341,33 @@ namespace Tesira_DSP_EPI {
         /// <summary>
         /// Subscription state of component
         /// </summary>
-        public override bool IsSubscribed {
-            get {
+        public override bool IsSubscribed
+        {
+            get
+            {
                 bool isSubscribed;
-                if (IsVoip) {
+                if (IsVoip)
+                {
                     if (VoipIsSubscribed && AutoAnswerIsSubscribed)
-                        isSubscribed =  true;
+                        isSubscribed = true;
                     else
-                        isSubscribed =  false;
+                        isSubscribed = false;
                 }
-                else if (!IsVoip) {
+                else if (!IsVoip)
+                {
                     if (PotsIsSubscribed && HookStateIsSubscribed)
                         isSubscribed = true;
                     else
                         isSubscribed = false;
                 }
                 else
-                    isSubscribed =  false;
+                    isSubscribed = false;
                 return isSubscribed;
             }
             protected set { }
         }
 
         private bool VoipIsSubscribed { get; set; }
-        private bool DndIsSubscribed { get; set; }
         private bool AutoAnswerIsSubscribed { get; set; }
         private bool HookStateIsSubscribed { get; set; }
         private bool PotsIsSubscribed { get; set; }
@@ -499,6 +503,9 @@ namespace Tesira_DSP_EPI {
         {
             if (IsVoip)
             {
+                VoipIsSubscribed = false;
+                AutoAnswerIsSubscribed = false;
+
                 DialerCustomName = string.Format("{0}~VoIPDialer{1}", InstanceTag1, Index1);
                 AutoAnswerCustomName = string.Format("{0}~VoIPDialerAutoAnswer{1}", InstanceTag1, Index1);
                 ControlStatusCustomName = string.Format("{0}~VoIPControl{1}", InstanceTag2, Index1);
@@ -513,6 +520,9 @@ namespace Tesira_DSP_EPI {
             }
             else if (!IsVoip)
             {
+                PotsIsSubscribed = false;
+                HookStateIsSubscribed = false;
+
                 PotsDialerCustomName = string.Format("{0}~PotsDialer{1}", InstanceTag1, Index1);
                 LastDialedCustomName = string.Format("{0}~PotsLastNumber{1}", InstanceTag1, Index1);
 

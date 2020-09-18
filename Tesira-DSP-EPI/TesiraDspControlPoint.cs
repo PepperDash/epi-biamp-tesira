@@ -47,9 +47,10 @@ namespace Tesira_DSP_EPI
 		}
 
         public virtual void Subscribe()
-		{
-
-		}
+        {
+            //If component does not override subscription, it sets the subscription value to false.
+            IsSubscribed = false;
+        }
 
         public virtual void Unsubscribe()
 		{

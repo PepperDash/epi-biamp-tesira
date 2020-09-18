@@ -8,6 +8,7 @@ using System.Text.RegularExpressions;
 using Newtonsoft.Json;
 using PepperDash.Essentials.Core.Config;
 using Crestron.SimplSharpPro.DeviceSupport;
+using PepperDash.Essentials.Devices.Common.VideoCodec.Cisco;
 using Tesira_DSP_EPI.Bridge.JoinMaps;
 using PepperDash.Essentials.Core.Bridges;
 using Feedback = PepperDash.Essentials.Core.Feedback;
@@ -96,7 +97,7 @@ namespace Tesira_DSP_EPI
 			if (socket != null)
 			{
 				// This instance uses IP control
-				socket.ConnectionChange += new EventHandler<GenericSocketStatusChageEventArgs>(socket_ConnectionChange);
+				socket.ConnectionChange += socket_ConnectionChange;
 				_isSerialComm = false;
 			}
 			else
@@ -369,7 +370,7 @@ namespace Tesira_DSP_EPI
                 var random = new Random(DateTime.Now.Millisecond + DateTime.Now.Second + DateTime.Now.Minute
 	                + DateTime.Now.Hour + DateTime.Now.Day + DateTime.Now.Month + DateTime.Now.Year);
 
-                var watchDogSubject = ControlPointList[random.Next(0, ControlPointList.Count)];
+                var watchDogSubject = SelectWatchDogSubject(random);
 
                 Debug.Console(2, this, "The Watchdog is sniffing {0}", watchDogSubject.Key);
 
@@ -382,6 +383,14 @@ namespace Tesira_DSP_EPI
                 Debug.Console(2, this, "The WatchDog smells something foul....let's resubscribe!");
                 Resubscribe();
             }
+        }
+
+        private ISubscribedComponent SelectWatchDogSubject(Random random)
+        {
+            var watchDogSubject = ControlPointList[random.Next(0, ControlPointList.Count)];
+            while(watchDogSubject.IsSubscribed == false)
+                watchDogSubject = ControlPointList[random.Next(0, ControlPointList.Count)];
+            return watchDogSubject;
         }
 
         #endregion
@@ -723,7 +732,8 @@ namespace Tesira_DSP_EPI
 		}
 
         private void SubscribeToComponent(ISubscribedComponent data)
-		{
+        {
+            if (data == null) return;
             if (!data.Enabled) return;
             Debug.Console(2, this, "Subscribing To Object - {0}", data.InstanceTag1);
             data.Subscribe();
@@ -740,14 +750,13 @@ namespace Tesira_DSP_EPI
 
         private void HandleAttributeSubscriptions()
         {
-            _subscriptionLock.Enter();
+
 
             SendLine("SESSION set verbose false");
             try
             {
                 //Unsubscribe
-                if (_isSerialComm) UnsubscribeFromComponents();
-
+                UnsubscribeFromComponents();
 
                 //Subscribe
                 SubscribeToComponents();

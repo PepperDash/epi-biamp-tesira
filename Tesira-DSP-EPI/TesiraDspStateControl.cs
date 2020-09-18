@@ -72,6 +72,7 @@ namespace Tesira_DSP_EPI {
         /// </summary>
         public override void Unsubscribe()
         {
+            IsSubscribed = false;
             StateCustomName = string.Format("{0}~state{1}", InstanceTag1, Index1);
             Debug.Console(2, this, "StateCustomName = {0}", StateCustomName);
             SendUnSubscriptionCommand(StateCustomName, "state", 1);

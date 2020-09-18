@@ -157,9 +157,7 @@ namespace Tesira_DSP_EPI
         {
             get
             {
-                var isSubscribed = !HasLevel && !_levelIsSubscribed;
-
-                return isSubscribed;
+                return HasLevel && _levelIsSubscribed;       
             }
             protected set { }
         }
@@ -295,6 +293,8 @@ namespace Tesira_DSP_EPI
         public override void Unsubscribe()
         {
             if (!HasLevel) return;
+
+            _levelIsSubscribed = false;
             LevelCustomName = string.Format("{0}~roomCombiner{1}", InstanceTag1, Index1);
             SendUnSubscriptionCommand(LevelCustomName, "levelOut", 1);
         }

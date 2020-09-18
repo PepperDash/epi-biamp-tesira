@@ -283,6 +283,7 @@ namespace Tesira_DSP_EPI
             //Unsubscribe to Mute
             if (HasMute)
             {
+                _muteIsSubscribed = false;
                 // MUST use InstanceTag2 for mute, it is the second instance tag in the JSON config
                 MuteCustomName = string.Format("{0}~mute{1}", InstanceTag2, Index1);
 
@@ -292,7 +293,7 @@ namespace Tesira_DSP_EPI
             //Unubscribe to Level
             if (HasLevel)
             {
-
+                _levelIsSubscribed = false;
                 // MUST use InstanceTag1 for levels, it is the first instance tag in the JSON config
                 LevelCustomName = string.Format("{0}~level{1}", InstanceTag1, Index1);
 
