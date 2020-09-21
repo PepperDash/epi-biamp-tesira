@@ -12,7 +12,7 @@ namespace Tesira_DSP_EPI {
         bool _State;
 
         public BoolFeedback StateFeedback { get; set; }
-
+		public IntFeedback StateIntFeedback { get; set; } 
         public string StateCustomName { get; set; }
 
         public TesiraDspStateControl(string key, TesiraStateControlBlockConfig config, TesiraDsp parent)
@@ -45,7 +45,7 @@ namespace Tesira_DSP_EPI {
             Label = config.label;
 
             StateFeedback = new BoolFeedback(() => _State);
-
+			
             Enabled = config.enabled;
 
             //Subscribe();

@@ -47,7 +47,7 @@ namespace Tesira_DSP_EPI.Bridge {
                 //var TesiraChannel = channel.Value as Tesira.DSP.EPI.TesiraDspLevelControl;
                 Debug.Console(2, "TesiraChannel {0} connect", x);
 
-                var genericChannel = channel.Value as IBasicVolumeWithFeedback;
+                var genericChannel = channel.Value as TesiraDspLevelControl;
                 if (channel.Value.Enabled) {
                     Debug.Console(2, DspDevice, "TesiraChannel {0} Is Enabled", x);
                     trilist.StringInput[levelJoinMap.Label + x].StringValue = channel.Value.Label;
@@ -58,11 +58,25 @@ namespace Tesira_DSP_EPI.Bridge {
 
                     genericChannel.MuteFeedback.LinkInputSig(trilist.BooleanInput[levelJoinMap.MuteToggleFb + x]);
                     genericChannel.MuteFeedback.LinkInputSig(trilist.BooleanInput[levelJoinMap.MuteOnFb + x]);
-                    genericChannel.MuteFeedback.LinkComplementInputSig(trilist.BooleanInput[levelJoinMap.MuteOffFb + x]);
+					genericChannel.MuteIntFeedback.LinkInputSig(trilist.UShortInput[levelJoinMap.MuteOnFb + x]);
+                    
+					genericChannel.MuteFeedback.LinkComplementInputSig(trilist.BooleanInput[levelJoinMap.MuteOffFb + x]);
                     genericChannel.VolumeLevelFeedback.LinkInputSig(trilist.UShortInput[levelJoinMap.VolumeFb + x]);
 
                     trilist.SetSigTrueAction(levelJoinMap.MuteToggle + x, () => genericChannel.MuteToggle());
                     trilist.SetSigTrueAction(levelJoinMap.MuteOn + x, () => genericChannel.MuteOn());
+
+					trilist.SetUShortSigAction(levelJoinMap.MuteOn + x, (a) => 
+						{
+							if(a == 1)
+							{
+								genericChannel.MuteOn();
+							}
+							else if (a == 0)
+							{
+								genericChannel.MuteOff();
+							}
+							});
                     trilist.SetSigTrueAction(levelJoinMap.MuteOff + x, () => genericChannel.MuteOff());
 
                     trilist.SetBoolSigAction(levelJoinMap.VolumeUp + x, b => genericChannel.VolumeUp(b));
