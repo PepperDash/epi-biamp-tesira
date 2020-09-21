@@ -14,7 +14,7 @@ namespace Tesira_DSP_EPI
     //Mixer1 toggle crosspointLevelState 1 1
     public class TesiraDspMatrixMixer : TesiraDspControlPoint
     {
-        public static readonly string AttributeCode = "crosspointLevelState";
+		public string AttributeCode = "crosspointLevelState";
 
         bool _State;
         public BoolFeedback StateFeedback { get; set; }
@@ -25,13 +25,14 @@ namespace Tesira_DSP_EPI
             Key = string.Format("{0}--{1}", Parent.Key, key);
             Label = config.label;
             Enabled = config.enabled;
-
+			AttributeCode = string.Format("crosspointLevelState {0} {1}", config.index1, config.index2);
             StateFeedback = new BoolFeedback(() => _State);
 
             /*CrestronConsole.AddNewConsoleCommand(s => StateOn(), "mixerstateon", "", ConsoleAccessLevelEnum.AccessOperator);
             CrestronConsole.AddNewConsoleCommand(s => StateOff(), "mixerstateoff", "", ConsoleAccessLevelEnum.AccessOperator);
             CrestronConsole.AddNewConsoleCommand(s => StateToggle(), "mixerstatetoggle", "", ConsoleAccessLevelEnum.AccessOperator);
             CrestronConsole.AddNewConsoleCommand(s => GetState(), "mixerstateget", "", ConsoleAccessLevelEnum.AccessOperator);*/
+
         }
 
         public void GetState()
@@ -57,7 +58,7 @@ namespace Tesira_DSP_EPI
         public void StateToggle()
         {
             Debug.Console(2, this, "StateToggle sent to {0}", this.Key);
-            SendFullCommand("toggle", AttributeCode, String.Empty, 1);
+            SendFullCommand("toggle", AttributeCode, string.Empty, 1);
             GetState();
         }
 
@@ -87,6 +88,11 @@ namespace Tesira_DSP_EPI
                             this.StateFeedback.FireUpdate();
                         }
                     }
+					else if (message.Contains("StandardMixerInterface"))
+					{
+						AttributeCode = string.Format("crosspoint {0} {1}", Index1, Index2);
+						GetState();
+					}
                 }
             }
             catch (Exception e)

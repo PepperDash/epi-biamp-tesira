@@ -358,3 +358,4 @@ MigrationBackup/
 
 # VS Code settings folders
 .vscode/
+GetPackages.BAT

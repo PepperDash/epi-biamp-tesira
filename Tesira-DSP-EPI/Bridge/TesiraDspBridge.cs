@@ -217,9 +217,9 @@ namespace Tesira_DSP_EPI.Bridge {
             Debug.Console(2, DspDevice, "There are {0} MatrixMixer Control Points", DspDevice.MatrixMixers.Count);
             for (int matrixMixer = 0; matrixMixer < DspDevice.MatrixMixers.Count; matrixMixer++)
             {
-                var toggleJoin = matrixMixerJoinMap.Toggle + matrixMixer;
-                var onJoin = matrixMixerJoinMap.On + matrixMixer;
-                var offJoin = matrixMixerJoinMap.Off + matrixMixer;
+                var toggleJoin = matrixMixerJoinMap.Toggle + (matrixMixer * 3);
+                var onJoin = matrixMixerJoinMap.On + (matrixMixer * 3);
+                var offJoin = matrixMixerJoinMap.Off + (matrixMixer * 3);
 
                 var mixer = DspDevice.MatrixMixers.ElementAtOrDefault(matrixMixer);
                 if (mixer.Key == null) continue;

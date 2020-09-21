@@ -125,3 +125,26 @@ C:\Development\epi-dsp-tesira\Tesira-DSP-EPI\bin\Debug\Crestron.SimplSharpPro.DM
 C:\Development\epi-dsp-tesira\Tesira-DSP-EPI\obj\Debug\ResolveAssemblyReference.cache
 C:\Development\epi-dsp-tesira\Tesira-DSP-EPI\obj\Debug\Tesira-DSP-EPI.dll
 C:\Development\epi-dsp-tesira\Tesira-DSP-EPI\obj\Debug\Tesira-DSP-EPI.pdb
+C:\Users\JTA\Documents\Stash Folder\Plugins\epi-biamp-tesira-public\Tesira-DSP-EPI\bin\Debug\Tesira-DSP-EPI.dll
+C:\Users\JTA\Documents\Stash Folder\Plugins\epi-biamp-tesira-public\Tesira-DSP-EPI\bin\Debug\Tesira-DSP-EPI.pdb
+C:\Users\JTA\Documents\Stash Folder\Plugins\epi-biamp-tesira-public\Tesira-DSP-EPI\bin\Debug\Crestron.SimplSharpPro.DeviceSupport.dll
+C:\Users\JTA\Documents\Stash Folder\Plugins\epi-biamp-tesira-public\Tesira-DSP-EPI\bin\Debug\Crestron.SimplSharpPro.UI.dll
+C:\Users\JTA\Documents\Stash Folder\Plugins\epi-biamp-tesira-public\Tesira-DSP-EPI\bin\Debug\Essentials Devices Common.dll
+C:\Users\JTA\Documents\Stash Folder\Plugins\epi-biamp-tesira-public\Tesira-DSP-EPI\bin\Debug\PepperDash_Core.dll
+C:\Users\JTA\Documents\Stash Folder\Plugins\epi-biamp-tesira-public\Tesira-DSP-EPI\bin\Debug\PepperDash_Essentials_Core.dll
+C:\Users\JTA\Documents\Stash Folder\Plugins\epi-biamp-tesira-public\Tesira-DSP-EPI\bin\Debug\PepperDashEssentials.dll
+C:\Users\JTA\Documents\Stash Folder\Plugins\epi-biamp-tesira-public\Tesira-DSP-EPI\bin\Debug\SimplSharpNewtonsoft.dll
+C:\Users\JTA\Documents\Stash Folder\Plugins\epi-biamp-tesira-public\Tesira-DSP-EPI\bin\Debug\SimplSharpReflectionInterface.dll
+C:\Users\JTA\Documents\Stash Folder\Plugins\epi-biamp-tesira-public\Tesira-DSP-EPI\bin\Debug\Crestron.SimplSharpPro.Lighting.dll
+C:\Users\JTA\Documents\Stash Folder\Plugins\epi-biamp-tesira-public\Tesira-DSP-EPI\bin\Debug\SimplSharpSQLHelperInterface.dll
+C:\Users\JTA\Documents\Stash Folder\Plugins\epi-biamp-tesira-public\Tesira-DSP-EPI\bin\Debug\PepperDash_Essentials_DM.dll
+C:\Users\JTA\Documents\Stash Folder\Plugins\epi-biamp-tesira-public\Tesira-DSP-EPI\bin\Debug\Crestron.SimplSharpPro.Fusion.dll
+C:\Users\JTA\Documents\Stash Folder\Plugins\epi-biamp-tesira-public\Tesira-DSP-EPI\bin\Debug\Crestron.SimplSharpPro.Shades.dll
+C:\Users\JTA\Documents\Stash Folder\Plugins\epi-biamp-tesira-public\Tesira-DSP-EPI\bin\Debug\Crestron.SimplSharpPro.EthernetCommunications.dll
+C:\Users\JTA\Documents\Stash Folder\Plugins\epi-biamp-tesira-public\Tesira-DSP-EPI\bin\Debug\SimplSharpTimerEventInterface.dll
+C:\Users\JTA\Documents\Stash Folder\Plugins\epi-biamp-tesira-public\Tesira-DSP-EPI\bin\Debug\Crestron.SimplSharpPro.Gateways.dll
+C:\Users\JTA\Documents\Stash Folder\Plugins\epi-biamp-tesira-public\Tesira-DSP-EPI\bin\Debug\Crestron.SimplSharpPro.GeneralIO.dll
+C:\Users\JTA\Documents\Stash Folder\Plugins\epi-biamp-tesira-public\Tesira-DSP-EPI\bin\Debug\Crestron.SimplSharpPro.DM.dll
+C:\Users\JTA\Documents\Stash Folder\Plugins\epi-biamp-tesira-public\Tesira-DSP-EPI\obj\Debug\ResolveAssemblyReference.cache
+C:\Users\JTA\Documents\Stash Folder\Plugins\epi-biamp-tesira-public\Tesira-DSP-EPI\obj\Debug\Tesira-DSP-EPI.dll
+C:\Users\JTA\Documents\Stash Folder\Plugins\epi-biamp-tesira-public\Tesira-DSP-EPI\obj\Debug\Tesira-DSP-EPI.pdb

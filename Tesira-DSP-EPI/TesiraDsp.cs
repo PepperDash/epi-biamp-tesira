@@ -859,19 +859,23 @@ namespace Tesira_DSP_EPI
                 control.Subscribe();
             }
 
-            /*
+            
             foreach (KeyValuePair<string, TesiraDspMeter> meter in Meters)
             {
                 var control = meter.Value;
                 control.Subscribe();
             }
-            */
+            
 
             foreach (KeyValuePair<string, TesiraDspRoomCombiner> roomCombiner in RoomCombiners)
             {
                 var control = roomCombiner.Value;
                 control.Subscribe();
             }
+			foreach (var mixer in MatrixMixers)
+			{
+				mixer.Value.GetState();
+			}
         }
 
         private void SubscribeToDialer(TesiraDspDialer data)
