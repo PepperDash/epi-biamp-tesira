@@ -154,7 +154,7 @@ namespace Tesira_DSP_EPI.Bridge {
             uint lineOffset = 0;
             foreach (var line in DspDevice.Dialers) {
                 var dialer = line;
-                var dialerLineOffset = lineOffset += 1;
+				var dialerLineOffset = lineOffset;
                 Debug.Console(2, "AddingDialerBRidge {0} {1} Offset", dialer.Key, dialerLineOffset);
                 trilist.SetSigTrueAction((dialerJoinMap.Keypad0 + dialerLineOffset), () => dialer.Value.SendKeypad(Tesira_DSP_EPI.TesiraDspDialer.eKeypadKeys.Num0));
                 trilist.SetSigTrueAction((dialerJoinMap.Keypad1 + dialerLineOffset), () => dialer.Value.SendKeypad(Tesira_DSP_EPI.TesiraDspDialer.eKeypadKeys.Num1));
