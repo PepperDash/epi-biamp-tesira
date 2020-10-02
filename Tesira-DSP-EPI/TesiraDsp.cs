@@ -69,6 +69,7 @@ namespace Tesira_DSP_EPI
 
         private bool WatchDogSniffer { get; set; }
 
+		private Thread _SubscribeThread;
 		DeviceConfig _Dc;
 
 		CrestronQueue _CommandQueue;
@@ -123,6 +124,9 @@ namespace Tesira_DSP_EPI
 	        CrestronConsole.AddNewConsoleCommand(SendLine, "send" + Key, "", ConsoleAccessLevelEnum.AccessOperator);
 	        CrestronConsole.AddNewConsoleCommand(s => Communication.Connect(), "con" + Key, "", ConsoleAccessLevelEnum.AccessOperator);
 	        CreateDspObjects();
+			_SubscribeThread  = new Thread((o) => HandleAttributeSubscriptions(), null, Thread.eThreadStartOptions.CreateSuspended);
+			_SubscribeThread.Priority = Thread.eThreadPriority.LowestPriority;
+
         }
 
 		public override bool CustomActivate()
@@ -143,7 +147,7 @@ namespace Tesira_DSP_EPI
             Debug.Console(2, this, "Communication monitor state: {0}", CommunicationMonitor.Status);
             if (e.Status == MonitorStatus.IsOk)
             {
-				CrestronInvoke.BeginInvoke((o) => HandleAttributeSubscriptions());
+				Resubscribe();
             }
             else if (e.Status != MonitorStatus.IsOk)
             {
@@ -193,7 +197,7 @@ namespace Tesira_DSP_EPI
 			if (props != null)
 			{
 				Debug.Console(2, this, "Props Exists");
-				Debug.Console(2, this, "Here's the props string\n {0}", _Dc.Properties.ToString());
+				//Debug.Console(2, this, "Here's the props string\n {0}", _Dc.Properties.ToString());
 			}
 
 			LevelControlPoints.Clear();
@@ -509,7 +513,10 @@ namespace Tesira_DSP_EPI
 		{
 			Debug.Console(0, this, "Issue Detected with device subscriptions - resubscribing to all controls");
             StopWatchDog();
-            CrestronInvoke.BeginInvoke((o) => HandleAttributeSubscriptions());
+			if (_SubscribeThread.ThreadState != Thread.eThreadStates.ThreadRunning)
+			{
+				_SubscribeThread.Start();
+			}
 
             //SubscribeToAttributes();
 		}
@@ -619,7 +626,7 @@ namespace Tesira_DSP_EPI
 		/// <summary>
 		/// Initiates the subscription process to the DSP
 		/// </summary>
-		void HandleAttributeSubscriptions()
+		object HandleAttributeSubscriptions()
 		{
             _SubscriptionLock.Enter();
 
@@ -645,6 +652,7 @@ namespace Tesira_DSP_EPI
             {
                 _SubscriptionLock.Leave();
             }
+			return null;
 		}
 
 
