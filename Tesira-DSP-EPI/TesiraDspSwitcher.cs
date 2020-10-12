@@ -2,7 +2,6 @@
 using System.Globalization;
 using System.Linq;
 using Crestron.SimplSharpPro.DeviceSupport;
-using Crestron.SimplSharpPro.DM;
 using Newtonsoft.Json;
 using PepperDash.Core;
 using PepperDash.Essentials.Core;
@@ -32,8 +31,7 @@ namespace Tesira_DSP_EPI {
         /// </summary>
         public string SelectorCustomName { get; private set; }
 
-        private int _source;
-		private string Type { get; set; } 
+        private string Type { get; set; } 
         private int Destination { get; set; }
         private int SourceIndex {
             get {
@@ -182,7 +180,7 @@ namespace Tesira_DSP_EPI {
                 }
                 if (attributeCode == "input")
                 {
-                    _source = int.Parse(value);
+                    int.Parse(value);
                 }
             }
             catch (Exception e) {

@@ -1,10 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using Crestron.SimplSharp;
+﻿using System.Collections.Generic;
 using Newtonsoft.Json;
-using PepperDash.Core;
 using PepperDash.Essentials.Core;
 
 namespace Tesira_DSP_EPI {
@@ -23,7 +18,7 @@ namespace Tesira_DSP_EPI {
         [JsonProperty("faderControlBlocks")]
         public Dictionary<string, TesiraFaderControlBlockConfig> FaderControlBlocks { get; set; }
 
-        [JsonProperty("dialerCotrolBlocks")]
+        [JsonProperty("dialerControlBlocks")]
         public Dictionary<string, TesiraDialerControlBlockConfig> DialerControlBlocks { get; set; }
 
         [JsonProperty("switcherControlBlocks")]

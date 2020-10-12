@@ -210,12 +210,12 @@ namespace Tesira_DSP_EPI
             Permissions = config.Permissions;
             IncrementAmount = config.IncrementAmount;
             AutomaticUnmuteOnVolumeUp = config.UnmuteOnVolChange;
-            _volumeUpRepeatTimer = new CTimer((o) => VolumeUpRepeat(), Timeout.Infinite);
-            _volumeDownRepeatTimer = new CTimer((o) => VolumeDownRepeat(), Timeout.Infinite);
-            _volumeUpRepeatDelayTimer = new CTimer((o) => VolumeUpRepeatDelay(), Timeout.Infinite);
-            _volumeDownRepeatDelayTimer = new CTimer((o) => VolumeDownRepeatDelay(), Timeout.Infinite);
+            _volumeUpRepeatTimer = new CTimer(o => VolumeUpRepeat(), Timeout.Infinite);
+            _volumeDownRepeatTimer = new CTimer(o => VolumeDownRepeat(), Timeout.Infinite);
+            _volumeUpRepeatDelayTimer = new CTimer(o => VolumeUpRepeatDelay(), Timeout.Infinite);
+            _volumeDownRepeatDelayTimer = new CTimer(o => VolumeDownRepeatDelay(), Timeout.Infinite);
 
-            _pollTimer = new CTimer((o) => DoPoll(), Timeout.Infinite);
+            _pollTimer = new CTimer(o => DoPoll(), Timeout.Infinite);
 
 
             if (HasMute && HasLevel)
@@ -336,7 +336,7 @@ namespace Tesira_DSP_EPI
 
                 Debug.Console(1, this, "Response: '{0}' Value: '{1}'", attributeCode, value);
 
-                if (message.IndexOf("+OK", System.StringComparison.Ordinal) <= -1) return;
+                if (message.IndexOf("+OK", StringComparison.Ordinal) <= -1) return;
                 switch (attributeCode)
                 {
                     case "levelOutMin" :
@@ -569,7 +569,7 @@ namespace Tesira_DSP_EPI
             return output;
         }
 
-        public enum ePdtLevelTypes
+        public enum EPdtLevelTypes
         {
             Speaker = 0,
             Microphone = 1

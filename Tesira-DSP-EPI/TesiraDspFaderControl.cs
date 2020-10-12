@@ -1,7 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using Crestron.SimplSharp;
 using Newtonsoft.Json;
 using PepperDash.Core;
@@ -49,7 +46,7 @@ namespace Tesira_DSP_EPI
 
         private string IncrementAmount { get; set; }
         private bool UseAbsoluteValue { get; set; }
-        private ePdtLevelTypes _type;
+        private EPdtLevelTypes _type;
         private string LevelControlPointTag { get { return InstanceTag1; } }
 
         public BoolFeedback MuteFeedback { get; private set; }
@@ -170,7 +167,7 @@ namespace Tesira_DSP_EPI
                 DeviceManager.AddDevice(this);
             }
 
-            _type = config.IsMic ? ePdtLevelTypes.Microphone : ePdtLevelTypes.Speaker;
+            _type = config.IsMic ? EPdtLevelTypes.Microphone : EPdtLevelTypes.Speaker;
 
             Debug.Console(2, this, "Adding LevelControl '{0}'", Key);
 
@@ -347,7 +344,7 @@ namespace Tesira_DSP_EPI
 
                 Debug.Console(1, this, "Response: '{0}' Value: '{1}'", attributeCode, value);
 
-                if (message.IndexOf("+OK", System.StringComparison.Ordinal) <= -1) return;
+                if (message.IndexOf("+OK", StringComparison.Ordinal) <= -1) return;
                 switch (attributeCode)
                 {
                     case "minLevel":
@@ -546,7 +543,7 @@ namespace Tesira_DSP_EPI
         /// <summary>
         /// Possible LevelType enums
         /// </summary>
-        public enum ePdtLevelTypes
+        public enum EPdtLevelTypes
         {
             Speaker = 0,
             Microphone = 1

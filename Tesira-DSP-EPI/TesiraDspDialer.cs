@@ -1,17 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using Crestron.SimplSharpPro.DeviceSupport;
 using Newtonsoft.Json;
 using PepperDash.Core;
 using PepperDash.Essentials.Core;
-using Crestron.SimplSharp.Reflection;
-using Crestron.SimplSharp;
 using PepperDash.Essentials.Core.Bridges;
 using PepperDash.Essentials.Devices.Common.Codec;
-using Crestron.SimplSharpPro.CrestronThread;
-using PepperDash.Essentials.Devices;
 using System.Text.RegularExpressions;
 using Tesira_DSP_EPI.Bridge.JoinMaps;
 using Feedback = PepperDash.Essentials.Core.Feedback;
@@ -477,23 +472,25 @@ namespace Tesira_DSP_EPI {
                 SendSubscriptionCommand(AutoAnswerCustomName, "autoAnswer", 500, 1);
 
                 SendSubscriptionCommand(LastDialedCustomName, "lastNum", 500, 1);
+
+                SendFullCommand("get", "dndEnable", null, 1);
             }
             else if (!IsVoip) {
-                PotsDialerCustomName = string.Format("{0}~PotsDialer{1}", InstanceTag1, Index1);
-                LastDialedCustomName = string.Format("{0}~PotsLastNumber{1}", InstanceTag1, Index1);
 
-                HookStateCustomName = string.Format("{0}~HookState{1}", InstanceTag1, Index1);
+                DialerCustomName = string.Format("{0}~PotsDialer{1}", InstanceTag1, Index1);
+                LastDialedCustomName = string.Format("{0}~PotsLastNumber{1}", InstanceTag1, Index1);
+                HookStateCustomName = string.Format("{0}~HookState{1}", InstanceTag2, Index1);
 
                 SendSubscriptionCommand(DialerCustomName, "callState", 250, 1);
 
-                SendSubscriptionCommand(HookStateCustomName, "hookState", 500, 1);
+                SendSubscriptionCommand(HookStateCustomName, "hookState", 500, 2);
 
                 SendSubscriptionCommand(LastDialedCustomName, "lastNum", 500, 1);
 
                 SendFullCommand("get", "autoAnswer", null, 1);
             }
 
-            SendFullCommand("get", "dndEnable", null, 1);
+            
         }
 
         /// <summary>
@@ -526,11 +523,11 @@ namespace Tesira_DSP_EPI {
                 PotsDialerCustomName = string.Format("{0}~PotsDialer{1}", InstanceTag1, Index1);
                 LastDialedCustomName = string.Format("{0}~PotsLastNumber{1}", InstanceTag1, Index1);
 
-                HookStateCustomName = string.Format("{0}~HookState{1}", InstanceTag1, Index1);
+                HookStateCustomName = string.Format("{0}~HookState{1}", InstanceTag2, Index1);
 
                 SendUnSubscriptionCommand(DialerCustomName, "callState", 1);
 
-                SendUnSubscriptionCommand(HookStateCustomName, "hookState", 1);
+                SendUnSubscriptionCommand(HookStateCustomName, "hookState", 2);
 
                 SendUnSubscriptionCommand(LastDialedCustomName, "lastNum", 1);
 
@@ -701,7 +698,7 @@ namespace Tesira_DSP_EPI {
 
             else if (!IsVoip) {
                 if (OffHookStatus) {
-                    SendFullCommand("set", "hookState", "ONHOOK", 1);
+                    SendFullCommand("set", "hookState", "ONHOOK", 2);
 
                     if (!ClearOnHangup) return;
                     DialString = String.Empty;
@@ -712,7 +709,7 @@ namespace Tesira_DSP_EPI {
                         SendFullCommand(null, "dial", DialString, 1);
                     }
                     else
-                        SendFullCommand("set", "hookState", "OFFHOOK", 1);
+                        SendFullCommand("set", "hookState", "OFFHOOK", 2);
                 }
             }
         }

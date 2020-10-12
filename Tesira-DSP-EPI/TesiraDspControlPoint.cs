@@ -1,13 +1,8 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using Crestron.SimplSharp;
 using Crestron.SimplSharpPro.DeviceSupport;
 using PepperDash.Essentials.Core;
 using PepperDash.Core;
 using PepperDash.Essentials.Core.Bridges;
-using PepperDash.Essentials.Devices.Common.DSP;
 using Feedback = PepperDash.Essentials.Core.Feedback;
 
 namespace Tesira_DSP_EPI

@@ -8,7 +8,6 @@ using System.Text.RegularExpressions;
 using Newtonsoft.Json;
 using PepperDash.Essentials.Core.Config;
 using Crestron.SimplSharpPro.DeviceSupport;
-using PepperDash.Essentials.Devices.Common.VideoCodec.Cisco;
 using Tesira_DSP_EPI.Bridge.JoinMaps;
 using PepperDash.Essentials.Core.Bridges;
 using Feedback = PepperDash.Essentials.Core.Feedback;
@@ -52,9 +51,7 @@ namespace Tesira_DSP_EPI
 
 		private CTimer _watchDogTimer;
 
-		private readonly CCriticalSection _subscriptionLock = new CCriticalSection();
-
-		private readonly bool _isSerialComm;
+        private readonly bool _isSerialComm;
 
         private Dictionary<string, TesiraDspFaderControl> Faders { get; set; }
         private Dictionary<string, TesiraDspDialer> Dialers { get; set; }
@@ -128,6 +125,8 @@ namespace Tesira_DSP_EPI
             CrosspointStates = new Dictionary<string, TesiraDspCrosspointState>();
             RoomCombiners = new Dictionary<string, TesiraDspRoomCombiner>();
 
+            CrestronEnvironment.ProgramStatusEventHandler += new ProgramStatusEventHandler(CrestronEnvironment_ProgramStatusEventHandler);
+
 
 			CommunicationMonitor.StatusChange += CommunicationMonitor_StatusChange;
 			CrestronConsole.AddNewConsoleCommand(SendLine, "send" + Key, "", ConsoleAccessLevelEnum.AccessOperator);
@@ -147,6 +146,16 @@ namespace Tesira_DSP_EPI
             });
 
             CreateDspObjects();
+        }
+
+        void CrestronEnvironment_ProgramStatusEventHandler(eProgramStatusEventType programEventType)
+        {
+            if (programEventType != eProgramStatusEventType.Stopping) return;
+
+            _watchDogTimer.Stop();
+            _watchDogTimer.Dispose();
+            CommunicationMonitor.Stop();
+            Communication.Disconnect();
         }
 
         private void CreateDspObjects()
@@ -313,7 +322,7 @@ namespace Tesira_DSP_EPI
 			Debug.Console(2, this, "Communication monitor state: {0}", CommunicationMonitor.Status);
 			if (e.Status == MonitorStatus.IsOk)
 			{
-				CrestronInvoke.BeginInvoke((o) => HandleAttributeSubscriptions());
+				CrestronInvoke.BeginInvoke(o => HandleAttributeSubscriptions());
 			}
 			else if (e.Status != MonitorStatus.IsOk)
 			{
@@ -345,7 +354,7 @@ namespace Tesira_DSP_EPI
         {
             if (_watchDogTimer == null)
             {
-                _watchDogTimer = new CTimer((o) => CheckWatchDog(), null, 20000, 20000);
+                _watchDogTimer = new CTimer(o => CheckWatchDog(), null, 20000, 20000);
             }
             else
             {
@@ -368,10 +377,15 @@ namespace Tesira_DSP_EPI
             {
                 Debug.Console(2, this, "The Watchdog is picking up a scent!");
                 var random = new Random(DateTime.Now.Millisecond + DateTime.Now.Second + DateTime.Now.Minute
-	                + DateTime.Now.Hour + DateTime.Now.Day + DateTime.Now.Month + DateTime.Now.Year);
+                    + DateTime.Now.Hour + DateTime.Now.Day + DateTime.Now.Month + DateTime.Now.Year);
 
                 var watchDogSubject = SelectWatchDogSubject(random);
 
+                if (!watchDogSubject.IsSubscribed)
+                {
+                    Debug.Console(2, this, "The Watchdog was wrong - that's just an old shoe.  Nothing is subscribed.");
+                    return;
+                }
                 Debug.Console(2, this, "The Watchdog is sniffing {0}", watchDogSubject.Key);
 
                 WatchDogSniffer = true;
@@ -443,7 +457,7 @@ namespace Tesira_DSP_EPI
                     // Indicates a new TTP session
                     // moved to CustomActivate() method
                     CommunicationMonitor.Start();
-                    CrestronInvoke.BeginInvoke((o) => HandleAttributeSubscriptions());
+                    CrestronInvoke.BeginInvoke(o => HandleAttributeSubscriptions());
                 }
                 else if (args.Text.IndexOf("! ", StringComparison.Ordinal) > -1)
                 {
@@ -745,17 +759,15 @@ namespace Tesira_DSP_EPI
         {
             Debug.Console(0, this, "Issue Detected with device subscriptions - resubscribing to all controls");
             StopWatchDog();
-            CrestronInvoke.BeginInvoke((o) => HandleAttributeSubscriptions());
+            CrestronInvoke.BeginInvoke(o => HandleAttributeResubscriptions());
         }
 
         private void HandleAttributeSubscriptions()
         {
-
-
             SendLine("SESSION set verbose false");
             try
             {
-                //Unsubscribe
+                if(_isSerialComm)
                 UnsubscribeFromComponents();
 
                 //Subscribe
@@ -768,11 +780,28 @@ namespace Tesira_DSP_EPI
             catch (Exception ex)
             {
                 Debug.ConsoleWithLog(2, this, "Error Subscribing: '{0}'", ex);
-                _subscriptionLock.Leave();
+                //_subscriptionLock.Leave();
             }
-            finally
+        }
+
+        private void HandleAttributeResubscriptions()
+        {
+            SendLine("SESSION set verbose false");
+            try
             {
-                _subscriptionLock.Leave();
+                UnsubscribeFromComponents();
+
+                //Subscribe
+                SubscribeToComponents();
+
+                StartWatchDog();
+                if (!_commandQueueInProgress)
+                    SendNextQueuedCommand();
+            }
+            catch (Exception ex)
+            {
+                Debug.ConsoleWithLog(2, this, "Error Subscribing: '{0}'", ex);
+                //_subscriptionLock.Leave();
             }
         }
 
@@ -934,8 +963,7 @@ namespace Tesira_DSP_EPI
                 var dialer = line.Value;
                 var bridgeIndex = dialer.BridgeIndex;
                 if (bridgeIndex == null) continue;
-                var x = (uint) bridgeIndex;
-               
+
                 var dialerLineOffset = lineOffset += 1;
                 Debug.Console(2, "AddingDialerBRidge {0} {1} Offset", dialer.Key, dialerLineOffset);
 
@@ -1016,9 +1044,6 @@ namespace Tesira_DSP_EPI
                 var xpointState = item.Value;
                 var data = xpointState.BridgeIndex;
                 if (data == null) continue;
-                var y = (uint)data;
-
-                var x = y > 1 ? ((y - 1) * 3) : 0;
 
                 Debug.Console(2, this, "Adding Crosspoint State ControlPoint {0} | JoinStart:{1}", xpointState.Key, crosspointStateJoinMap.Label.JoinNumber);
                 xpointState.CrosspointStateFeedback.LinkInputSig(trilist.BooleanInput[crosspointStateJoinMap.Toggle.JoinNumber]);
