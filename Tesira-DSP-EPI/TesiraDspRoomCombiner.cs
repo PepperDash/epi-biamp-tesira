@@ -309,7 +309,7 @@ namespace Tesira_DSP_EPI
             if (!HasLevel || customName != LevelCustomName) return;
             var value = Double.Parse(data);
 
-            OutVolumeLevel = (ushort)Scale(value, MinLevel, MaxLevel, 0, 65535);
+            OutVolumeLevel = UseAbsoluteValue ? (ushort)value : (ushort) Scale(value, MinLevel, MaxLevel, 0, 65535);
 
             _levelIsSubscribed = true;
 
@@ -408,7 +408,7 @@ namespace Tesira_DSP_EPI
                 if (_outIsMuted)
                     MuteOff();
 
-            var volumeLevel = Scale(level, 0, 65535, MinLevel, MaxLevel);
+            var volumeLevel = UseAbsoluteValue ? level : Scale(level, 0, 65535, MinLevel, MaxLevel);
 
             SendFullCommand("set", "levelOut", string.Format("{0:0.000000}", volumeLevel), 1);
         }

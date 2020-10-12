@@ -103,7 +103,7 @@ namespace Tesira_DSP_EPI {
             try {
                 Debug.Console(2, this, "Parsing Message - '{0}' : Message has an attributeCode of {1}", message, attributeCode);
                 // Parse an "+OK" message
-                var pattern = "[^ ]* (.*)";
+                const string pattern = "[^ ]* (.*)";
 
                 var match = Regex.Match(message, pattern);
 

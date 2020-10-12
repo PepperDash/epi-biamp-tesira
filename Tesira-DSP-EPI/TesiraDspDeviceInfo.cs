@@ -16,7 +16,7 @@ namespace Tesira_DSP_EPI
         /// </summary>
         public FeedbackCollection<Feedback> Feedbacks;
 
-        private readonly Dictionary<string, TesiraDspPresets> Presets; 
+        private readonly Dictionary<string, TesiraDspPresets> _presets; 
 
         readonly TesiraDsp _parent;
 
@@ -28,10 +28,11 @@ namespace Tesira_DSP_EPI
         /// <param name="key">Unique Key</param>
         /// <param name="name">Friendly Name</param>
         /// <param name="parent">Parent Device</param>
+        /// <param name="presets">Dictionary of Presets</param>
         public TesiraDspDeviceInfo(string key, string name, TesiraDsp parent, Dictionary<string, TesiraDspPresets> presets)
             : base(key, name)
         {
-            Presets = presets;
+            _presets = presets;
             _parent = parent;
 
             NameFeedback = new StringFeedback(() => _parent.Name);
@@ -70,7 +71,7 @@ namespace Tesira_DSP_EPI
 
             trilist.SetStringSigAction(presetJoinMap.PresetName.JoinNumber, _parent.RunPreset);
 
-            foreach (var preset in Presets)
+            foreach (var preset in _presets)
             {
                 var p = preset;
                 var runPresetIndex = preset.Value.PresetIndex;

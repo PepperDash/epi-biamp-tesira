@@ -97,16 +97,8 @@ namespace Tesira_DSP_EPI
 				//Command requires Index
 				if (String.IsNullOrEmpty(value))
 				{
-					if (String.IsNullOrEmpty(command))
-					{
-						//format command without value OR command
-						cmd = string.Format("{0} {1} {2} ", instanceTagLocal, attributeCode, Index1);
-					}
-					else
-					{
-						// format command without value
-						cmd = string.Format("{0} {1} {2} {3}", instanceTagLocal, command, attributeCode, Index1);
-					}
+					cmd = String.IsNullOrEmpty(command) ? string.Format("{0} {1} {2} ", 
+                        instanceTagLocal, attributeCode, Index1) : string.Format("{0} {1} {2} {3}", instanceTagLocal, command, attributeCode, Index1);
 				}
 				else
 				{

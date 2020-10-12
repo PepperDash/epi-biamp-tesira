@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using Crestron.SimplSharp;
+using Crestron.SimplSharpPro.CrestronThread;
 using PepperDash.Core;
 using PepperDash.Essentials.Core;
 using System.Text.RegularExpressions;
@@ -50,6 +51,10 @@ namespace Tesira_DSP_EPI
         public bool IsSubscribed;
 
 		private CTimer _watchDogTimer;
+
+        private readonly CCriticalSection _subscriptionLock = new CCriticalSection();
+
+        private Thread _subscribeThread;
 
         private readonly bool _isSerialComm;
 
@@ -125,12 +130,17 @@ namespace Tesira_DSP_EPI
             CrosspointStates = new Dictionary<string, TesiraDspCrosspointState>();
             RoomCombiners = new Dictionary<string, TesiraDspRoomCombiner>();
 
-            CrestronEnvironment.ProgramStatusEventHandler += new ProgramStatusEventHandler(CrestronEnvironment_ProgramStatusEventHandler);
+            CrestronEnvironment.ProgramStatusEventHandler += CrestronEnvironment_ProgramStatusEventHandler;
 
 
 			CommunicationMonitor.StatusChange += CommunicationMonitor_StatusChange;
 			CrestronConsole.AddNewConsoleCommand(SendLine, "send" + Key, "", ConsoleAccessLevelEnum.AccessOperator);
 			CrestronConsole.AddNewConsoleCommand(s => Communication.Connect(), "con" + Key, "", ConsoleAccessLevelEnum.AccessOperator);
+
+            _subscribeThread = new Thread(o => HandleAttributeSubscriptions(), null, Thread.eThreadStartOptions.CreateSuspended)
+            {
+                Priority = Thread.eThreadPriority.LowestPriority
+            };
 
             Feedbacks.Add(CommunicationMonitor.IsOnlineFeedback);
             Feedbacks.Add(CommandPassthruFeedback);
@@ -322,7 +332,10 @@ namespace Tesira_DSP_EPI
 			Debug.Console(2, this, "Communication monitor state: {0}", CommunicationMonitor.Status);
 			if (e.Status == MonitorStatus.IsOk)
 			{
-				CrestronInvoke.BeginInvoke(o => HandleAttributeSubscriptions());
+                if (_subscribeThread.ThreadState != Thread.eThreadStates.ThreadRunning)
+                {
+                    _subscribeThread.Start();
+                }
 			}
 			else if (e.Status != MonitorStatus.IsOk)
 			{
@@ -457,7 +470,10 @@ namespace Tesira_DSP_EPI
                     // Indicates a new TTP session
                     // moved to CustomActivate() method
                     CommunicationMonitor.Start();
-                    CrestronInvoke.BeginInvoke(o => HandleAttributeSubscriptions());
+                    if (_subscribeThread.ThreadState != Thread.eThreadStates.ThreadRunning)
+                    {
+                        _subscribeThread.Start();
+                    }
                 }
                 else if (args.Text.IndexOf("! ", StringComparison.Ordinal) > -1)
                 {
@@ -759,16 +775,20 @@ namespace Tesira_DSP_EPI
         {
             Debug.Console(0, this, "Issue Detected with device subscriptions - resubscribing to all controls");
             StopWatchDog();
-            CrestronInvoke.BeginInvoke(o => HandleAttributeResubscriptions());
+            if (_subscribeThread.ThreadState != Thread.eThreadStates.ThreadRunning)
+            {
+                _subscribeThread.Start();
+            }
         }
 
-        private void HandleAttributeSubscriptions()
+        private object HandleAttributeSubscriptions()
         {
+            _subscriptionLock.Enter();
             SendLine("SESSION set verbose false");
             try
             {
-                if(_isSerialComm)
-                UnsubscribeFromComponents();
+                if (_isSerialComm)
+                    UnsubscribeFromComponents();
 
                 //Subscribe
                 SubscribeToComponents();
@@ -780,31 +800,15 @@ namespace Tesira_DSP_EPI
             catch (Exception ex)
             {
                 Debug.ConsoleWithLog(2, this, "Error Subscribing: '{0}'", ex);
+                _subscriptionLock.Leave();
                 //_subscriptionLock.Leave();
             }
-        }
-
-        private void HandleAttributeResubscriptions()
-        {
-            SendLine("SESSION set verbose false");
-            try
+            finally
             {
-                UnsubscribeFromComponents();
-
-                //Subscribe
-                SubscribeToComponents();
-
-                StartWatchDog();
-                if (!_commandQueueInProgress)
-                    SendNextQueuedCommand();
+                _subscriptionLock.Leave();
             }
-            catch (Exception ex)
-            {
-                Debug.ConsoleWithLog(2, this, "Error Subscribing: '{0}'", ex);
-                //_subscriptionLock.Leave();
-            }
+            return null;
         }
-
 
 		#endregion
 
@@ -969,13 +973,13 @@ namespace Tesira_DSP_EPI
 
                 for (var i = 0; i < dialerJoinMap.KeyPadNumeric.JoinSpan; i++)
                 {
-                    trilist.SetSigTrueAction((dialerJoinMap.KeyPadNumeric.JoinNumber + (uint)i + dialerLineOffset), () => dialer.SendKeypad(TesiraDspDialer.eKeypadKeys.Num0));
+                    trilist.SetSigTrueAction((dialerJoinMap.KeyPadNumeric.JoinNumber + (uint)i + dialerLineOffset), () => dialer.SendKeypad(TesiraDspDialer.EKeypadKeys.Num0));
                 }
 
-                trilist.SetSigTrueAction((dialerJoinMap.KeyPadStar.JoinNumber + dialerLineOffset), () => dialer.SendKeypad(TesiraDspDialer.eKeypadKeys.Star));
-                trilist.SetSigTrueAction((dialerJoinMap.KeyPadPound.JoinNumber + dialerLineOffset), () => dialer.SendKeypad(TesiraDspDialer.eKeypadKeys.Pound));
-                trilist.SetSigTrueAction((dialerJoinMap.KeyPadClear.JoinNumber + dialerLineOffset), () => dialer.SendKeypad(TesiraDspDialer.eKeypadKeys.Clear));
-                trilist.SetSigTrueAction((dialerJoinMap.KeyPadBackspace.JoinNumber + dialerLineOffset), () => dialer.SendKeypad(TesiraDspDialer.eKeypadKeys.Backspace));
+                trilist.SetSigTrueAction((dialerJoinMap.KeyPadStar.JoinNumber + dialerLineOffset), () => dialer.SendKeypad(TesiraDspDialer.EKeypadKeys.Star));
+                trilist.SetSigTrueAction((dialerJoinMap.KeyPadPound.JoinNumber + dialerLineOffset), () => dialer.SendKeypad(TesiraDspDialer.EKeypadKeys.Pound));
+                trilist.SetSigTrueAction((dialerJoinMap.KeyPadClear.JoinNumber + dialerLineOffset), () => dialer.SendKeypad(TesiraDspDialer.EKeypadKeys.Clear));
+                trilist.SetSigTrueAction((dialerJoinMap.KeyPadBackspace.JoinNumber + dialerLineOffset), () => dialer.SendKeypad(TesiraDspDialer.EKeypadKeys.Backspace));
 
                 trilist.SetSigTrueAction(dialerJoinMap.KeyPadDial.JoinNumber + dialerLineOffset, dialer.Dial);
                 trilist.SetSigTrueAction(dialerJoinMap.DoNotDisturbToggle.JoinNumber + dialerLineOffset, dialer.DoNotDisturbToggle);

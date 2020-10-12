@@ -317,7 +317,7 @@ namespace Tesira_DSP_EPI
 
                 var localValue = Double.Parse(value);
 
-                VolumeLevel = (ushort)Scale(localValue, MinLevel, MaxLevel, 0, 65535);
+                VolumeLevel = UseAbsoluteValue ? (ushort)localValue :  (ushort)Scale(localValue, MinLevel, MaxLevel, 0, 65535);
 
                 _levelIsSubscribed = true;
             }
@@ -406,7 +406,7 @@ namespace Tesira_DSP_EPI
                 if (_isMuted)
                     MuteOff();
 
-            var volumeLevel = Scale(level, 0, 65535, MinLevel, MaxLevel);
+            var volumeLevel = UseAbsoluteValue ? level : Scale(level, 0, 65535, MinLevel, MaxLevel);
 
             SendFullCommand("set", "level", string.Format("{0:0.000000}", volumeLevel), 1);
         }

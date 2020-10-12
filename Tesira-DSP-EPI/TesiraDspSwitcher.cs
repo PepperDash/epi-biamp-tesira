@@ -173,14 +173,15 @@ namespace Tesira_DSP_EPI {
                     return;
                 }
 
-                if (message.IndexOf("+OK", StringComparison.OrdinalIgnoreCase) > -1) {
-                    if (attributeCode == "sourceSelection") {
-                        SourceIndex = int.Parse(value);
-                    }
-                }
-                if (attributeCode == "input")
+                if (message.IndexOf("+OK", StringComparison.Ordinal) <= -1) return;
+                switch (attributeCode)
                 {
-                    int.Parse(value);
+                    case "sourceSelection":
+                        SourceIndex = int.Parse(value);
+                        break;
+                    case "input":
+                        SourceIndex = int.Parse(value);
+                        break;
                 }
             }
             catch (Exception e) {
