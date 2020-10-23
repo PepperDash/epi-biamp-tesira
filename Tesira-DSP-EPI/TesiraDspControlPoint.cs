@@ -118,27 +118,22 @@ namespace Tesira_DSP_EPI
 			else
 			{
 				//Command does not require Index
-				if (String.IsNullOrEmpty(value))
-				{
-					cmd = string.Format("{0} {1} {2}", instanceTagLocal, command, attributeCode);
-				}
-				else
-				{
-					cmd = string.Format("{0} {1} {2} {3}", instanceTagLocal, command, attributeCode, value);
-				}
+				cmd = String.IsNullOrEmpty(value) ? 
+                    string.Format("{0} {1} {2}", instanceTagLocal, command, attributeCode) : 
+                    string.Format("{0} {1} {2} {3}", instanceTagLocal, command, attributeCode, value);
 			}
 
 			if (command == "get")
 			{
 				// This command will generate a return value response so it needs to be queued
 				if (!string.IsNullOrEmpty(cmd))
-					Parent.EnqueueCommand(new TesiraDsp.QueuedCommand { Command = cmd, AttributeCode = attributeCode, ControlPoint = this });
+                    Parent.CommandQueue.EnqueueCommand(new QueuedCommand { Command = cmd, AttributeCode = attributeCode, ControlPoint = this });
 			}
 			else
 			{
 				// This command will generate a simple "+OK" response and doesn't need to be queued
 				if (!string.IsNullOrEmpty(cmd))
-					Parent.SendLine(cmd);
+                    Parent.SendLine(cmd);
 			}
 		}
 
@@ -187,7 +182,7 @@ namespace Tesira_DSP_EPI
 
 			//Parent.WatchDogList.Add(customName,cmd);
 			//Parent.SendLine(cmd);
-			Parent.EnqueueCommand(new TesiraDsp.QueuedCommand { Command = cmd, AttributeCode = attributeCode, ControlPoint = this });
+            Parent.CommandQueue.EnqueueCommand(new QueuedCommand { Command = cmd, AttributeCode = attributeCode, ControlPoint = this });
 
 		}
 
@@ -228,7 +223,7 @@ namespace Tesira_DSP_EPI
 
 			//Parent.WatchDogList.Add(customName,cmd);
 			//Parent.SendLine(cmd);
-			Parent.EnqueueCommand(new TesiraDsp.QueuedCommand { Command = cmd, AttributeCode = attributeCode, ControlPoint = this });
+            Parent.CommandQueue.EnqueueCommand(new QueuedCommand { Command = cmd, AttributeCode = attributeCode, ControlPoint = this });
 		}
 
 		public virtual void DoPoll()

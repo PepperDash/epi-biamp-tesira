@@ -8,20 +8,37 @@ namespace Tesira_DSP_EPI.Bridge.JoinMaps
     /// </summary>
     public class TesiraPresetJoinMapAdvanced : JoinMapBaseAdvanced
     {
-        [JoinName("PresetSelection")]
-        public JoinDataComplete PresetSelection = new JoinDataComplete(new JoinData() { JoinNumber = 100, JoinSpan = 1 },
-            new JoinMetadata() { Description = "Recall Preset Explicitly by Configured Index", JoinCapabilities = eJoinCapabilities.FromSIMPL, JoinType = eJoinType.Digital });
+        [JoinName("PresetSelection")] public JoinDataComplete PresetSelection =
+            new JoinDataComplete(new JoinData {JoinNumber = 100, JoinSpan = 1},
+                new JoinMetadata
+                {
+                    Description = "Recall Preset Explicitly by Configured Index",
+                    JoinCapabilities = eJoinCapabilities.FromSIMPL,
+                    JoinType = eJoinType.Digital
+                });
 
-        [JoinName("PresetName")]
-        public JoinDataComplete PresetName = new JoinDataComplete(new JoinData() { JoinNumber = 100, JoinSpan = 1 },
-            new JoinMetadata() { Description = "Recall Preset by name", JoinCapabilities = eJoinCapabilities.FromSIMPL, JoinType = eJoinType.Serial });
+        [JoinName("PresetName")] public JoinDataComplete PresetName =
+            new JoinDataComplete(new JoinData {JoinNumber = 100, JoinSpan = 1},
+                new JoinMetadata
+                {
+                    Description = "Recall Preset by name",
+                    JoinCapabilities = eJoinCapabilities.FromSIMPL,
+                    JoinType = eJoinType.Serial
+                });
 
-        [JoinName("PresetNameFeedback")]
-        public JoinDataComplete PresetNameFeedback = new JoinDataComplete(new JoinData() { JoinNumber = 100, JoinSpan = 1 },
-            new JoinMetadata() { Description = "Preset Labels as configured for explicit preset recall", JoinCapabilities = eJoinCapabilities.ToSIMPL, JoinType = eJoinType.Serial });
+        [JoinName("PresetNameFeedback")] public JoinDataComplete PresetNameFeedback =
+            new JoinDataComplete(new JoinData {JoinNumber = 100, JoinSpan = 1},
+                new JoinMetadata
+                {
+                    Description = "Preset Labels as configured for explicit preset recall",
+                    JoinCapabilities = eJoinCapabilities.ToSIMPL,
+                    JoinType = eJoinType.Serial
+                });
 
         public TesiraPresetJoinMapAdvanced(uint joinStart)
-            : base(joinStart, typeof(TesiraPresetJoinMapAdvanced)) { }
+            : base(joinStart, typeof (TesiraPresetJoinMapAdvanced))
+        {
+        }
 
     }
 
@@ -30,20 +47,37 @@ namespace Tesira_DSP_EPI.Bridge.JoinMaps
     /// </summary>
     public class TesiraPresetJoinMapAdvancedStandalone : JoinMapBaseAdvanced
     {
-        [JoinName("PresetSelection")]
-        public JoinDataComplete PresetSelection = new JoinDataComplete(new JoinData() { JoinNumber = 3, JoinSpan = 1 },
-            new JoinMetadata() { Description = "Recall Preset Explicitly by Configured Index", JoinCapabilities = eJoinCapabilities.FromSIMPL, JoinType = eJoinType.Digital });
+        [JoinName("PresetSelection")] public JoinDataComplete PresetSelection =
+            new JoinDataComplete(new JoinData {JoinNumber = 3, JoinSpan = 1},
+                new JoinMetadata
+                {
+                    Description = "Recall Preset Explicitly by Configured Index",
+                    JoinCapabilities = eJoinCapabilities.FromSIMPL,
+                    JoinType = eJoinType.Digital
+                });
 
-        [JoinName("PresetName")]
-        public JoinDataComplete PresetName = new JoinDataComplete(new JoinData() { JoinNumber = 3, JoinSpan = 1 },
-            new JoinMetadata() { Description = "Recall Preset by name", JoinCapabilities = eJoinCapabilities.FromSIMPL, JoinType = eJoinType.Serial });
+        [JoinName("PresetName")] public JoinDataComplete PresetName =
+            new JoinDataComplete(new JoinData {JoinNumber = 3, JoinSpan = 1},
+                new JoinMetadata
+                {
+                    Description = "Recall Preset by name",
+                    JoinCapabilities = eJoinCapabilities.FromSIMPL,
+                    JoinType = eJoinType.Serial
+                });
 
-        [JoinName("PresetNameFeedback")]
-        public JoinDataComplete PresetNameFeedback = new JoinDataComplete(new JoinData() { JoinNumber = 3, JoinSpan = 1 },
-            new JoinMetadata() { Description = "Preset Labels as configured for explicit preset recall", JoinCapabilities = eJoinCapabilities.ToSIMPL, JoinType = eJoinType.Serial });
+        [JoinName("PresetNameFeedback")] public JoinDataComplete PresetNameFeedback =
+            new JoinDataComplete(new JoinData {JoinNumber = 3, JoinSpan = 1},
+                new JoinMetadata
+                {
+                    Description = "Preset Labels as configured for explicit preset recall",
+                    JoinCapabilities = eJoinCapabilities.ToSIMPL,
+                    JoinType = eJoinType.Serial
+                });
 
         public TesiraPresetJoinMapAdvancedStandalone(uint joinStart)
-            : base(joinStart, typeof(TesiraPresetJoinMapAdvancedStandalone)) { }
+            : base(joinStart, typeof (TesiraPresetJoinMapAdvancedStandalone))
+        {
+        }
 
     }
 

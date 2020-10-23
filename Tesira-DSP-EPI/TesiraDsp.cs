@@ -23,9 +23,11 @@ namespace Tesira_DSP_EPI
         public FeedbackCollection<Feedback> Feedbacks;
 
         /// <summary>
-        /// Date Returning from Device
+        /// Data Returning from Device
         /// </summary>
         public string DeviceRx { get; set; }
+
+        public TesiraQueue CommandQueue { get; set; }
 
         /// <summary>
         /// Communication Object for Device
@@ -41,7 +43,7 @@ namespace Tesira_DSP_EPI
 		public GenericCommunicationMonitor CommunicationMonitor { get; private set; }
 
         /// <summary>
-        /// COmmand Responses from Device
+        /// Command Responses from Device
         /// </summary>
 		public StringFeedback CommandPassthruFeedback { get; set; }
 
@@ -72,11 +74,11 @@ namespace Tesira_DSP_EPI
 
 		readonly DeviceConfig _dc;
 
-        readonly CrestronQueue _commandQueue;
-
 		bool _commandQueueInProgress;
 
 		public bool ShowHexResponse { get; set; }
+
+        public string ResubsriptionString { get; set; }
 
         /// <summary>
         /// Consturctor for base Tesira DSP Device
@@ -92,7 +94,10 @@ namespace Tesira_DSP_EPI
 
 			Debug.Console(0, this, "Made it to device constructor");
 
-			_commandQueue = new CrestronQueue(100);
+            CommandQueue = new TesiraQueue(100, this);
+
+            CommandPassthruFeedback = new StringFeedback(() => DeviceRx);
+
 			Communication = comm;
 			var socket = comm as ISocketStatus;
 
@@ -110,9 +115,8 @@ namespace Tesira_DSP_EPI
 			PortGather = new CommunicationGather(Communication, "\x0D\x0A");
 			PortGather.LineReceived += Port_LineReceived;
 
-			CommandPassthruFeedback = new StringFeedback(() => DeviceRx);
 
-			CommunicationMonitor = new GenericCommunicationMonitor(this, Communication, 20000, 120000, 300000, () => SendLine("SESSION set verbose false"));
+            CommunicationMonitor = new GenericCommunicationMonitor(this, Communication, 20000, 120000, 300000, () => SendLine("SESSION set verbose false"));
 
 			// Custom monitoring, will check the heartbeat tracker count every 20s and reset. Heartbeat sbould be coming in every 20s if subscriptions are valid
 			DeviceManager.AddDevice(CommunicationMonitor);
@@ -134,7 +138,7 @@ namespace Tesira_DSP_EPI
 
 
 			CommunicationMonitor.StatusChange += CommunicationMonitor_StatusChange;
-			CrestronConsole.AddNewConsoleCommand(SendLine, "send" + Key, "", ConsoleAccessLevelEnum.AccessOperator);
+            CrestronConsole.AddNewConsoleCommand(CommandQueue.EnqueueCommand, "send" + Key, "", ConsoleAccessLevelEnum.AccessOperator);
 			CrestronConsole.AddNewConsoleCommand(s => Communication.Connect(), "con" + Key, "", ConsoleAccessLevelEnum.AccessOperator);
 
             _subscribeThread = new Thread(o => HandleAttributeSubscriptions(), null, Thread.eThreadStartOptions.CreateSuspended)
@@ -158,6 +162,18 @@ namespace Tesira_DSP_EPI
             CreateDspObjects();
         }
 
+        private void StartSubsciptionThread()
+        {
+            if (_subscribeThread.ThreadState == Thread.eThreadStates.ThreadRunning) return;
+
+            _subscribeThread = null;
+            _subscribeThread = new Thread(o => HandleAttributeSubscriptions(), null,
+                Thread.eThreadStartOptions.Running)
+            {
+                Priority = Thread.eThreadPriority.LowestPriority
+            };
+        }
+
         void CrestronEnvironment_ProgramStatusEventHandler(eProgramStatusEventType programEventType)
         {
             if (programEventType != eProgramStatusEventType.Stopping) return;
@@ -174,7 +190,9 @@ namespace Tesira_DSP_EPI
 
             var props = JsonConvert.DeserializeObject<TesiraDspPropertiesConfig>(_dc.Properties.ToString());
 
-            if (props == null) return;
+            ResubsriptionString = !String.IsNullOrEmpty(props.ResubscribeString)
+                ? props.ResubscribeString
+                : "hullabaloo";
 
             Debug.Console(2, this, "Props Exists");
             Debug.Console(2, this, "Here's the props string\n {0}", _dc.Properties.ToString());
@@ -298,7 +316,7 @@ namespace Tesira_DSP_EPI
                     var key = mixer.Key;
                     var value = mixer.Value;
                     CrosspointStates.Add(key, new TesiraDspCrosspointState(key, value, this));
-                    Debug.Console(2, this, "Adding Mixer {0} InstanceTag: {1}", key, value.MatrixInstanceTag);
+                    Debug.Console(2, this, "Adding CrosspointState {0} InstanceTag: {1}", key, value.MatrixInstanceTag);
 
                     if (value.Enabled)
                     {
@@ -332,10 +350,15 @@ namespace Tesira_DSP_EPI
 			Debug.Console(2, this, "Communication monitor state: {0}", CommunicationMonitor.Status);
 			if (e.Status == MonitorStatus.IsOk)
 			{
-                if (_subscribeThread.ThreadState != Thread.eThreadStates.ThreadRunning)
-                {
-                    _subscribeThread.Start();
-                }
+			    StartSubsciptionThread();
+        {
+            if (_subscribeThread.ThreadState == Thread.eThreadStates.ThreadRunning) return;
+            _subscribeThread = null;
+            _subscribeThread = new Thread(o => HandleAttributeSubscriptions(), null, Thread.eThreadStartOptions.Running)
+            {
+                Priority = Thread.eThreadPriority.LowestPriority
+            };
+        }
 			}
 			else if (e.Status != MonitorStatus.IsOk)
 			{
@@ -354,7 +377,7 @@ namespace Tesira_DSP_EPI
 			else
 			{
 				// Cleanup items from this session
-				_commandQueue.Clear();
+                CommandQueue.Clear();
 				_commandQueueInProgress = false;
 			}
         }
@@ -399,7 +422,7 @@ namespace Tesira_DSP_EPI
                     Debug.Console(2, this, "The Watchdog was wrong - that's just an old shoe.  Nothing is subscribed.");
                     return;
                 }
-                Debug.Console(2, this, "The Watchdog is sniffing {0}", watchDogSubject.Key);
+                Debug.Console(2, this, "The Watchdog is sniffing \"{0}\".", watchDogSubject.Key);
 
                 WatchDogSniffer = true;
 
@@ -452,30 +475,41 @@ namespace Tesira_DSP_EPI
 
         private void Port_LineReceived(object dev, GenericCommMethodReceiveTextArgs args)
         {
-            if (Debug.Level == 2)
-                Debug.Console(2, this, "RX: '{0}'",
-                    ShowHexResponse ? ComTextHelper.GetEscapedText(args.Text) : args.Text);
+            if (args == null) return;
 
-            //Debug.Console(1, this, "RX: '{0}'", args.Text);
+            if (String.IsNullOrEmpty(args.Text)) return;
 
             try
             {
+
+                Debug.Console(2, this, "RX: '{0}'", ShowHexResponse ? ComTextHelper.GetEscapedText(args.Text) : args.Text);
 
                 DeviceRx = args.Text;
 
                 CommandPassthruFeedback.FireUpdate();
 
-                if (args.Text.IndexOf("Welcome to the Tesira Text Protocol Server...", StringComparison.Ordinal) > -1)
+                if (args.Text.Length == 0) return;
+
+                //if (args.Text.IndexOf("Welcome", StringComparison.Ordinal) > -1)
+                if(args.Text.Contains("Welcome"))
                 {
                     // Indicates a new TTP session
                     // moved to CustomActivate() method
                     CommunicationMonitor.Start();
                     if (_subscribeThread.ThreadState != Thread.eThreadStates.ThreadRunning)
                     {
-                        _subscribeThread.Start();
+                        StartSubsciptionThread();
                     }
                 }
-                else if (args.Text.IndexOf("! ", StringComparison.Ordinal) > -1)
+
+                //else if (args.Text.IndexOf(ResubsriptionString, StringComparison.Ordinal) > -1)
+                else if (args.Text.Equals(ResubsriptionString, StringComparison.OrdinalIgnoreCase))
+                {
+                    CommandQueue.Clear();
+                    Resubscribe();
+                }
+
+                else if (args.Text.IndexOf("! ", StringComparison.Ordinal) == 0)
                 {
                     // response is from a subscribed attribute
 
@@ -490,7 +524,7 @@ namespace Tesira_DSP_EPI
                     var customName = match.Groups[1].Value;
                     var value = match.Groups[2].Value;
 
-                    AdvanceQueue(args.Text);
+                    CommandQueue.AdvanceQueue(args.Text);
 
                     foreach (var controlPoint in Faders.Where(controlPoint => customName == controlPoint.Value.LevelCustomName || customName == controlPoint.Value.MuteCustomName))
                     {
@@ -519,12 +553,9 @@ namespace Tesira_DSP_EPI
                         controlPoint.Value.ParseSubscriptionMessage(customName, value);
                         return;
                     }
-
-                    // same for dialers
-                    // same for switchers
-
                 }
-                else if (args.Text.IndexOf("+OK", StringComparison.Ordinal) > -1)
+
+                else if (args.Text.IndexOf("+OK", StringComparison.Ordinal) == 0)
                 {
                     if (args.Text == "+OK")       // Check for a simple "+OK" only 'ack' repsonse or a list response and ignore
                         return;
@@ -532,10 +563,11 @@ namespace Tesira_DSP_EPI
                     //string pattern = "(?<=\" )(.*?)(?=\\+)";
                     //string data = Regex.Replace(args.Text, pattern, "");
 
-                    AdvanceQueue(args.Text);
-
+                    CommandQueue.AdvanceQueue(args.Text);
                 }
-                else if (args.Text.IndexOf("-ERR", StringComparison.Ordinal) > -1)
+                
+
+                else if (args.Text.IndexOf("-ERR", StringComparison.Ordinal) == 0)
                 {
                     // Error response
                     Debug.Console(2, this, "Error From DSP: '{0}'", args.Text);
@@ -543,8 +575,10 @@ namespace Tesira_DSP_EPI
                     {
                         case "-ERR ALREADY_SUBSCRIBED":
                             {
+                                if(WatchDogSniffer)
+                                    Debug.Console(2, this, "The Watchdog didn't find anything.  Good Boy!");
                                 WatchDogSniffer = false;
-                                AdvanceQueue(args.Text);
+                                CommandQueue.AdvanceQueue(args.Text);
                                 break;
                             }
 
@@ -552,17 +586,21 @@ namespace Tesira_DSP_EPI
                         default:
                             {
                                 WatchDogSniffer = false;
-
-                                AdvanceQueue(args.Text);
+                                CommandQueue.AdvanceQueue(args.Text);
                                 break;
                             }
                     }
-
                 }
+                    /*
+                else if (args.Text.IndexOf("SESSION", StringComparison.OrdinalIgnoreCase) > -1)
+                {
+                    AdvanceQueue(args.Text);
+                }
+                     */
             }
             catch (Exception e)
             {
-                if (Debug.Level == 2)
+                if(args.Text.Length > 0)
                     Debug.Console(2, this, "Error parsing response: '{0}'\n{1}", args.Text, e);
             }
 
@@ -570,86 +608,6 @@ namespace Tesira_DSP_EPI
 
         #endregion
 
-        #region Queue Management
-
-        /// <summary>
-		/// Adds a command from a child module to the queue
-		/// </summary>
-        /// <param name="commandToEnqueue">Command object from child module</param>
-		public void EnqueueCommand(QueuedCommand commandToEnqueue)
-		{
-			_commandQueue.Enqueue(commandToEnqueue);
-			Debug.Console(1, this, "Command (QueuedCommand) Enqueued '{0}'.  CommandQueue has '{1}' Elements.", commandToEnqueue.Command, _commandQueue.Count);
-			if (!_commandQueueInProgress)
-				SendNextQueuedCommand();
-		}
-
-		/// <summary>
-		/// Adds a raw string command to the queue
-		/// </summary>
-		/// <param name="command">String to enqueue</param>
-		public void EnqueueCommand(string command)
-		{
-			_commandQueue.Enqueue(command);
-			Debug.Console(1, this, "Command (string) Enqueued '{0}'.  CommandQueue has '{1}' Elements.", command, _commandQueue.Count);
-			if (!_commandQueueInProgress)
-				SendNextQueuedCommand();
-		}
-
-		/// <summary>
-		/// Sends the next queued command to the DSP
-		/// </summary>
-		void SendNextQueuedCommand()
-		{
-            Debug.Console(2, this, "Attemption to send a queued commend");
-		    if (!Communication.IsConnected || _commandQueue.IsEmpty) return;
-		    _commandQueueInProgress = true;
-
-		    if (_commandQueue.Peek() is QueuedCommand)
-		    {
-		        var nextCommand = (QueuedCommand)_commandQueue.Peek();
-		        SendLine(nextCommand.Command);
-		    }
-
-		    else
-		    {
-		        var nextCommand = (string)_commandQueue.Peek();
-		        SendLine(nextCommand);
-		    }
-		}
-
-        private void AdvanceQueue(string cmd)
-        {
-            if (_commandQueue.IsEmpty) return;
-
-            if (_commandQueue.Peek() is QueuedCommand)
-            {
-                // Expected response belongs to a child class
-                var tempCommand = (QueuedCommand)_commandQueue.TryToDequeue();
-                Debug.Console(1, this, "Command Dequeued. CommandQueue Size: {0} {1}", _commandQueue.Count, tempCommand.Command);
-                tempCommand.ControlPoint.ParseGetMessage(tempCommand.AttributeCode, cmd);
-            }
-
-            Debug.Console(2, this, "Commmand queue {0}.", _commandQueue.IsEmpty ? "is empty" : "has entries");
-
-            if (_commandQueue.IsEmpty)
-                _commandQueueInProgress = false;
-            else
-                SendNextQueuedCommand();
-        }
-
-        /// <summary>
-        /// Contains all data for a component command
-        /// </summary>
-        public class QueuedCommand
-        {
-            public string Command { get; set; }
-            public string AttributeCode { get; set; }
-            public ISubscribedComponent ControlPoint { get; set; }
-        }
-
-
-        #endregion
 
 		#region Presets
 
@@ -676,7 +634,7 @@ namespace Tesira_DSP_EPI
         /// <param name="name">Preset Name</param>
 		public void RunPreset(string name)
 		{
-            SendLine(string.Format("DEVICE recallPresetByName \"{0}\"", name));
+            CommandQueue.EnqueueCommand(string.Format("DEVICE recallPresetByName \"{0}\"", name));
 		}
 
         /// <summary>
@@ -685,7 +643,7 @@ namespace Tesira_DSP_EPI
         /// <param name="id">Preset Id</param>
         public void RunPreset(int id)
         {
-            SendLine(string.Format("DEVICE recallPreset {0}", id));
+            CommandQueue.EnqueueCommand(string.Format("DEVICE recallPreset {0}", id));
         }
 
 		#endregion
@@ -759,6 +717,11 @@ namespace Tesira_DSP_EPI
 			{
                 SubscribeToComponent(control);
             }
+
+		    foreach (var control in CrosspointStates.Select(crosspointState => crosspointState.Value))
+		    {
+		        SubscribeToComponent(control);
+		    }
 		}
 
         private void SubscribeToComponent(ISubscribedComponent data)
@@ -771,13 +734,16 @@ namespace Tesira_DSP_EPI
 
 		#endregion
 
-        private void Resubscribe()
+        /// <summary>
+        /// Resubscribe to all controls
+        /// </summary>
+        public void Resubscribe()
         {
             Debug.Console(0, this, "Issue Detected with device subscriptions - resubscribing to all controls");
             StopWatchDog();
             if (_subscribeThread.ThreadState != Thread.eThreadStates.ThreadRunning)
             {
-                _subscribeThread.Start();
+                StartSubsciptionThread();
             }
         }
 
@@ -795,7 +761,7 @@ namespace Tesira_DSP_EPI
 
                 StartWatchDog();
                 if (!_commandQueueInProgress)
-                    SendNextQueuedCommand();
+                    CommandQueue.SendNextQueuedCommand();
             }
             catch (Exception ex)
             {
@@ -848,6 +814,8 @@ namespace Tesira_DSP_EPI
             trilist.SetStringSigAction(deviceJoinMap.DirectPreset.JoinNumber, RunPreset);
 
             trilist.SetStringSigAction(deviceJoinMap.CommandPassThru.JoinNumber, SendLineRaw);
+
+            trilist.SetSigTrueAction(deviceJoinMap.Resubscribe.JoinNumber, Resubscribe);
 
 
             //Level and Mute Control

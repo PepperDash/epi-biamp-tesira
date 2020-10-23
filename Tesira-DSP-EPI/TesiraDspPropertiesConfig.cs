@@ -38,6 +38,9 @@ namespace Tesira_DSP_EPI {
 
         [JsonProperty("roomCombinerControlBlocks")]
         public Dictionary<string, TesiraRoomCombinerBlockConfig> RoomCombinerControlBlocks { get; set; }
+
+        [JsonProperty("resubscribeString")]
+        public string ResubscribeString { get; set; }
     }
 
     public class TesiraFaderControlBlockConfig

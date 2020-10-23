@@ -7,6 +7,7 @@ using System.Text.RegularExpressions;
 using Crestron.SimplSharpPro.DeviceSupport;
 using PepperDash.Essentials.Core.Bridges;
 using Tesira_DSP_EPI.Bridge.JoinMaps;
+using System.Collections.Generic;
 
 namespace Tesira_DSP_EPI
 {
@@ -55,6 +56,8 @@ namespace Tesira_DSP_EPI
         public IntFeedback TypeFeedback { get; private set; }
         public IntFeedback ControlTypeFeedback { get; private set; }
         public IntFeedback PermissionsFeedback { get; private set; }
+
+        private Dictionary<string, SubscriptionTrackingObject> SubscriptionTracker { get; set; }
 
 
         
@@ -120,12 +123,19 @@ namespace Tesira_DSP_EPI
         {
             get
             {
-                var isSubscribed = !HasMute && !_muteIsSubscribed;
+                var trackValue = 0;
 
-                if (HasLevel && !_levelIsSubscribed)
-                    isSubscribed = false;
+                foreach (var subscriptionTrackingObject in SubscriptionTracker)
+                {
+                    var data = subscriptionTrackingObject.Value;
 
-                return isSubscribed;
+                    if (data.Enabled)
+                    {
+                        trackValue += data.Subscribed ? 1 : -1;
+                    }
+                }
+
+                return trackValue > 0;
             }
             protected set { }
         }
@@ -142,10 +152,6 @@ namespace Tesira_DSP_EPI
         /// </summary>
         public bool HasLevel { get; private set; }
 
-        private bool _muteIsSubscribed;
-
-        private bool _levelIsSubscribed;
-
         /// <summary>
         /// Constructor for Component
         /// </summary>
@@ -155,7 +161,6 @@ namespace Tesira_DSP_EPI
         public TesiraDspFaderControl(string key, TesiraFaderControlBlockConfig config, TesiraDsp parent)
             : base(config.LevelInstanceTag, config.MuteInstanceTag, config.Index1, config.Index2, parent, String.Format(KeyFormatter, parent.Key, key), config.Label, config.BridgeIndex)
         {
-
             Initialize(config);
 
         }
@@ -184,6 +189,11 @@ namespace Tesira_DSP_EPI
             _volumeDownRepeatTimer = new CTimer(VolumeDownRepeat, Timeout.Infinite);
             _volumeUpRepeatDelayTimer = new CTimer(VolumeUpRepeatDelay, Timeout.Infinite);
             _volumeDownRepeatDelayTimer = new CTimer(VolumeDownRepeatDelay, Timeout.Infinite);
+
+            SubscriptionTracker = new Dictionary<string, SubscriptionTrackingObject>();
+
+            SubscriptionTracker.Add("mute", new SubscriptionTrackingObject(HasMute));
+            SubscriptionTracker.Add("level", new SubscriptionTrackingObject(HasLevel));
 
             
 
@@ -280,7 +290,7 @@ namespace Tesira_DSP_EPI
             //Unsubscribe to Mute
             if (HasMute)
             {
-                _muteIsSubscribed = false;
+                SubscriptionTracker["mute"].Subscribed = false;
                 // MUST use InstanceTag2 for mute, it is the second instance tag in the JSON config
                 MuteCustomName = string.Format("{0}~mute{1}", InstanceTag2, Index1);
 
@@ -290,7 +300,7 @@ namespace Tesira_DSP_EPI
             //Unubscribe to Level
             if (HasLevel)
             {
-                _levelIsSubscribed = false;
+                SubscriptionTracker["level"].Subscribed = false;
                 // MUST use InstanceTag1 for levels, it is the first instance tag in the JSON config
                 LevelCustomName = string.Format("{0}~level{1}", InstanceTag1, Index1);
 
@@ -309,7 +319,7 @@ namespace Tesira_DSP_EPI
             if (HasMute && customName == MuteCustomName)
             {
                 IsMuted = bool.Parse(value);
-                _muteIsSubscribed = true;
+                SubscriptionTracker["mute"].Subscribed = true;
             }
             else if (HasLevel && customName == LevelCustomName)
             {
@@ -319,7 +329,7 @@ namespace Tesira_DSP_EPI
 
                 VolumeLevel = UseAbsoluteValue ? (ushort)localValue :  (ushort)Scale(localValue, MinLevel, MaxLevel, 0, 65535);
 
-                _levelIsSubscribed = true;
+                SubscriptionTracker["level"].Subscribed = true;
             }
 
         }

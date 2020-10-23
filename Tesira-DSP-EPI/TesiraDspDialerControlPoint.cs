@@ -81,20 +81,13 @@ namespace Tesira_DSP_EPI
                 //Command requires Index
                 if (String.IsNullOrEmpty(value))
                 {
-                    if (String.IsNullOrEmpty(command))
-                    {
-                        //format command without value OR command
-                        cmd = string.Format("{0} {1} {2} ", localInstanceTag, attributeCode, Index1);
-                    }
-                    else
-                    {
-                        // format command without value
-                        cmd = string.Format("{0} {1} {2} {3}", localInstanceTag, command, attributeCode, Index1);
-                    }
+                    cmd = String.IsNullOrEmpty(command) ? 
+                        string.Format("{0} {1} {2} ", localInstanceTag, attributeCode, Index1) : 
+                        string.Format("{0} {1} {2} {3}", localInstanceTag, command, attributeCode, Index1);
                 }
                 else
                 {
-                    // format commadn with value
+                    // format command with value
                     cmd = string.Format("{0} {1} {2} {3} {4}", localInstanceTag, command, attributeCode, Index1, value);
                 }
             }
@@ -104,15 +97,9 @@ namespace Tesira_DSP_EPI
                 attributeCode == "offHook" || attributeCode == "answer")
             {
                 //requires index, but does not require command
-                if (String.IsNullOrEmpty(value))
-                {
-                    //format command without value
-                    cmd = string.Format("{0} {1} {2} {3}", localInstanceTag, attributeCode, Index1, Index2);
-                }
-                else
-                {
-                    cmd = string.Format("{0} {1} {2} {3} {4}", localInstanceTag, attributeCode, Index1, Index2, value);
-                }
+                cmd = String.IsNullOrEmpty(value) ? 
+                    string.Format("{0} {1} {2} {3}", localInstanceTag, attributeCode, Index1, Index2) : 
+                    string.Format("{0} {1} {2} {3} {4}", localInstanceTag, attributeCode, Index1, Index2, value);
             }
 
             else
@@ -125,7 +112,7 @@ namespace Tesira_DSP_EPI
             {
                 // This command will generate a return value response so it needs to be queued
                 if (!string.IsNullOrEmpty(cmd))
-                    Parent.EnqueueCommand(new TesiraDsp.QueuedCommand { Command = cmd, AttributeCode = attributeCode, ControlPoint = this });
+                    Parent.CommandQueue.EnqueueCommand(new QueuedCommand { Command = cmd, AttributeCode = attributeCode, ControlPoint = this });
             }
             else
             {
@@ -181,7 +168,7 @@ namespace Tesira_DSP_EPI
 
             //Parent.WatchDogList.Add(customName,cmd);
             //Parent.SendLine(cmd);
-			Parent.EnqueueCommand(new TesiraDsp.QueuedCommand { Command = cmd, AttributeCode = attributeCode, ControlPoint = this });
+            Parent.CommandQueue.EnqueueCommand(new QueuedCommand { Command = cmd, AttributeCode = attributeCode, ControlPoint = this });
         }
 
         public virtual void SendUnSubscriptionCommand(string customName, string attributeCode, int instanceTag)
@@ -221,7 +208,7 @@ namespace Tesira_DSP_EPI
 
             //Parent.WatchDogList.Add(customName,cmd);
             //Parent.SendLine(cmd);
-			Parent.EnqueueCommand(new TesiraDsp.QueuedCommand { Command = cmd, AttributeCode = attributeCode, ControlPoint = this });
+            Parent.CommandQueue.EnqueueCommand(new QueuedCommand { Command = cmd, AttributeCode = attributeCode, ControlPoint = this });
         }
         
         public virtual void DoPoll()

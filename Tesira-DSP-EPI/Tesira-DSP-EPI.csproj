@@ -109,6 +109,7 @@
     <Compile Include="Interfaces\Interfaces.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Bridge\JoinMaps\TesiraSwitcherJoinMap.cs" />
+    <Compile Include="SubscriptionTrackingObject.cs" />
     <Compile Include="TesiraDsp.cs" />
     <Compile Include="TesiraDspControlPoint.cs" />
     <Compile Include="TesiraDspDeviceInfo.cs" />
@@ -124,6 +125,7 @@
     <Compile Include="Bridge\JoinMaps\TesiraFaderJoinMap.cs" />
     <Compile Include="Bridge\JoinMaps\TesiraStateJoinMap.cs" />
     <Compile Include="Bridge\JoinMaps\TesiraPresetJoinMap.cs" />
+    <Compile Include="TesiraQueue.cs" />
     <None Include="Properties\ControlSystem.cfg" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CompactFramework.CSharp.targets" />

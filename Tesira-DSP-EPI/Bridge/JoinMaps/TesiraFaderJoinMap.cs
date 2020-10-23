@@ -9,8 +9,8 @@ namespace Tesira_DSP_EPI.Bridge.JoinMaps
     public class TesiraFaderJoinMapAdvanced : JoinMapBaseAdvanced
     {
         [JoinName("MuteToggle")] public JoinDataComplete MuteToggle =
-            new JoinDataComplete(new JoinData() {JoinNumber = 400, JoinSpan = 1},
-                new JoinMetadata()
+            new JoinDataComplete(new JoinData {JoinNumber = 400, JoinSpan = 1},
+                new JoinMetadata
                 {
                     Description = "Fader Mute Toggle and Feedback",
                     JoinCapabilities = eJoinCapabilities.ToFromSIMPL,
@@ -18,8 +18,8 @@ namespace Tesira_DSP_EPI.Bridge.JoinMaps
                 });
 
         [JoinName("MuteOn")] public JoinDataComplete MuteOn =
-            new JoinDataComplete(new JoinData() {JoinNumber = 600, JoinSpan = 1},
-                new JoinMetadata()
+            new JoinDataComplete(new JoinData {JoinNumber = 600, JoinSpan = 1},
+                new JoinMetadata
                 {
                     Description = "Fader Mute On and Feedback",
                     JoinCapabilities = eJoinCapabilities.ToFromSIMPL,
@@ -27,8 +27,8 @@ namespace Tesira_DSP_EPI.Bridge.JoinMaps
                 });
 
         [JoinName("MuteOff")] public JoinDataComplete MuteOff =
-            new JoinDataComplete(new JoinData() {JoinNumber = 800, JoinSpan = 1},
-                new JoinMetadata()
+            new JoinDataComplete(new JoinData {JoinNumber = 800, JoinSpan = 1},
+                new JoinMetadata
                 {
                     Description = "Fader Mute Off and Feedback",
                     JoinCapabilities = eJoinCapabilities.ToFromSIMPL,
@@ -36,8 +36,8 @@ namespace Tesira_DSP_EPI.Bridge.JoinMaps
                 });
 
         [JoinName("VolumeUp")] public JoinDataComplete VolumeUp =
-            new JoinDataComplete(new JoinData() {JoinNumber = 1000, JoinSpan = 1},
-                new JoinMetadata()
+            new JoinDataComplete(new JoinData {JoinNumber = 1000, JoinSpan = 1},
+                new JoinMetadata
                 {
                     Description = "Fader Level Increment",
                     JoinCapabilities = eJoinCapabilities.FromSIMPL,
@@ -45,8 +45,8 @@ namespace Tesira_DSP_EPI.Bridge.JoinMaps
                 });
 
         [JoinName("VolumeDown")] public JoinDataComplete VolumeDown =
-            new JoinDataComplete(new JoinData() {JoinNumber = 1200, JoinSpan = 1},
-                new JoinMetadata()
+            new JoinDataComplete(new JoinData {JoinNumber = 1200, JoinSpan = 1},
+                new JoinMetadata
                 {
                     Description = "Fader Level Decrement",
                     JoinCapabilities = eJoinCapabilities.FromSIMPL,
@@ -54,8 +54,8 @@ namespace Tesira_DSP_EPI.Bridge.JoinMaps
                 });
 
         [JoinName("Visible")] public JoinDataComplete Visible =
-            new JoinDataComplete(new JoinData() {JoinNumber = 200, JoinSpan = 1},
-                new JoinMetadata()
+            new JoinDataComplete(new JoinData {JoinNumber = 200, JoinSpan = 1},
+                new JoinMetadata
                 {
                     Description = "Fader Visible and In Use",
                     JoinCapabilities = eJoinCapabilities.ToSIMPL,
@@ -63,8 +63,8 @@ namespace Tesira_DSP_EPI.Bridge.JoinMaps
                 });
 
         [JoinName("Volume")] public JoinDataComplete Volume =
-            new JoinDataComplete(new JoinData() {JoinNumber = 200, JoinSpan = 1},
-                new JoinMetadata()
+            new JoinDataComplete(new JoinData {JoinNumber = 200, JoinSpan = 1},
+                new JoinMetadata
                 {
                     Description = "Fader Level Set and Feedback",
                     JoinCapabilities = eJoinCapabilities.ToFromSIMPL,
@@ -72,8 +72,8 @@ namespace Tesira_DSP_EPI.Bridge.JoinMaps
                 });
 
         [JoinName("Type")] public JoinDataComplete Type =
-            new JoinDataComplete(new JoinData() {JoinNumber = 400, JoinSpan = 1},
-                new JoinMetadata()
+            new JoinDataComplete(new JoinData {JoinNumber = 400, JoinSpan = 1},
+                new JoinMetadata
                 {
                     Description = "Fader Type [Speaker / Microphone]",
                     JoinCapabilities = eJoinCapabilities.ToSIMPL,
@@ -81,8 +81,8 @@ namespace Tesira_DSP_EPI.Bridge.JoinMaps
                 });
 
         [JoinName("Status")] public JoinDataComplete Status =
-            new JoinDataComplete(new JoinData() {JoinNumber = 600, JoinSpan = 1},
-                new JoinMetadata()
+            new JoinDataComplete(new JoinData {JoinNumber = 600, JoinSpan = 1},
+                new JoinMetadata
                 {
                     Description = "Fader Control Data [Mic / Speaker]",
                     JoinCapabilities = eJoinCapabilities.ToSIMPL,
@@ -90,8 +90,8 @@ namespace Tesira_DSP_EPI.Bridge.JoinMaps
                 });
 
         [JoinName("Permissions")] public JoinDataComplete Permissions =
-            new JoinDataComplete(new JoinData() {JoinNumber = 800, JoinSpan = 1},
-                new JoinMetadata()
+            new JoinDataComplete(new JoinData {JoinNumber = 800, JoinSpan = 1},
+                new JoinMetadata
                 {
                     Description = "Fader Permissions",
                     JoinCapabilities = eJoinCapabilities.ToSIMPL,
@@ -99,8 +99,8 @@ namespace Tesira_DSP_EPI.Bridge.JoinMaps
                 });
 
         [JoinName("Label")] public JoinDataComplete Label =
-            new JoinDataComplete(new JoinData() {JoinNumber = 200, JoinSpan = 1},
-                new JoinMetadata()
+            new JoinDataComplete(new JoinData {JoinNumber = 200, JoinSpan = 1},
+                new JoinMetadata
                 {
                     Description = "Fader Label",
                     JoinCapabilities = eJoinCapabilities.ToSIMPL,
@@ -120,8 +120,8 @@ namespace Tesira_DSP_EPI.Bridge.JoinMaps
     public class TesiraFaderJoinMapAdvanceeStandalone : JoinMapBaseAdvanced
     {
         [JoinName("VolumeUp")] public JoinDataComplete VolumeUp =
-            new JoinDataComplete(new JoinData() {JoinNumber = 1, JoinSpan = 1},
-                new JoinMetadata()
+            new JoinDataComplete(new JoinData {JoinNumber = 1, JoinSpan = 1},
+                new JoinMetadata
                 {
                     Description = "Fader Level Increment",
                     JoinCapabilities = eJoinCapabilities.FromSIMPL,
@@ -129,8 +129,8 @@ namespace Tesira_DSP_EPI.Bridge.JoinMaps
                 });
 
         [JoinName("VolumeDown")] public JoinDataComplete VolumeDown =
-            new JoinDataComplete(new JoinData() {JoinNumber = 2, JoinSpan = 1},
-                new JoinMetadata()
+            new JoinDataComplete(new JoinData {JoinNumber = 2, JoinSpan = 1},
+                new JoinMetadata
                 {
                     Description = "Fader Level Decrement",
                     JoinCapabilities = eJoinCapabilities.FromSIMPL,
@@ -138,8 +138,8 @@ namespace Tesira_DSP_EPI.Bridge.JoinMaps
                 });
 
         [JoinName("MuteOn")] public JoinDataComplete MuteOn =
-            new JoinDataComplete(new JoinData() {JoinNumber = 3, JoinSpan = 1},
-                new JoinMetadata()
+            new JoinDataComplete(new JoinData {JoinNumber = 3, JoinSpan = 1},
+                new JoinMetadata
                 {
                     Description = "Fader Mute On and Feedback",
                     JoinCapabilities = eJoinCapabilities.ToFromSIMPL,
@@ -147,8 +147,8 @@ namespace Tesira_DSP_EPI.Bridge.JoinMaps
                 });
 
         [JoinName("MuteOff")] public JoinDataComplete MuteOff =
-            new JoinDataComplete(new JoinData() {JoinNumber = 4, JoinSpan = 1},
-                new JoinMetadata()
+            new JoinDataComplete(new JoinData {JoinNumber = 4, JoinSpan = 1},
+                new JoinMetadata
                 {
                     Description = "Fader Mute Off and Feedback",
                     JoinCapabilities = eJoinCapabilities.ToFromSIMPL,
@@ -156,8 +156,8 @@ namespace Tesira_DSP_EPI.Bridge.JoinMaps
                 });
 
         [JoinName("MuteToggle")] public JoinDataComplete MuteToggle =
-            new JoinDataComplete(new JoinData() {JoinNumber = 5, JoinSpan = 1},
-                new JoinMetadata()
+            new JoinDataComplete(new JoinData {JoinNumber = 5, JoinSpan = 1},
+                new JoinMetadata
                 {
                     Description = "Fader Mute Toggle and Feedback",
                     JoinCapabilities = eJoinCapabilities.ToFromSIMPL,
@@ -166,8 +166,8 @@ namespace Tesira_DSP_EPI.Bridge.JoinMaps
 
 
         [JoinName("Visible")] public JoinDataComplete Visible =
-            new JoinDataComplete(new JoinData() {JoinNumber = 6, JoinSpan = 1},
-                new JoinMetadata()
+            new JoinDataComplete(new JoinData {JoinNumber = 6, JoinSpan = 1},
+                new JoinMetadata
                 {
                     Description = "Fader Visible and In Use",
                     JoinCapabilities = eJoinCapabilities.ToSIMPL,
@@ -175,8 +175,8 @@ namespace Tesira_DSP_EPI.Bridge.JoinMaps
                 });
 
         [JoinName("Volume")] public JoinDataComplete Volume =
-            new JoinDataComplete(new JoinData() {JoinNumber = 1, JoinSpan = 1},
-                new JoinMetadata()
+            new JoinDataComplete(new JoinData {JoinNumber = 1, JoinSpan = 1},
+                new JoinMetadata
                 {
                     Description = "Fader Level Set and Feedback",
                     JoinCapabilities = eJoinCapabilities.ToFromSIMPL,
@@ -184,8 +184,8 @@ namespace Tesira_DSP_EPI.Bridge.JoinMaps
                 });
 
         [JoinName("Type")] public JoinDataComplete Type =
-            new JoinDataComplete(new JoinData() {JoinNumber = 2, JoinSpan = 1},
-                new JoinMetadata()
+            new JoinDataComplete(new JoinData {JoinNumber = 2, JoinSpan = 1},
+                new JoinMetadata
                 {
                     Description = "Fader Type [Speaker / Microphone]",
                     JoinCapabilities = eJoinCapabilities.ToSIMPL,
@@ -193,8 +193,8 @@ namespace Tesira_DSP_EPI.Bridge.JoinMaps
                 });
 
         [JoinName("Status")] public JoinDataComplete Status =
-            new JoinDataComplete(new JoinData() {JoinNumber = 3, JoinSpan = 1},
-                new JoinMetadata()
+            new JoinDataComplete(new JoinData {JoinNumber = 3, JoinSpan = 1},
+                new JoinMetadata
                 {
                     Description = "Fader Control Data [Mic / Speaker]",
                     JoinCapabilities = eJoinCapabilities.ToSIMPL,
@@ -202,8 +202,8 @@ namespace Tesira_DSP_EPI.Bridge.JoinMaps
                 });
 
         [JoinName("Permissions")] public JoinDataComplete Permissions =
-            new JoinDataComplete(new JoinData() {JoinNumber = 4, JoinSpan = 1},
-                new JoinMetadata()
+            new JoinDataComplete(new JoinData {JoinNumber = 4, JoinSpan = 1},
+                new JoinMetadata
                 {
                     Description = "Fader Permissions",
                     JoinCapabilities = eJoinCapabilities.ToSIMPL,
@@ -211,8 +211,8 @@ namespace Tesira_DSP_EPI.Bridge.JoinMaps
                 });
 
         [JoinName("Label")] public JoinDataComplete Label =
-            new JoinDataComplete(new JoinData() {JoinNumber = 1, JoinSpan = 1},
-                new JoinMetadata()
+            new JoinDataComplete(new JoinData {JoinNumber = 1, JoinSpan = 1},
+                new JoinMetadata
                 {
                     Description = "Fader Label",
                     JoinCapabilities = eJoinCapabilities.ToSIMPL,

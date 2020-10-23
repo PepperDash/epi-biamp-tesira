@@ -46,6 +46,19 @@ namespace Tesira_DSP_EPI
             Feedbacks.Add(CrosspointStateFeedback);
             Feedbacks.Add(NameFeedback);
             parent.Feedbacks.AddRange(Feedbacks);
+
+            if (config.Enabled)
+            {
+                DeviceManager.AddDevice(this);
+            }
+        }
+
+        /// <summary>
+        /// Get Initial Values for Control.  Control does not subscribe.
+        /// </summary>
+        public override void Subscribe()
+        {
+            GetState();
         }
 
         /// <summary>

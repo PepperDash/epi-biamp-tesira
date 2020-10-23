@@ -68,6 +68,7 @@ namespace Tesira_DSP_EPI
             Debug.Console(1, this, "Linking to Trilist '{0}'", trilist.ID.ToString("X"));
 
             //var comm = DspDevice as IBasicCommunication;
+            trilist.SetSigTrueAction(joinMap.Resubscribe.JoinNumber, _parent.Resubscribe);
 
             trilist.SetStringSigAction(presetJoinMap.PresetName.JoinNumber, _parent.RunPreset);
 

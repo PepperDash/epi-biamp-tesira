@@ -8,20 +8,46 @@ namespace Tesira_DSP_EPI.Bridge.JoinMaps
     public class TesiraDspDeviceJoinMapAdvanced : JoinMapBaseAdvanced
     {
 
-        [JoinName("IsOnline")]
-        public JoinDataComplete IsOnline = new JoinDataComplete(new JoinData() { JoinNumber = 1, JoinSpan = 1 },
-            new JoinMetadata() { Description = "Device Online", JoinCapabilities = eJoinCapabilities.ToSIMPL, JoinType = eJoinType.Digital });
+        [JoinName("IsOnline")] public JoinDataComplete IsOnline =
+            new JoinDataComplete(new JoinData {JoinNumber = 1, JoinSpan = 1},
+                new JoinMetadata
+                {
+                    Description = "Device Online",
+                    JoinCapabilities = eJoinCapabilities.ToSIMPL,
+                    JoinType = eJoinType.Digital
+                });
 
-        [JoinName("CommandPassThru")]
-        public JoinDataComplete CommandPassThru = new JoinDataComplete(new JoinData() { JoinNumber = 1, JoinSpan = 1 },
-            new JoinMetadata() { Description = "Pass discrete commands directly to/from the device", JoinCapabilities = eJoinCapabilities.ToFromSIMPL, JoinType = eJoinType.Serial });
+        [JoinName("Resubscribe")] public JoinDataComplete Resubscribe =
+            new JoinDataComplete(new JoinData {JoinNumber = 1, JoinSpan = 1},
+                new JoinMetadata
+                {
+                    Description = "Trigger control resubscription",
+                    JoinCapabilities = eJoinCapabilities.FromSIMPL,
+                    JoinType = eJoinType.Digital
+                });
 
-        [JoinName("DirectPreset")]
-        public JoinDataComplete DirectPreset = new JoinDataComplete(new JoinData() { JoinNumber = 100, JoinSpan = 1 },
-            new JoinMetadata() { Description = "Directly Recall a Preset", JoinCapabilities = eJoinCapabilities.ToSIMPL, JoinType = eJoinType.Digital });
+        [JoinName("CommandPassThru")] public JoinDataComplete CommandPassThru =
+            new JoinDataComplete(new JoinData {JoinNumber = 1, JoinSpan = 1},
+                new JoinMetadata
+                {
+                    Description = "Pass discrete commands directly to/from the device",
+                    JoinCapabilities = eJoinCapabilities.ToFromSIMPL,
+                    JoinType = eJoinType.Serial
+                });
+
+        [JoinName("DirectPreset")] public JoinDataComplete DirectPreset =
+            new JoinDataComplete(new JoinData {JoinNumber = 100, JoinSpan = 1},
+                new JoinMetadata
+                {
+                    Description = "Directly Recall a Preset",
+                    JoinCapabilities = eJoinCapabilities.ToSIMPL,
+                    JoinType = eJoinType.Digital
+                });
 
         public TesiraDspDeviceJoinMapAdvanced(uint joinStart)
-            : base(joinStart, typeof(TesiraDspDeviceJoinMapAdvanced)) { }
+            : base(joinStart, typeof (TesiraDspDeviceJoinMapAdvanced))
+        {
+        }
     }
 
     /// <summary>
@@ -30,19 +56,45 @@ namespace Tesira_DSP_EPI.Bridge.JoinMaps
     public class TesiraDspDeviceJoinMapAdvancedStandalone : JoinMapBaseAdvanced
     {
 
-        [JoinName("IsOnline")]
-        public JoinDataComplete IsOnline = new JoinDataComplete(new JoinData() { JoinNumber = 1, JoinSpan = 1 },
-            new JoinMetadata() { Description = "Device Online", JoinCapabilities = eJoinCapabilities.ToSIMPL, JoinType = eJoinType.Digital });
+        [JoinName("IsOnline")] public JoinDataComplete IsOnline =
+            new JoinDataComplete(new JoinData {JoinNumber = 1, JoinSpan = 1},
+                new JoinMetadata
+                {
+                    Description = "Device Online",
+                    JoinCapabilities = eJoinCapabilities.ToSIMPL,
+                    JoinType = eJoinType.Digital
+                });
 
-        [JoinName("Name")]
-        public JoinDataComplete Name = new JoinDataComplete(new JoinData() { JoinNumber = 1, JoinSpan = 1 },
-            new JoinMetadata() { Description = "Device Name", JoinCapabilities = eJoinCapabilities.ToSIMPL, JoinType = eJoinType.Serial });
+        [JoinName("Resubscribe")] public JoinDataComplete Resubscribe =
+            new JoinDataComplete(new JoinData {JoinNumber = 1, JoinSpan = 1},
+                new JoinMetadata
+                {
+                    Description = "Trigger control resubscription",
+                    JoinCapabilities = eJoinCapabilities.FromSIMPL,
+                    JoinType = eJoinType.Digital
+                });
 
-        [JoinName("CommandPassThru")]
-        public JoinDataComplete CommandPassThru = new JoinDataComplete(new JoinData() { JoinNumber = 2, JoinSpan = 2 },
-            new JoinMetadata() { Description = "Pass discrete commands directly to/from the device", JoinCapabilities = eJoinCapabilities.ToFromSIMPL, JoinType = eJoinType.Serial });
+        [JoinName("Name")] public JoinDataComplete Name =
+            new JoinDataComplete(new JoinData {JoinNumber = 1, JoinSpan = 1},
+                new JoinMetadata
+                {
+                    Description = "Device Name",
+                    JoinCapabilities = eJoinCapabilities.ToSIMPL,
+                    JoinType = eJoinType.Serial
+                });
+
+        [JoinName("CommandPassThru")] public JoinDataComplete CommandPassThru =
+            new JoinDataComplete(new JoinData {JoinNumber = 2, JoinSpan = 2},
+                new JoinMetadata
+                {
+                    Description = "Pass discrete commands directly to/from the device",
+                    JoinCapabilities = eJoinCapabilities.ToFromSIMPL,
+                    JoinType = eJoinType.Serial
+                });
 
         public TesiraDspDeviceJoinMapAdvancedStandalone(uint joinStart)
-            : base(joinStart, typeof(TesiraDspDeviceJoinMapAdvancedStandalone)) { }
+            : base(joinStart, typeof (TesiraDspDeviceJoinMapAdvancedStandalone))
+        {
+        }
     }
 }
