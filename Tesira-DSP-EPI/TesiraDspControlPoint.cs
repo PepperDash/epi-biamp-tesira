@@ -107,6 +107,11 @@ namespace Tesira_DSP_EPI
 				}
 			}
 
+		    else if (attributeCode == "crosspointLevelState")
+		    {
+                cmd = string.Format("{0} {1} {2} {3} {4}", instanceTagLocal, command, attributeCode, Index1, Index2);
+            }
+
 
 			else if (attributeCode == "dial" || attributeCode == "end" || attributeCode == "onHook" ||
 				attributeCode == "offHook" || attributeCode == "answer")

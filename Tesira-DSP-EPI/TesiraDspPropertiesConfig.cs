@@ -256,6 +256,14 @@ namespace Tesira_DSP_EPI {
 
         [JsonProperty("bridgeIndex")]
         public uint? BridgeIndex { get; set; }
+
+        [JsonProperty("pollEnable")]
+        public bool PollEnable { get; set; }
+
+        [JsonProperty("pollTimeMs")]
+        public long  PollTimeMs { get; set; }
+
+
     }
 
     public class TesiraRoomCombinerBlockConfig

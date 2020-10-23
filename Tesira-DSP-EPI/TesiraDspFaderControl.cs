@@ -263,22 +263,30 @@ namespace Tesira_DSP_EPI
         /// </summary>
         public override void Subscribe()
         {
-            //Subscribe to Mute
-            if (HasMute)
+            if (!IsSubscribed)
             {
-                // MUST use InstanceTag2 for mute, it is the second instance tag in the JSON config
-                MuteCustomName = string.Format("{0}~mute{1}", InstanceTag2, Index1);
+                //Subscribe to Mute
+                if (HasMute)
+                {
+                    // MUST use InstanceTag2 for mute, it is the second instance tag in the JSON config
+                    MuteCustomName = string.Format("{0}~mute{1}", InstanceTag2, Index1);
 
 
-                SendSubscriptionCommand(MuteCustomName, "mute", 500, 2);
+                    SendSubscriptionCommand(MuteCustomName, "mute", 500, 2);
+                }
+
+                //Subscribe to Level
+                if (HasLevel)
+                {
+                    // MUST use InstanceTag1 for levels, it is the first instance tag in the JSON config
+                    LevelCustomName = string.Format("{0}~level{1}", InstanceTag1, Index1);
+                    SendFullCommand("get", "minLevel", null, 1);
+                }
             }
-
-            //Subscribe to Level
-            if (HasLevel)
+            else
             {
-                // MUST use InstanceTag1 for levels, it is the first instance tag in the JSON config
-                LevelCustomName = string.Format("{0}~level{1}", InstanceTag1, Index1);
-                SendFullCommand("get", "minLevel", null, 1);
+                if (HasMute) SendSubscriptionCommand(MuteCustomName, "mute", 500, 2);
+                if (HasLevel) SendSubscriptionCommand(LevelCustomName, "level", 250, 1);
             }
         }
 
