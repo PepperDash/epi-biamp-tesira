@@ -157,9 +157,7 @@ namespace Tesira_DSP_EPI
         {
             get
             {
-                var isSubscribed = !HasLevel && !_levelIsSubscribed;
-
-                return isSubscribed;
+                return HasLevel && _levelIsSubscribed;       
             }
             protected set { }
         }
@@ -212,12 +210,12 @@ namespace Tesira_DSP_EPI
             Permissions = config.Permissions;
             IncrementAmount = config.IncrementAmount;
             AutomaticUnmuteOnVolumeUp = config.UnmuteOnVolChange;
-            _volumeUpRepeatTimer = new CTimer((o) => VolumeUpRepeat(), Timeout.Infinite);
-            _volumeDownRepeatTimer = new CTimer((o) => VolumeDownRepeat(), Timeout.Infinite);
-            _volumeUpRepeatDelayTimer = new CTimer((o) => VolumeUpRepeatDelay(), Timeout.Infinite);
-            _volumeDownRepeatDelayTimer = new CTimer((o) => VolumeDownRepeatDelay(), Timeout.Infinite);
+            _volumeUpRepeatTimer = new CTimer(o => VolumeUpRepeat(), Timeout.Infinite);
+            _volumeDownRepeatTimer = new CTimer(o => VolumeDownRepeat(), Timeout.Infinite);
+            _volumeUpRepeatDelayTimer = new CTimer(o => VolumeUpRepeatDelay(), Timeout.Infinite);
+            _volumeDownRepeatDelayTimer = new CTimer(o => VolumeDownRepeatDelay(), Timeout.Infinite);
 
-            _pollTimer = new CTimer((o) => DoPoll(), Timeout.Infinite);
+            _pollTimer = new CTimer(o => DoPoll(), Timeout.Infinite);
 
 
             if (HasMute && HasLevel)
@@ -295,6 +293,8 @@ namespace Tesira_DSP_EPI
         public override void Unsubscribe()
         {
             if (!HasLevel) return;
+
+            _levelIsSubscribed = false;
             LevelCustomName = string.Format("{0}~roomCombiner{1}", InstanceTag1, Index1);
             SendUnSubscriptionCommand(LevelCustomName, "levelOut", 1);
         }
@@ -309,7 +309,7 @@ namespace Tesira_DSP_EPI
             if (!HasLevel || customName != LevelCustomName) return;
             var value = Double.Parse(data);
 
-            OutVolumeLevel = (ushort)Scale(value, MinLevel, MaxLevel, 0, 65535);
+            OutVolumeLevel = UseAbsoluteValue ? (ushort)value : (ushort) Scale(value, MinLevel, MaxLevel, 0, 65535);
 
             _levelIsSubscribed = true;
 
@@ -336,7 +336,7 @@ namespace Tesira_DSP_EPI
 
                 Debug.Console(1, this, "Response: '{0}' Value: '{1}'", attributeCode, value);
 
-                if (message.IndexOf("+OK", System.StringComparison.Ordinal) <= -1) return;
+                if (message.IndexOf("+OK", StringComparison.Ordinal) <= -1) return;
                 switch (attributeCode)
                 {
                     case "levelOutMin" :
@@ -408,7 +408,7 @@ namespace Tesira_DSP_EPI
                 if (_outIsMuted)
                     MuteOff();
 
-            var volumeLevel = Scale(level, 0, 65535, MinLevel, MaxLevel);
+            var volumeLevel = UseAbsoluteValue ? level : Scale(level, 0, 65535, MinLevel, MaxLevel);
 
             SendFullCommand("set", "levelOut", string.Format("{0:0.000000}", volumeLevel), 1);
         }
@@ -569,7 +569,7 @@ namespace Tesira_DSP_EPI
             return output;
         }
 
-        public enum ePdtLevelTypes
+        public enum EPdtLevelTypes
         {
             Speaker = 0,
             Microphone = 1

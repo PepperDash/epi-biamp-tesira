@@ -7,6 +7,9 @@ namespace Tesira_DSP_EPI
 {
     public class TesiraFactory : EssentialsPluginDeviceFactory<TesiraDsp>
     {
+        /// <summary>
+        /// Factory for building new TesiraDsp Device
+        /// </summary>
         public TesiraFactory()
         {
             MinimumEssentialsFrameworkVersion = "1.5.8";
@@ -14,6 +17,11 @@ namespace Tesira_DSP_EPI
             TypeNames = new List<string> { "tesira", "tesiraforte", "tesiraserver", "tesira-dsp", "tesiradsp" };
         }
 
+        /// <summary>
+        /// Build new TesiraDsp Device from Config
+        /// </summary>
+        /// <param name="dc">TesiraDsp Device Config</param>
+        /// <returns></returns>
         public override EssentialsDevice BuildDevice(DeviceConfig dc)
         {
             Debug.Console(1, "Factory Attempting to create new Biamp Tesira Device");

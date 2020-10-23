@@ -1,17 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using Crestron.SimplSharpPro.DeviceSupport;
 using Newtonsoft.Json;
 using PepperDash.Core;
 using PepperDash.Essentials.Core;
-using Crestron.SimplSharp.Reflection;
-using Crestron.SimplSharp;
 using PepperDash.Essentials.Core.Bridges;
 using PepperDash.Essentials.Devices.Common.Codec;
-using Crestron.SimplSharpPro.CrestronThread;
-using PepperDash.Essentials.Devices;
 using System.Text.RegularExpressions;
 using Tesira_DSP_EPI.Bridge.JoinMaps;
 using Feedback = PepperDash.Essentials.Core.Feedback;
@@ -162,8 +157,10 @@ namespace Tesira_DSP_EPI {
         /// </summary>
         public StringFeedback DisplayNumberFeedback;
 
-        private eCallStatus _CallStatusEnum { get; set; }
-        public eCallStatus CallStatusEnum
+// ReSharper disable once InconsistentNaming
+        private ECallStatus _CallStatusEnum { get; set; }
+
+        public ECallStatus CallStatusEnum
         {
             get
             {
@@ -172,14 +169,14 @@ namespace Tesira_DSP_EPI {
             protected set
             {
                 _CallStatusEnum = value;
-                if (CallStatusEnum == eCallStatus.DIAL_TONE ||
-                    CallStatusEnum == eCallStatus.DIALING ||
-                    CallStatusEnum == eCallStatus.ANSWERING ||
-                    CallStatusEnum == eCallStatus.ACTIVE ||
-                    CallStatusEnum == eCallStatus.ACTIVE_MUTED ||
-                    CallStatusEnum == eCallStatus.BUSY ||
-                    CallStatusEnum == eCallStatus.INVALID_NUMBER ||
-                    CallStatusEnum == eCallStatus.ON_HOLD)
+                if (CallStatusEnum == ECallStatus.DIAL_TONE ||
+                    CallStatusEnum == ECallStatus.DIALING ||
+                    CallStatusEnum == ECallStatus.ANSWERING ||
+                    CallStatusEnum == ECallStatus.ACTIVE ||
+                    CallStatusEnum == ECallStatus.ACTIVE_MUTED ||
+                    CallStatusEnum == ECallStatus.BUSY ||
+                    CallStatusEnum == ECallStatus.INVALID_NUMBER ||
+                    CallStatusEnum == ECallStatus.ON_HOLD)
                 {
                     if (IsVoip)
                         OffHookStatus = true;
@@ -187,7 +184,7 @@ namespace Tesira_DSP_EPI {
                 else
                     if (IsVoip)
                         OffHookStatus = false;
-                if (value == eCallStatus.IDLE && IsVoip)
+                if (value == ECallStatus.IDLE && IsVoip)
                 {
                     if (ClearOnHangup)
                     {
@@ -198,93 +195,91 @@ namespace Tesira_DSP_EPI {
                 CallStateFeedback.FireUpdate();
                 switch (CallStatusEnum)
                 {
-                    case eCallStatus.INIT:
+                    case ECallStatus.INIT:
                         ActiveCalls.First().Status = eCodecCallStatus.Unknown;
                         break;
-                    case eCallStatus.FAULT:
+                    case ECallStatus.FAULT:
                         ActiveCalls.First().Status = eCodecCallStatus.Unknown;
                         break;
-                    case eCallStatus.IDLE:
+                    case ECallStatus.IDLE:
                         ActiveCalls.First().Status = eCodecCallStatus.Idle;
                         break;
-                    case eCallStatus.DIAL_TONE:
+                    case ECallStatus.DIAL_TONE:
                         ActiveCalls.First().Status = eCodecCallStatus.Idle;
                         break;
-                    case eCallStatus.SILENT:
+                    case ECallStatus.SILENT:
                         ActiveCalls.First().Status = eCodecCallStatus.Unknown;
                         break;
-                    case eCallStatus.DIALING:
+                    case ECallStatus.DIALING:
                         ActiveCalls.First().Status = eCodecCallStatus.Connecting;
                         ActiveCalls.First().Direction = eCodecCallDirection.Outgoing;
                         break;
-                    case eCallStatus.RINGBACK:
+                    case ECallStatus.RINGBACK:
                         ActiveCalls.First().Status = eCodecCallStatus.Connecting;
                         break;
-                    case eCallStatus.RINGING:
+                    case ECallStatus.RINGING:
                         ActiveCalls.First().Status = eCodecCallStatus.Ringing;
                         ActiveCalls.First().Direction = eCodecCallDirection.Incoming;
                         break;
-                    case eCallStatus.BUSY:
+                    case ECallStatus.BUSY:
                         ActiveCalls.First().Status = eCodecCallStatus.Disconnecting;
                         break;
-                    case eCallStatus.REJECT:
+                    case ECallStatus.REJECT:
                         ActiveCalls.First().Status = eCodecCallStatus.Disconnecting;
                         break;
-                    case eCallStatus.INVALID_NUMBER:
+                    case ECallStatus.INVALID_NUMBER:
                         ActiveCalls.First().Status = eCodecCallStatus.Disconnecting;
                         break;
-                    case eCallStatus.ACTIVE:
+                    case ECallStatus.ACTIVE:
                         ActiveCalls.First().Status = eCodecCallStatus.Connected;
                         break;
-                    case eCallStatus.ACTIVE_MUTED:
+                    case ECallStatus.ACTIVE_MUTED:
                         ActiveCalls.First().Status = eCodecCallStatus.Connected;
                         break;
-                    case eCallStatus.ON_HOLD:
+                    case ECallStatus.ON_HOLD:
                         ActiveCalls.First().Status = eCodecCallStatus.OnHold;
                         break;
-                    case eCallStatus.WAITING_RING:
+                    case ECallStatus.WAITING_RING:
                         ActiveCalls.First().Status = eCodecCallStatus.Connected;
                         break;
-                    case eCallStatus.CONF_ACTIVE:
+                    case ECallStatus.CONF_ACTIVE:
                         ActiveCalls.First().Status = eCodecCallStatus.Connected;
                         break;
-                    case eCallStatus.CONF_HOLD:
+                    case ECallStatus.CONF_HOLD:
                         ActiveCalls.First().Status = eCodecCallStatus.OnHold;
                         break;
-                    case eCallStatus.XFER_INIT:
+                    case ECallStatus.XFER_INIT:
                         ActiveCalls.First().Status = eCodecCallStatus.Unknown;
                         break;
-                    case eCallStatus.XFER_Silent:
+                    case ECallStatus.XFER_Silent:
                         ActiveCalls.First().Status = eCodecCallStatus.Unknown;
                         break;
-                    case eCallStatus.XFER_ReqDialing:
+                    case ECallStatus.XFER_ReqDialing:
                         ActiveCalls.First().Status = eCodecCallStatus.Unknown;
                         break;
-                    case eCallStatus.XFER_Process:
+                    case ECallStatus.XFER_Process:
                         ActiveCalls.First().Status = eCodecCallStatus.Unknown;
                         break;
-                    case eCallStatus.XFER_ReplacesProcess:
+                    case ECallStatus.XFER_ReplacesProcess:
                         ActiveCalls.First().Status = eCodecCallStatus.Unknown;
                         break;
-                    case eCallStatus.XFER_Active:
+                    case ECallStatus.XFER_Active:
                         ActiveCalls.First().Status = eCodecCallStatus.Unknown;
                         break;
-                    case eCallStatus.XFER_RingBack:
+                    case ECallStatus.XFER_RingBack:
                         ActiveCalls.First().Status = eCodecCallStatus.Unknown;
                         break;
-                    case eCallStatus.XFER_OnHold:
+                    case ECallStatus.XFER_OnHold:
                         ActiveCalls.First().Status = eCodecCallStatus.Unknown;
                         break;
-                    case eCallStatus.XFER_Decision:
+                    case ECallStatus.XFER_Decision:
                         ActiveCalls.First().Status = eCodecCallStatus.Unknown;
                         break;
-                    case eCallStatus.XFER_InitError:
+                    case ECallStatus.XFER_InitError:
                         ActiveCalls.First().Status = eCodecCallStatus.Unknown;
                         break;
-                    case eCallStatus.XFER_WAIT:
+                    case ECallStatus.XFER_WAIT:
                         ActiveCalls.First().Status = eCodecCallStatus.Unknown;
-                        break;
-                    default:
                         break;
                 }
             }
@@ -297,7 +292,7 @@ namespace Tesira_DSP_EPI {
         {
             get
             {
-                return CallStatusEnum == eCallStatus.RINGING;
+                return CallStatusEnum == ECallStatus.RINGING;
             }
         }
 
@@ -322,6 +317,7 @@ namespace Tesira_DSP_EPI {
             }
         }
 
+        // ReSharper disable once InconsistentNaming
         private string _callerIdName { get; set; }
 
         /// <summary>
@@ -340,30 +336,33 @@ namespace Tesira_DSP_EPI {
         /// <summary>
         /// Subscription state of component
         /// </summary>
-        public override bool IsSubscribed {
-            get {
+        public override bool IsSubscribed
+        {
+            get
+            {
                 bool isSubscribed;
-                if (IsVoip) {
+                if (IsVoip)
+                {
                     if (VoipIsSubscribed && AutoAnswerIsSubscribed)
-                        isSubscribed =  true;
+                        isSubscribed = true;
                     else
-                        isSubscribed =  false;
+                        isSubscribed = false;
                 }
-                else if (!IsVoip) {
+                else if (!IsVoip)
+                {
                     if (PotsIsSubscribed && HookStateIsSubscribed)
                         isSubscribed = true;
                     else
                         isSubscribed = false;
                 }
                 else
-                    isSubscribed =  false;
+                    isSubscribed = false;
                 return isSubscribed;
             }
             protected set { }
         }
 
         private bool VoipIsSubscribed { get; set; }
-        private bool DndIsSubscribed { get; set; }
         private bool AutoAnswerIsSubscribed { get; set; }
         private bool HookStateIsSubscribed { get; set; }
         private bool PotsIsSubscribed { get; set; }
@@ -409,11 +408,11 @@ namespace Tesira_DSP_EPI {
 
             parent.Feedbacks.AddRange(Feedbacks);
 
-            Initialize(key, config);
+            Initialize(config);
 
         }
 
-		private void Initialize(string key, TesiraDialerControlBlockConfig config)
+		private void Initialize(TesiraDialerControlBlockConfig config)
 		{
 
             if (config.Enabled)
@@ -438,15 +437,17 @@ namespace Tesira_DSP_EPI {
             DisplayNumber = config.DisplayNumber;
 
             ActiveCalls = new List<CodecActiveCallItem>();
-            var activeCall = new CodecActiveCallItem();
-            activeCall.Name = "";
-            activeCall.Number = "";
-            activeCall.Type = eCodecCallType.Audio;
-            activeCall.Status = eCodecCallStatus.Idle;
-            activeCall.Direction = eCodecCallDirection.Unknown;
-            activeCall.Id = Key;
+            var activeCall = new CodecActiveCallItem
+            {
+                Name = "",
+                Number = "",
+                Type = eCodecCallType.Audio,
+                Status = eCodecCallStatus.Idle,
+                Direction = eCodecCallDirection.Unknown,
+                Id = Key
+            };
 
-            ActiveCalls.Add(activeCall);
+		    ActiveCalls.Add(activeCall);
         }
 
         /// <summary>
@@ -473,23 +474,25 @@ namespace Tesira_DSP_EPI {
                 SendSubscriptionCommand(AutoAnswerCustomName, "autoAnswer", 500, 1);
 
                 SendSubscriptionCommand(LastDialedCustomName, "lastNum", 500, 1);
+
+                SendFullCommand("get", "dndEnable", null, 1);
             }
             else if (!IsVoip) {
-                PotsDialerCustomName = string.Format("{0}~PotsDialer{1}", InstanceTag1, Index1);
-                LastDialedCustomName = string.Format("{0}~PotsLastNumber{1}", InstanceTag1, Index1);
 
-                HookStateCustomName = string.Format("{0}~HookState{1}", InstanceTag1, Index1);
+                DialerCustomName = string.Format("{0}~PotsDialer{1}", InstanceTag1, Index1);
+                LastDialedCustomName = string.Format("{0}~PotsLastNumber{1}", InstanceTag1, Index1);
+                HookStateCustomName = string.Format("{0}~HookState{1}", InstanceTag2, Index1);
 
                 SendSubscriptionCommand(DialerCustomName, "callState", 250, 1);
 
-                SendSubscriptionCommand(HookStateCustomName, "hookState", 500, 1);
+                SendSubscriptionCommand(HookStateCustomName, "hookState", 500, 2);
 
                 SendSubscriptionCommand(LastDialedCustomName, "lastNum", 500, 1);
 
                 SendFullCommand("get", "autoAnswer", null, 1);
             }
 
-            SendFullCommand("get", "dndEnable", null, 1);
+            
         }
 
         /// <summary>
@@ -499,6 +502,9 @@ namespace Tesira_DSP_EPI {
         {
             if (IsVoip)
             {
+                VoipIsSubscribed = false;
+                AutoAnswerIsSubscribed = false;
+
                 DialerCustomName = string.Format("{0}~VoIPDialer{1}", InstanceTag1, Index1);
                 AutoAnswerCustomName = string.Format("{0}~VoIPDialerAutoAnswer{1}", InstanceTag1, Index1);
                 ControlStatusCustomName = string.Format("{0}~VoIPControl{1}", InstanceTag2, Index1);
@@ -513,14 +519,17 @@ namespace Tesira_DSP_EPI {
             }
             else if (!IsVoip)
             {
+                PotsIsSubscribed = false;
+                HookStateIsSubscribed = false;
+
                 PotsDialerCustomName = string.Format("{0}~PotsDialer{1}", InstanceTag1, Index1);
                 LastDialedCustomName = string.Format("{0}~PotsLastNumber{1}", InstanceTag1, Index1);
 
-                HookStateCustomName = string.Format("{0}~HookState{1}", InstanceTag1, Index1);
+                HookStateCustomName = string.Format("{0}~HookState{1}", InstanceTag2, Index1);
 
                 SendUnSubscriptionCommand(DialerCustomName, "callState", 1);
 
-                SendUnSubscriptionCommand(HookStateCustomName, "hookState", 1);
+                SendUnSubscriptionCommand(HookStateCustomName, "hookState", 2);
 
                 SendUnSubscriptionCommand(LastDialedCustomName, "lastNum", 1);
 
@@ -555,9 +564,9 @@ namespace Tesira_DSP_EPI {
                     if (match2.Success)
                     {
                         Debug.Console(2, this, "VoIPControlStatus Subscribed Response = {0}", match.Value);
-                        var lineNumber = (int)(ushort.Parse(match2.Groups["line"].Value) + 1);
+                        var lineNumber = ushort.Parse(match2.Groups["line"].Value) + 1;
                         var callStatusInt = int.Parse(match2.Groups["state"].Value);
-                        CallStatusEnum = (eCallStatus)(callStatusInt);
+                        CallStatusEnum = (ECallStatus)(callStatusInt);
                         Debug.Console(2, this, "Callstate for Line {0} is {1}", lineNumber, int.Parse(match2.Groups["state"].Value));
                         Debug.Console(2, this, "Callstate Enum for Line {0} is {1}", lineNumber, (int)CallStatusEnum);
 
@@ -691,7 +700,7 @@ namespace Tesira_DSP_EPI {
 
             else if (!IsVoip) {
                 if (OffHookStatus) {
-                    SendFullCommand("set", "hookState", "ONHOOK", 1);
+                    SendFullCommand("set", "hookState", "ONHOOK", 2);
 
                     if (!ClearOnHangup) return;
                     DialString = String.Empty;
@@ -702,7 +711,7 @@ namespace Tesira_DSP_EPI {
                         SendFullCommand(null, "dial", DialString, 1);
                     }
                     else
-                        SendFullCommand("set", "hookState", "OFFHOOK", 1);
+                        SendFullCommand("set", "hookState", "OFFHOOK", 2);
                 }
             }
         }
@@ -812,69 +821,69 @@ namespace Tesira_DSP_EPI {
         /// </summary>
         /// <param name="digit">Digit to send</param>
         public override void SendDtmf(string digit) {
-            throw new NotImplementedException();
+            SendFullCommand(null, "dtmf", digit, 1);
         }
 
         /// <summary>
         /// Send Keypad Digit to component - Will Send DTMF if call active
         /// </summary>
         /// <param name="data">Keypad press to send</param>
-        public void SendKeypad(eKeypadKeys data) {
+        public void SendKeypad(EKeypadKeys data) {
             if (!OffHookStatus) {
                 switch (data) {
-                    case eKeypadKeys.Num0:
+                    case EKeypadKeys.Num0:
                         DialString = DialString + "0";
                         DialStringFeedback.FireUpdate();
                         break;
-                    case eKeypadKeys.Num1:
+                    case EKeypadKeys.Num1:
                         DialString = DialString + "1";
                         DialStringFeedback.FireUpdate();
                         break;
-                    case eKeypadKeys.Num2:
+                    case EKeypadKeys.Num2:
                         DialString = DialString + "2";
                         DialStringFeedback.FireUpdate();
                         break;
-                    case eKeypadKeys.Num3:
+                    case EKeypadKeys.Num3:
                         DialString = DialString + "3";
                         DialStringFeedback.FireUpdate();
                         break;
-                    case eKeypadKeys.Num4:
+                    case EKeypadKeys.Num4:
                         DialString = DialString + "4";
                         DialStringFeedback.FireUpdate();
                         break;
-                    case eKeypadKeys.Num5:
+                    case EKeypadKeys.Num5:
                         DialString = DialString + "5";
                         DialStringFeedback.FireUpdate();
                         break;
-                    case eKeypadKeys.Num6:
+                    case EKeypadKeys.Num6:
                         DialString = DialString + "6";
                         DialStringFeedback.FireUpdate();
                         break;
-                    case eKeypadKeys.Num7:
+                    case EKeypadKeys.Num7:
                         DialString = DialString + "7";
                         DialStringFeedback.FireUpdate();
                         break;
-                    case eKeypadKeys.Num8:
+                    case EKeypadKeys.Num8:
                         DialString = DialString + "8";
                         DialStringFeedback.FireUpdate();
                         break;
-                    case eKeypadKeys.Num9:
+                    case EKeypadKeys.Num9:
                         DialString = DialString + "9";
                         DialStringFeedback.FireUpdate();
                         break;
-                    case eKeypadKeys.Star:
+                    case EKeypadKeys.Star:
                         DialString = DialString + "*";
                         DialStringFeedback.FireUpdate();
                         break;
-                    case eKeypadKeys.Pound:
+                    case EKeypadKeys.Pound:
                         DialString = DialString + "#";
                         DialStringFeedback.FireUpdate();
                         break;
-                    case eKeypadKeys.Clear:
+                    case EKeypadKeys.Clear:
                         DialString = String.Empty;
                         DialStringFeedback.FireUpdate();
                         break;
-                    case eKeypadKeys.Backspace:
+                    case EKeypadKeys.Backspace:
                         DialString = DialString.Remove(DialString.Length - 1, 1);
                         DialStringFeedback.FireUpdate();
                         break;
@@ -884,93 +893,93 @@ namespace Tesira_DSP_EPI {
             if (!OffHookStatus) return;
 
             switch (data) {
-                case eKeypadKeys.Num0:
+                case EKeypadKeys.Num0:
                     SendFullCommand(null, "dtmf", "0", 1);
                     if (AppendDtmf) {
                         DialString = DialString + "0";
                         DialStringFeedback.FireUpdate();
                     }
                     break;
-                case eKeypadKeys.Num1:
+                case EKeypadKeys.Num1:
                     SendFullCommand(null, "dtmf", "1", 1);
                     if (AppendDtmf) {
                         DialString = DialString + "1";
                         DialStringFeedback.FireUpdate();
                     }
                     break;
-                case eKeypadKeys.Num2:
+                case EKeypadKeys.Num2:
                     SendFullCommand(null, "dtmf", "2", 1);
                     if (AppendDtmf) {
                         DialString = DialString + "2";
                         DialStringFeedback.FireUpdate();
                     }
                     break;
-                case eKeypadKeys.Num3:
+                case EKeypadKeys.Num3:
                     SendFullCommand(null, "dtmf", "3", 1);
                     if (AppendDtmf) {
                         DialString = DialString + "3";
                         DialStringFeedback.FireUpdate();
                     }
                     break;
-                case eKeypadKeys.Num4:
+                case EKeypadKeys.Num4:
                     SendFullCommand(null, "dtmf", "4", 1);
                     if (AppendDtmf) {
                         DialString = DialString + "4";
                         DialStringFeedback.FireUpdate();
                     }
                     break;
-                case eKeypadKeys.Num5:
+                case EKeypadKeys.Num5:
                     SendFullCommand(null, "dtmf", "5", 1);
                     if (AppendDtmf) {
                         DialString = DialString + "5";
                         DialStringFeedback.FireUpdate();
                     }
                     break;
-                case eKeypadKeys.Num6:
+                case EKeypadKeys.Num6:
                     SendFullCommand(null, "dtmf", "6", 1);
                     if (AppendDtmf) {
                         DialString = DialString + "6";
                         DialStringFeedback.FireUpdate();
                     }
                     break;
-                case eKeypadKeys.Num7:
+                case EKeypadKeys.Num7:
                     SendFullCommand(null, "dtmf", "7", 1);
                     if (AppendDtmf) {
                         DialString = DialString + "7";
                         DialStringFeedback.FireUpdate();
                     }
                     break;
-                case eKeypadKeys.Num8:
+                case EKeypadKeys.Num8:
                     SendFullCommand(null, "dtmf", "8", 1);
                     if (AppendDtmf) {
                         DialString = DialString + "8";
                         DialStringFeedback.FireUpdate();
                     }
                     break;
-                case eKeypadKeys.Num9:
+                case EKeypadKeys.Num9:
                     SendFullCommand(null, "dtmf", "9", 1);
                     if (AppendDtmf) {
                         DialString = DialString + "9";
                         DialStringFeedback.FireUpdate();
                     }
                     break;
-                case eKeypadKeys.Star:
+                case EKeypadKeys.Star:
                     SendFullCommand(null, "dtmf", "*", 1);
                     if (AppendDtmf) {
                         DialString = DialString + "*";
                         DialStringFeedback.FireUpdate();
                     }
                     break;
-                case eKeypadKeys.Pound:
+                case EKeypadKeys.Pound:
                     SendFullCommand(null, "dtmf", "#", 1);
                     if (AppendDtmf) {
                         DialString = DialString + "#";
                         DialStringFeedback.FireUpdate();
                     }
                     break;
-                case eKeypadKeys.Clear:
+                case EKeypadKeys.Clear:
                     break;
-                case eKeypadKeys.Backspace:
+                case EKeypadKeys.Backspace:
                     break;
             }
         }
@@ -978,7 +987,7 @@ namespace Tesira_DSP_EPI {
         /// <summary>
         /// List of possible Call Status values returned from component
         /// </summary>
-        public enum eCallStatus {
+        public enum ECallStatus {
             INIT = 1,
             FAULT,
             IDLE,
@@ -1013,7 +1022,7 @@ namespace Tesira_DSP_EPI {
         /// <summary>
         /// List of valid keypad keys to send to component
         /// </summary>
-        public enum eKeypadKeys {
+        public enum EKeypadKeys {
             Num0 = 0,
             Num1,
             Num2,
@@ -1049,14 +1058,14 @@ namespace Tesira_DSP_EPI {
 
             for (var i = 0; i < joinMap.KeyPadNumeric.JoinSpan; i++)
             {
-                trilist.SetSigTrueAction((joinMap.KeyPadNumeric.JoinNumber + (uint)i), () => SendKeypad(eKeypadKeys.Num0));
+                trilist.SetSigTrueAction((joinMap.KeyPadNumeric.JoinNumber + (uint)i), () => SendKeypad(EKeypadKeys.Num0));
 
             }
 
-            trilist.SetSigTrueAction((joinMap.KeyPadStar.JoinNumber), () => SendKeypad(eKeypadKeys.Star));
-            trilist.SetSigTrueAction((joinMap.KeyPadPound.JoinNumber), () => SendKeypad(eKeypadKeys.Pound));
-            trilist.SetSigTrueAction((joinMap.KeyPadClear.JoinNumber), () => SendKeypad(eKeypadKeys.Clear));
-            trilist.SetSigTrueAction((joinMap.KeyPadBackspace.JoinNumber), () => SendKeypad(eKeypadKeys.Backspace));
+            trilist.SetSigTrueAction((joinMap.KeyPadStar.JoinNumber), () => SendKeypad(EKeypadKeys.Star));
+            trilist.SetSigTrueAction((joinMap.KeyPadPound.JoinNumber), () => SendKeypad(EKeypadKeys.Pound));
+            trilist.SetSigTrueAction((joinMap.KeyPadClear.JoinNumber), () => SendKeypad(EKeypadKeys.Clear));
+            trilist.SetSigTrueAction((joinMap.KeyPadBackspace.JoinNumber), () => SendKeypad(EKeypadKeys.Backspace));
 
             trilist.SetSigTrueAction(joinMap.KeyPadDial.JoinNumber, Dial);
             trilist.SetSigTrueAction(joinMap.DoNotDisturbToggle.JoinNumber, DoNotDisturbToggle);

@@ -1,4 +1,5 @@
 ﻿using System;
+using Crestron.SimplSharp;
 using Crestron.SimplSharpPro.DeviceSupport;
 using Newtonsoft.Json;
 using PepperDash.Core;
@@ -21,8 +22,13 @@ namespace Tesira_DSP_EPI
 
         private const string Pattern = "[^ ]* (.*)";
 
-
         bool _state;
+
+        private CTimer _pollTimer;
+
+        private readonly bool _pollEnable;
+
+        private readonly long _pollTime;
 
         /// <summary>
         /// Boolean Feedback for Component State
@@ -35,8 +41,10 @@ namespace Tesira_DSP_EPI
         /// <param name="key">Unique Key for Component</param>
         /// <param name="config">Config Object for Component</param>
         /// <param name="parent">Parent object of Component</param>
-		public TesiraDspCrosspointState(string key, TesiraCrosspointStateBlockConfig config, TesiraDsp parent)
-            : base(config.MatrixInstanceTag, string.Empty, config.Index1, config.Index2, parent, string.Format(KeyFormatter, parent.Key, key), config.Label, config.BridgeIndex)
+        public TesiraDspCrosspointState(string key, TesiraCrosspointStateBlockConfig config, TesiraDsp parent)
+            : base(
+                config.MatrixInstanceTag, string.Empty, config.Index1, config.Index2, parent,
+                string.Format(KeyFormatter, parent.Key, key), config.Label, config.BridgeIndex)
         {
             Label = config.Label;
             Enabled = config.Enabled;
@@ -46,6 +54,32 @@ namespace Tesira_DSP_EPI
             Feedbacks.Add(CrosspointStateFeedback);
             Feedbacks.Add(NameFeedback);
             parent.Feedbacks.AddRange(Feedbacks);
+
+            if (!config.Enabled) return;
+            DeviceManager.AddDevice(this);
+            _pollEnable = config.PollEnable;
+            if (_pollEnable)
+            {
+                _pollTime = config.PollTimeMs < 10000 ? 10000 : config.PollTimeMs;
+            }
+
+        }
+
+        /// <summary>
+        /// Get Initial Values for Control.  Control does not subscribe.
+        /// </summary>
+        public override void Subscribe()
+        {
+            GetState();
+
+            if (!_pollEnable) return;
+            if(_pollTimer == null)
+                _pollTimer = new CTimer(o => GetState(), null, _pollTime, _pollTime);
+        }
+
+        public override void Unsubscribe()
+        {
+            _pollTimer = null;
         }
 
         /// <summary>

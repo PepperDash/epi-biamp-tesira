@@ -2,7 +2,6 @@
 using System.Globalization;
 using System.Linq;
 using Crestron.SimplSharpPro.DeviceSupport;
-using Crestron.SimplSharpPro.DM;
 using Newtonsoft.Json;
 using PepperDash.Core;
 using PepperDash.Essentials.Core;
@@ -32,8 +31,7 @@ namespace Tesira_DSP_EPI {
         /// </summary>
         public string SelectorCustomName { get; private set; }
 
-        private int _source;
-		private string Type { get; set; } 
+        private string Type { get; set; } 
         private int Destination { get; set; }
         private int SourceIndex {
             get {
@@ -129,6 +127,8 @@ namespace Tesira_DSP_EPI {
         /// </summary>
         public override void Unsubscribe()
         {
+            IsSubscribed = false;
+
             SelectorCustomName = string.Format("{0}~Selector{1}", InstanceTag1, Index1);
 
             SendUnSubscriptionCommand(SelectorCustomName, "sourceSelection", 1);
@@ -173,14 +173,15 @@ namespace Tesira_DSP_EPI {
                     return;
                 }
 
-                if (message.IndexOf("+OK", StringComparison.OrdinalIgnoreCase) > -1) {
-                    if (attributeCode == "sourceSelection") {
-                        SourceIndex = int.Parse(value);
-                    }
-                }
-                if (attributeCode == "input")
+                if (message.IndexOf("+OK", StringComparison.Ordinal) <= -1) return;
+                switch (attributeCode)
                 {
-                    _source = int.Parse(value);
+                    case "sourceSelection":
+                        SourceIndex = int.Parse(value);
+                        break;
+                    case "input":
+                        SourceIndex = int.Parse(value);
+                        break;
                 }
             }
             catch (Exception e) {

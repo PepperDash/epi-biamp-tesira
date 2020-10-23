@@ -1,10 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using Crestron.SimplSharp;
+﻿using System.Collections.Generic;
 using Newtonsoft.Json;
-using PepperDash.Core;
 using PepperDash.Essentials.Core;
 
 namespace Tesira_DSP_EPI {
@@ -23,7 +18,7 @@ namespace Tesira_DSP_EPI {
         [JsonProperty("faderControlBlocks")]
         public Dictionary<string, TesiraFaderControlBlockConfig> FaderControlBlocks { get; set; }
 
-        [JsonProperty("dialerCotrolBlocks")]
+        [JsonProperty("dialerControlBlocks")]
         public Dictionary<string, TesiraDialerControlBlockConfig> DialerControlBlocks { get; set; }
 
         [JsonProperty("switcherControlBlocks")]
@@ -43,6 +38,9 @@ namespace Tesira_DSP_EPI {
 
         [JsonProperty("roomCombinerControlBlocks")]
         public Dictionary<string, TesiraRoomCombinerBlockConfig> RoomCombinerControlBlocks { get; set; }
+
+        [JsonProperty("resubscribeString")]
+        public string ResubscribeString { get; set; }
     }
 
     public class TesiraFaderControlBlockConfig
@@ -258,6 +256,14 @@ namespace Tesira_DSP_EPI {
 
         [JsonProperty("bridgeIndex")]
         public uint? BridgeIndex { get; set; }
+
+        [JsonProperty("pollEnable")]
+        public bool PollEnable { get; set; }
+
+        [JsonProperty("pollTimeMs")]
+        public long  PollTimeMs { get; set; }
+
+
     }
 
     public class TesiraRoomCombinerBlockConfig

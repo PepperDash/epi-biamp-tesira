@@ -7,25 +7,47 @@ namespace Tesira_DSP_EPI.Bridge.JoinMaps
     /// </summary>
     public class TesiraCrosspointStateJoinMapAdvanced : JoinMapBaseAdvanced
     {
-        [JoinName("Toggle")]
-        public JoinDataComplete Toggle = new JoinDataComplete(new JoinData() { JoinNumber = 2001, JoinSpan = 1 },
-            new JoinMetadata() { Description = "State Toggle and Feedback", JoinCapabilities = eJoinCapabilities.ToFromSIMPL, JoinType = eJoinType.Digital });
+        [JoinName("Toggle")] public JoinDataComplete Toggle =
+            new JoinDataComplete(new JoinData {JoinNumber = 2001, JoinSpan = 1},
+                new JoinMetadata
+                {
+                    Description = "State Toggle and Feedback",
+                    JoinCapabilities = eJoinCapabilities.ToFromSIMPL,
+                    JoinType = eJoinType.Digital
+                });
 
-        [JoinName("On")]
-        public JoinDataComplete On = new JoinDataComplete(new JoinData() { JoinNumber = 2002, JoinSpan = 1 },
-            new JoinMetadata() { Description = "State On and Feedback", JoinCapabilities = eJoinCapabilities.ToFromSIMPL, JoinType = eJoinType.Digital });
+        [JoinName("On")] public JoinDataComplete On =
+            new JoinDataComplete(new JoinData {JoinNumber = 2002, JoinSpan = 1},
+                new JoinMetadata
+                {
+                    Description = "State On and Feedback",
+                    JoinCapabilities = eJoinCapabilities.ToFromSIMPL,
+                    JoinType = eJoinType.Digital
+                });
 
-        [JoinName("Off")]
-        public JoinDataComplete Off = new JoinDataComplete(new JoinData() { JoinNumber = 2003, JoinSpan = 1 },
-            new JoinMetadata() { Description = "State On and Feedback", JoinCapabilities = eJoinCapabilities.ToFromSIMPL, JoinType = eJoinType.Digital });
+        [JoinName("Off")] public JoinDataComplete Off =
+            new JoinDataComplete(new JoinData {JoinNumber = 2003, JoinSpan = 1},
+                new JoinMetadata
+                {
+                    Description = "State On and Feedback",
+                    JoinCapabilities = eJoinCapabilities.ToFromSIMPL,
+                    JoinType = eJoinType.Digital
+                });
 
-        [JoinName("Label")]
-        public JoinDataComplete Label = new JoinDataComplete(new JoinData() { JoinNumber = 2001, JoinSpan = 1 },
-            new JoinMetadata() { Description = "State Label", JoinCapabilities = eJoinCapabilities.ToSIMPL, JoinType = eJoinType.Serial });
+        [JoinName("Label")] public JoinDataComplete Label =
+            new JoinDataComplete(new JoinData {JoinNumber = 2001, JoinSpan = 1},
+                new JoinMetadata
+                {
+                    Description = "State Label",
+                    JoinCapabilities = eJoinCapabilities.ToSIMPL,
+                    JoinType = eJoinType.Serial
+                });
 
 
         public TesiraCrosspointStateJoinMapAdvanced(uint joinStart)
-            : base(joinStart, typeof(TesiraCrosspointStateJoinMapAdvanced)) { }
+            : base(joinStart, typeof (TesiraCrosspointStateJoinMapAdvanced))
+        {
+        }
 
     }
 
@@ -34,25 +56,46 @@ namespace Tesira_DSP_EPI.Bridge.JoinMaps
     /// </summary>
     public class TesiraCrosspointStateJoinMapAdvancedStandalone : JoinMapBaseAdvanced
     {
-        [JoinName("On")]
-        public JoinDataComplete On = new JoinDataComplete(new JoinData() { JoinNumber = 1, JoinSpan = 1 },
-            new JoinMetadata() { Description = "State On and Feedback", JoinCapabilities = eJoinCapabilities.ToFromSIMPL, JoinType = eJoinType.Digital });
+        [JoinName("On")] public JoinDataComplete On = new JoinDataComplete(new JoinData {JoinNumber = 1, JoinSpan = 1},
+            new JoinMetadata
+            {
+                Description = "State On and Feedback",
+                JoinCapabilities = eJoinCapabilities.ToFromSIMPL,
+                JoinType = eJoinType.Digital
+            });
 
-        [JoinName("Off")]
-        public JoinDataComplete Off = new JoinDataComplete(new JoinData() { JoinNumber = 2, JoinSpan = 1 },
-            new JoinMetadata() { Description = "State On and Feedback", JoinCapabilities = eJoinCapabilities.ToFromSIMPL, JoinType = eJoinType.Digital });
+        [JoinName("Off")] public JoinDataComplete Off = new JoinDataComplete(
+            new JoinData {JoinNumber = 2, JoinSpan = 1},
+            new JoinMetadata
+            {
+                Description = "State On and Feedback",
+                JoinCapabilities = eJoinCapabilities.ToFromSIMPL,
+                JoinType = eJoinType.Digital
+            });
 
-        [JoinName("Toggle")]
-        public JoinDataComplete Toggle = new JoinDataComplete(new JoinData() { JoinNumber = 3, JoinSpan = 1 },
-            new JoinMetadata() { Description = "State Toggle and Feedback", JoinCapabilities = eJoinCapabilities.ToFromSIMPL, JoinType = eJoinType.Digital });
+        [JoinName("Toggle")] public JoinDataComplete Toggle =
+            new JoinDataComplete(new JoinData {JoinNumber = 3, JoinSpan = 1},
+                new JoinMetadata
+                {
+                    Description = "State Toggle and Feedback",
+                    JoinCapabilities = eJoinCapabilities.ToFromSIMPL,
+                    JoinType = eJoinType.Digital
+                });
 
-        [JoinName("Label")]
-        public JoinDataComplete Label = new JoinDataComplete(new JoinData() { JoinNumber = 1, JoinSpan = 1 },
-            new JoinMetadata() { Description = "State Label", JoinCapabilities = eJoinCapabilities.ToSIMPL, JoinType = eJoinType.Serial });
+        [JoinName("Label")] public JoinDataComplete Label =
+            new JoinDataComplete(new JoinData {JoinNumber = 1, JoinSpan = 1},
+                new JoinMetadata
+                {
+                    Description = "State Label",
+                    JoinCapabilities = eJoinCapabilities.ToSIMPL,
+                    JoinType = eJoinType.Serial
+                });
 
 
         public TesiraCrosspointStateJoinMapAdvancedStandalone(uint joinStart)
-            : base(joinStart, typeof(TesiraCrosspointStateJoinMapAdvancedStandalone)) { }
+            : base(joinStart, typeof (TesiraCrosspointStateJoinMapAdvancedStandalone))
+        {
+        }
 
     }
 
