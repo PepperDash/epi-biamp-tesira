@@ -722,6 +722,10 @@ namespace Tesira_DSP_EPI
 		    {
 		        SubscribeToComponent(control);
 		    }
+			foreach (var control in Meters)
+			{
+				SubscribeToComponent(control.Value);
+			}
 		}
 
         private void SubscribeToComponent(ISubscribedComponent data)
