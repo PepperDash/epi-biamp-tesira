@@ -1018,16 +1018,24 @@ namespace Tesira_DSP_EPI
             foreach (var item in CrosspointStates)
             {
                 var xpointState = item.Value;
-                var data = xpointState.BridgeIndex;
-                if (data == null) continue;
+				var joinOffset = ((xpointState.BridgeIndex - 1) * 3);
+                if (joinOffset == null) continue;
 
-                Debug.Console(2, this, "Adding Crosspoint State ControlPoint {0} | JoinStart:{1}", xpointState.Key, crosspointStateJoinMap.Label.JoinNumber);
-                xpointState.CrosspointStateFeedback.LinkInputSig(trilist.BooleanInput[crosspointStateJoinMap.Toggle.JoinNumber]);
-                xpointState.CrosspointStateFeedback.LinkInputSig(trilist.BooleanInput[crosspointStateJoinMap.On.JoinNumber]);
 
-                trilist.SetSigTrueAction(crosspointStateJoinMap.Toggle.JoinNumber, xpointState.StateToggle);
-                trilist.SetSigTrueAction(crosspointStateJoinMap.On.JoinNumber, xpointState.StateOn);
-                trilist.SetSigTrueAction(crosspointStateJoinMap.Off.JoinNumber, xpointState.StateOff);
+				var channel = item.Value;
+				var data = channel.BridgeIndex;
+				if (data == null) continue;
+				var x = (uint)data;
+
+
+				Debug.Console(2, this, "Adding Crosspoint State ControlPoint {0} | JoinStart:{1}", xpointState.Key, (crosspointStateJoinMap.Toggle.JoinNumber + joinOffset));
+                xpointState.CrosspointStateFeedback.LinkInputSig(trilist.BooleanInput[(uint)(crosspointStateJoinMap.Toggle.JoinNumber + joinOffset)]);
+                xpointState.CrosspointStateFeedback.LinkInputSig(trilist.BooleanInput[(uint)(crosspointStateJoinMap.On.JoinNumber + joinOffset)]);
+
+                trilist.SetSigTrueAction((uint)(crosspointStateJoinMap.Toggle.JoinNumber + joinOffset), xpointState.StateToggle);
+                trilist.SetSigTrueAction((uint)(crosspointStateJoinMap.On.JoinNumber + joinOffset), xpointState.StateOn);
+                trilist.SetSigTrueAction((uint)(crosspointStateJoinMap.Off.JoinNumber + joinOffset), xpointState.StateOff);
+				
 
             }
 
