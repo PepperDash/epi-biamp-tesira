@@ -150,8 +150,7 @@ namespace Tesira_DSP_EPI
 					return;
 				}
 				
-				if (message.IndexOf("+OK", StringComparison.OrdinalIgnoreCase) >= 0) { return;}
-				  
+				if (message.Equals("+OK", StringComparison.OrdinalIgnoreCase)){ return;}
 
                 if (!attributeCode.Equals(AttributeCode, StringComparison.InvariantCultureIgnoreCase)) return;
                 _state = bool.Parse(value);
@@ -164,7 +163,7 @@ namespace Tesira_DSP_EPI
                 Debug.Console(2, "Unable to parse message: '{0}'\n{1}", message, e);
             }
         }
-		/*
+		
         public override void LinkToApi(BasicTriList trilist, uint joinStart, string joinMapKey, EiscApiAdvanced bridge)
         {
             var joinMap = new TesiraCrosspointStateJoinMapAdvancedStandalone(joinStart);
@@ -202,7 +201,7 @@ namespace Tesira_DSP_EPI
                     feedback.FireUpdate();
                 }
             };
-        }*/
+        }
 
 
     }
