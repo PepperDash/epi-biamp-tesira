@@ -16,7 +16,7 @@ env:
   # Defaults to debug for build type
   BUILD_TYPE: Release
   # Defaults to master as the release branch.  Change as necessary
-  RELEASE_BRANCH: main
+  RELEASE_BRANCH: master
 jobs:
   Build_Project:
     runs-on: windows-latest
@@ -26,13 +26,12 @@ jobs:
         uses: actions/checkout@v2
         with:
           fetch-depth: 0
-          submodules: true
           token: ${{ secrets.PLUGIN_ACTION_TOKEN }}
       # Generate the appropriate version number
       - name: Set Version Number
         shell: powershell
         env:
-          TAG_NAME: ${{ github.event.release.tag_name }}        
+          TAG_NAME: ${{ github.event.release.tag_name }}
         run: echo "VERSION=$($Env:TAG_NAME)" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
       # Use the version number to set the version of the assemblies
       - name: Update AssemblyInfo.cs
@@ -62,6 +61,15 @@ jobs:
         with:
           name: Build
           path: ./${{ env.SOLUTION_FILE}}-${{ env.VERSION}}.zip
+      # Write the version to a file to be consumed by the push jobs
+      - name: Write Version
+        run: Write-Output "$($Env:VERSION)" | Out-File -FilePath "$($Env:GITHUB_HOME)\output\version.txt"
+      # Upload the Version file as an artifact
+      - name: Upload version.txt
+        uses: actions/upload-artifact@v1
+        with:
+          name: Version
+          path: ${{env.GITHUB_HOME}}\output\version.txt
       # Upload the build package to the release
       - name: Upload Release Package
         id: upload_release
@@ -73,3 +81,48 @@ jobs:
           asset_content_type: application/zip
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  Push_Nuget_Package:
+    needs: Build_Project
+    runs-on: windows-latest
+    steps:
+      - name: Download Build Version Info
+        uses: actions/download-artifact@v1
+        with:
+          name: Version
+      - name: Set Version Number
+        shell: powershell
+        run: |
+          Get-ChildItem "./Version"
+          $version = Get-Content -Path ./Version/version.txt
+          Write-Host "Version: $version"
+          echo "VERSION=$version" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          Remove-Item -Path ./Version/version.txt
+          Remove-Item -Path ./Version
+      - name: Download Build output
+        uses: actions/download-artifact@v1
+        with:
+          name: Build
+          path: ./
+      - name: Unzip Build file
+        run: |
+          Get-ChildItem .\*.zip | Expand-Archive -DestinationPath .\
+          Remove-Item -Path .\*.zip
+      - name: Copy Files to root & delete output directory
+        run: |
+          Remove-Item -Path .\* -Include @("*.cpz","*.md","*.cplz","*.json","*.dll","*.clz")  
+          Get-ChildItem -Path .\output\* | Copy-Item -Destination .\
+          Remove-Item -Path .\output -Recurse
+      - name: Add nuget.exe
+        uses: nuget/setup-nuget@v1
+      - name: Add Github Packages source
+        run: nuget sources add -name github -source https://nuget.pkg.github.com/pepperdash/index.json -username Pepperdash -password ${{ secrets.GITHUB_TOKEN }}
+      # Pushes to nuget, not needed unless publishing publicly
+      #- name: Add nuget.org API Key
+      #  run: nuget setApiKey ${{ secrets.NUGET_API_KEY }}
+      - name: Create nuget package
+        run: nuget pack "./${{ env.SOLUTION_FILE}}.nuspec" -version ${{ env.VERSION }}
+      - name: Publish nuget package to Github registry
+        run: nuget push **/*.nupkg -source github
+      # Pushes to nuget, not needed unless publishing publicly >> this pushes package to nuget.org
+      #- name: Publish nuget package to nuget.org
+      #  run: nuget push **/*.nupkg -Source https://api.nuget.org/v3/index.json

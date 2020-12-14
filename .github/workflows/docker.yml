@@ -18,7 +18,7 @@ env:
   # Defaults to debug for build type
   BUILD_TYPE: Debug
   # Defaults to master as the release branch.  Change as necessary
-  RELEASE_BRANCH: master
+  RELEASE_BRANCH: maain
 jobs:
   Build_Project:
     runs-on: windows-latest
@@ -36,7 +36,7 @@ jobs:
       - name: Set Version Number
         shell: powershell
         run: |
-          $version = ./.github/scripts/GenerateVersionNumber.ps1
+          $version = ./.github/scripts/GenerateVersionNumber.ps1          
           echo "VERSION=$version" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
       # Use the version number to set the version of the assemblies
       - name: Update AssemblyInfo.cs
@@ -132,7 +132,13 @@ jobs:
         uses: nuget/setup-nuget@v1
       - name: Add Github Packages source
         run: nuget sources add -name github -source https://nuget.pkg.github.com/pepperdash/index.json -username Pepperdash -password ${{ secrets.GITHUB_TOKEN }}
+      # Pushes to nuget, not needed unless publishing publicly
+      #- name: Add nuget.org API Key
+      #  run: nuget setApiKey ${{ secrets.NUGET_API_KEY }}
       - name: Create nuget package
-        run: nuget pack "./epi-display-samsung-mdc.nuspec" -version ${{ env.VERSION }}
+        run: nuget pack "./${{ env.SOLUTION_FILE}}.nuspec" -version ${{ env.VERSION }}
       - name: Publish nuget package to Github registry
         run: nuget push **/*.nupkg -source github
+      # Pushes to nuget, not needed unless publishing publicly >> this pushes package to nuget.org
+      #- name: Publish nuget package to nuget.org
+      #  run: nuget push **/*.nupkg -Source https://api.nuget.org/v3/index.json
