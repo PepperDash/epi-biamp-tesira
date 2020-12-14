@@ -18,7 +18,7 @@ env:
   # Defaults to debug for build type
   BUILD_TYPE: Debug
   # Defaults to master as the release branch.  Change as necessary
-  RELEASE_BRANCH: maain
+  RELEASE_BRANCH: main
 jobs:
   Build_Project:
     runs-on: windows-latest

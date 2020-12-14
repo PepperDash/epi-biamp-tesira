@@ -7,7 +7,7 @@
 $destination = "$($Env:GITHUB_HOME)\output"
 New-Item -ItemType Directory -Force -Path ($destination)
 Get-ChildItem ($destination)
-$exclusions = @(git submodule foreach --quiet 'echo $name')
+$exclusions = "packages"
 # Trying to get any .json schema files (not currently working)
 # Gets any files with the listed extensions.
 Get-ChildItem -recurse -Path "$($Env:GITHUB_WORKSPACE)" -include "*.clz", "*.cpz", "*.cplz", "*.nuspec" | ForEach-Object {
@@ -36,6 +36,7 @@ Get-ChildItem -Path $destination | Where-Object {($_.Extension -eq ".clz") -or (
     Get-ChildItem -Recurse -Path "$($Env:GITHUB_WORKSPACE)" -include $filenames | Copy-Item -Destination ($destination) -Force
   }
 }
+Get-ChildItem -Path $destination\*.cplz | Rename-Item -NewName { "$($_.BaseName)-$($Env:VERSION)$($_.Extension)" }
 Compress-Archive -Path $destination -DestinationPath "$($Env:GITHUB_WORKSPACE)\$($Env:SOLUTION_FILE)-$($Env:VERSION).zip" -Force
 Write-Host "Output Contents post Zip"
 Get-ChildItem -Path $destination
