@@ -26,7 +26,6 @@ jobs:
         uses: actions/checkout@v2
         with:
           fetch-depth: 0
-          token: ${{ secrets.PLUGIN_ACTION_TOKEN }}
       # Generate the appropriate version number
       - name: Set Version Number
         shell: powershell
