@@ -571,32 +571,35 @@ namespace Tesira_DSP_EPI
 
                     CommandQueue.AdvanceQueue(args.Text);
                 }
-                
 
-                else if (args.Text.IndexOf("-ERR", StringComparison.Ordinal) == 0)
-                {
-                    // Error response
-                    Debug.Console(2, this, "Error From DSP: '{0}'", args.Text);
-                    switch (args.Text)
-                    {
-                        case "-ERR ALREADY_SUBSCRIBED":
-                            {
-                                if(WatchDogSniffer)
-                                    Debug.Console(2, this, "The Watchdog didn't find anything.  Good Boy!");
-                                WatchDogSniffer = false;
-                                CommandQueue.AdvanceQueue(args.Text);
-                                break;
-                            }
+				else if (args.Text.IndexOf("DEVICE recallPresetByName", StringComparison.Ordinal) == 0)
+				{
+					CommandQueue.AdvanceQueue(args.Text);
+				}
+				else if (args.Text.IndexOf("-ERR", StringComparison.Ordinal) == 0)
+				{
+					// Error response
+					Debug.Console(2, this, "Error From DSP: '{0}'", args.Text);
+					switch (args.Text)
+					{
+						case "-ERR ALREADY_SUBSCRIBED":
+							{
+								if (WatchDogSniffer)
+									Debug.Console(2, this, "The Watchdog didn't find anything.  Good Boy!");
+								WatchDogSniffer = false;
+								CommandQueue.AdvanceQueue(args.Text);
+								break;
+							}
 
 
-                        default:
-                            {
-                                WatchDogSniffer = false;
-                                CommandQueue.AdvanceQueue(args.Text);
-                                break;
-                            }
-                    }
-                }
+						default:
+							{
+								WatchDogSniffer = false;
+								CommandQueue.AdvanceQueue(args.Text);
+								break;
+							}
+					}
+				}
                     /*
                 else if (args.Text.IndexOf("SESSION", StringComparison.OrdinalIgnoreCase) > -1)
                 {
@@ -928,7 +931,7 @@ namespace Tesira_DSP_EPI
             {
                 var p = preset;
                 var runPresetIndex = preset.Value.PresetIndex;
-                var presetIndex = runPresetIndex - 1;
+                var presetIndex = runPresetIndex;
                 trilist.StringInput[(uint)(presetJoinMap.PresetNameFeedback.JoinNumber + presetIndex)].StringValue = p.Value.Label;
                 trilist.SetSigTrueAction((uint)(presetJoinMap.PresetSelection.JoinNumber + presetIndex), () => RunPresetNumber((ushort)runPresetIndex));
             }
