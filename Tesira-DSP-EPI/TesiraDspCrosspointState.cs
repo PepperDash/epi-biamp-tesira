@@ -16,7 +16,7 @@ namespace Tesira_DSP_EPI
 
     public class TesiraDspCrosspointState : TesiraDspControlPoint
     {
-        public static readonly string AttributeCode = "crosspointLevelState";
+        public string AttributeCode = "crosspointLevelState";
 
         private const string KeyFormatter = "{0}--{1}";
 
@@ -139,9 +139,19 @@ namespace Tesira_DSP_EPI
                 if (!match.Success) return;
                 var value = match.Groups[1].Value;
 
-                Debug.Console(1, this, "Response: '{0}' Value: '{1}'", attributeCode, value);
+                Debug.Console(1, this, "xPoint Response: '{0}' Value: '{1}'", attributeCode, value);
 
-                if (message.IndexOf("+OK", StringComparison.OrdinalIgnoreCase) <= -1) return;
+				if (message.Contains("StandardMixerInterface"))
+				{
+
+					AttributeCode = string.Format("crosspoint {0} {1}", Index1, Index2);
+					Debug.Console(2, this, "StandardMixerInterface: {0}", AttributeCode);
+					GetState();
+					return;
+				}
+				
+				if (message.Equals("+OK", StringComparison.OrdinalIgnoreCase)){ return;}
+
                 if (!attributeCode.Equals(AttributeCode, StringComparison.InvariantCultureIgnoreCase)) return;
                 _state = bool.Parse(value);
                 Debug.Console(2, this, "New Value: {0}", _state);
@@ -153,7 +163,7 @@ namespace Tesira_DSP_EPI
                 Debug.Console(2, "Unable to parse message: '{0}'\n{1}", message, e);
             }
         }
-
+		
         public override void LinkToApi(BasicTriList trilist, uint joinStart, string joinMapKey, EiscApiAdvanced bridge)
         {
             var joinMap = new TesiraCrosspointStateJoinMapAdvancedStandalone(joinStart);

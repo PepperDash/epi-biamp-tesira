@@ -143,11 +143,6 @@ namespace Tesira_DSP_EPI
             CrestronConsole.AddNewConsoleCommand(CommandQueue.EnqueueCommand, "send" + Key, "", ConsoleAccessLevelEnum.AccessOperator);
 			CrestronConsole.AddNewConsoleCommand(s => Communication.Connect(), "con" + Key, "", ConsoleAccessLevelEnum.AccessOperator);
 
-            _subscribeThread = new Thread(o => HandleAttributeSubscriptions(), null, Thread.eThreadStartOptions.CreateSuspended)
-            {
-                Priority = Thread.eThreadPriority.LowestPriority
-            };
-
             Feedbacks.Add(CommunicationMonitor.IsOnlineFeedback);
             Feedbacks.Add(CommandPassthruFeedback);
 
@@ -166,14 +161,20 @@ namespace Tesira_DSP_EPI
 
         private void StartSubsciptionThread()
         {
-            if (_subscribeThread.ThreadState == Thread.eThreadStates.ThreadRunning) return;
-
-            _subscribeThread = null;
-            _subscribeThread = new Thread(o => HandleAttributeSubscriptions(), null,
-                Thread.eThreadStartOptions.Running)
-            {
-                Priority = Thread.eThreadPriority.LowestPriority
-            };
+			if (_subscribeThread != null)
+			{
+				if(_subscribeThread.ThreadState == Thread.eThreadStates.ThreadRunning)
+				{
+					return;
+				}	
+			}
+			_subscribeThread = null;
+			_subscribeThread = new Thread(o => HandleAttributeSubscriptions(), null,
+				Thread.eThreadStartOptions.CreateSuspended)
+			{
+				Priority = Thread.eThreadPriority.LowestPriority
+			};
+			_subscribeThread.Start();
         }
 
         void CrestronEnvironment_ProgramStatusEventHandler(eProgramStatusEventType programEventType)
@@ -354,15 +355,7 @@ namespace Tesira_DSP_EPI
 			Debug.Console(2, this, "Communication monitor state: {0}", CommunicationMonitor.Status);
 			if (e.Status == MonitorStatus.IsOk)
 			{
-			    StartSubsciptionThread();
-        {
-            if (_subscribeThread.ThreadState == Thread.eThreadStates.ThreadRunning) return;
-            _subscribeThread = null;
-            _subscribeThread = new Thread(o => HandleAttributeSubscriptions(), null, Thread.eThreadStartOptions.Running)
-            {
-                Priority = Thread.eThreadPriority.LowestPriority
-            };
-        }
+			    //StartSubsciptionThread();
 			}
 			else if (e.Status != MonitorStatus.IsOk)
 			{
@@ -412,38 +405,46 @@ namespace Tesira_DSP_EPI
 
         private void CheckWatchDog()
         {
-            Debug.Console(2, this, "The Watchdog is on the hunt!");
-            if (!WatchDogSniffer)
-            {
-                Debug.Console(2, this, "The Watchdog is picking up a scent!");
-                var random = new Random(DateTime.Now.Millisecond + DateTime.Now.Second + DateTime.Now.Minute
-                    + DateTime.Now.Hour + DateTime.Now.Day + DateTime.Now.Month + DateTime.Now.Year);
+			try
+			{
 
-                var watchDogSubject = SelectWatchDogSubject(random);
+				Debug.Console(2, this, "The Watchdog is on the hunt!");
+				if (!WatchDogSniffer)
+				{
+					Debug.Console(2, this, "The Watchdog is picking up a scent!");
+					var random = new Random(DateTime.Now.Millisecond + DateTime.Now.Second + DateTime.Now.Minute
+						+ DateTime.Now.Hour + DateTime.Now.Day + DateTime.Now.Month + DateTime.Now.Year);
 
-                if (!watchDogSubject.IsSubscribed)
-                {
-                    Debug.Console(2, this, "The Watchdog was wrong - that's just an old shoe.  Nothing is subscribed.");
-                    return;
-                }
-                Debug.Console(2, this, "The Watchdog is sniffing \"{0}\".", watchDogSubject.Key);
+					var watchDogSubject = ControlPointList[random.Next(0, ControlPointList.Count)];
+					if (!watchDogSubject.IsSubscribed)
+					{
+						Debug.Console(2, this, "The Watchdog was wrong - that's just an old shoe.  Nothing is subscribed.");
+						return;
+					}
+					Debug.Console(2, this, "The Watchdog is sniffing \"{0}\".", watchDogSubject.Key);
 
-                WatchDogSniffer = true;
+					WatchDogSniffer = true;
 
-                watchDogSubject.Subscribe();
-            }
-            else
-            {
-                Debug.Console(2, this, "The WatchDog smells something foul....let's resubscribe!");
-                Resubscribe();
-            }
+					watchDogSubject.Subscribe();
+				}
+				else
+				{
+					Debug.Console(2, this, "The WatchDog smells something foul....let's resubscribe!");
+					Resubscribe();
+				}
+
+			}
+			catch (Exception ex)
+			{
+				Debug.ConsoleWithLog(2, this, "Watchdog Error: '{0}'", ex);
+			}
         }
 
         private ISubscribedComponent SelectWatchDogSubject(Random random)
         {
             var watchDogSubject = ControlPointList[random.Next(0, ControlPointList.Count)];
-            while(watchDogSubject.IsSubscribed == false)
-                watchDogSubject = ControlPointList[random.Next(0, ControlPointList.Count)];
+			if (watchDogSubject.IsSubscribed == false)
+				watchDogSubject = null;
             return watchDogSubject;
         }
 
@@ -500,10 +501,8 @@ namespace Tesira_DSP_EPI
                     // Indicates a new TTP session
                     // moved to CustomActivate() method
                     CommunicationMonitor.Start();
-                    if (_subscribeThread.ThreadState != Thread.eThreadStates.ThreadRunning)
-                    {
-                        StartSubsciptionThread();
-                    }
+					CrestronInvoke.BeginInvoke(o => StartSubsciptionThread());
+                  
                 }
 
                 //else if (args.Text.IndexOf(ResubsriptionString, StringComparison.Ordinal) > -1)
@@ -731,6 +730,10 @@ namespace Tesira_DSP_EPI
 		    {
 		        DeviceInfo.Subscribe();
 		    }
+			foreach (var control in Meters)
+			{
+				SubscribeToComponent(control.Value);
+			}
 		}
 
         private void SubscribeToComponent(ISubscribedComponent data)
@@ -750,15 +753,12 @@ namespace Tesira_DSP_EPI
         {
             Debug.Console(0, this, "Issue Detected with device subscriptions - resubscribing to all controls");
             StopWatchDog();
-            if (_subscribeThread.ThreadState != Thread.eThreadStates.ThreadRunning)
-            {
-                StartSubsciptionThread();
-            }
-        }
+			StartSubsciptionThread();
+       }
 
         private object HandleAttributeSubscriptions()
         {
-            _subscriptionLock.Enter();
+            //_subscriptionLock.Enter();
             SendLine("SESSION set verbose false");
             try
             {
@@ -767,20 +767,19 @@ namespace Tesira_DSP_EPI
 
                 //Subscribe
                 SubscribeToComponents();
-
-                StartWatchDog();
+				StartWatchDog();
                 if (!_commandQueueInProgress)
                     CommandQueue.SendNextQueuedCommand();
             }
             catch (Exception ex)
             {
                 Debug.ConsoleWithLog(2, this, "Error Subscribing: '{0}'", ex);
-                _subscriptionLock.Leave();
+                //_subscriptionLock.Leave();
                 //_subscriptionLock.Leave();
             }
             finally
             {
-                _subscriptionLock.Leave();
+               // _subscriptionLock.Leave();
             }
             return null;
         }
@@ -943,7 +942,11 @@ namespace Tesira_DSP_EPI
             {
                 var dialer = line.Value;
                 var bridgeIndex = dialer.BridgeIndex;
-                if (bridgeIndex == null) continue;
+				if (bridgeIndex == null)
+				{
+					Debug.Console(2, "BridgeIndex is missing for Dialer {0}", dialer.Key);
+					continue;
+				}
 
                 var dialerLineOffset = lineOffset += 1;
                 Debug.Console(2, "AddingDialerBRidge {0} {1} Offset", dialer.Key, dialerLineOffset);
@@ -1023,16 +1026,24 @@ namespace Tesira_DSP_EPI
             foreach (var item in CrosspointStates)
             {
                 var xpointState = item.Value;
-                var data = xpointState.BridgeIndex;
-                if (data == null) continue;
+				var joinOffset = ((xpointState.BridgeIndex - 1) * 3);
+                if (joinOffset == null) continue;
 
-                Debug.Console(2, this, "Adding Crosspoint State ControlPoint {0} | JoinStart:{1}", xpointState.Key, crosspointStateJoinMap.Label.JoinNumber);
-                xpointState.CrosspointStateFeedback.LinkInputSig(trilist.BooleanInput[crosspointStateJoinMap.Toggle.JoinNumber]);
-                xpointState.CrosspointStateFeedback.LinkInputSig(trilist.BooleanInput[crosspointStateJoinMap.On.JoinNumber]);
 
-                trilist.SetSigTrueAction(crosspointStateJoinMap.Toggle.JoinNumber, xpointState.StateToggle);
-                trilist.SetSigTrueAction(crosspointStateJoinMap.On.JoinNumber, xpointState.StateOn);
-                trilist.SetSigTrueAction(crosspointStateJoinMap.Off.JoinNumber, xpointState.StateOff);
+				var channel = item.Value;
+				var data = channel.BridgeIndex;
+				if (data == null) continue;
+				var x = (uint)data;
+
+
+				Debug.Console(2, this, "Adding Crosspoint State ControlPoint {0} | JoinStart:{1}", xpointState.Key, (crosspointStateJoinMap.Toggle.JoinNumber + joinOffset));
+                xpointState.CrosspointStateFeedback.LinkInputSig(trilist.BooleanInput[(uint)(crosspointStateJoinMap.Toggle.JoinNumber + joinOffset)]);
+                xpointState.CrosspointStateFeedback.LinkInputSig(trilist.BooleanInput[(uint)(crosspointStateJoinMap.On.JoinNumber + joinOffset)]);
+
+                trilist.SetSigTrueAction((uint)(crosspointStateJoinMap.Toggle.JoinNumber + joinOffset), xpointState.StateToggle);
+                trilist.SetSigTrueAction((uint)(crosspointStateJoinMap.On.JoinNumber + joinOffset), xpointState.StateOn);
+                trilist.SetSigTrueAction((uint)(crosspointStateJoinMap.Off.JoinNumber + joinOffset), xpointState.StateOff);
+				
 
             }
 
