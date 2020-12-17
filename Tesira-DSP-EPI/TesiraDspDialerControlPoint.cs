@@ -93,7 +93,7 @@ namespace Tesira_DSP_EPI
             }
 
 
-            else if (attributeCode == "dial" || attributeCode == "end" || attributeCode == "onHook" ||
+            else if ( attributeCode == "end" || attributeCode == "onHook" ||
                 attributeCode == "offHook" || attributeCode == "answer")
             {
                 //requires index, but does not require command
@@ -152,7 +152,7 @@ namespace Tesira_DSP_EPI
                     localInstanceTag = InstanceTag1;
                     break;
             }
-            if (attributeCode == "callState" || attributeCode == "sourceSelection")
+			if (attributeCode == "callState" || attributeCode == "sourceSelection" || attributeCode == "hookState")
             {
                 cmd = string.Format("\"{0}\" subscribe {1} {2} {3}", localInstanceTag, attributeCode, customName, responseRate);
             }

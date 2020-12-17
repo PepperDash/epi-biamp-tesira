@@ -526,7 +526,7 @@ namespace Tesira_DSP_EPI
 
                     var customName = match.Groups[1].Value;
                     var value = match.Groups[2].Value;
-
+					Debug.Console(2, this, "Subscription Message: 'Name: {0} GRoup:{1}'",customName, value);
                     CommandQueue.AdvanceQueue(args.Text);
 
                     foreach (var controlPoint in Faders.Where(controlPoint => customName == controlPoint.Value.LevelCustomName || customName == controlPoint.Value.MuteCustomName))
@@ -534,11 +534,18 @@ namespace Tesira_DSP_EPI
                         controlPoint.Value.ParseSubscriptionMessage(customName, value);
                         return;
                     }
-                    foreach (var controlPoint in Dialers.Where(controlPoint => customName == controlPoint.Value.AutoAnswerCustomName || customName == controlPoint.Value.ControlStatusCustomName || customName == controlPoint.Value.DialerCustomName))
-                    {
-                        controlPoint.Value.ParseSubscriptionMessage(customName, value);
-                        return;
-                    }
+					foreach (KeyValuePair<string, TesiraDspDialer> controlPoint in Dialers)
+					{
+
+						if (customName == controlPoint.Value.AutoAnswerCustomName || customName == controlPoint.Value.ControlStatusCustomName ||
+							customName == controlPoint.Value.DialerCustomName || customName == controlPoint.Value.HookStateCustomName 
+							|| customName == controlPoint.Value.PotsDialerCustomName)
+						{
+							controlPoint.Value.ParseSubscriptionMessage(customName, value);
+							return;
+						}
+
+					}
                     foreach (var controlPoint in States.Where(controlPoint => customName == controlPoint.Value.StateCustomName))
                     {
                         controlPoint.Value.ParseSubscriptionMessage(customName, value);
@@ -568,32 +575,35 @@ namespace Tesira_DSP_EPI
 
                     CommandQueue.AdvanceQueue(args.Text);
                 }
-                
 
-                else if (args.Text.IndexOf("-ERR", StringComparison.Ordinal) == 0)
-                {
-                    // Error response
-                    Debug.Console(2, this, "Error From DSP: '{0}'", args.Text);
-                    switch (args.Text)
-                    {
-                        case "-ERR ALREADY_SUBSCRIBED":
-                            {
-                                if(WatchDogSniffer)
-                                    Debug.Console(2, this, "The Watchdog didn't find anything.  Good Boy!");
-                                WatchDogSniffer = false;
-                                CommandQueue.AdvanceQueue(args.Text);
-                                break;
-                            }
+				else if (args.Text.IndexOf("DEVICE recallPresetByName", StringComparison.Ordinal) == 0)
+				{
+					CommandQueue.AdvanceQueue(args.Text);
+				}
+				else if (args.Text.IndexOf("-ERR", StringComparison.Ordinal) == 0)
+				{
+					// Error response
+					Debug.Console(2, this, "Error From DSP: '{0}'", args.Text);
+					switch (args.Text)
+					{
+						case "-ERR ALREADY_SUBSCRIBED":
+							{
+								if (WatchDogSniffer)
+									Debug.Console(2, this, "The Watchdog didn't find anything.  Good Boy!");
+								WatchDogSniffer = false;
+								CommandQueue.AdvanceQueue(args.Text);
+								break;
+							}
 
 
-                        default:
-                            {
-                                WatchDogSniffer = false;
-                                CommandQueue.AdvanceQueue(args.Text);
-                                break;
-                            }
-                    }
-                }
+						default:
+							{
+								WatchDogSniffer = false;
+								CommandQueue.AdvanceQueue(args.Text);
+								break;
+							}
+					}
+				}
                     /*
                 else if (args.Text.IndexOf("SESSION", StringComparison.OrdinalIgnoreCase) > -1)
                 {
@@ -730,6 +740,7 @@ namespace Tesira_DSP_EPI
 		    {
 		        DeviceInfo.Subscribe();
 		    }
+
 			foreach (var control in Meters)
 			{
 				SubscribeToComponent(control.Value);
@@ -930,7 +941,7 @@ namespace Tesira_DSP_EPI
             {
                 var p = preset;
                 var runPresetIndex = preset.Value.PresetIndex;
-                var presetIndex = runPresetIndex - 1;
+                var presetIndex = runPresetIndex;
                 trilist.StringInput[(uint)(presetJoinMap.PresetNameFeedback.JoinNumber + presetIndex)].StringValue = p.Value.Label;
                 trilist.SetSigTrueAction((uint)(presetJoinMap.PresetSelection.JoinNumber + presetIndex), () => RunPresetNumber((ushort)runPresetIndex));
             }
@@ -948,12 +959,13 @@ namespace Tesira_DSP_EPI
 					continue;
 				}
 
-                var dialerLineOffset = lineOffset += 1;
+				var dialerLineOffset = lineOffset;
                 Debug.Console(2, "AddingDialerBRidge {0} {1} Offset", dialer.Key, dialerLineOffset);
 
                 for (var i = 0; i < dialerJoinMap.KeyPadNumeric.JoinSpan; i++)
                 {
-                    trilist.SetSigTrueAction((dialerJoinMap.KeyPadNumeric.JoinNumber + (uint)i + dialerLineOffset), () => dialer.SendKeypad(TesiraDspDialer.EKeypadKeys.Num0));
+					var tempi = i;
+                    trilist.SetSigTrueAction((dialerJoinMap.KeyPadNumeric.JoinNumber + (uint)i + dialerLineOffset), () => dialer.SendKeypad((TesiraDspDialer.EKeypadKeys)(tempi)));
                 }
 
                 trilist.SetSigTrueAction((dialerJoinMap.KeyPadStar.JoinNumber + dialerLineOffset), () => dialer.SendKeypad(TesiraDspDialer.EKeypadKeys.Star));
@@ -969,7 +981,7 @@ namespace Tesira_DSP_EPI
                 trilist.SetSigTrueAction(dialerJoinMap.AutoAnswerOn.JoinNumber + dialerLineOffset, dialer.AutoAnswerOn);
                 trilist.SetSigTrueAction(dialerJoinMap.AutoAnswerOff.JoinNumber + dialerLineOffset, dialer.AutoAnswerOff);
                 trilist.SetSigTrueAction(dialerJoinMap.Answer.JoinNumber + dialerLineOffset, dialer.Answer);
-                trilist.SetSigTrueAction(dialerJoinMap.EndCall.JoinNumber + dialerLineOffset, dialer.EndAllCalls);
+                trilist.SetSigTrueAction(dialerJoinMap.EndCall.JoinNumber + dialerLineOffset, dialer.OnHook);
                 trilist.SetSigTrueAction(dialerJoinMap.OnHook.JoinNumber + dialerLineOffset, dialer.OnHook);
                 trilist.SetSigTrueAction(dialerJoinMap.OffHook.JoinNumber + dialerLineOffset, dialer.OffHook);
 
