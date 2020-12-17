@@ -133,6 +133,6 @@ jobs:
       - name: Add Github Packages source
         run: nuget sources add -name github -source https://nuget.pkg.github.com/pepperdash/index.json -username Pepperdash -password ${{ secrets.GITHUB_TOKEN }}
       - name: Create nuget package
-        run: nuget pack "./epi-essentials-mobile-control.nuspec" -version ${{ env.VERSION }}
+        run: nuget pack "Tesira-DSP-EPI/Tesira-DSP-EPI.nuspec" -version ${{ env.VERSION }}
       - name: Publish nuget package to Github registry
         run: nuget push **/*.nupkg -source github
