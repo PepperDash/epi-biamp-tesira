@@ -9,8 +9,8 @@ on:
 env:
   # solution path doesn't need slashes unless there it is multiple folders deep
   # solution name does not include extension. .sln is assumed
-  SOLUTION_PATH: epi-essentials-mobile-control\
-  SOLUTION_FILE: epi-essentials-mobile-control
+  SOLUTION_PATH:
+  SOLUTION_FILE: Tesira-DSP-EPI
   # Do not edit this, we're just creating it here
   VERSION: 0.0.0-buildtype-buildnumber
   # Defaults to debug for build type
@@ -108,7 +108,7 @@ jobs:
           Remove-Item -Path .\*.zip
       - name: Copy Files to root & delete output directory
         run: |
-          Remove-Item -Path .\* -Include @("*.cpz","*.md","*.cplz","*.json","*.dll","*.clz")  
+          Remove-Item -Path .\* -Include @("*.cpz","*.md","*.cplz","*.json","*.dll","*.clz")
           Get-ChildItem -Path .\output\* | Copy-Item -Destination .\
           Remove-Item -Path .\output -Recurse
       - name: Add nuget.exe

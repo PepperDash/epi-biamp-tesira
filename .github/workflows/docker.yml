@@ -12,8 +12,8 @@ env:
   # solution path needs slashes (use \). When solution file name and path are put together, it should be a valid path
   # If Solution is in repo root, leave SOLUTION_PATH empty
   # solution name does not include extension. .sln is assumed
-  SOLUTION_PATH: epi-essentials-mobile-control\
-  SOLUTION_FILE: epi-essentials-mobile-control
+  SOLUTION_PATH:
+  SOLUTION_FILE: Tesira-DSP-EPI
   # Do not edit this, we're just creating it here
   VERSION: 0.0.0-buildtype-buildnumber
   # Defaults to debug for build type
@@ -125,7 +125,7 @@ jobs:
           Remove-Item -Path .\*.zip
       - name: Copy Files to root & delete output directory
         run: |
-          Remove-Item -Path .\* -Include @("*.cpz","*.md","*.cplz","*.json","*.dll","*.clz")  
+          Remove-Item -Path .\* -Include @("*.cpz","*.md","*.cplz","*.json","*.dll","*.clz")
           Get-ChildItem -Path .\output\* | Copy-Item -Destination .\
           Remove-Item -Path .\output -Recurse
       - name: Add nuget.exe
