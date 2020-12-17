@@ -1,4 +1,5 @@
 ﻿using System;
+using Crestron.SimplSharp;
 using Crestron.SimplSharpPro.DeviceSupport;
 using Newtonsoft.Json;
 using PepperDash.Core;
@@ -15,14 +16,19 @@ namespace Tesira_DSP_EPI
 
     public class TesiraDspCrosspointState : TesiraDspControlPoint
     {
-        public static readonly string AttributeCode = "crosspointLevelState";
+        public string AttributeCode = "crosspointLevelState";
 
         private const string KeyFormatter = "{0}--{1}";
 
         private const string Pattern = "[^ ]* (.*)";
 
-
         bool _state;
+
+        private CTimer _pollTimer;
+
+        private readonly bool _pollEnable;
+
+        private readonly long _pollTime;
 
         /// <summary>
         /// Boolean Feedback for Component State
@@ -35,8 +41,10 @@ namespace Tesira_DSP_EPI
         /// <param name="key">Unique Key for Component</param>
         /// <param name="config">Config Object for Component</param>
         /// <param name="parent">Parent object of Component</param>
-		public TesiraDspCrosspointState(string key, TesiraCrosspointStateBlockConfig config, TesiraDsp parent)
-            : base(config.MatrixInstanceTag, string.Empty, config.Index1, config.Index2, parent, string.Format(KeyFormatter, parent.Key, key), config.Label, config.BridgeIndex)
+        public TesiraDspCrosspointState(string key, TesiraCrosspointStateBlockConfig config, TesiraDsp parent)
+            : base(
+                config.MatrixInstanceTag, string.Empty, config.Index1, config.Index2, parent,
+                string.Format(KeyFormatter, parent.Key, key), config.Label, config.BridgeIndex)
         {
             Label = config.Label;
             Enabled = config.Enabled;
@@ -46,6 +54,32 @@ namespace Tesira_DSP_EPI
             Feedbacks.Add(CrosspointStateFeedback);
             Feedbacks.Add(NameFeedback);
             parent.Feedbacks.AddRange(Feedbacks);
+
+            if (!config.Enabled) return;
+            DeviceManager.AddDevice(this);
+            _pollEnable = config.PollEnable;
+            if (_pollEnable)
+            {
+                _pollTime = config.PollTimeMs < 10000 ? 10000 : config.PollTimeMs;
+            }
+
+        }
+
+        /// <summary>
+        /// Get Initial Values for Control.  Control does not subscribe.
+        /// </summary>
+        public override void Subscribe()
+        {
+            GetState();
+
+            if (!_pollEnable) return;
+            if(_pollTimer == null)
+                _pollTimer = new CTimer(o => GetState(), null, _pollTime, _pollTime);
+        }
+
+        public override void Unsubscribe()
+        {
+            _pollTimer = null;
         }
 
         /// <summary>
@@ -105,9 +139,19 @@ namespace Tesira_DSP_EPI
                 if (!match.Success) return;
                 var value = match.Groups[1].Value;
 
-                Debug.Console(1, this, "Response: '{0}' Value: '{1}'", attributeCode, value);
+                Debug.Console(1, this, "xPoint Response: '{0}' Value: '{1}'", attributeCode, value);
 
-                if (message.IndexOf("+OK", StringComparison.OrdinalIgnoreCase) <= -1) return;
+				if (message.Contains("StandardMixerInterface"))
+				{
+
+					AttributeCode = string.Format("crosspoint {0} {1}", Index1, Index2);
+					Debug.Console(2, this, "StandardMixerInterface: {0}", AttributeCode);
+					GetState();
+					return;
+				}
+				
+				if (message.Equals("+OK", StringComparison.OrdinalIgnoreCase)){ return;}
+
                 if (!attributeCode.Equals(AttributeCode, StringComparison.InvariantCultureIgnoreCase)) return;
                 _state = bool.Parse(value);
                 Debug.Console(2, this, "New Value: {0}", _state);
@@ -119,7 +163,7 @@ namespace Tesira_DSP_EPI
                 Debug.Console(2, "Unable to parse message: '{0}'\n{1}", message, e);
             }
         }
-
+		
         public override void LinkToApi(BasicTriList trilist, uint joinStart, string joinMapKey, EiscApiAdvanced bridge)
         {
             var joinMap = new TesiraCrosspointStateJoinMapAdvancedStandalone(joinStart);

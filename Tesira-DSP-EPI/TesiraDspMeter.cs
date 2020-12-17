@@ -79,8 +79,9 @@ namespace Tesira_DSP_EPI
 
         public void UnSubscribe()
         {
-            SendUnSubscriptionCommand(MeterCustomName, MeterAttributeCode, 0);
             IsSubscribed = false;
+
+            SendUnSubscriptionCommand(MeterCustomName, MeterAttributeCode, 0);
             SubscribedFeedback.FireUpdate();
         }
 
@@ -95,7 +96,7 @@ namespace Tesira_DSP_EPI
             SubscribedFeedback.FireUpdate();
 
             Debug.Console(2, this, "Parsing Message - '{0}'", message);
-            var value = Double.Parse(message).Scale(_meterMinimum, _meterMaximum, (double)ushort.MinValue, (double)ushort.MaxValue);
+            var value = Double.Parse(message).Scale(_meterMinimum, _meterMaximum, ushort.MinValue, ushort.MaxValue);
             _currentMeter = (ushort)value;
 
             Debug.Console(2, this, "Scaled Meter Value - '{0}'", _currentMeter);

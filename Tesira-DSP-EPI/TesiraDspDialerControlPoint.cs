@@ -1,13 +1,7 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using Crestron.SimplSharp;
 using Crestron.SimplSharpPro.DeviceSupport;
 using PepperDash.Core;
-using PepperDash.Essentials.Core;
 using PepperDash.Essentials.Core.Bridges;
-using PepperDash.Essentials.Devices.Common.DSP;
 using PepperDash.Essentials.Devices.Common.AudioCodec;
 using PepperDash.Essentials.Devices.Common.Codec;
 
@@ -50,32 +44,32 @@ namespace Tesira_DSP_EPI
         /// <param name="command">Command to send</param>
         /// <param name="attributeCode">Attribute code for control</param>
         /// <param name="value">Value for command</param>
-        /// <param name="InstanceTag">Instance Tag of Control</param>
-        public virtual void SendFullCommand(string command, string attributeCode, string value, int InstanceTag)
+        /// <param name="instanceTag">Instance Tag of Control</param>
+        public virtual void SendFullCommand(string command, string attributeCode, string value, int instanceTag)
         {
             if (string.IsNullOrEmpty(attributeCode))
             {
-                Debug.Console(2, this, Debug.ErrorLogLevel.Error, "SendFullCommand({0}, {1}, {2}, {3}) Error: AttributeCode is null or empty", command, attributeCode, value, InstanceTag);
+                Debug.Console(2, this, Debug.ErrorLogLevel.Error, "SendFullCommand({0}, {1}, {2}, {3}) Error: AttributeCode is null or empty", command, attributeCode, value, instanceTag);
                 return;
             }
 
             // Command Format: InstanceTag get/set/toggle/increment/decrement/subscribe/unsubscribe attributeCode [index] [value]
             // Ex: "RoomLevel set level 1.00"
             string cmd;
-            string instanceTag;
-            switch (InstanceTag)
+            string localInstanceTag;
+            switch (instanceTag)
             {
                 case 1:
-                    instanceTag = InstanceTag1;
+                    localInstanceTag = InstanceTag1;
                     break;
                 case 2:
-                    instanceTag = InstanceTag2;
+                    localInstanceTag = InstanceTag2;
                     break;
                 case 999:
-                    instanceTag = "DEVICE";
+                    localInstanceTag = "DEVICE";
                     break;
                 default:
-                    instanceTag = InstanceTag1;
+                    localInstanceTag = InstanceTag1;
                     break;
             }
 
@@ -87,51 +81,38 @@ namespace Tesira_DSP_EPI
                 //Command requires Index
                 if (String.IsNullOrEmpty(value))
                 {
-                    if (String.IsNullOrEmpty(command))
-                    {
-                        //format command without value OR command
-                        cmd = string.Format("{0} {1} {2} ", instanceTag, attributeCode, Index1);
-                    }
-                    else
-                    {
-                        // format command without value
-                        cmd = string.Format("{0} {1} {2} {3}", instanceTag, command, attributeCode, Index1);
-                    }
+                    cmd = String.IsNullOrEmpty(command) ? 
+                        string.Format("{0} {1} {2} ", localInstanceTag, attributeCode, Index1) : 
+                        string.Format("{0} {1} {2} {3}", localInstanceTag, command, attributeCode, Index1);
                 }
                 else
                 {
-                    // format commadn with value
-                    cmd = string.Format("{0} {1} {2} {3} {4}", instanceTag, command, attributeCode, Index1, value);
+                    // format command with value
+                    cmd = string.Format("{0} {1} {2} {3} {4}", localInstanceTag, command, attributeCode, Index1, value);
                 }
             }
 
 
-            else if (attributeCode == "dial" || attributeCode == "end" || attributeCode == "onHook" ||
+            else if ( attributeCode == "end" || attributeCode == "onHook" ||
                 attributeCode == "offHook" || attributeCode == "answer")
             {
                 //requires index, but does not require command
-                if (String.IsNullOrEmpty(value))
-                {
-                    //format command without value
-                    cmd = string.Format("{0} {1} {2} {3}", instanceTag, attributeCode, Index1, Index2);
-                }
-                else
-                {
-                    cmd = string.Format("{0} {1} {2} {3} {4}", instanceTag, attributeCode, Index1, Index2, value);
-                }
+                cmd = String.IsNullOrEmpty(value) ? 
+                    string.Format("{0} {1} {2} {3}", localInstanceTag, attributeCode, Index1, Index2) : 
+                    string.Format("{0} {1} {2} {3} {4}", localInstanceTag, attributeCode, Index1, Index2, value);
             }
 
             else
             {
                 //Command does not require Index
-                cmd = String.IsNullOrEmpty(value) ? string.Format("{0} {1} {2}", instanceTag, command, attributeCode) : string.Format("{0} {1} {2} {3}", instanceTag, command, attributeCode, value);
+                cmd = String.IsNullOrEmpty(value) ? string.Format("{0} {1} {2}", localInstanceTag, command, attributeCode) : string.Format("{0} {1} {2} {3}", localInstanceTag, command, attributeCode, value);
             }
 
             if (command == "get")
             {
                 // This command will generate a return value response so it needs to be queued
                 if (!string.IsNullOrEmpty(cmd))
-                    Parent.EnqueueCommand(new TesiraDsp.QueuedCommand { Command = cmd, AttributeCode = attributeCode, ControlPoint = this });
+                    Parent.CommandQueue.EnqueueCommand(new QueuedCommand { Command = cmd, AttributeCode = attributeCode, ControlPoint = this });
             }
             else
             {
@@ -171,7 +152,7 @@ namespace Tesira_DSP_EPI
                     localInstanceTag = InstanceTag1;
                     break;
             }
-            if (attributeCode == "callState" || attributeCode == "sourceSelection")
+			if (attributeCode == "callState" || attributeCode == "sourceSelection" || attributeCode == "hookState")
             {
                 cmd = string.Format("\"{0}\" subscribe {1} {2} {3}", localInstanceTag, attributeCode, customName, responseRate);
             }
@@ -187,7 +168,7 @@ namespace Tesira_DSP_EPI
 
             //Parent.WatchDogList.Add(customName,cmd);
             //Parent.SendLine(cmd);
-			Parent.EnqueueCommand(new TesiraDsp.QueuedCommand { Command = cmd, AttributeCode = attributeCode, ControlPoint = this });
+            Parent.CommandQueue.EnqueueCommand(new QueuedCommand { Command = cmd, AttributeCode = attributeCode, ControlPoint = this });
         }
 
         public virtual void SendUnSubscriptionCommand(string customName, string attributeCode, int instanceTag)
@@ -227,7 +208,7 @@ namespace Tesira_DSP_EPI
 
             //Parent.WatchDogList.Add(customName,cmd);
             //Parent.SendLine(cmd);
-			Parent.EnqueueCommand(new TesiraDsp.QueuedCommand { Command = cmd, AttributeCode = attributeCode, ControlPoint = this });
+            Parent.CommandQueue.EnqueueCommand(new QueuedCommand { Command = cmd, AttributeCode = attributeCode, ControlPoint = this });
         }
         
         public virtual void DoPoll()

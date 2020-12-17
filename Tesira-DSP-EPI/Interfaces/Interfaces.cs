@@ -21,6 +21,8 @@ namespace Tesira_DSP_EPI {
 
         void Unsubscribe();
 
+        bool IsSubscribed { get;  }
+
         bool Enabled { get; }
 
         string InstanceTag1 { get; }
