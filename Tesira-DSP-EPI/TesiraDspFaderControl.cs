@@ -24,8 +24,10 @@ namespace Tesira_DSP_EPI
             {
                 _isMuted = value;
                 MuteFeedback.FireUpdate();
+				MuteIntFeedback.FireUpdate();
             }
         }
+
         private int _volumeLevel;
         protected int VolumeLevel
         {
@@ -51,6 +53,7 @@ namespace Tesira_DSP_EPI
         private string LevelControlPointTag { get { return InstanceTag1; } }
 
         public BoolFeedback MuteFeedback { get; private set; }
+		public IntFeedback MuteIntFeedback { get; private set; } 
         public BoolFeedback VisibleFeedback { get; private set; }
         public IntFeedback VolumeLevelFeedback { get; private set; }
         public IntFeedback TypeFeedback { get; private set; }
@@ -216,6 +219,17 @@ namespace Tesira_DSP_EPI
             }
 
             MuteFeedback = new BoolFeedback(Key + "-MuteFeedback", () => IsMuted);
+			MuteIntFeedback = new IntFeedback(Key + "MuteIntFeedback", () =>
+				{
+					if (IsMuted)
+					{
+						return 1;
+					}
+					else
+					{
+						return 0; 
+					}
+				});
             VisibleFeedback = new BoolFeedback(Key + "-VisibleFeedback", () => Enabled);
 
             VolumeLevelFeedback = new IntFeedback(Key + "-LevelFeedback", () => VolumeLevel);
