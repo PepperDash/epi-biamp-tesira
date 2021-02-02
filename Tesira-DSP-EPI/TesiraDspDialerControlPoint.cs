@@ -93,7 +93,7 @@ namespace Tesira_DSP_EPI
             }
 
 
-            else if ( attributeCode == "end" || attributeCode == "onHook" ||
+            else if ( attributeCode == "dial" || attributeCode == "end" || attributeCode == "onHook" ||
                 attributeCode == "offHook" || attributeCode == "answer")
             {
                 //requires index, but does not require command
