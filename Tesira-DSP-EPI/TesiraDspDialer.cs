@@ -836,7 +836,7 @@ namespace Tesira_DSP_EPI {
             SendFullCommand("get", "dndEnable", null, 1);
         }
 
-		public void EndAllCalls()
+		public override void EndAllCalls()
 		{
 			this.OnHook();
 

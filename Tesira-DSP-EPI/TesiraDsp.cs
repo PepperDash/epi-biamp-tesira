@@ -70,6 +70,8 @@ namespace Tesira_DSP_EPI
         private Dictionary<string, TesiraDspPresets> Presets { get; set; }
         private List<ISubscribedComponent> ControlPointList { get; set; }
 
+        private TesiraDspDeviceInfo DeviceInfo { get; set; }
+
 		private bool WatchDogSniffer { get; set; }
 
 		readonly DeviceConfig _dc;
@@ -340,7 +342,9 @@ namespace Tesira_DSP_EPI
             }
 
             //Keep me at the end of this method!
-            DeviceManager.AddDevice(new TesiraDspDeviceInfo(String.Format("{0}--DeviceInfo", Key), String.Format("{0}--DeviceInfo", Name, Presets), this, Presets));
+            DeviceInfo = new TesiraDspDeviceInfo(this, Presets);
+            if(DeviceInfo != null)
+                DeviceManager.AddDevice(DeviceInfo);
         }
 
 
@@ -731,6 +735,12 @@ namespace Tesira_DSP_EPI
 		    {
 		        SubscribeToComponent(control);
 		    }
+
+		    if (DeviceInfo != null)
+		    {
+		        DeviceInfo.Subscribe();
+		    }
+
 			foreach (var control in Meters)
 			{
 				SubscribeToComponent(control.Value);
