@@ -18,7 +18,19 @@ namespace Tesira_DSP_EPI {
         public FeedbackCollection<Feedback> Feedbacks; 
 
         private bool IsVoip { get; set; }
-        private string DialString { get; set; }
+		private string _DialString;
+		public string DialString
+		{
+			get
+			{
+				return _DialString;
+			}
+			set
+			{
+				_DialString = value;
+				DialStringFeedback.FireUpdate();
+			}
+		}
 
         private bool _offHookStatus;
 
@@ -169,22 +181,23 @@ namespace Tesira_DSP_EPI {
             protected set
             {
                 _CallStatusEnum = value;
-                if (CallStatusEnum == ECallStatus.DIAL_TONE ||
-                    CallStatusEnum == ECallStatus.DIALING ||
-                    CallStatusEnum == ECallStatus.ANSWERING ||
-                    CallStatusEnum == ECallStatus.ACTIVE ||
-                    CallStatusEnum == ECallStatus.ACTIVE_MUTED ||
-                    CallStatusEnum == ECallStatus.BUSY ||
-                    CallStatusEnum == ECallStatus.INVALID_NUMBER ||
-                    CallStatusEnum == ECallStatus.ON_HOLD)
-                {
-                    if (IsVoip)
-                        OffHookStatus = true;
-                }
-                else
-                    if (IsVoip)
-                        OffHookStatus = false;
-                if (value == ECallStatus.IDLE && IsVoip)
+				if (CallStatusEnum == ECallStatus.DIAL_TONE ||
+					CallStatusEnum == ECallStatus.DIALING ||
+					CallStatusEnum == ECallStatus.ANSWERING ||
+					CallStatusEnum == ECallStatus.ACTIVE ||
+					CallStatusEnum == ECallStatus.ACTIVE_MUTED ||
+					CallStatusEnum == ECallStatus.BUSY ||
+					CallStatusEnum == ECallStatus.INVALID_NUMBER ||
+					CallStatusEnum == ECallStatus.ON_HOLD)
+				{
+					OffHookStatus = true;
+					SendFullCommand("get", "cid", null, 2);
+				}
+				else
+				{
+					OffHookStatus = false;
+				}
+                if (value == ECallStatus.IDLE)
                 {
                     if (ClearOnHangup)
                     {
@@ -479,17 +492,18 @@ namespace Tesira_DSP_EPI {
             }
             else if (!IsVoip) {
 
-                DialerCustomName = string.Format("{0}~PotsDialer{1}", InstanceTag1, Index1);
-                LastDialedCustomName = string.Format("{0}~PotsLastNumber{1}", InstanceTag1, Index1);
-                HookStateCustomName = string.Format("{0}~HookState{1}", InstanceTag2, Index1);
+				PotsDialerCustomName = string.Format("{0}~PotsDialer{1}", this.InstanceTag1, this.Index1);
+				LastDialedCustomName = string.Format("{0}~PotsLastNumber{1}", this.InstanceTag1, this.Index1);
 
-                SendSubscriptionCommand(DialerCustomName, "callState", 250, 1);
+				HookStateCustomName = string.Format("{0}~HookState{1}", this.InstanceTag1, this.Index1);
 
-                SendSubscriptionCommand(HookStateCustomName, "hookState", 500, 2);
+				SendSubscriptionCommand(PotsDialerCustomName, "callState", 250, 1);
 
-                SendSubscriptionCommand(LastDialedCustomName, "lastNum", 500, 1);
+				SendSubscriptionCommand(HookStateCustomName, "hookState", 500, 2);
 
-                SendFullCommand("get", "autoAnswer", null, 1);
+				SendSubscriptionCommand(LastDialedCustomName, "lastNum", 500, 1);
+
+				SendFullCommand("get", "autoAnswer", null, 1);
             }
 
             
@@ -519,19 +533,16 @@ namespace Tesira_DSP_EPI {
             }
             else if (!IsVoip)
             {
-                PotsIsSubscribed = false;
-                HookStateIsSubscribed = false;
+				DialerCustomName = string.Format("{0}~PotsDialer{1}", this.InstanceTag1, this.Index1);
+				LastDialedCustomName = string.Format("{0}~PotsLastNumber{1}", this.InstanceTag1, this.Index1);
 
-                PotsDialerCustomName = string.Format("{0}~PotsDialer{1}", InstanceTag1, Index1);
-                LastDialedCustomName = string.Format("{0}~PotsLastNumber{1}", InstanceTag1, Index1);
+				HookStateCustomName = string.Format("{0}~HookState{1}", this.InstanceTag1, this.Index1);
 
-                HookStateCustomName = string.Format("{0}~HookState{1}", InstanceTag2, Index1);
+				SendUnSubscriptionCommand(DialerCustomName, "callState", 2);
 
-                SendUnSubscriptionCommand(DialerCustomName, "callState", 1);
+				SendUnSubscriptionCommand(HookStateCustomName, "hookState", 2);
 
-                SendUnSubscriptionCommand(HookStateCustomName, "hookState", 2);
-
-                SendUnSubscriptionCommand(LastDialedCustomName, "lastNum", 1);
+				SendUnSubscriptionCommand(LastDialedCustomName, "lastNum", 2);
 
             }
         }
@@ -566,7 +577,33 @@ namespace Tesira_DSP_EPI {
                         Debug.Console(2, this, "VoIPControlStatus Subscribed Response = {0}", match.Value);
                         var lineNumber = ushort.Parse(match2.Groups["line"].Value) + 1;
                         var callStatusInt = int.Parse(match2.Groups["state"].Value);
-                        CallStatusEnum = (ECallStatus)(callStatusInt);
+
+						if (IsVoip)
+						{
+							CallStatusEnum = (ECallStatus)(callStatusInt);
+						}
+						// Set call stauts for POTS 
+						else
+						{
+							switch (callStatusInt)
+							{
+								case 1: CallStatusEnum = ECallStatus.IDLE; break;
+								case 2: CallStatusEnum = ECallStatus.DIALING; break;
+								case 3: CallStatusEnum = ECallStatus.RINGBACK; break;
+								case 4: CallStatusEnum = ECallStatus.BUSY; break;
+								case 5: CallStatusEnum = ECallStatus.REJECT; break;
+								case 6: CallStatusEnum = ECallStatus.ACTIVE; break;
+								case 7: CallStatusEnum = ECallStatus.RINGING; break;
+								case 8: CallStatusEnum = ECallStatus.REJECT; break;
+								case 12: CallStatusEnum = ECallStatus.INIT; break;
+								case 13: CallStatusEnum = ECallStatus.FAULT; break;
+								case 14: CallStatusEnum = ECallStatus.SILENT; break;
+								//default: CallStatusEnum = eCallStatus.IDLE;
+
+
+							}
+						}
+                        
                         Debug.Console(2, this, "Callstate for Line {0} is {1}", lineNumber, int.Parse(match2.Groups["state"].Value));
                         Debug.Console(2, this, "Callstate Enum for Line {0} is {1}", lineNumber, (int)CallStatusEnum);
 
@@ -684,7 +721,7 @@ namespace Tesira_DSP_EPI {
         public void Dial() {
             if (IsVoip) {
                 if (OffHookStatus) {
-                    SendFullCommand(null, "end", null, 1);
+                    SendFullCommand(null, "end", null, 2);
 
                     if (!ClearOnHangup) return;
                     DialString = String.Empty;
@@ -693,7 +730,7 @@ namespace Tesira_DSP_EPI {
                 else if (!OffHookStatus) {
                     if (!String.IsNullOrEmpty(DialString))
                     {
-                        SendFullCommand(null, "dial", DialString, 1);
+                        SendFullCommand(null, "dial", DialString, 2);
                     }
                 }
             }
@@ -708,7 +745,7 @@ namespace Tesira_DSP_EPI {
                 }
                 else if (!OffHookStatus) {
                     if (!String.IsNullOrEmpty(DialString)) {
-                        SendFullCommand(null, "dial", DialString, 1);
+                        SendFullCommand(null, "dial", DialString, 2);
                     }
                     else
                         SendFullCommand("set", "hookState", "OFFHOOK", 2);
@@ -733,7 +770,7 @@ namespace Tesira_DSP_EPI {
                 SendFullCommand(null, "onHook", null, 1);
             }
             if (!IsVoip) {
-                SendFullCommand("set", "hookState", "ONHOOK", 1);
+                SendFullCommand("set", "hookState", "ONHOOK", 2);
             }
         }
 
@@ -745,7 +782,7 @@ namespace Tesira_DSP_EPI {
             if (IsVoip)
                 Answer();
             if (!IsVoip) {
-                SendFullCommand("set", "hookState", "OFFHOOK", 1);
+                SendFullCommand("set", "hookState", "OFFHOOK", 2);
             }
         }
 
@@ -799,6 +836,11 @@ namespace Tesira_DSP_EPI {
             SendFullCommand("get", "dndEnable", null, 1);
         }
 
+		public void EndAllCalls()
+		{
+			this.OnHook();
+
+		}
         /// <summary>
         /// Toggle Do Not Disturb for the component.
         /// </summary>
@@ -884,8 +926,12 @@ namespace Tesira_DSP_EPI {
                         DialStringFeedback.FireUpdate();
                         break;
                     case EKeypadKeys.Backspace:
-                        DialString = DialString.Remove(DialString.Length - 1, 1);
-                        DialStringFeedback.FireUpdate();
+						if (DialString.Length > 0)
+						{
+							DialString = DialString.Remove(DialString.Length - 1, 1);
+							this.DialStringFeedback.FireUpdate();
+
+						} 
                         break;
                 }
             }

@@ -141,11 +141,6 @@ namespace Tesira_DSP_EPI
             CrestronConsole.AddNewConsoleCommand(CommandQueue.EnqueueCommand, "send" + Key, "", ConsoleAccessLevelEnum.AccessOperator);
 			CrestronConsole.AddNewConsoleCommand(s => Communication.Connect(), "con" + Key, "", ConsoleAccessLevelEnum.AccessOperator);
 
-            _subscribeThread = new Thread(o => HandleAttributeSubscriptions(), null, Thread.eThreadStartOptions.CreateSuspended)
-            {
-                Priority = Thread.eThreadPriority.LowestPriority
-            };
-
             Feedbacks.Add(CommunicationMonitor.IsOnlineFeedback);
             Feedbacks.Add(CommandPassthruFeedback);
 
@@ -164,14 +159,20 @@ namespace Tesira_DSP_EPI
 
         private void StartSubsciptionThread()
         {
-            if (_subscribeThread.ThreadState == Thread.eThreadStates.ThreadRunning) return;
-
-            _subscribeThread = null;
-            _subscribeThread = new Thread(o => HandleAttributeSubscriptions(), null,
-                Thread.eThreadStartOptions.Running)
-            {
-                Priority = Thread.eThreadPriority.LowestPriority
-            };
+			if (_subscribeThread != null)
+			{
+				if(_subscribeThread.ThreadState == Thread.eThreadStates.ThreadRunning)
+				{
+					return;
+				}	
+			}
+			_subscribeThread = null;
+			_subscribeThread = new Thread(o => HandleAttributeSubscriptions(), null,
+				Thread.eThreadStartOptions.CreateSuspended)
+			{
+				Priority = Thread.eThreadPriority.LowestPriority
+			};
+			_subscribeThread.Start();
         }
 
         void CrestronEnvironment_ProgramStatusEventHandler(eProgramStatusEventType programEventType)
@@ -350,15 +351,7 @@ namespace Tesira_DSP_EPI
 			Debug.Console(2, this, "Communication monitor state: {0}", CommunicationMonitor.Status);
 			if (e.Status == MonitorStatus.IsOk)
 			{
-			    StartSubsciptionThread();
-        {
-            if (_subscribeThread.ThreadState == Thread.eThreadStates.ThreadRunning) return;
-            _subscribeThread = null;
-            _subscribeThread = new Thread(o => HandleAttributeSubscriptions(), null, Thread.eThreadStartOptions.Running)
-            {
-                Priority = Thread.eThreadPriority.LowestPriority
-            };
-        }
+			    //StartSubsciptionThread();
 			}
 			else if (e.Status != MonitorStatus.IsOk)
 			{
@@ -408,38 +401,46 @@ namespace Tesira_DSP_EPI
 
         private void CheckWatchDog()
         {
-            Debug.Console(2, this, "The Watchdog is on the hunt!");
-            if (!WatchDogSniffer)
-            {
-                Debug.Console(2, this, "The Watchdog is picking up a scent!");
-                var random = new Random(DateTime.Now.Millisecond + DateTime.Now.Second + DateTime.Now.Minute
-                    + DateTime.Now.Hour + DateTime.Now.Day + DateTime.Now.Month + DateTime.Now.Year);
+			try
+			{
 
-                var watchDogSubject = SelectWatchDogSubject(random);
+				Debug.Console(2, this, "The Watchdog is on the hunt!");
+				if (!WatchDogSniffer)
+				{
+					Debug.Console(2, this, "The Watchdog is picking up a scent!");
+					var random = new Random(DateTime.Now.Millisecond + DateTime.Now.Second + DateTime.Now.Minute
+						+ DateTime.Now.Hour + DateTime.Now.Day + DateTime.Now.Month + DateTime.Now.Year);
 
-                if (!watchDogSubject.IsSubscribed)
-                {
-                    Debug.Console(2, this, "The Watchdog was wrong - that's just an old shoe.  Nothing is subscribed.");
-                    return;
-                }
-                Debug.Console(2, this, "The Watchdog is sniffing \"{0}\".", watchDogSubject.Key);
+					var watchDogSubject = ControlPointList[random.Next(0, ControlPointList.Count)];
+					if (!watchDogSubject.IsSubscribed)
+					{
+						Debug.Console(2, this, "The Watchdog was wrong - that's just an old shoe.  Nothing is subscribed.");
+						return;
+					}
+					Debug.Console(2, this, "The Watchdog is sniffing \"{0}\".", watchDogSubject.Key);
 
-                WatchDogSniffer = true;
+					WatchDogSniffer = true;
 
-                watchDogSubject.Subscribe();
-            }
-            else
-            {
-                Debug.Console(2, this, "The WatchDog smells something foul....let's resubscribe!");
-                Resubscribe();
-            }
+					watchDogSubject.Subscribe();
+				}
+				else
+				{
+					Debug.Console(2, this, "The WatchDog smells something foul....let's resubscribe!");
+					Resubscribe();
+				}
+
+			}
+			catch (Exception ex)
+			{
+				Debug.ConsoleWithLog(2, this, "Watchdog Error: '{0}'", ex);
+			}
         }
 
         private ISubscribedComponent SelectWatchDogSubject(Random random)
         {
             var watchDogSubject = ControlPointList[random.Next(0, ControlPointList.Count)];
-            while(watchDogSubject.IsSubscribed == false)
-                watchDogSubject = ControlPointList[random.Next(0, ControlPointList.Count)];
+			if (watchDogSubject.IsSubscribed == false)
+				watchDogSubject = null;
             return watchDogSubject;
         }
 
@@ -496,10 +497,8 @@ namespace Tesira_DSP_EPI
                     // Indicates a new TTP session
                     // moved to CustomActivate() method
                     CommunicationMonitor.Start();
-                    if (_subscribeThread.ThreadState != Thread.eThreadStates.ThreadRunning)
-                    {
-                        StartSubsciptionThread();
-                    }
+					CrestronInvoke.BeginInvoke(o => StartSubsciptionThread());
+                  
                 }
 
                 //else if (args.Text.IndexOf(ResubsriptionString, StringComparison.Ordinal) > -1)
@@ -523,7 +522,7 @@ namespace Tesira_DSP_EPI
 
                     var customName = match.Groups[1].Value;
                     var value = match.Groups[2].Value;
-
+					Debug.Console(2, this, "Subscription Message: 'Name: {0} GRoup:{1}'",customName, value);
                     CommandQueue.AdvanceQueue(args.Text);
 
                     foreach (var controlPoint in Faders.Where(controlPoint => customName == controlPoint.Value.LevelCustomName || customName == controlPoint.Value.MuteCustomName))
@@ -531,11 +530,18 @@ namespace Tesira_DSP_EPI
                         controlPoint.Value.ParseSubscriptionMessage(customName, value);
                         return;
                     }
-                    foreach (var controlPoint in Dialers.Where(controlPoint => customName == controlPoint.Value.AutoAnswerCustomName || customName == controlPoint.Value.ControlStatusCustomName || customName == controlPoint.Value.DialerCustomName))
-                    {
-                        controlPoint.Value.ParseSubscriptionMessage(customName, value);
-                        return;
-                    }
+					foreach (KeyValuePair<string, TesiraDspDialer> controlPoint in Dialers)
+					{
+
+						if (customName == controlPoint.Value.AutoAnswerCustomName || customName == controlPoint.Value.ControlStatusCustomName ||
+							customName == controlPoint.Value.DialerCustomName || customName == controlPoint.Value.HookStateCustomName 
+							|| customName == controlPoint.Value.PotsDialerCustomName)
+						{
+							controlPoint.Value.ParseSubscriptionMessage(customName, value);
+							return;
+						}
+
+					}
                     foreach (var controlPoint in States.Where(controlPoint => customName == controlPoint.Value.StateCustomName))
                     {
                         controlPoint.Value.ParseSubscriptionMessage(customName, value);
@@ -565,32 +571,35 @@ namespace Tesira_DSP_EPI
 
                     CommandQueue.AdvanceQueue(args.Text);
                 }
-                
 
-                else if (args.Text.IndexOf("-ERR", StringComparison.Ordinal) == 0)
-                {
-                    // Error response
-                    Debug.Console(2, this, "Error From DSP: '{0}'", args.Text);
-                    switch (args.Text)
-                    {
-                        case "-ERR ALREADY_SUBSCRIBED":
-                            {
-                                if(WatchDogSniffer)
-                                    Debug.Console(2, this, "The Watchdog didn't find anything.  Good Boy!");
-                                WatchDogSniffer = false;
-                                CommandQueue.AdvanceQueue(args.Text);
-                                break;
-                            }
+				else if (args.Text.IndexOf("DEVICE recallPresetByName", StringComparison.Ordinal) == 0)
+				{
+					CommandQueue.AdvanceQueue(args.Text);
+				}
+				else if (args.Text.IndexOf("-ERR", StringComparison.Ordinal) == 0)
+				{
+					// Error response
+					Debug.Console(2, this, "Error From DSP: '{0}'", args.Text);
+					switch (args.Text)
+					{
+						case "-ERR ALREADY_SUBSCRIBED":
+							{
+								if (WatchDogSniffer)
+									Debug.Console(2, this, "The Watchdog didn't find anything.  Good Boy!");
+								WatchDogSniffer = false;
+								CommandQueue.AdvanceQueue(args.Text);
+								break;
+							}
 
 
-                        default:
-                            {
-                                WatchDogSniffer = false;
-                                CommandQueue.AdvanceQueue(args.Text);
-                                break;
-                            }
-                    }
-                }
+						default:
+							{
+								WatchDogSniffer = false;
+								CommandQueue.AdvanceQueue(args.Text);
+								break;
+							}
+					}
+				}
                     /*
                 else if (args.Text.IndexOf("SESSION", StringComparison.OrdinalIgnoreCase) > -1)
                 {
@@ -745,15 +754,12 @@ namespace Tesira_DSP_EPI
         {
             Debug.Console(0, this, "Issue Detected with device subscriptions - resubscribing to all controls");
             StopWatchDog();
-            if (_subscribeThread.ThreadState != Thread.eThreadStates.ThreadRunning)
-            {
-                StartSubsciptionThread();
-            }
-        }
+			StartSubsciptionThread();
+       }
 
         private object HandleAttributeSubscriptions()
         {
-            _subscriptionLock.Enter();
+            //_subscriptionLock.Enter();
             SendLine("SESSION set verbose false");
             try
             {
@@ -762,20 +768,19 @@ namespace Tesira_DSP_EPI
 
                 //Subscribe
                 SubscribeToComponents();
-
-                StartWatchDog();
+				StartWatchDog();
                 if (!_commandQueueInProgress)
                     CommandQueue.SendNextQueuedCommand();
             }
             catch (Exception ex)
             {
                 Debug.ConsoleWithLog(2, this, "Error Subscribing: '{0}'", ex);
-                _subscriptionLock.Leave();
+                //_subscriptionLock.Leave();
                 //_subscriptionLock.Leave();
             }
             finally
             {
-                _subscriptionLock.Leave();
+               // _subscriptionLock.Leave();
             }
             return null;
         }
@@ -926,7 +931,7 @@ namespace Tesira_DSP_EPI
             {
                 var p = preset;
                 var runPresetIndex = preset.Value.PresetIndex;
-                var presetIndex = runPresetIndex - 1;
+                var presetIndex = runPresetIndex;
                 trilist.StringInput[(uint)(presetJoinMap.PresetNameFeedback.JoinNumber + presetIndex)].StringValue = p.Value.Label;
                 trilist.SetSigTrueAction((uint)(presetJoinMap.PresetSelection.JoinNumber + presetIndex), () => RunPresetNumber((ushort)runPresetIndex));
             }
@@ -938,14 +943,19 @@ namespace Tesira_DSP_EPI
             {
                 var dialer = line.Value;
                 var bridgeIndex = dialer.BridgeIndex;
-                if (bridgeIndex == null) continue;
+				if (bridgeIndex == null)
+				{
+					Debug.Console(2, "BridgeIndex is missing for Dialer {0}", dialer.Key);
+					continue;
+				}
 
-                var dialerLineOffset = lineOffset += 1;
+				var dialerLineOffset = lineOffset;
                 Debug.Console(2, "AddingDialerBRidge {0} {1} Offset", dialer.Key, dialerLineOffset);
 
                 for (var i = 0; i < dialerJoinMap.KeyPadNumeric.JoinSpan; i++)
                 {
-                    trilist.SetSigTrueAction((dialerJoinMap.KeyPadNumeric.JoinNumber + (uint)i + dialerLineOffset), () => dialer.SendKeypad(TesiraDspDialer.EKeypadKeys.Num0));
+					var tempi = i;
+                    trilist.SetSigTrueAction((dialerJoinMap.KeyPadNumeric.JoinNumber + (uint)i + dialerLineOffset), () => dialer.SendKeypad((TesiraDspDialer.EKeypadKeys)(tempi)));
                 }
 
                 trilist.SetSigTrueAction((dialerJoinMap.KeyPadStar.JoinNumber + dialerLineOffset), () => dialer.SendKeypad(TesiraDspDialer.EKeypadKeys.Star));
@@ -961,7 +971,7 @@ namespace Tesira_DSP_EPI
                 trilist.SetSigTrueAction(dialerJoinMap.AutoAnswerOn.JoinNumber + dialerLineOffset, dialer.AutoAnswerOn);
                 trilist.SetSigTrueAction(dialerJoinMap.AutoAnswerOff.JoinNumber + dialerLineOffset, dialer.AutoAnswerOff);
                 trilist.SetSigTrueAction(dialerJoinMap.Answer.JoinNumber + dialerLineOffset, dialer.Answer);
-                trilist.SetSigTrueAction(dialerJoinMap.EndCall.JoinNumber + dialerLineOffset, dialer.EndAllCalls);
+                trilist.SetSigTrueAction(dialerJoinMap.EndCall.JoinNumber + dialerLineOffset, dialer.OnHook);
                 trilist.SetSigTrueAction(dialerJoinMap.OnHook.JoinNumber + dialerLineOffset, dialer.OnHook);
                 trilist.SetSigTrueAction(dialerJoinMap.OffHook.JoinNumber + dialerLineOffset, dialer.OffHook);
 
