@@ -487,7 +487,7 @@ namespace Tesira_DSP_EPI
             try
             {
 
-                Debug.Console(2, this, "RX: '{0}'", ShowHexResponse ? ComTextHelper.GetEscapedText(args.Text) : args.Text);
+                //Debug.Console(2, this, "RX: '{0}'", ShowHexResponse ? ComTextHelper.GetEscapedText(args.Text) : args.Text);
 
                 DeviceRx = args.Text;
 
