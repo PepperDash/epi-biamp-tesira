@@ -282,9 +282,9 @@ namespace Tesira_DSP_EPI
             if (HasLevel)
             {
                 LevelCustomName = string.Format("{0}~roomCombiner{1}", InstanceTag1, Index1);
-                SendFullCommand("get", "levelOutMin", null, 1);
+                SendFullCommand("get", "levelOutMin", null, Index1);
             }
-            SendFullCommand("get", "group", null, 1);
+            SendFullCommand("get", "group", null, Index1);
         }
 
         /// <summary>
@@ -296,7 +296,7 @@ namespace Tesira_DSP_EPI
 
             _levelIsSubscribed = false;
             LevelCustomName = string.Format("{0}~roomCombiner{1}", InstanceTag1, Index1);
-            SendUnSubscriptionCommand(LevelCustomName, "levelOut", 1);
+            SendUnSubscriptionCommand(LevelCustomName, "levelOut", Index1);
         }
 
         /// <summary>
@@ -385,7 +385,8 @@ namespace Tesira_DSP_EPI
         /// </summary>
         public void MuteOff()
         {
-            SendFullCommand("set", "muteOut", "false", 1);
+            SendFullCommand("set", "muteOut", "false", Index1);
+            GetMute();
         }
 
         /// <summary>
@@ -393,7 +394,8 @@ namespace Tesira_DSP_EPI
         /// </summary>
         public void MuteOn()
         {
-            SendFullCommand("set", "muteOut", "true", 1);
+            SendFullCommand("set", "muteOut", "true", Index1);
+            GetMute();
         }
 
         /// <summary>
@@ -410,7 +412,7 @@ namespace Tesira_DSP_EPI
 
             var volumeLevel = UseAbsoluteValue ? level : Scale(level, 0, 65535, MinLevel, MaxLevel);
 
-            SendFullCommand("set", "levelOut", string.Format("{0:0.000000}", volumeLevel), 1);
+            SendFullCommand("set", "levelOut", string.Format("{0:0.000000}", volumeLevel), Index1);
         }
 
         /// <summary>
@@ -420,7 +422,7 @@ namespace Tesira_DSP_EPI
         public void SetRoomGroup(ushort group)
         {
             Debug.Console(1, this, "group: {0}", group);
-            SendFullCommand("set", "group", Convert.ToString(group), 1);
+            SendFullCommand("set", "group", Convert.ToString(group), Index1);
         }
 
         /// <summary>
@@ -446,7 +448,7 @@ namespace Tesira_DSP_EPI
         /// </summary>
         public void GetVolume()
         {
-            SendFullCommand("get", "levelOut", String.Empty, 1);
+            SendFullCommand("get", "levelOut", String.Empty, Index1);
         }
 
         /// <summary>
@@ -454,7 +456,7 @@ namespace Tesira_DSP_EPI
         /// </summary>
         public void GetMute()
         {
-            SendFullCommand("get", "muteOut", String.Empty, 1);
+            SendFullCommand("get", "muteOut", String.Empty, Index1);
         }
 
         /// <summary>
@@ -462,7 +464,7 @@ namespace Tesira_DSP_EPI
         /// </summary>
         public void GetRoomGroup()
         {
-            SendFullCommand("get", "group", String.Empty, 1);
+            SendFullCommand("get", "group", String.Empty, Index1);
         }
 
         /// <summary>
@@ -470,7 +472,8 @@ namespace Tesira_DSP_EPI
         /// </summary>
         public void MuteToggle()
         {
-            SendFullCommand("toggle", "muteOut", String.Empty, 1);
+            SendFullCommand("toggle", "muteOut", String.Empty, Index1);
+            GetMute();
         }
 
         /// <summary>
@@ -485,12 +488,12 @@ namespace Tesira_DSP_EPI
                 if (_volDownPressTracker)
                 {
                     _volumeDownRepeatTimer.Reset(100);
-                    SendFullCommand("decrement", "levelOut", IncrementAmount, 1);
+                    SendFullCommand("decrement", "levelOut", IncrementAmount, Index1);
                 }
                 else if (!_volDownPressTracker)
                 {
                     _volumeDownRepeatDelayTimer.Reset(750);
-                    SendFullCommand("decrement", "levelOut", IncrementAmount, 1);
+                    SendFullCommand("decrement", "levelOut", IncrementAmount, Index1);
                 }
 
             }
@@ -515,12 +518,12 @@ namespace Tesira_DSP_EPI
                 if (_volUpPressTracker)
                 {
                     _volumeUpRepeatTimer.Reset(100);
-                    SendFullCommand("increment", "levelOut", IncrementAmount, 1);
+                    SendFullCommand("increment", "levelOut", IncrementAmount, Index1);
                 }
                 else if (!_volUpPressTracker)
                 {
                     _volumeUpRepeatDelayTimer.Reset(750);
-                    SendFullCommand("increment", "levelOut", IncrementAmount, 1);
+                    SendFullCommand("increment", "levelOut", IncrementAmount, Index1);
                     if (AutomaticUnmuteOnVolumeUp)
                     {
                         if (_outIsMuted)
