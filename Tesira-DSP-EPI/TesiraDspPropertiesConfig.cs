@@ -295,7 +295,7 @@ namespace Tesira_DSP_EPI {
         [JsonProperty("umuteOnVolChange")]
         public bool UnmuteOnVolChange { get; set; }
 
-        [JsonProperty("incerementAmount")]
+        [JsonProperty("incrementAmount")]
         public string IncrementAmount { get; set; }
 
         [JsonProperty("permissions")]
