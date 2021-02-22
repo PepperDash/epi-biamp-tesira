@@ -461,7 +461,7 @@ namespace Tesira_DSP_EPI
 			if (string.IsNullOrEmpty(s))
 				return;
 
-			Debug.Console(1, this, "TX: '{0}'", s);
+			//Debug.Console(1, this, "TX: '{0}'", s);
 			Communication.SendText(s + "\x0D");
 		}
 
@@ -474,7 +474,7 @@ namespace Tesira_DSP_EPI
 			if (string.IsNullOrEmpty(s))
 				return;
 
-			Debug.Console(1, this, "TX: '{0}'", s);
+			//Debug.Console(1, this, "TX: '{0}'", s);
 			Communication.SendText(s);
 		}
 
@@ -487,7 +487,7 @@ namespace Tesira_DSP_EPI
             try
             {
 
-                Debug.Console(2, this, "RX: '{0}'", ShowHexResponse ? ComTextHelper.GetEscapedText(args.Text) : args.Text);
+                //Debug.Console(2, this, "RX: '{0}'", ShowHexResponse ? ComTextHelper.GetEscapedText(args.Text) : args.Text);
 
                 DeviceRx = args.Text;
 
