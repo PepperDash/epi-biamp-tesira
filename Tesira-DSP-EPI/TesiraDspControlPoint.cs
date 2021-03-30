@@ -91,7 +91,7 @@ namespace Tesira_DSP_EPI
 				attributeCode == "maxLevel" || attributeCode == "label" || attributeCode == "rampInterval" ||
 				attributeCode == "rampStep" || attributeCode == "autoAnswer" || attributeCode == "dndEnable" ||
 				attributeCode == "dtmf" || attributeCode == "state" || attributeCode == "levelOut" ||
-				attributeCode == "maxLevelOut" || attributeCode == "minLevelOut" || attributeCode == "muteOut" ||
+				attributeCode == "levelOutMax" || attributeCode == "levelOutMin" || attributeCode == "muteOut" ||
 				attributeCode == "group" || attributeCode == "input" && command == "set")
 			{
 				//Command requires Index
