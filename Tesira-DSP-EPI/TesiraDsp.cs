@@ -534,21 +534,17 @@ namespace Tesira_DSP_EPI
                         controlPoint.Value.ParseSubscriptionMessage(customName, value);
                         return;
                     }
-
-                    foreach (var controlPoint in RoomCombiners.Where(controlPoint => customName == controlPoint.Value.LevelCustomName))
-                    {
-                        controlPoint.Value.ParseSubscriptionMessage(customName, value);
-                        return;
-                    }
-
-					foreach (var controlPoint in Dialers)
+					foreach (KeyValuePair<string, TesiraDspDialer> controlPoint in Dialers)
 					{
-					    if (customName != controlPoint.Value.AutoAnswerCustomName &&
-					        customName != controlPoint.Value.ControlStatusCustomName &&
-					        customName != controlPoint.Value.DialerCustomName && customName != controlPoint.Value.HookStateCustomName &&
-					        customName != controlPoint.Value.PotsDialerCustomName) continue;
-					    controlPoint.Value.ParseSubscriptionMessage(customName, value);
-					    return;
+
+						if (customName == controlPoint.Value.AutoAnswerCustomName || customName == controlPoint.Value.ControlStatusCustomName ||
+							customName == controlPoint.Value.DialerCustomName || customName == controlPoint.Value.HookStateCustomName 
+							|| customName == controlPoint.Value.PotsDialerCustomName)
+						{
+							controlPoint.Value.ParseSubscriptionMessage(customName, value);
+							return;
+						}
+
 					}
                     foreach (var controlPoint in States.Where(controlPoint => customName == controlPoint.Value.StateCustomName))
                     {

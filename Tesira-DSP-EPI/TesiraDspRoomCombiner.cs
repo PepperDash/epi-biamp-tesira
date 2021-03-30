@@ -81,11 +81,6 @@ namespace Tesira_DSP_EPI
         public IntFeedback VolumeLevelFeedback { get; private set; }
 
         /// <summary>
-        /// Integer Feedback for Type Feedback
-        /// </summary>
-        public IntFeedback TypeFeedback { get; private set; }
-
-        /// <summary>
         /// Integer Feedback for Control Type
         /// </summary>
         public IntFeedback ControlTypeFeedback { get; private set; }
@@ -100,7 +95,6 @@ namespace Tesira_DSP_EPI
         /// </summary>
         public IntFeedback RoomGroupFeedback { get; private set; }
 
-        private EPdtLevelTypes _type;
 
         private string IncrementAmount { get; set; }
         private bool UseAbsoluteValue { get; set; }
@@ -208,9 +202,6 @@ namespace Tesira_DSP_EPI
             Debug.Console(2, this, "Adding RoomCombiner '{0}'", Key);
 
             IsSubscribed = false;
-
-            _type = config.IsMic ? EPdtLevelTypes.Microphone : EPdtLevelTypes.Speaker;
-
       
             HasMute = config.HasMute;
             HasLevel = config.HasLevel;
@@ -243,8 +234,6 @@ namespace Tesira_DSP_EPI
 
             MuteFeedback = new BoolFeedback(Key + "-MuteFeedback", () => OutIsMuted);
             VisibleFeedback = new BoolFeedback(Key + "-VisibleFeedback", () => Enabled);
-            TypeFeedback = new IntFeedback(Key + "-TypeFeedback", () => (ushort)_type);
-
 
             RoomGroupFeedback = new IntFeedback(Key + "-RoomGroupFeedback", () => RoomGroup);
             VolumeLevelFeedback = new IntFeedback(Key + "-LevelFeedback", () => OutVolumeLevel);
@@ -362,14 +351,6 @@ namespace Tesira_DSP_EPI
                         Debug.Console(1, this, "MaxLevel is '{0}'", MaxLevel);
                         break;
                     }
-                    case "levelOut" :
-                    {
-                        var level = Double.Parse(value);
-
-                        OutVolumeLevel = UseAbsoluteValue ? (ushort)level : (ushort)Scale(level, MinLevel, MaxLevel, 0, 65535);
-
-                        break;
-                    }
                     case "muteOut" :
                     {
                         OutIsMuted = bool.Parse(value);
@@ -405,7 +386,6 @@ namespace Tesira_DSP_EPI
         public void MuteOff()
         {
             SendFullCommand("set", "muteOut", "false", 1);
-            GetMute();
         }
 
         /// <summary>
@@ -414,7 +394,6 @@ namespace Tesira_DSP_EPI
         public void MuteOn()
         {
             SendFullCommand("set", "muteOut", "true", 1);
-            GetMute();
         }
 
         /// <summary>
@@ -492,7 +471,6 @@ namespace Tesira_DSP_EPI
         public void MuteToggle()
         {
             SendFullCommand("toggle", "muteOut", String.Empty, 1);
-            GetMute();
         }
 
         /// <summary>
@@ -621,8 +599,7 @@ namespace Tesira_DSP_EPI
 
             NameFeedback.LinkInputSig(trilist.StringInput[joinMap.Label.JoinNumber]);
             VisibleFeedback.LinkInputSig(trilist.BooleanInput[joinMap.Visible.JoinNumber]);
-            TypeFeedback.LinkInputSig(trilist.UShortInput[joinMap.Type.JoinNumber]);
-            ControlTypeFeedback.LinkInputSig(trilist.UShortInput[joinMap.Status.JoinNumber]);
+            ControlTypeFeedback.LinkInputSig(trilist.UShortInput[joinMap.Type.JoinNumber]);
             PermissionsFeedback.LinkInputSig(trilist.UShortInput[joinMap.Permissions.JoinNumber]);
             RoomGroupFeedback.LinkInputSig(trilist.UShortInput[joinMap.Group.JoinNumber]);
 
