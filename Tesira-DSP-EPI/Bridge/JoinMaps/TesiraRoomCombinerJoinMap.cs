@@ -106,16 +106,6 @@ namespace Tesira_DSP_EPI.Bridge.JoinMaps
                     JoinType = eJoinType.Serial
                 });
 
-        [JoinName("Status")]
-        public JoinDataComplete Status =
-            new JoinDataComplete(new JoinData { JoinNumber = 2205, JoinSpan = 1 },
-            new JoinMetadata
-            {
-                Description = "Fader Control Data [Mic / Speaker]",
-                JoinCapabilities = eJoinCapabilities.ToSIMPL,
-                JoinType = eJoinType.Analog
-            });
-
         public TesiraRoomCombinerJoinMapAdvanced(uint joinStart)
             : base(joinStart, typeof (TesiraRoomCombinerJoinMapAdvanced))
         {
@@ -227,16 +217,6 @@ namespace Tesira_DSP_EPI.Bridge.JoinMaps
                     JoinCapabilities = eJoinCapabilities.ToSIMPL,
                     JoinType = eJoinType.Serial
                 });
-
-        [JoinName("Status")]
-        public JoinDataComplete Status =
-            new JoinDataComplete(new JoinData { JoinNumber = 5, JoinSpan = 1 },
-            new JoinMetadata
-            {
-                Description = "Fader Control Data [Mic / Speaker]",
-                JoinCapabilities = eJoinCapabilities.ToSIMPL,
-                JoinType = eJoinType.Analog
-            });
 
         public TesiraRoomCombinerJoinMapAdvancedStandalone(uint joinStart)
             : base(joinStart, typeof (TesiraRoomCombinerJoinMapAdvancedStandalone))
