@@ -32,7 +32,7 @@ namespace Tesira_DSP_EPI
         /// <summary>
         /// Communication Object for Device
         /// </summary>
-		public IBasicCommunication Communication { get; private set; }
+		public IBasicCommunicationWithStreamDebugging Communication { get; private set; }
         /// <summary>
         /// Communication Response Gather for Device
         /// </summary>
@@ -89,7 +89,7 @@ namespace Tesira_DSP_EPI
         /// <param name="name">Tesira DSP Device Friendly Name</param>
         /// <param name="comm">Device Communication Object</param>
         /// <param name="dc">Full device configuration object</param>
-		public TesiraDsp(string key, string name, IBasicCommunication comm, DeviceConfig dc)
+        public TesiraDsp(string key, string name, IBasicCommunication comm, DeviceConfig dc)
 			: base(key, name)
 		{
 			_dc = dc;
@@ -100,7 +100,16 @@ namespace Tesira_DSP_EPI
 
             CommandPassthruFeedback = new StringFeedback(() => DeviceRx);
 
-			Communication = comm;
+            Communication = comm as IBasicCommunicationWithStreamDebugging;
+
+            if (Debug.Level >= 1)
+            {
+                if (Communication != null)
+                {
+                    Communication.StreamDebugging.SetDebuggingWithDefaultTimeout(eStreamDebuggingSetting.Both);
+                }
+            }
+
 			var socket = comm as ISocketStatus;
 
 			if (socket != null)
@@ -169,11 +178,15 @@ namespace Tesira_DSP_EPI
 				}	
 			}
 			_subscribeThread = null;
-			_subscribeThread = new Thread(o => HandleAttributeSubscriptions(), null,
-				Thread.eThreadStartOptions.CreateSuspended)
-			{
+            _subscribeThread = new Thread(o => HandleAttributeSubscriptions(), null,
+                Thread.eThreadStartOptions.CreateSuspended);
+			/*{
 				Priority = Thread.eThreadPriority.LowestPriority
-			};
+			};*/
+            _subscribeThread.Priority = CrestronEnvironment.ProgramCompatibility.Equals(eCrestronSeries.Series4)
+                ? Thread.eThreadPriority.HighPriority
+                : Thread.eThreadPriority.LowestPriority;
+
 			_subscribeThread.Start();
         }
 
@@ -536,15 +549,12 @@ namespace Tesira_DSP_EPI
                     }
 					foreach (KeyValuePair<string, TesiraDspDialer> controlPoint in Dialers)
 					{
-
-						if (customName == controlPoint.Value.AutoAnswerCustomName || customName == controlPoint.Value.ControlStatusCustomName ||
-							customName == controlPoint.Value.DialerCustomName || customName == controlPoint.Value.HookStateCustomName 
-							|| customName == controlPoint.Value.PotsDialerCustomName)
-						{
-							controlPoint.Value.ParseSubscriptionMessage(customName, value);
-							return;
-						}
-
+					    if (customName != controlPoint.Value.AutoAnswerCustomName &&
+					        customName != controlPoint.Value.ControlStatusCustomName &&
+					        customName != controlPoint.Value.DialerCustomName && customName != controlPoint.Value.HookStateCustomName &&
+					        customName != controlPoint.Value.PotsDialerCustomName) continue;
+					    controlPoint.Value.ParseSubscriptionMessage(customName, value);
+					    return;
 					}
                     foreach (var controlPoint in States.Where(controlPoint => customName == controlPoint.Value.StateCustomName))
                     {
@@ -706,45 +716,53 @@ namespace Tesira_DSP_EPI
 
 		private void SubscribeToComponents()
 		{
-			foreach (var control in Dialers.Select(dialer => dialer.Value))
+			foreach (var control in Dialers)
 			{
-			    SubscribeToComponent(control);
+			    var dialer = control.Value;
+                SubscribeToComponent(dialer);
 			}
 
-			foreach (var control in Switchers.Select(switcher => switcher.Value))
+			foreach (var control in Switchers)
 			{
-                SubscribeToComponent(control);
+			    var switcher = control.Value;
+                SubscribeToComponent(switcher);
             }
 
-			foreach (var control in States.Select(state => state.Value))
+			foreach (var control in States)
 			{
-                SubscribeToComponent(control);
+			    var state = control.Value;
+                SubscribeToComponent(state);
             }
 
-            foreach (var control in Faders.Select(level => level.Value))
-			{
-                SubscribeToComponent(control);
+            foreach (var control in Faders)
+            {
+                var fader = control.Value;
+                SubscribeToComponent(fader);
             }
 
-			foreach (var control in RoomCombiners.Select(roomCombiner => roomCombiner.Value))
+			foreach (var control in RoomCombiners)
 			{
-                SubscribeToComponent(control);
+			    var roomCombiner = control.Value;
+                SubscribeToComponent(roomCombiner);
             }
 
-		    foreach (var control in CrosspointStates.Select(crosspointState => crosspointState.Value))
+		    foreach (var control in CrosspointStates)
 		    {
-		        SubscribeToComponent(control);
-		    }
-
-		    if (DeviceInfo != null)
-		    {
-		        DeviceInfo.Subscribe();
+		        var crosspointSate = control.Value;
+                SubscribeToComponent(crosspointSate);
 		    }
 
 			foreach (var control in Meters)
 			{
-				SubscribeToComponent(control.Value);
+			    var meter = control.Value;
+                SubscribeToComponent(meter);
 			}
+
+            if (DeviceInfo != null)
+            {
+                DeviceInfo.Subscribe();
+            }
+
 		}
 
         private void SubscribeToComponent(ISubscribedComponent data)
@@ -787,10 +805,6 @@ namespace Tesira_DSP_EPI
                 Debug.ConsoleWithLog(2, this, "Error Subscribing: '{0}'", ex);
                 //_subscriptionLock.Leave();
                 //_subscriptionLock.Leave();
-            }
-            finally
-            {
-               // _subscriptionLock.Leave();
             }
             return null;
         }

@@ -8,6 +8,7 @@ using Crestron.SimplSharpPro.DeviceSupport;
 using PepperDash.Essentials.Core.Bridges;
 using Tesira_DSP_EPI.Bridge.JoinMaps;
 using System.Collections.Generic;
+using Tesira_DSP_EPI.Extensions;
 
 namespace Tesira_DSP_EPI
 {
@@ -39,6 +40,8 @@ namespace Tesira_DSP_EPI
                 VolumeLevelFeedback.FireUpdate();
             }
         }
+
+        private int subcounter;
 
         private const string KeyFormatter = "{0}--{1}";
 
@@ -112,6 +115,15 @@ namespace Tesira_DSP_EPI
             {
                 _maxLevel = value;
                 //LevelSubscribed = true;
+                if (_maxLevel.CompareFullPrecision(_minLevel, this) && subcounter < 3)
+                {
+                    subcounter++;
+                    SendFullCommand("get", "minLevel", null, 1);
+                    return;
+                }
+                if(subcounter == 3)
+                    Debug.Console(0, this, Debug.ErrorLogLevel.Error, "Unable to determine MaxLevel and MinLevel span - this control is non functional");
+                subcounter = 0;
                 SendSubscriptionCommand(LevelCustomName, "level", 250, 1);
             }
         }
