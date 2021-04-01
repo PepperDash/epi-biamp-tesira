@@ -13,6 +13,8 @@ namespace Tesira_DSP_EPI
 
         private TesiraDsp Parent { get; set; }
 
+        //private CEvent DequeueEvent { get; set; }
+
         public bool CommandQueueInProgress { get; set; }
     
         /// <summary>
@@ -25,46 +27,57 @@ namespace Tesira_DSP_EPI
             LocalQueue = new CrestronQueue(queueSize);
             Parent = parent;
             CommandQueueInProgress = false;
+            //DequeueEvent = new CEvent(true, false);
         }
 
         /// <summary>
         /// Dequeue from TesiraQueue and process queue responses
         /// </summary>
-        /// <param name="cmd">Command String comparator for QueuedCommand</param>
+        /// <param name="response">Command String comparator for QueuedCommand</param>
         public void AdvanceQueue(string response)
         {
-            Debug.Console(0, Parent, "[AdvanceQueue] - Command Queue {0} in progress.", CommandQueueInProgress ? "is" : "is not");
-            Debug.Console(0, Parent, "[AdvanceQueue] - Incoming Response : \"{0}\".", response);
-
-
-            if (LocalQueue.IsEmpty)
+            try
             {
-                Debug.Console(0, Parent, "[AdvanceQueue] - Command Queue is empty.");
+                Debug.Console(0, Parent, "[AdvanceQueue] - Command Queue {0} in progress.", CommandQueueInProgress ? "is" : "is not");
+                Debug.Console(0, Parent, "[AdvanceQueue] - Incoming Response : \"{0}\".", response);
 
-                return;
+
+                if (LocalQueue.IsEmpty)
+                {
+                    Debug.Console(0, Parent, "[AdvanceQueue] - Command Queue is empty.");
+
+                    return;
+                }
+
+                if (LocalQueue.Peek() is QueuedCommand)
+                {
+                    //Expected response belongs to a child class
+                    var tempCommand = (QueuedCommand)LocalQueue.Dequeue();
+                    Debug.Console(0, Parent, "[AdvanceQueue:InsidePeek] - Command Dequeued. CommandQueue Size: {0} : Outgoing Command - {1}", LocalQueue.Count, tempCommand.Command);
+                    tempCommand.ControlPoint.ParseGetMessage(tempCommand.AttributeCode, response);
+                }
+                else
+                {
+                    LocalQueue.Dequeue();
+                }
+
+                Debug.Console(0, Parent, "[AdvanceQueue - Default] - Commmand queue {0}.", LocalQueue.IsEmpty ? "is empty" : "has entries");
+               // DequeueEvent.Set();
+                
+                if (LocalQueue.IsEmpty)
+                    CommandQueueInProgress = false;
+                else
+                {
+                    Debug.Console(0, Parent, "[AdvanceQueue] - Triggering 'SendNextQueuedCommand'");
+
+                    SendNextQueuedCommand();
+                }
+                
             }
-
-            if (LocalQueue.Peek() is QueuedCommand)
+            finally
             {
-                //Expected response belongs to a child class
-                var tempCommand = (QueuedCommand)LocalQueue.Dequeue();
-                Debug.Console(0, Parent, "[AdvanceQueue:InsidePeek] - Command Dequeued. CommandQueue Size: {0} : Outgoing Command - {1}", LocalQueue.Count, tempCommand.Command);
-                tempCommand.ControlPoint.ParseGetMessage(tempCommand.AttributeCode, response);
-            }
-            else
-            {
-                LocalQueue.Dequeue();
-            }
-
-            Debug.Console(0, Parent, "[AdvanceQueue - Default] - Commmand queue {0}.", LocalQueue.IsEmpty ? "is empty" : "has entries");
-
-            if (LocalQueue.IsEmpty)
-                CommandQueueInProgress = false;
-            else
-            {
-                Debug.Console(0, Parent, "[AdvanceQueue] - Triggering 'SendNextQueuedCommand'");
-
-                SendNextQueuedCommand();
+                Debug.Console(0, Parent, "[AdvanceQueue] - Reached Finally");
+                //DequeueEvent.Set();
             }
         }
 
@@ -104,6 +117,7 @@ namespace Tesira_DSP_EPI
         /// </summary>
         public void SendNextQueuedCommand()
         {
+           // DequeueEvent.Wait();
             Debug.Console(0, Parent, "[SendNextQueuedCommand] - Attempting to send a queued commend");
 
             if (LocalQueue.IsEmpty)

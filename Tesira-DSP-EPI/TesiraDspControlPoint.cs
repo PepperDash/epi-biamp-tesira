@@ -187,8 +187,8 @@ namespace Tesira_DSP_EPI
 
 			//Parent.WatchDogList.Add(customName,cmd);
 			//Parent.SendLine(cmd);
-		    //Parent.SendLine(cmd);
-            Parent.CommandQueue.EnqueueCommand(new QueuedCommand(cmd, attributeCode, this));
+		    Parent.SendLine(cmd);
+            //Parent.CommandQueue.EnqueueCommand(new QueuedCommand(cmd, attributeCode, this));
 
 		}
 
@@ -228,8 +228,8 @@ namespace Tesira_DSP_EPI
 			}
 
 			//Parent.WatchDogList.Add(customName,cmd);
-			//Parent.SendLine(cmd);
-            Parent.CommandQueue.EnqueueCommand(new QueuedCommand(cmd, attributeCode, this));
+			Parent.SendLine(cmd);
+            //Parent.CommandQueue.EnqueueCommand(new QueuedCommand(cmd, attributeCode, this));
         }
 
 		public virtual void DoPoll()

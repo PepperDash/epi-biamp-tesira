@@ -84,15 +84,36 @@ namespace Tesira_DSP_EPI
         /// </summary>
         public string MuteCustomName { get; protected set; }
 
+
+        private double _minLevel;
+
         /// <summary>
         /// Minimum fader level
         /// </summary>
-        private double MinLevel { get; set; }
+        private double MinLevel
+        {
+            get { return _minLevel; }
 
+            set
+            {
+                _minLevel = value;
+                SendFullCommand("get", "maxLevel", null, 1);
+
+            }
+        }
+
+
+        private double _maxLevel;
         /// <summary>
         /// Maximum fader level
         /// </summary>
-        private double MaxLevel { get; set; }
+        private double MaxLevel {
+            get { return _maxLevel; }
+            set
+            {
+                _maxLevel = value;
+                GetVolume();
+            } }
 
         /// <summary>
         /// Checks if a valid subscription string has been recieved for all subscriptions
@@ -258,8 +279,6 @@ namespace Tesira_DSP_EPI
                 {
                     // MUST use InstanceTag1 for levels, it is the first instance tag in the JSON config
                     LevelCustomName = string.Format("{0}~level{1}", InstanceTag1, Index1);
-                    SendFullCommand("get", "minLevel", null, 1);
-                    SendFullCommand("get", "maxLevel", null, 1);
                     SendSubscriptionCommand(LevelCustomName, "level", 250, 1);
                 }
             }
@@ -349,7 +368,7 @@ namespace Tesira_DSP_EPI
                     {
                         MinLevel = Double.Parse(value);
 
-                        Debug.Console(1, this, "MinLevel is '{0}'", MinLevel);
+                        Debug.Console(0, this, "MinLevel is '{0}'", MinLevel);
 
                         break;
                     }
@@ -357,13 +376,24 @@ namespace Tesira_DSP_EPI
                     {
                         MaxLevel = Double.Parse(value);
 
-                        Debug.Console(1, this, "MaxLevel is '{0}'", MaxLevel);
+                        Debug.Console(0, this, "MaxLevel is '{0}'", MaxLevel);
 
                         break;
                     }
+                    case "level":
+                    {
+                        var localValue = Double.Parse(value);
+
+                        VolumeLevel = UseAbsoluteValue ? (ushort)localValue : (ushort)Scale(localValue, MinLevel, MaxLevel, 0, 65535);
+
+                        Debug.Console(0, this, "VolumeLevel is '{0}'", VolumeLevel);
+
+                        break;
+
+                    }
                     default:
                     {
-                        Debug.Console(2, "Response does not match expected attribute codes: '{0}'", message);
+                        Debug.Console(0, "Response does not match expected attribute codes: '{0}'", message);
 
                         break;
                     }
@@ -429,7 +459,17 @@ namespace Tesira_DSP_EPI
         /// </summary>
         public void GetVolume()
         {
+            if (!HasLevel) return;
             SendFullCommand("get", "level", String.Empty, 1);
+        }
+
+        /// <summary>
+        /// Polls current min/max/volume of component - for post-subscription;
+        /// </summary>
+        public void GetInitialVolume()
+        {
+            if (!HasLevel) return;
+            SendFullCommand("get", "minLevel", null, 1);
         }
 
         /// <summary>
@@ -437,6 +477,7 @@ namespace Tesira_DSP_EPI
         /// </summary>
         public void GetMute()
         {
+            if (!HasMute) return;
             SendFullCommand("get", "mute", String.Empty, 2);
         }
 
@@ -445,6 +486,7 @@ namespace Tesira_DSP_EPI
         /// </summary>
         public void MuteToggle()
         {
+            if (!HasMute) return;
             SendFullCommand("toggle", "mute", String.Empty, 2);
         }
 
@@ -454,6 +496,7 @@ namespace Tesira_DSP_EPI
         /// <param name="press">Trigger map to bridge or UI component</param>
         public void VolumeDown(bool press)
         {
+            if (!HasLevel) return;
             Debug.Console(2, "VolumeDown Sent for {0}", LevelControlPointTag);
             if (press)
             {
@@ -481,6 +524,7 @@ namespace Tesira_DSP_EPI
         /// <param name="press">Trigger map to bridge or UI component</param>
         public void VolumeUp(bool press)
         {
+            if (!HasLevel) return;
             Debug.Console(2, "VolumeUp Sent for {0}", LevelControlPointTag);
 
             if (press)
@@ -526,7 +570,8 @@ namespace Tesira_DSP_EPI
 
             if (inputRange <= 0)
             {
-                throw new ArithmeticException(string.Format("Invalid Input Range '{0}' for Scaling.  Min '{1}' Max '{2}'.", inputRange, inMin, inMax));
+                Debug.Console(0, Debug.ErrorLogLevel.Notice, "Invalid Input Range '{0}' for Scaling.  Min '{1}' Max '{2}'.", inputRange, inMin, inMax);
+                return input;
             }
 
             var outputRange = outMax - outMin;

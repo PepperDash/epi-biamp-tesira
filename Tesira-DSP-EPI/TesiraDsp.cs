@@ -102,6 +102,8 @@ namespace Tesira_DSP_EPI
 
             Communication = comm;
 
+
+
 			var socket = comm as ISocketStatus;
 
 			if (socket != null)
@@ -173,13 +175,17 @@ namespace Tesira_DSP_EPI
 			}
 			_subscribeThread = null;
             _subscribeThread = new Thread(o => HandleAttributeSubscriptions(), null,
-                Thread.eThreadStartOptions.CreateSuspended);
+                Thread.eThreadStartOptions.CreateSuspended)
+            {
+                Priority = CrestronEnvironment.ProgramCompatibility.Equals(eCrestronSeries.Series4)
+                    ? Thread.eThreadPriority.HighPriority
+                    : Thread.eThreadPriority.LowestPriority
+            };
 			/*{
 				Priority = Thread.eThreadPriority.LowestPriority
 			};*/
-            _subscribeThread.Priority = Thread.eThreadPriority.LowestPriority;
 
-			_subscribeThread.Start();
+            _subscribeThread.Start();
         }
 
         void CrestronEnvironment_ProgramStatusEventHandler(eProgramStatusEventType programEventType)
@@ -201,6 +207,7 @@ namespace Tesira_DSP_EPI
             ResubsriptionString = !String.IsNullOrEmpty(props.ResubscribeString)
                 ? props.ResubscribeString
                 : "hullabaloo";
+
 
             Debug.Console(2, this, "Props Exists");
             Debug.Console(2, this, "Here's the props string\n {0}", _dc.Properties.ToString());
@@ -347,9 +354,10 @@ namespace Tesira_DSP_EPI
             }
 
             //Keep me at the end of this method!
-            DeviceInfo = new TesiraDspDeviceInfo(this, Presets);
+            /*DeviceInfo = new TesiraDspDeviceInfo(this, Presets);
             if(DeviceInfo != null)
                 DeviceManager.AddDevice(DeviceInfo);
+            */
         }
 
 
@@ -466,7 +474,7 @@ namespace Tesira_DSP_EPI
 			if (string.IsNullOrEmpty(s))
 				return;
 
-			Debug.Console(1, this, "TX: '{0}'", s);
+			Debug.Console(0, this, "TX: '{0}'", s);
             
 			Communication.SendText(s + "\x0D");
 		}
@@ -494,7 +502,7 @@ namespace Tesira_DSP_EPI
             try
             {
 
-                Debug.Console(2, this, "RX: '{0}'", ShowHexResponse ? ComTextHelper.GetEscapedText(args.Text) : args.Text);
+                Debug.Console(0, this, "RX: '{0}'", ShowHexResponse ? ComTextHelper.GetEscapedText(args.Text) : args.Text);
 
                 DeviceRx = args.Text;
 
@@ -515,6 +523,7 @@ namespace Tesira_DSP_EPI
                 //else if (args.Text.IndexOf(ResubsriptionString, StringComparison.Ordinal) > -1)
                 else if (args.Text.Equals(ResubsriptionString, StringComparison.OrdinalIgnoreCase))
                 {
+                    if(!String.IsNullOrEmpty(ResubsriptionString))
                     CommandQueue.Clear();
                     Resubscribe();
                 }
@@ -595,7 +604,7 @@ namespace Tesira_DSP_EPI
                             Debug.Console(2, this, "The Watchdog didn't find anything.  Good Boy!");
 
                         WatchDogSniffer = false;
-                        CommandQueue.AdvanceQueue(args.Text);
+                        //CommandQueue.AdvanceQueue(args.Text);
                     }
 
                     else
@@ -665,6 +674,7 @@ namespace Tesira_DSP_EPI
 
         #region Unsubscribe
 
+
         private void UnsubscribeFromComponents()
 		{
 			foreach (var control in Dialers.Select(dialer => dialer.Value))
@@ -706,6 +716,7 @@ namespace Tesira_DSP_EPI
 
 		private void SubscribeToComponents()
 		{
+            Debug.Console(0, "SUBSRIBING!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
 		    //CommandQueue.CommandQueueInProgress = true;
 			foreach (var control in Dialers)
 			{
@@ -748,11 +759,25 @@ namespace Tesira_DSP_EPI
 			    var meter = control.Value;
                 SubscribeToComponent(meter);
 			}
-
+            /*
             if (DeviceInfo != null)
             {
                 DeviceInfo.Subscribe();
             }
+            */
+		    foreach (var control in Faders)
+		    {
+		        var fader = control.Value;
+                Debug.Console(0, fader, "Attempting to get min/max/level");
+                fader.GetInitialVolume();
+		    }
+
+
+		    foreach (var fader in ControlPointList.Select(component => component as TesiraDspFaderControl))
+		    {
+		        if (fader == null) continue;
+		        fader.GetInitialVolume();
+		    }
 		    //CommandQueue.CommandQueueInProgress = false;
             //CommandQueue.SendNextQueuedCommand();
 
@@ -784,8 +809,8 @@ namespace Tesira_DSP_EPI
             SendLine("SESSION set verbose false");
             try
             {
-                //if (_isSerialComm)
-                UnsubscribeFromComponents();
+                if (_isSerialComm)
+                    UnsubscribeFromComponents();
 
                 //Subscribe
                 SubscribeToComponents();

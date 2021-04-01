@@ -1,4 +1,6 @@
-# Tesira DSP Essentials Plugin (c) 2020
+# Tesira DSP Essentials Plugin (c) 2021
+
+>**NOTE : INVALID TAGS BREAK THIS RELEASE**
 
 ## License
 
