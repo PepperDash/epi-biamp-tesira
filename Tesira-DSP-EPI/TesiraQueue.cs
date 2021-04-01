@@ -38,13 +38,13 @@ namespace Tesira_DSP_EPI
         {
             try
             {
-                Debug.Console(0, Parent, "[AdvanceQueue] - Command Queue {0} in progress.", CommandQueueInProgress ? "is" : "is not");
-                Debug.Console(0, Parent, "[AdvanceQueue] - Incoming Response : \"{0}\".", response);
+                Debug.Console(2, Parent, "[AdvanceQueue] - Command Queue {0} in progress.", CommandQueueInProgress ? "is" : "is not");
+                Debug.Console(2, Parent, "[AdvanceQueue] - Incoming Response : \"{0}\".", response);
 
 
                 if (LocalQueue.IsEmpty)
                 {
-                    Debug.Console(0, Parent, "[AdvanceQueue] - Command Queue is empty.");
+                    Debug.Console(2, Parent, "[AdvanceQueue] - Command Queue is empty.");
 
                     return;
                 }
@@ -53,7 +53,7 @@ namespace Tesira_DSP_EPI
                 {
                     //Expected response belongs to a child class
                     var tempCommand = (QueuedCommand)LocalQueue.Dequeue();
-                    Debug.Console(0, Parent, "[AdvanceQueue:InsidePeek] - Command Dequeued. CommandQueue Size: {0} : Outgoing Command - {1}", LocalQueue.Count, tempCommand.Command);
+                    Debug.Console(2, Parent, "[AdvanceQueue:InsidePeek] - Command Dequeued. CommandQueue Size: {0} : Outgoing Command - {1}", LocalQueue.Count, tempCommand.Command);
                     tempCommand.ControlPoint.ParseGetMessage(tempCommand.AttributeCode, response);
                 }
                 else
@@ -61,14 +61,14 @@ namespace Tesira_DSP_EPI
                     LocalQueue.Dequeue();
                 }
 
-                Debug.Console(0, Parent, "[AdvanceQueue - Default] - Commmand queue {0}.", LocalQueue.IsEmpty ? "is empty" : "has entries");
+                Debug.Console(2, Parent, "[AdvanceQueue - Default] - Commmand queue {0}.", LocalQueue.IsEmpty ? "is empty" : "has entries");
                // DequeueEvent.Set();
                 
                 if (LocalQueue.IsEmpty)
                     CommandQueueInProgress = false;
                 else
                 {
-                    Debug.Console(0, Parent, "[AdvanceQueue] - Triggering 'SendNextQueuedCommand'");
+                    Debug.Console(2, Parent, "[AdvanceQueue] - Triggering 'SendNextQueuedCommand'");
 
                     SendNextQueuedCommand();
                 }
@@ -76,7 +76,7 @@ namespace Tesira_DSP_EPI
             }
             finally
             {
-                Debug.Console(0, Parent, "[AdvanceQueue] - Reached Finally");
+                Debug.Console(2, Parent, "[AdvanceQueue] - Reached Finally");
                 //DequeueEvent.Set();
             }
         }
@@ -87,12 +87,12 @@ namespace Tesira_DSP_EPI
         /// <param name="commandToEnqueue">Command object from child module</param>
         public void EnqueueCommand(QueuedCommand commandToEnqueue)
         {
-            Debug.Console(0, Parent, "[EqueueCommand(QueuedCommand)] - Command Queue {0} in progress.", CommandQueueInProgress ? "is" : "is not");
+            Debug.Console(2, Parent, "[EqueueCommand(QueuedCommand)] - Command Queue {0} in progress.", CommandQueueInProgress ? "is" : "is not");
 
             LocalQueue.Enqueue(commandToEnqueue);
-            Debug.Console(0, Parent, "[EqueueCommand(QueuedCommand)] - Command Enqueued '{0}'.  CommandQueue has '{1}' Elements.", commandToEnqueue.Command, LocalQueue.Count);
+            Debug.Console(2, Parent, "[EqueueCommand(QueuedCommand)] - Command Enqueued '{0}'.  CommandQueue has '{1}' Elements.", commandToEnqueue.Command, LocalQueue.Count);
             if (CommandQueueInProgress) return;
-            Debug.Console(0, Parent, "[EnqueueCommand(QueuedCommand)] - Triggering 'SendNextQueuedCommand'");
+            Debug.Console(2, Parent, "[EnqueueCommand(QueuedCommand)] - Triggering 'SendNextQueuedCommand'");
 
             SendNextQueuedCommand();
         }
@@ -103,11 +103,11 @@ namespace Tesira_DSP_EPI
         /// <param name="command">String to enqueue</param>
         public void EnqueueCommand(string command)
         {
-            Debug.Console(0, Parent, "[EqueueCommand(String)] - Command Queue {0} in progress.", CommandQueueInProgress ? "is" : "is not");
+            Debug.Console(2, Parent, "[EqueueCommand(String)] - Command Queue {0} in progress.", CommandQueueInProgress ? "is" : "is not");
 
             LocalQueue.Enqueue(command);
-            Debug.Console(0, Parent, "[EqueueCommand(String)] - Command Enqueued '{0}'.  CommandQueue has '{1}' Elements.", command, LocalQueue.Count);
-            Debug.Console(0, Parent, "[EnqueueCommand(String)] - Triggering 'SendNextQueuedCommand'");
+            Debug.Console(2, Parent, "[EqueueCommand(String)] - Command Enqueued '{0}'.  CommandQueue has '{1}' Elements.", command, LocalQueue.Count);
+            Debug.Console(2, Parent, "[EnqueueCommand(String)] - Triggering 'SendNextQueuedCommand'");
 
             SendNextQueuedCommand();
         }
@@ -118,18 +118,18 @@ namespace Tesira_DSP_EPI
         public void SendNextQueuedCommand()
         {
            // DequeueEvent.Wait();
-            Debug.Console(0, Parent, "[SendNextQueuedCommand] - Attempting to send a queued commend");
+            Debug.Console(2, Parent, "[SendNextQueuedCommand] - Attempting to send a queued commend");
 
             if (LocalQueue.IsEmpty)
             {
                 CommandQueueInProgress = false;
                 return;
             }
-            Debug.Console(0, Parent, "[SendNextQueuedCommand] - Command Queue {0} in progress.", CommandQueueInProgress ? "is" : "is not");
+            Debug.Console(2, Parent, "[SendNextQueuedCommand] - Command Queue {0} in progress.", CommandQueueInProgress ? "is" : "is not");
 
             if (!Parent.Communication.IsConnected)
             {
-                Debug.Console(0, Parent, "[SendNextQueuedCommand] - Unable to send queued command - Tesira Disconnected");
+                Debug.Console(2, Parent, "[SendNextQueuedCommand] - Unable to send queued command - Tesira Disconnected");
                 return;
             }
             CommandQueueInProgress = true;
@@ -137,14 +137,14 @@ namespace Tesira_DSP_EPI
             if (LocalQueue.Peek() is QueuedCommand)
             {
                 var nextCommand = (QueuedCommand)LocalQueue.Peek();
-                Debug.Console(0, Parent, "[SendNextQueuedCommand(QueuedCommand)] - Sending Line - {0}", nextCommand.Command);
+                Debug.Console(2, Parent, "[SendNextQueuedCommand(QueuedCommand)] - Sending Line - {0}", nextCommand.Command);
                 Parent.SendLine(nextCommand.Command);
             }
 
             else
             {
                 var nextCommand = (string)LocalQueue.Peek();
-                Debug.Console(0, Parent, "[SendNextQueuedCommand(String)] - Sending Line - {0}", nextCommand);
+                Debug.Console(2, Parent, "[SendNextQueuedCommand(String)] - Sending Line - {0}", nextCommand);
                 Parent.SendLine(nextCommand);
             }
         }

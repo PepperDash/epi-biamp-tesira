@@ -94,7 +94,6 @@ namespace Tesira_DSP_EPI
 		{
 			_dc = dc;
 
-			Debug.Console(0, this, "Made it to device constructor");
 
             CommandQueue = new TesiraQueue(2000, this);
 
@@ -223,15 +222,15 @@ namespace Tesira_DSP_EPI
 
             if (props.FaderControlBlocks != null)
             {
-                Debug.Console(0, this, "faderControlBlocks is not null - There are {0} of them", props.FaderControlBlocks.Count());
+                Debug.Console(2, this, "faderControlBlocks is not null - There are {0} of them", props.FaderControlBlocks.Count());
                 foreach (var block in props.FaderControlBlocks)
                 {
                     var key = block.Key;
-                    Debug.Console(0, this, "faderControlBlock Key - {0}", key);
+                    Debug.Console(2, this, "faderControlBlock Key - {0}", key);
                     var value = block.Value;
 
                     Faders.Add(key, new TesiraDspFaderControl(key, value, this));
-                    Debug.Console(0, this, "Added faderControlPoint {0} levelTag: {1} muteTag: {2}", key, value.LevelInstanceTag, value.MuteInstanceTag);
+                    Debug.Console(2, this, "Added faderControlPoint {0} levelTag: {1} muteTag: {2}", key, value.LevelInstanceTag, value.MuteInstanceTag);
                     if (block.Value.Enabled)
                     {
                         //Add ControlPoint to the list for the watchdog
@@ -421,20 +420,20 @@ namespace Tesira_DSP_EPI
 			try
 			{
 
-				Debug.Console(2, this, "The Watchdog is on the hunt!");
+				Debug.Console(1, this, "The Watchdog is on the hunt!");
 				if (!WatchDogSniffer)
 				{
-					Debug.Console(2, this, "The Watchdog is picking up a scent!");
+					Debug.Console(1, this, "The Watchdog is picking up a scent!");
 					var random = new Random(DateTime.Now.Millisecond + DateTime.Now.Second + DateTime.Now.Minute
 						+ DateTime.Now.Hour + DateTime.Now.Day + DateTime.Now.Month + DateTime.Now.Year);
 
 					var watchDogSubject = ControlPointList[random.Next(0, ControlPointList.Count)];
 					if (!watchDogSubject.IsSubscribed)
 					{
-						Debug.Console(2, this, "The Watchdog was wrong - that's just an old shoe.  Nothing is subscribed.");
+						Debug.Console(1, this, "The Watchdog was wrong - that's just an old shoe.  Nothing is subscribed.");
 						return;
 					}
-					Debug.Console(2, this, "The Watchdog is sniffing \"{0}\".", watchDogSubject.Key);
+					Debug.Console(1, this, "The Watchdog is sniffing \"{0}\".", watchDogSubject.Key);
 
 					WatchDogSniffer = true;
 
@@ -442,14 +441,14 @@ namespace Tesira_DSP_EPI
 				}
 				else
 				{
-					Debug.Console(2, this, "The WatchDog smells something foul....let's resubscribe!");
+					Debug.Console(1, this, "The WatchDog smells something foul....let's resubscribe!");
 					Resubscribe();
 				}
 
 			}
 			catch (Exception ex)
 			{
-				Debug.ConsoleWithLog(2, this, "Watchdog Error: '{0}'", ex);
+				Debug.ConsoleWithLog(1, this, "Watchdog Error: '{0}'", ex);
 			}
         }
 
@@ -474,7 +473,7 @@ namespace Tesira_DSP_EPI
 			if (string.IsNullOrEmpty(s))
 				return;
 
-			Debug.Console(0, this, "TX: '{0}'", s);
+			Debug.Console(1, this, "TX: '{0}'", s);
             
 			Communication.SendText(s + "\x0D");
 		}
@@ -502,7 +501,7 @@ namespace Tesira_DSP_EPI
             try
             {
 
-                Debug.Console(0, this, "RX: '{0}'", ShowHexResponse ? ComTextHelper.GetEscapedText(args.Text) : args.Text);
+                Debug.Console(1, this, "RX: '{0}'", ShowHexResponse ? ComTextHelper.GetEscapedText(args.Text) : args.Text);
 
                 DeviceRx = args.Text;
 
@@ -542,7 +541,7 @@ namespace Tesira_DSP_EPI
 
                     var customName = match.Groups[1].Value;
                     var value = match.Groups[2].Value;
-					Debug.Console(0, this, "Subscription Message: 'Name: {0} Group:{1}'",customName, value);
+					Debug.Console(2, this, "Subscription Message: 'Name: {0} Group:{1}'",customName, value);
                     //CommandQueue.AdvanceQueue(args.Text);
 
                     foreach (var controlPoint in Faders.Where(controlPoint => customName == controlPoint.Value.LevelCustomName || customName == controlPoint.Value.MuteCustomName))
@@ -596,12 +595,12 @@ namespace Tesira_DSP_EPI
 				else if (args.Text.IndexOf("-ERR", StringComparison.Ordinal) >= 0)
 				{
 					// Error response
-					Debug.Console(0, this, "Error From DSP: '{0}'", args.Text);
+					Debug.Console(1, this, "Error From DSP: '{0}'", args.Text);
 
                     if (args.Text.IndexOf("ALREADY_SUBSCRIBED", StringComparison.Ordinal) >= 0)
                     {
                         if (WatchDogSniffer)
-                            Debug.Console(2, this, "The Watchdog didn't find anything.  Good Boy!");
+                            Debug.Console(1, this, "The Watchdog didn't find anything.  Good Boy!");
 
                         WatchDogSniffer = false;
                         //CommandQueue.AdvanceQueue(args.Text);
@@ -623,7 +622,7 @@ namespace Tesira_DSP_EPI
             catch (Exception e)
             {
                 if(args.Text.Length > 0)
-                    Debug.Console(0, this, "Error parsing response: '{0}'\n{1}", args.Text, e);
+                    Debug.Console(1, this, "Error parsing response: '{0}'\n{1}", args.Text, e);
             }
 
         }
@@ -716,7 +715,6 @@ namespace Tesira_DSP_EPI
 
 		private void SubscribeToComponents()
 		{
-            Debug.Console(0, "SUBSRIBING!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
 		    //CommandQueue.CommandQueueInProgress = true;
 			foreach (var control in Dialers)
 			{
@@ -768,7 +766,7 @@ namespace Tesira_DSP_EPI
 		    foreach (var control in Faders)
 		    {
 		        var fader = control.Value;
-                Debug.Console(0, fader, "Attempting to get min/max/level");
+                Debug.Console(2, fader, "Attempting to get min/max/level");
                 fader.GetInitialVolume();
 		    }
 
@@ -820,7 +818,7 @@ namespace Tesira_DSP_EPI
             }
             catch (Exception ex)
             {
-                Debug.ConsoleWithLog(2, this, "Error Subscribing: '{0}'", ex);
+                Debug.ConsoleWithLog(1, this, "Error Subscribing: '{0}'", ex);
                 //_subscriptionLock.Leave();
                 //_subscriptionLock.Leave();
             }
