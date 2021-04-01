@@ -32,7 +32,7 @@ namespace Tesira_DSP_EPI
         /// <summary>
         /// Communication Object for Device
         /// </summary>
-		public IBasicCommunicationWithStreamDebugging Communication { get; private set; }
+		public IBasicCommunication Communication { get; private set; }
         /// <summary>
         /// Communication Response Gather for Device
         /// </summary>
@@ -96,19 +96,11 @@ namespace Tesira_DSP_EPI
 
 			Debug.Console(0, this, "Made it to device constructor");
 
-            CommandQueue = new TesiraQueue(100, this);
+            CommandQueue = new TesiraQueue(2000, this);
 
             CommandPassthruFeedback = new StringFeedback(() => DeviceRx);
 
-            Communication = comm as IBasicCommunicationWithStreamDebugging;
-
-            if (Debug.Level >= 1)
-            {
-                if (Communication != null)
-                {
-                    Communication.StreamDebugging.SetDebuggingWithDefaultTimeout(eStreamDebuggingSetting.Both);
-                }
-            }
+            Communication = comm;
 
 			var socket = comm as ISocketStatus;
 
@@ -123,6 +115,8 @@ namespace Tesira_DSP_EPI
 				// This instance uses RS-232 control
 				_isSerialComm = true;
 			}
+
+
 			PortGather = new CommunicationGather(Communication, "\x0D\x0A");
 			PortGather.LineReceived += Port_LineReceived;
 
@@ -183,9 +177,7 @@ namespace Tesira_DSP_EPI
 			/*{
 				Priority = Thread.eThreadPriority.LowestPriority
 			};*/
-            _subscribeThread.Priority = CrestronEnvironment.ProgramCompatibility.Equals(eCrestronSeries.Series4)
-                ? Thread.eThreadPriority.HighPriority
-                : Thread.eThreadPriority.LowestPriority;
+            _subscribeThread.Priority = Thread.eThreadPriority.LowestPriority;
 
 			_subscribeThread.Start();
         }
@@ -224,15 +216,15 @@ namespace Tesira_DSP_EPI
 
             if (props.FaderControlBlocks != null)
             {
-                Debug.Console(2, this, "levelControlBlocks is not null - There are {0} of them", props.FaderControlBlocks.Count());
+                Debug.Console(0, this, "faderControlBlocks is not null - There are {0} of them", props.FaderControlBlocks.Count());
                 foreach (var block in props.FaderControlBlocks)
                 {
                     var key = block.Key;
-                    Debug.Console(2, this, "LevelControlBlock Key - {0}", key);
+                    Debug.Console(0, this, "faderControlBlock Key - {0}", key);
                     var value = block.Value;
 
                     Faders.Add(key, new TesiraDspFaderControl(key, value, this));
-                    Debug.Console(2, this, "Added LevelControlPoint {0} LevelTag: {1} MuteTag: {2}", key, value.LevelInstanceTag, value.MuteInstanceTag);
+                    Debug.Console(0, this, "Added faderControlPoint {0} levelTag: {1} muteTag: {2}", key, value.LevelInstanceTag, value.MuteInstanceTag);
                     if (block.Value.Enabled)
                     {
                         //Add ControlPoint to the list for the watchdog
@@ -474,7 +466,8 @@ namespace Tesira_DSP_EPI
 			if (string.IsNullOrEmpty(s))
 				return;
 
-			//Debug.Console(1, this, "TX: '{0}'", s);
+			Debug.Console(1, this, "TX: '{0}'", s);
+            
 			Communication.SendText(s + "\x0D");
 		}
 
@@ -497,10 +490,11 @@ namespace Tesira_DSP_EPI
 
             if (String.IsNullOrEmpty(args.Text)) return;
 
+
             try
             {
 
-                //Debug.Console(2, this, "RX: '{0}'", ShowHexResponse ? ComTextHelper.GetEscapedText(args.Text) : args.Text);
+                Debug.Console(2, this, "RX: '{0}'", ShowHexResponse ? ComTextHelper.GetEscapedText(args.Text) : args.Text);
 
                 DeviceRx = args.Text;
 
@@ -539,8 +533,8 @@ namespace Tesira_DSP_EPI
 
                     var customName = match.Groups[1].Value;
                     var value = match.Groups[2].Value;
-					Debug.Console(2, this, "Subscription Message: 'Name: {0} GRoup:{1}'",customName, value);
-                    CommandQueue.AdvanceQueue(args.Text);
+					Debug.Console(0, this, "Subscription Message: 'Name: {0} Group:{1}'",customName, value);
+                    //CommandQueue.AdvanceQueue(args.Text);
 
                     foreach (var controlPoint in Faders.Where(controlPoint => customName == controlPoint.Value.LevelCustomName || customName == controlPoint.Value.MuteCustomName))
                     {
@@ -590,29 +584,25 @@ namespace Tesira_DSP_EPI
 				{
 					CommandQueue.AdvanceQueue(args.Text);
 				}
-				else if (args.Text.IndexOf("-ERR", StringComparison.Ordinal) == 0)
+				else if (args.Text.IndexOf("-ERR", StringComparison.Ordinal) >= 0)
 				{
 					// Error response
-					Debug.Console(2, this, "Error From DSP: '{0}'", args.Text);
-					switch (args.Text)
-					{
-						case "-ERR ALREADY_SUBSCRIBED":
-							{
-								if (WatchDogSniffer)
-									Debug.Console(2, this, "The Watchdog didn't find anything.  Good Boy!");
-								WatchDogSniffer = false;
-								CommandQueue.AdvanceQueue(args.Text);
-								break;
-							}
+					Debug.Console(0, this, "Error From DSP: '{0}'", args.Text);
 
+                    if (args.Text.IndexOf("ALREADY_SUBSCRIBED", StringComparison.Ordinal) >= 0)
+                    {
+                        if (WatchDogSniffer)
+                            Debug.Console(2, this, "The Watchdog didn't find anything.  Good Boy!");
 
-						default:
-							{
-								WatchDogSniffer = false;
-								CommandQueue.AdvanceQueue(args.Text);
-								break;
-							}
-					}
+                        WatchDogSniffer = false;
+                        CommandQueue.AdvanceQueue(args.Text);
+                    }
+
+                    else
+                    {
+                        WatchDogSniffer = false;
+                        CommandQueue.AdvanceQueue(args.Text);
+                    }
 				}
                     /*
                 else if (args.Text.IndexOf("SESSION", StringComparison.OrdinalIgnoreCase) > -1)
@@ -624,7 +614,7 @@ namespace Tesira_DSP_EPI
             catch (Exception e)
             {
                 if(args.Text.Length > 0)
-                    Debug.Console(2, this, "Error parsing response: '{0}'\n{1}", args.Text, e);
+                    Debug.Console(0, this, "Error parsing response: '{0}'\n{1}", args.Text, e);
             }
 
         }
@@ -716,6 +706,7 @@ namespace Tesira_DSP_EPI
 
 		private void SubscribeToComponents()
 		{
+		    //CommandQueue.CommandQueueInProgress = true;
 			foreach (var control in Dialers)
 			{
 			    var dialer = control.Value;
@@ -762,6 +753,8 @@ namespace Tesira_DSP_EPI
             {
                 DeviceInfo.Subscribe();
             }
+		    //CommandQueue.CommandQueueInProgress = false;
+            //CommandQueue.SendNextQueuedCommand();
 
 		}
 
@@ -791,8 +784,8 @@ namespace Tesira_DSP_EPI
             SendLine("SESSION set verbose false");
             try
             {
-                if (_isSerialComm)
-                    UnsubscribeFromComponents();
+                //if (_isSerialComm)
+                UnsubscribeFromComponents();
 
                 //Subscribe
                 SubscribeToComponents();

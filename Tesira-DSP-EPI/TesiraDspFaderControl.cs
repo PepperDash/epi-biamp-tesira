@@ -84,49 +84,15 @@ namespace Tesira_DSP_EPI
         /// </summary>
         public string MuteCustomName { get; protected set; }
 
-        private double _minLevel;
         /// <summary>
         /// Minimum fader level
         /// </summary>
-        double MinLevel
-        {
-            get
-            {
-                return _minLevel;
-            }
-            set
-            {
-                _minLevel = value;
-                SendFullCommand("get", "maxLevel", null, 1);
-            }
-        }
+        private double MinLevel { get; set; }
 
-        private double _maxLevel;
         /// <summary>
         /// Maximum fader level
         /// </summary>
-        double MaxLevel
-        {
-            get
-            {
-                return _maxLevel;
-            }
-            set
-            {
-                _maxLevel = value;
-                //LevelSubscribed = true;
-                if (_maxLevel.CompareFullPrecision(_minLevel, this) && subcounter < 3)
-                {
-                    subcounter++;
-                    SendFullCommand("get", "minLevel", null, 1);
-                    return;
-                }
-                if(subcounter == 3)
-                    Debug.Console(0, this, Debug.ErrorLogLevel.Error, "Unable to determine MaxLevel and MinLevel span - this control is non functional");
-                subcounter = 0;
-                SendSubscriptionCommand(LevelCustomName, "level", 250, 1);
-            }
-        }
+        private double MaxLevel { get; set; }
 
         /// <summary>
         /// Checks if a valid subscription string has been recieved for all subscriptions
@@ -147,7 +113,7 @@ namespace Tesira_DSP_EPI
                     }
                 }
 
-                return trackValue > 0;
+                return trackValue >= 0;
             }
             protected set { }
         }
@@ -293,6 +259,8 @@ namespace Tesira_DSP_EPI
                     // MUST use InstanceTag1 for levels, it is the first instance tag in the JSON config
                     LevelCustomName = string.Format("{0}~level{1}", InstanceTag1, Index1);
                     SendFullCommand("get", "minLevel", null, 1);
+                    SendFullCommand("get", "maxLevel", null, 1);
+                    SendSubscriptionCommand(LevelCustomName, "level", 250, 1);
                 }
             }
             else

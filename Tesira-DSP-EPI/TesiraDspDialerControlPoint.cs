@@ -112,7 +112,7 @@ namespace Tesira_DSP_EPI
             {
                 // This command will generate a return value response so it needs to be queued
                 if (!string.IsNullOrEmpty(cmd))
-                    Parent.CommandQueue.EnqueueCommand(new QueuedCommand { Command = cmd, AttributeCode = attributeCode, ControlPoint = this });
+                    Parent.CommandQueue.EnqueueCommand(new QueuedCommand(cmd, attributeCode, this));
             }
             else
             {
@@ -168,7 +168,7 @@ namespace Tesira_DSP_EPI
 
             //Parent.WatchDogList.Add(customName,cmd);
             //Parent.SendLine(cmd);
-            Parent.CommandQueue.EnqueueCommand(new QueuedCommand { Command = cmd, AttributeCode = attributeCode, ControlPoint = this });
+            Parent.CommandQueue.EnqueueCommand(new QueuedCommand(cmd, attributeCode, this));
         }
 
         public virtual void SendUnSubscriptionCommand(string customName, string attributeCode, int instanceTag)
@@ -208,7 +208,7 @@ namespace Tesira_DSP_EPI
 
             //Parent.WatchDogList.Add(customName,cmd);
             //Parent.SendLine(cmd);
-            Parent.CommandQueue.EnqueueCommand(new QueuedCommand { Command = cmd, AttributeCode = attributeCode, ControlPoint = this });
+            Parent.CommandQueue.EnqueueCommand(new QueuedCommand(cmd, attributeCode, this));
         }
         
         public virtual void DoPoll()
