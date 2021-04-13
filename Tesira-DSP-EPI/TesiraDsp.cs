@@ -15,7 +15,7 @@ using Feedback = PepperDash.Essentials.Core.Feedback;
 
 namespace Tesira_DSP_EPI
 {
-    public class TesiraDsp : EssentialsBridgeableDevice
+    public class TesiraDsp : EssentialsBridgeableDevice, IHasDspPresets
     {
         /// <summary>
         /// Collection of all Device Feedbacks
@@ -67,7 +67,7 @@ namespace Tesira_DSP_EPI
         private Dictionary<string, TesiraDspMeter> Meters { get; set; }
         private Dictionary<string, TesiraDspCrosspointState> CrosspointStates { get; set; }
         private Dictionary<string, TesiraDspRoomCombiner> RoomCombiners { get; set; }
-        private Dictionary<string, TesiraDspPresets> Presets { get; set; }
+        public List<IDspPreset> Presets { get; private set; } 
         private List<ISubscribedComponent> ControlPointList { get; set; }
 
         private TesiraDspDeviceInfo DeviceInfo { get; set; }
@@ -132,7 +132,7 @@ namespace Tesira_DSP_EPI
             //Initialize Dictionaries
             Feedbacks = new FeedbackCollection<Feedback>();
             Faders = new Dictionary<string, TesiraDspFaderControl>();
-            Presets = new Dictionary<string, TesiraDspPresets>();
+            Presets = new List<IDspPreset>();
             Dialers = new Dictionary<string, TesiraDspDialer>();
             Switchers = new Dictionary<string, TesiraDspSwitcher>();
             States = new Dictionary<string, TesiraDspStateControl>();
@@ -177,7 +177,7 @@ namespace Tesira_DSP_EPI
                 Thread.eThreadStartOptions.CreateSuspended)
             {
                 Priority = CrestronEnvironment.ProgramCompatibility.Equals(eCrestronSeries.Series4)
-                    ? Thread.eThreadPriority.HighPriority
+                    ? Thread.eThreadPriority.LowestPriority
                     : Thread.eThreadPriority.LowestPriority
             };
 			/*{
@@ -302,7 +302,7 @@ namespace Tesira_DSP_EPI
                 {
                     var value = preset.Value;
                     var key = preset.Key;
-                    Presets.Add(key, value);
+                    Presets.Add(new TesiraPreset(preset.Value));
                     Debug.Console(2, this, "Added Preset {0} {1}", value.Label, value.PresetName);
                 }
             }
@@ -634,19 +634,13 @@ namespace Tesira_DSP_EPI
 
 		public void RunPresetNumber(ushort n)
 		{
-		    var presetValue = Presets.FirstOrDefault(o => o.Value.PresetIndex == n).Value;
+            Debug.Console(2, this, "Attempting to run preset {0}", n);
 
-			Debug.Console(2, this, "Attempting to run preset {0}", n);
-			if (presetValue != null)
-			{
-			    if (!String.IsNullOrEmpty(presetValue.PresetName))
-			    {
-			        RunPreset(presetValue.PresetName);
-			    }
+            foreach (var preset in Presets.OfType<TesiraPreset>().Where(preset => preset.Index == n))
+            {
+                RecallPreset(preset);
+            }
 
-                else
-                    RunPreset(presetValue.PresetId);
-			}
 		}
 
 		/// <summary>
@@ -665,6 +659,20 @@ namespace Tesira_DSP_EPI
         public void RunPreset(int id)
         {
             CommandQueue.EnqueueCommand(string.Format("DEVICE recallPreset {0}", id));
+        }
+
+        public void RecallPreset(IDspPreset preset)
+        {
+            var tesiraPreset = preset as TesiraPreset;
+            if (tesiraPreset == null) return;
+            if (!String.IsNullOrEmpty(tesiraPreset.PresetName))
+            {
+                RunPreset(tesiraPreset.PresetData.PresetName);
+            }
+            else
+            {
+                RunPreset(tesiraPreset.PresetData.PresetId);
+            }
         }
 
 		#endregion
@@ -812,7 +820,7 @@ namespace Tesira_DSP_EPI
 
                 //Subscribe
                 SubscribeToComponents();
-				StartWatchDog();
+                StartWatchDog();
                 if (!_commandQueueInProgress)
                     CommandQueue.SendNextQueuedCommand();
             }
@@ -821,6 +829,10 @@ namespace Tesira_DSP_EPI
                 Debug.ConsoleWithLog(1, this, "Error Subscribing: '{0}'", ex);
                 //_subscriptionLock.Leave();
                 //_subscriptionLock.Leave();
+            }
+            finally
+            {
+                //_subscribeThread.Abort();
             }
             return null;
         }
@@ -969,10 +981,13 @@ namespace Tesira_DSP_EPI
 
             foreach (var preset in Presets)
             {
-                var p = preset;
-                var runPresetIndex = preset.Value.PresetIndex;
+
+
+                var p = preset as TesiraPreset;
+                if (preset == null) continue;
+                var runPresetIndex = p.PresetData.PresetIndex;
                 var presetIndex = runPresetIndex;
-                trilist.StringInput[(uint)(presetJoinMap.PresetNameFeedback.JoinNumber + presetIndex)].StringValue = p.Value.Label;
+                trilist.StringInput[(uint)(presetJoinMap.PresetNameFeedback.JoinNumber + presetIndex)].StringValue = p.PresetData.Label;
                 trilist.SetSigTrueAction((uint)(presetJoinMap.PresetSelection.JoinNumber + presetIndex), () => RunPresetNumber((ushort)runPresetIndex));
             }
 
