@@ -218,5 +218,5 @@ jobs:
       - name: Publish nuget package to Github registry
         run: nuget push **/*.nupkg -source github
       # Pushes to nuget, not needed unless publishing publicly >> this pushes package to nuget.org
-      #- name: Publish nuget package to nuget.org
-      #  run: nuget push **/*.nupkg -Source https://api.nuget.org/v3/index.json
+      - name: Publish nuget package to nuget.org
+        run: nuget push **/*.nupkg -Source https://api.nuget.org/v3/index.json
