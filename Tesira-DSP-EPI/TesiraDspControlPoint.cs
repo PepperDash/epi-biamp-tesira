@@ -102,7 +102,7 @@ namespace Tesira_DSP_EPI
 				}
 				else
 				{
-					// format commadn with value
+					// format command with value
 					cmd = string.Format("{0} {1} {2} {3} {4}", instanceTagLocal, command, attributeCode, Index1, value);
 				}
 			}
@@ -132,7 +132,7 @@ namespace Tesira_DSP_EPI
 			{
 				// This command will generate a return value response so it needs to be queued
 				if (!string.IsNullOrEmpty(cmd))
-                    Parent.CommandQueue.EnqueueCommand(new QueuedCommand { Command = cmd, AttributeCode = attributeCode, ControlPoint = this });
+                    Parent.CommandQueue.EnqueueCommand(new QueuedCommand(cmd, attributeCode, this));
 			}
 			else
 			{
@@ -187,7 +187,8 @@ namespace Tesira_DSP_EPI
 
 			//Parent.WatchDogList.Add(customName,cmd);
 			//Parent.SendLine(cmd);
-            Parent.CommandQueue.EnqueueCommand(new QueuedCommand { Command = cmd, AttributeCode = attributeCode, ControlPoint = this });
+		    Parent.SendLine(cmd);
+            //Parent.CommandQueue.EnqueueCommand(new QueuedCommand(cmd, attributeCode, this));
 
 		}
 
@@ -227,9 +228,9 @@ namespace Tesira_DSP_EPI
 			}
 
 			//Parent.WatchDogList.Add(customName,cmd);
-			//Parent.SendLine(cmd);
-            Parent.CommandQueue.EnqueueCommand(new QueuedCommand { Command = cmd, AttributeCode = attributeCode, ControlPoint = this });
-		}
+			Parent.SendLine(cmd);
+            //Parent.CommandQueue.EnqueueCommand(new QueuedCommand(cmd, attributeCode, this));
+        }
 
 		public virtual void DoPoll()
 		{

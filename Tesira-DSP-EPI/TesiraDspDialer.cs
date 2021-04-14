@@ -474,8 +474,10 @@ namespace Tesira_DSP_EPI {
         /// <summary>
         /// Subscribe to all component data
         /// </summary>
-        public override void Subscribe() {
-            if (IsVoip) {
+        public override void Subscribe()
+        {
+            if (IsVoip)
+            {
                 DialerCustomName = string.Format("{0}~VoIPDialer{1}", InstanceTag1, Index1);
                 AutoAnswerCustomName = string.Format("{0}~VoIPDialerAutoAnswer{1}", InstanceTag1, Index1);
                 ControlStatusCustomName = string.Format("{0}~VoIPControl{1}", InstanceTag2, Index1);
@@ -490,23 +492,24 @@ namespace Tesira_DSP_EPI {
 
                 SendFullCommand("get", "dndEnable", null, 1);
             }
-            else if (!IsVoip) {
+            else if (!IsVoip)
+            {
 
-				PotsDialerCustomName = string.Format("{0}~PotsDialer{1}", this.InstanceTag1, this.Index1);
-				LastDialedCustomName = string.Format("{0}~PotsLastNumber{1}", this.InstanceTag1, this.Index1);
+                PotsDialerCustomName = string.Format("{0}~PotsDialer{1}", this.InstanceTag1, this.Index1);
+                LastDialedCustomName = string.Format("{0}~PotsLastNumber{1}", this.InstanceTag1, this.Index1);
 
-				HookStateCustomName = string.Format("{0}~HookState{1}", this.InstanceTag1, this.Index1);
+                HookStateCustomName = string.Format("{0}~HookState{1}", this.InstanceTag1, this.Index1);
 
-				SendSubscriptionCommand(PotsDialerCustomName, "callState", 250, 1);
+                SendSubscriptionCommand(PotsDialerCustomName, "callState", 250, 1);
 
-				SendSubscriptionCommand(HookStateCustomName, "hookState", 500, 2);
+                SendSubscriptionCommand(HookStateCustomName, "hookState", 500, 2);
 
-				SendSubscriptionCommand(LastDialedCustomName, "lastNum", 500, 1);
+                SendSubscriptionCommand(LastDialedCustomName, "lastNum", 500, 1);
 
-				SendFullCommand("get", "autoAnswer", null, 1);
+                SendFullCommand("get", "autoAnswer", null, 1);
             }
 
-            
+
         }
 
         /// <summary>

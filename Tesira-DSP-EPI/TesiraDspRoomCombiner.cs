@@ -7,6 +7,7 @@ using PepperDash.Essentials.Core;
 using System.Text.RegularExpressions;
 using PepperDash.Essentials.Core.Bridges;
 using Tesira_DSP_EPI.Bridge.JoinMaps;
+using Tesira_DSP_EPI.Extensions;
 
 namespace Tesira_DSP_EPI
 {
@@ -100,6 +101,8 @@ namespace Tesira_DSP_EPI
         private bool UseAbsoluteValue { get; set; }
         private string LevelControlPointTag { get { return InstanceTag1; } }
 
+        private int subcounter;
+
         CTimer _volumeUpRepeatTimer;
         CTimer _volumeDownRepeatTimer;
         CTimer _volumeUpRepeatDelayTimer;
@@ -146,7 +149,17 @@ namespace Tesira_DSP_EPI
             {
                 _maxLevel = value;
                 //LevelSubscribed = true;
-                SendSubscriptionCommand(LevelCustomName, "levelOut", 250, 1);
+                if (_maxLevel.CompareFullPrecision(_minLevel, this) && subcounter < 3)
+                {
+                    Debug.Console(0, this, "Issue with MaxLevel and MinLevel span.  Trying to get span again.  Attempt {0} of 3", subcounter + 1);
+                    subcounter++;
+                    SendFullCommand("get", "minLevel", null, 1);
+                    return;
+                }
+                if (subcounter == 3)
+                    Debug.Console(0, this, Debug.ErrorLogLevel.Error, "Unable to determine MaxLevel and MinLevel span - this control is non functional");
+                subcounter = 0;
+                SendSubscriptionCommand(LevelCustomName, "level", 250, 1);
             }
         }
 
