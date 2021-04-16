@@ -211,12 +211,12 @@ jobs:
       - name: Add Github Packages source
         run: nuget sources add -name github -source https://nuget.pkg.github.com/pepperdash/index.json -username Pepperdash -password ${{ secrets.GITHUB_TOKEN }}
       # Pushes to nuget, not needed unless publishing publicly
-      #- name: Add nuget.org API Key
-      #  run: nuget setApiKey ${{ secrets.NUGET_API_KEY }}
+      - name: Add nuget.org API Key
+        run: nuget setApiKey ${{ secrets.NUGET_API_KEY }}
       - name: Create nuget package
         run: nuget pack "./${{ env.NUSPEC_FILE}}.nuspec" -version ${{ env.VERSION }}
       - name: Publish nuget package to Github registry
         run: nuget push **/*.nupkg -source github
       # Pushes to nuget, not needed unless publishing publicly >> this pushes package to nuget.org
-      #- name: Publish nuget package to nuget.org
-      #  run: nuget push **/*.nupkg -Source https://api.nuget.org/v3/index.json
+      - name: Publish nuget package to nuget.org
+        run: nuget push **/*.nupkg -Source https://api.nuget.org/v3/index.json
