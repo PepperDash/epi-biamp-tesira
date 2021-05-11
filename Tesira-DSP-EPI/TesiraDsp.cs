@@ -638,6 +638,7 @@ namespace Tesira_DSP_EPI
 
             foreach (var preset in Presets.OfType<TesiraPreset>().Where(preset => preset.Index == n))
             {
+                Debug.Console(2, this, "Found a matching Preset - {0}", preset.PresetData.PresetId);
                 RecallPreset(preset);
             }
 
@@ -649,7 +650,9 @@ namespace Tesira_DSP_EPI
         /// <param name="name">Preset Name</param>
 		public void RunPreset(string name)
 		{
-            CommandQueue.EnqueueCommand(string.Format("DEVICE recallPresetByName \"{0}\"", name));
+            Debug.Console(2, this, "Running Preset By Name - {0}", name);
+            SendLine(string.Format("DEVICE recallPresetByName \"{0}\"", name));
+            //CommandQueue.EnqueueCommand(string.Format("DEVICE recallPresetByName \"{0}\"", name));
 		}
 
         /// <summary>
@@ -658,11 +661,14 @@ namespace Tesira_DSP_EPI
         /// <param name="id">Preset Id</param>
         public void RunPreset(int id)
         {
-            CommandQueue.EnqueueCommand(string.Format("DEVICE recallPreset {0}", id));
+            Debug.Console(2, this, "Running Preset By ID - {0}", id);
+            SendLine(string.Format("DEVICE recallPreset {0}", id));
+            //CommandQueue.EnqueueCommand(string.Format("DEVICE recallPreset {0}", id));
         }
 
         public void RecallPreset(IDspPreset preset)
         {
+            Debug.Console(2, this, "Running preset {0}", preset.Name);
             var tesiraPreset = preset as TesiraPreset;
             if (tesiraPreset == null) return;
             if (!String.IsNullOrEmpty(tesiraPreset.PresetName))
@@ -981,14 +987,12 @@ namespace Tesira_DSP_EPI
 
             foreach (var preset in Presets)
             {
-
-
                 var p = preset as TesiraPreset;
                 if (preset == null) continue;
                 var runPresetIndex = p.PresetData.PresetIndex;
                 var presetIndex = runPresetIndex;
                 trilist.StringInput[(uint)(presetJoinMap.PresetNameFeedback.JoinNumber + presetIndex)].StringValue = p.PresetData.Label;
-                trilist.SetSigTrueAction((uint)(presetJoinMap.PresetSelection.JoinNumber + presetIndex), () => RunPresetNumber((ushort)runPresetIndex));
+                trilist.SetSigTrueAction((uint)(presetJoinMap.PresetSelection.JoinNumber + presetIndex), () => RunPresetNumber((ushort)presetIndex));
             }
 
             // VoIP Dialer
