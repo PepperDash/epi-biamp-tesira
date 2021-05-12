@@ -481,10 +481,14 @@ namespace Tesira_DSP_EPI {
 
 
                 SendSubscriptionCommand(ControlStatusCustomName, "callState", 250, 2);
+                AddCustomName(ControlStatusCustomName);
 
                 SendSubscriptionCommand(AutoAnswerCustomName, "autoAnswer", 500, 1);
+                AddCustomName(AutoAnswerCustomName);
+
 
                 SendSubscriptionCommand(LastDialedCustomName, "lastNum", 500, 1);
+                AddCustomName(LastDialedCustomName);
 
                 SendFullCommand("get", "dndEnable", null, 1);
             }
@@ -497,10 +501,13 @@ namespace Tesira_DSP_EPI {
                 HookStateCustomName = string.Format("{0}~HookState{1}", InstanceTag1, Index1);
 
                 SendSubscriptionCommand(PotsDialerCustomName, "callState", 250, 1);
+                AddCustomName(PotsDialerCustomName);
 
                 SendSubscriptionCommand(HookStateCustomName, "hookState", 500, 2);
+                AddCustomName(HookStateCustomName);
 
                 SendSubscriptionCommand(LastDialedCustomName, "lastNum", 500, 1);
+                AddCustomName(LastDialedCustomName);
 
                 SendFullCommand("get", "autoAnswer", null, 1);
             }
@@ -551,7 +558,7 @@ namespace Tesira_DSP_EPI {
         /// </summary>
         /// <param name="customName">CustomName of subscribed control within the component</param>
         /// <param name="value">Data to be parsed</param>
-        public void ParseSubscriptionMessage(string customName, string value)
+        public override void ParseSubscriptionMessage(string customName, string value)
         {
             try
             {

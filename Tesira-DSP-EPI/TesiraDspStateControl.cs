@@ -62,6 +62,7 @@ namespace Tesira_DSP_EPI {
         public override void Subscribe() {
             StateCustomName = string.Format("{0}~state{1}", InstanceTag1, Index1);
             Debug.Console(2, this, "StateCustomName = {0}", StateCustomName);
+            AddCustomName(StateCustomName);
             SendSubscriptionCommand(StateCustomName, "state", 250, 1);
 
             GetState();
@@ -83,7 +84,7 @@ namespace Tesira_DSP_EPI {
         /// </summary>
         /// <param name="customName">Subscription identifier</param>
         /// <param name="value">response data to be parsed</param>
-        public void ParseSubscriptionMessage(string customName, string value) {
+        public override void ParseSubscriptionMessage(string customName, string value) {
 
             // Check for valid subscription response
 

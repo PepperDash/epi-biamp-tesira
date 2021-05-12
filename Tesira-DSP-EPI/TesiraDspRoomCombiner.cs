@@ -9,9 +9,10 @@ using PepperDash.Essentials.Core.Bridges;
 using Tesira_DSP_EPI.Bridge.JoinMaps;
 using Tesira_DSP_EPI.Extensions;
 
+
 namespace Tesira_DSP_EPI
 {
-    public class TesiraDspRoomCombiner : TesiraDspControlPoint, IBasicVolumeWithFeedback
+    public class TesiraDspRoomCombiner : TesiraDspControlPoint, IBasicVolumeWithFeedback, IVolumeComponent
     {
         private bool _outIsMuted;
         protected bool OutIsMuted
@@ -101,8 +102,6 @@ namespace Tesira_DSP_EPI
         private bool UseAbsoluteValue { get; set; }
         private string LevelControlPointTag { get { return InstanceTag1; } }
 
-        private int subcounter;
-
         CTimer _volumeUpRepeatTimer;
         CTimer _volumeDownRepeatTimer;
         CTimer _volumeUpRepeatDelayTimer;
@@ -118,50 +117,15 @@ namespace Tesira_DSP_EPI
         /// </summary>
         public string LevelCustomName { get; private set; }
 
-        private double _minLevel;
         /// <summary>
         /// Minimum fader level
         /// </summary>
-        double MinLevel
-        {
-            get
-            {
-                return _minLevel;
-            }
-            set
-            {
-                _minLevel = value;
-                SendFullCommand("get", "levelOutMax", null, 1);
-            }
-        }
+        public double MinLevel { get; private set; }
 
-        private double _maxLevel;
         /// <summary>
         /// Maximum fader level
         /// </summary>
-        double MaxLevel
-        {
-            get
-            {
-                return _maxLevel;
-            }
-            set
-            {
-                _maxLevel = value;
-                //LevelSubscribed = true;
-                if (_maxLevel.CompareFullPrecision(_minLevel, this) && subcounter < 3)
-                {
-                    Debug.Console(0, this, "Issue with MaxLevel and MinLevel span.  Trying to get span again.  Attempt {0} of 3", subcounter + 1);
-                    subcounter++;
-                    SendFullCommand("get", "minLevel", null, 1);
-                    return;
-                }
-                if (subcounter == 3)
-                    Debug.Console(0, this, Debug.ErrorLogLevel.Error, "Unable to determine MaxLevel and MinLevel span - this control is non functional");
-                subcounter = 0;
-                SendSubscriptionCommand(LevelCustomName, "level", 250, 1);
-            }
-        }
+        public double MaxLevel { get; private set; }
 
         /// <summary>
         /// Checks if a valid subscription string has been recieved for all subscriptions
@@ -295,6 +259,7 @@ namespace Tesira_DSP_EPI
             if (HasLevel)
             {
                 LevelCustomName = string.Format("{0}~roomCombiner{1}", InstanceTag1, Index1);
+                AddCustomName(LevelCustomName);
                 SendFullCommand("get", "levelOutMin", null, 1);
             }
             SendFullCommand("get", "group", null, 1);
@@ -317,12 +282,12 @@ namespace Tesira_DSP_EPI
         /// </summary>
         /// <param name="customName"></param>
         /// <param name="data"></param>
-        public void ParseSubscriptionMessage(string customName, string data)
+        public override void ParseSubscriptionMessage(string customName, string data)
         {
             if (!HasLevel || customName != LevelCustomName) return;
             var value = Double.Parse(data);
 
-            OutVolumeLevel = UseAbsoluteValue ? (ushort)value : (ushort) Scale(value, MinLevel, MaxLevel, 0, 65535);
+            OutVolumeLevel = UseAbsoluteValue ? (ushort)value : (ushort) value.Scale(MinLevel, MaxLevel, 0, 65535, this);
 
             _levelIsSubscribed = true;
 
@@ -420,8 +385,9 @@ namespace Tesira_DSP_EPI
             if (level > _outVolumeLevel && AutomaticUnmuteOnVolumeUp)
                 if (_outIsMuted)
                     MuteOff();
+            var newLevel = (double) level;
 
-            var volumeLevel = UseAbsoluteValue ? level : Scale(level, 0, 65535, MinLevel, MaxLevel);
+            var volumeLevel = UseAbsoluteValue ? level : newLevel.Scale(0, 65535, MinLevel, MaxLevel, this);
 
             SendFullCommand("set", "levelOut", string.Format("{0:0.000000}", volumeLevel), 1);
         }
@@ -461,6 +427,25 @@ namespace Tesira_DSP_EPI
         {
             SendFullCommand("get", "levelOut", String.Empty, 1);
         }
+
+        /// <summary>
+        /// Polls minimum level of fader component
+        /// </summary>
+        public void GetMinLevel()
+        {
+            if (!HasLevel) return;
+            SendFullCommand("get", "minLevel", null, 1);
+        }
+
+        /// <summary>
+        /// poll maximum level of fader component
+        /// </summary>
+        public void GetMaxLevel()
+        {
+            if (!HasLevel) return;
+            SendFullCommand("get", "maxLevel", null, 1);
+        }
+
 
         /// <summary>
         /// Polls the current mute state

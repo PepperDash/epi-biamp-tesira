@@ -54,6 +54,8 @@ namespace Tesira_DSP_EPI
 
 		private CTimer _watchDogTimer;
 
+        private CTimer _QueueCheckTimer;
+
         private Thread _subscribeThread;
 
         private readonly bool _isSerialComm;
@@ -175,7 +177,7 @@ namespace Tesira_DSP_EPI
                 Thread.eThreadStartOptions.CreateSuspended)
             {
                 Priority = CrestronEnvironment.ProgramCompatibility.Equals(eCrestronSeries.Series4)
-                    ? Thread.eThreadPriority.HighPriority
+                    ? Thread.eThreadPriority.LowestPriority
                     : Thread.eThreadPriority.LowestPriority
             };
 			/*{
@@ -530,39 +532,13 @@ namespace Tesira_DSP_EPI
 
                     var customName = match.Groups[1].Value;
                     var value = match.Groups[2].Value;
-					Debug.Console(2, this, "Subscription Message: 'Name: {0} Group:{1}'",customName, value);
+					Debug.Console(2, this, "Subscription Message: 'Name: {0} Value:{1}'",customName, value);
                     //CommandQueue.AdvanceQueue(args.Text);
 
-                    foreach (var controlPoint in Faders.Where(controlPoint => customName == controlPoint.Value.LevelCustomName || customName == controlPoint.Value.MuteCustomName))
+                    foreach (var component in from component in ControlPointList let item = component from n in item.CustomNames.Where(n => n == customName) select component)
                     {
-                        controlPoint.Value.ParseSubscriptionMessage(customName, value);
-                        return;
-                    }
-					foreach (KeyValuePair<string, TesiraDspDialer> controlPoint in Dialers)
-					{
-					    if (customName != controlPoint.Value.AutoAnswerCustomName &&
-					        customName != controlPoint.Value.ControlStatusCustomName &&
-					        customName != controlPoint.Value.DialerCustomName && customName != controlPoint.Value.HookStateCustomName &&
-					        customName != controlPoint.Value.PotsDialerCustomName) continue;
-					    controlPoint.Value.ParseSubscriptionMessage(customName, value);
-					    return;
-					}
-                    foreach (var controlPoint in States.Where(controlPoint => customName == controlPoint.Value.StateCustomName))
-                    {
-                        controlPoint.Value.ParseSubscriptionMessage(customName, value);
-                        return;
-                    }
-
-                    foreach (var controlPoint in Switchers.Where(controlPoint => customName == controlPoint.Value.SelectorCustomName))
-                    {
-                        controlPoint.Value.ParseSubscriptionMessage(customName, value);
-                        return;
-                    }
-
-                    foreach (var controlPoint in Meters.Where(controlPoint => customName == controlPoint.Value.MeterCustomName))
-                    {
-                        controlPoint.Value.ParseSubscriptionMessage(customName, value);
-                        return;
+                        if (component == null) return;
+                        component.ParseSubscriptionMessage(customName, value);
                     }
                 }
 
@@ -584,7 +560,7 @@ namespace Tesira_DSP_EPI
 				else if (args.Text.IndexOf("-ERR", StringComparison.Ordinal) >= 0)
 				{
 					// Error response
-					Debug.Console(1, this, "Error From DSP: '{0}'", args.Text);
+					Debug.Console(1, this, Debug.ErrorLogLevel.Error, "Error From DSP: '{0}'", args.Text);
 
                     if (args.Text.IndexOf("ALREADY_SUBSCRIBED", StringComparison.Ordinal) >= 0)
                     {
@@ -611,7 +587,7 @@ namespace Tesira_DSP_EPI
             catch (Exception e)
             {
                 if(args.Text.Length > 0)
-                    Debug.Console(1, this, "Error parsing response: '{0}'\n{1}", args.Text, e);
+                    Debug.Console(1, this, Debug.ErrorLogLevel.Error, "Error parsing response: '{0}'\n{1}", args.Text, e);
             }
 
         }
@@ -717,53 +693,42 @@ namespace Tesira_DSP_EPI
 		#region Subscribe
 
 		private void SubscribeToComponents()
-		{
-		    //CommandQueue.CommandQueueInProgress = true;
-			foreach (var dialer in Dialers.Select(control => control.Value))
-			{
-			    SubscribeToComponent(dialer);
-			}
-
-			foreach (var switcher in Switchers.Select(control => control.Value))
-			{
-			    SubscribeToComponent(switcher);
-			}
-
-			foreach (var state in States.Select(control => control.Value))
-			{
-			    SubscribeToComponent(state);
-			}
-
-            foreach (var fader in Faders.Select(control => control.Value))
+        {
+            foreach (var fader in ControlPointList.OfType<IVolumeComponent>())
             {
-                SubscribeToComponent(fader);
+                fader.GetMinLevel();
             }
 
-			foreach (var roomCombiner in RoomCombiners.Select(control => control.Value))
-			{
-			    SubscribeToComponent(roomCombiner);
-			}
+            foreach (var fader in ControlPointList.OfType<IVolumeComponent>())
+            {
+                fader.GetMaxLevel();
+            }
 
-		    foreach (var crosspointSate in CrosspointStates.Select(control => control.Value))
-		    {
-		        SubscribeToComponent(crosspointSate);
-		    }
-
-			foreach (var meter in Meters.Select(control => control.Value))
-			{
-			    SubscribeToComponent(meter);
-			}
-
-		    foreach (var fader in Faders.Select(control => control.Value))
-		    {
-		        Debug.Console(2, fader, "Attempting to get min/max/level");
-		        fader.GetInitialVolume();
-		    }
-
-		    //CommandQueue.CommandQueueInProgress = false;
-            //CommandQueue.SendNextQueuedCommand();
+            if (_QueueCheckTimer == null)
+            {
+                _QueueCheckTimer = new CTimer(o => QueueCheck(), null, 1000, 1000);
+            }
+            else
+            {
+                _QueueCheckTimer.Reset(1000, 1000);
+            }
 
 		}
+
+        private void QueueCheck()
+        {
+            if (!CommandQueue.LocalQueue.Any() && !CommandQueue.CommandQueueInProgress)
+            {
+                _QueueCheckTimer.Stop();
+                _QueueCheckTimer = null;
+                foreach (var component in ControlPointList)
+                {
+                    SubscribeToComponent(component);
+                }
+            }
+            else
+                _QueueCheckTimer.Reset(1000, 1000);
+        }
 
         private void SubscribeToComponent(ISubscribedComponent data)
         {
@@ -1060,10 +1025,9 @@ namespace Tesira_DSP_EPI
 				var channel = item.Value;
 				var data = channel.BridgeIndex;
 				if (data == null) continue;
-				var x = (uint)data;
 
 
-				Debug.Console(2, this, "Adding Crosspoint State ControlPoint {0} | JoinStart:{1}", xpointState.Key, (crosspointStateJoinMap.Toggle.JoinNumber + joinOffset));
+                Debug.Console(2, this, "Adding Crosspoint State ControlPoint {0} | JoinStart:{1}", xpointState.Key, (crosspointStateJoinMap.Toggle.JoinNumber + joinOffset));
                 xpointState.CrosspointStateFeedback.LinkInputSig(trilist.BooleanInput[(uint)(crosspointStateJoinMap.Toggle.JoinNumber + joinOffset)]);
                 xpointState.CrosspointStateFeedback.LinkInputSig(trilist.BooleanInput[(uint)(crosspointStateJoinMap.On.JoinNumber + joinOffset)]);
 

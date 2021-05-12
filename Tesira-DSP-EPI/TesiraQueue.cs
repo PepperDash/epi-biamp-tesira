@@ -7,7 +7,7 @@ namespace Tesira_DSP_EPI
     public class TesiraQueue
     {
 
-        private CrestronQueue LocalQueue { get; set; }
+        public CrestronQueue LocalQueue { get; private set; }
 
         private TesiraDsp Parent { get; set; }
 
