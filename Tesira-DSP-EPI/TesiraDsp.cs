@@ -762,8 +762,8 @@ namespace Tesira_DSP_EPI
                 //Subscribe
                 SubscribeToComponents();
                 StartWatchDog();
-                if (!_commandQueueInProgress)
-                    CommandQueue.SendNextQueuedCommand();
+                /*if (!_commandQueueInProgress)
+                    CommandQueue.SendNextQueuedCommand();*/
             }
             catch (Exception ex)
             {
