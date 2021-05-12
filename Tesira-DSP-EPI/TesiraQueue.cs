@@ -1,8 +1,6 @@
 ﻿using System;
-using System.Data;
 using PepperDash.Core;
 using Crestron.SimplSharp;
-using PepperDash.Essentials.Devices.Common.VideoCodec.Cisco;
 
 namespace Tesira_DSP_EPI
 {

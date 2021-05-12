@@ -54,8 +54,6 @@ namespace Tesira_DSP_EPI
 
 		private CTimer _watchDogTimer;
 
-        private readonly CCriticalSection _subscriptionLock = new CCriticalSection();
-
         private Thread _subscribeThread;
 
         private readonly bool _isSerialComm;
@@ -70,7 +68,7 @@ namespace Tesira_DSP_EPI
         public List<IDspPreset> Presets { get; private set; } 
         private List<ISubscribedComponent> ControlPointList { get; set; }
 
-        private TesiraDspDeviceInfo DeviceInfo { get; set; }
+        //private TesiraDspDeviceInfo DeviceInfo { get; set; }
 
 		private bool WatchDogSniffer { get; set; }
 
@@ -177,7 +175,7 @@ namespace Tesira_DSP_EPI
                 Thread.eThreadStartOptions.CreateSuspended)
             {
                 Priority = CrestronEnvironment.ProgramCompatibility.Equals(eCrestronSeries.Series4)
-                    ? Thread.eThreadPriority.LowestPriority
+                    ? Thread.eThreadPriority.HighPriority
                     : Thread.eThreadPriority.LowestPriority
             };
 			/*{
@@ -301,7 +299,6 @@ namespace Tesira_DSP_EPI
                 foreach (var preset in props.Presets)
                 {
                     var value = preset.Value;
-                    var key = preset.Key;
                     Presets.Add(new TesiraPreset(preset.Value));
                     Debug.Console(2, this, "Added Preset {0} {1}", value.Label, value.PresetName);
                 }
@@ -450,14 +447,6 @@ namespace Tesira_DSP_EPI
 			{
 				Debug.ConsoleWithLog(1, this, "Watchdog Error: '{0}'", ex);
 			}
-        }
-
-        private ISubscribedComponent SelectWatchDogSubject(Random random)
-        {
-            var watchDogSubject = ControlPointList[random.Next(0, ControlPointList.Count)];
-			if (watchDogSubject.IsSubscribed == false)
-				watchDogSubject = null;
-            return watchDogSubject;
         }
 
         #endregion
@@ -730,66 +719,47 @@ namespace Tesira_DSP_EPI
 		private void SubscribeToComponents()
 		{
 		    //CommandQueue.CommandQueueInProgress = true;
-			foreach (var control in Dialers)
+			foreach (var dialer in Dialers.Select(control => control.Value))
 			{
-			    var dialer = control.Value;
-                SubscribeToComponent(dialer);
+			    SubscribeToComponent(dialer);
 			}
 
-			foreach (var control in Switchers)
+			foreach (var switcher in Switchers.Select(control => control.Value))
 			{
-			    var switcher = control.Value;
-                SubscribeToComponent(switcher);
-            }
+			    SubscribeToComponent(switcher);
+			}
 
-			foreach (var control in States)
+			foreach (var state in States.Select(control => control.Value))
 			{
-			    var state = control.Value;
-                SubscribeToComponent(state);
-            }
+			    SubscribeToComponent(state);
+			}
 
-            foreach (var control in Faders)
+            foreach (var fader in Faders.Select(control => control.Value))
             {
-                var fader = control.Value;
                 SubscribeToComponent(fader);
             }
 
-			foreach (var control in RoomCombiners)
+			foreach (var roomCombiner in RoomCombiners.Select(control => control.Value))
 			{
-			    var roomCombiner = control.Value;
-                SubscribeToComponent(roomCombiner);
-            }
-
-		    foreach (var control in CrosspointStates)
-		    {
-		        var crosspointSate = control.Value;
-                SubscribeToComponent(crosspointSate);
-		    }
-
-			foreach (var control in Meters)
-			{
-			    var meter = control.Value;
-                SubscribeToComponent(meter);
+			    SubscribeToComponent(roomCombiner);
 			}
-            /*
-            if (DeviceInfo != null)
-            {
-                DeviceInfo.Subscribe();
-            }
-            */
-		    foreach (var control in Faders)
+
+		    foreach (var crosspointSate in CrosspointStates.Select(control => control.Value))
 		    {
-		        var fader = control.Value;
-                Debug.Console(2, fader, "Attempting to get min/max/level");
-                fader.GetInitialVolume();
+		        SubscribeToComponent(crosspointSate);
 		    }
 
+			foreach (var meter in Meters.Select(control => control.Value))
+			{
+			    SubscribeToComponent(meter);
+			}
 
-		    foreach (var fader in ControlPointList.Select(component => component as TesiraDspFaderControl))
+		    foreach (var fader in Faders.Select(control => control.Value))
 		    {
-		        if (fader == null) continue;
+		        Debug.Console(2, fader, "Attempting to get min/max/level");
 		        fader.GetInitialVolume();
 		    }
+
 		    //CommandQueue.CommandQueueInProgress = false;
             //CommandQueue.SendNextQueuedCommand();
 
@@ -835,10 +805,6 @@ namespace Tesira_DSP_EPI
                 Debug.ConsoleWithLog(1, this, "Error Subscribing: '{0}'", ex);
                 //_subscriptionLock.Leave();
                 //_subscriptionLock.Leave();
-            }
-            finally
-            {
-                //_subscribeThread.Abort();
             }
             return null;
         }

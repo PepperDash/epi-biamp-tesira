@@ -363,10 +363,7 @@ namespace Tesira_DSP_EPI {
                 }
                 else if (!IsVoip)
                 {
-                    if (PotsIsSubscribed && HookStateIsSubscribed)
-                        isSubscribed = true;
-                    else
-                        isSubscribed = false;
+                    isSubscribed = PotsIsSubscribed;
                 }
                 else
                     isSubscribed = false;
@@ -377,7 +374,6 @@ namespace Tesira_DSP_EPI {
 
         private bool VoipIsSubscribed { get; set; }
         private bool AutoAnswerIsSubscribed { get; set; }
-        private bool HookStateIsSubscribed { get; set; }
         private bool PotsIsSubscribed { get; set; }
 
 
@@ -495,10 +491,10 @@ namespace Tesira_DSP_EPI {
             else if (!IsVoip)
             {
 
-                PotsDialerCustomName = string.Format("{0}~PotsDialer{1}", this.InstanceTag1, this.Index1);
-                LastDialedCustomName = string.Format("{0}~PotsLastNumber{1}", this.InstanceTag1, this.Index1);
+                PotsDialerCustomName = string.Format("{0}~PotsDialer{1}", InstanceTag1, Index1);
+                LastDialedCustomName = string.Format("{0}~PotsLastNumber{1}", InstanceTag1, Index1);
 
-                HookStateCustomName = string.Format("{0}~HookState{1}", this.InstanceTag1, this.Index1);
+                HookStateCustomName = string.Format("{0}~HookState{1}", InstanceTag1, Index1);
 
                 SendSubscriptionCommand(PotsDialerCustomName, "callState", 250, 1);
 
@@ -536,10 +532,10 @@ namespace Tesira_DSP_EPI {
             }
             else if (!IsVoip)
             {
-				DialerCustomName = string.Format("{0}~PotsDialer{1}", this.InstanceTag1, this.Index1);
-				LastDialedCustomName = string.Format("{0}~PotsLastNumber{1}", this.InstanceTag1, this.Index1);
+				DialerCustomName = string.Format("{0}~PotsDialer{1}", InstanceTag1, Index1);
+				LastDialedCustomName = string.Format("{0}~PotsLastNumber{1}", InstanceTag1, Index1);
 
-				HookStateCustomName = string.Format("{0}~HookState{1}", this.InstanceTag1, this.Index1);
+				HookStateCustomName = string.Format("{0}~HookState{1}", InstanceTag1, Index1);
 
 				SendUnSubscriptionCommand(DialerCustomName, "callState", 2);
 
@@ -841,7 +837,7 @@ namespace Tesira_DSP_EPI {
 
 		public override void EndAllCalls()
 		{
-			this.OnHook();
+			OnHook();
 
 		}
         /// <summary>
@@ -932,7 +928,7 @@ namespace Tesira_DSP_EPI {
 						if (DialString.Length > 0)
 						{
 							DialString = DialString.Remove(DialString.Length - 1, 1);
-							this.DialStringFeedback.FireUpdate();
+							DialStringFeedback.FireUpdate();
 
 						} 
                         break;

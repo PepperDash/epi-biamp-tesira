@@ -1,11 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using Crestron.SimplSharp;
-using PepperDash.Essentials.Devices.Common.VideoCodec.Cisco;
-
-namespace Tesira_DSP_EPI
+﻿namespace Tesira_DSP_EPI
 {
     /// <summary>
     /// Track a subscription in a multi-subscription control

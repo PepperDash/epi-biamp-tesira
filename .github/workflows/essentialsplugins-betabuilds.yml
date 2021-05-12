@@ -107,10 +107,10 @@ jobs:
           }
 
           # validate arguments
-          $r = [System.Text.RegularExpressions.Regex]::Match($args[0], "\d+\.\d+\.\d+.*");
+          $r = [System.Text.RegularExpressions.Regex]::Match($Env:VERSION, "\d+\.\d+\.\d+.*");
           if ($r.Success) {
               Write-Output "Updating Assembly Version to $args ...";
-              Update-AllAssemblyInfoFiles $args[0];
+              Update-AllAssemblyInfoFiles $Env:VERSION;
           }
           else {
               Write-Output " ";

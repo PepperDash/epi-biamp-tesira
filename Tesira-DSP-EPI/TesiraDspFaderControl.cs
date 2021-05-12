@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using Crestron.SimplSharp;
 using Newtonsoft.Json;
 using PepperDash.Core;
@@ -8,7 +9,6 @@ using Crestron.SimplSharpPro.DeviceSupport;
 using PepperDash.Essentials.Core.Bridges;
 using Tesira_DSP_EPI.Bridge.JoinMaps;
 using System.Collections.Generic;
-using Tesira_DSP_EPI.Extensions;
 
 namespace Tesira_DSP_EPI
 {
@@ -40,8 +40,6 @@ namespace Tesira_DSP_EPI
                 VolumeLevelFeedback.FireUpdate();
             }
         }
-
-        private int subcounter;
 
         private const string KeyFormatter = "{0}--{1}";
 
@@ -122,17 +120,9 @@ namespace Tesira_DSP_EPI
         {
             get
             {
-                var trackValue = 0;
-
-                foreach (var subscriptionTrackingObject in SubscriptionTracker)
-                {
-                    var data = subscriptionTrackingObject.Value;
-
-                    if (data.Enabled)
-                    {
-                        trackValue += data.Subscribed ? 1 : -1;
-                    }
-                }
+                var trackValue = SubscriptionTracker.Select(subscriptionTrackingObject => 
+                    subscriptionTrackingObject.Value).Where(data => 
+                        data.Enabled).Sum(data => data.Subscribed ? 1 : -1);
 
                 return trackValue >= 0;
             }
@@ -189,12 +179,12 @@ namespace Tesira_DSP_EPI
             _volumeUpRepeatDelayTimer = new CTimer(VolumeUpRepeatDelay, Timeout.Infinite);
             _volumeDownRepeatDelayTimer = new CTimer(VolumeDownRepeatDelay, Timeout.Infinite);
 
-            SubscriptionTracker = new Dictionary<string, SubscriptionTrackingObject>();
+            SubscriptionTracker = new Dictionary<string, SubscriptionTrackingObject>
+            {
+                {"mute", new SubscriptionTrackingObject(HasMute)},
+                {"level", new SubscriptionTrackingObject(HasLevel)}
+            };
 
-            SubscriptionTracker.Add("mute", new SubscriptionTrackingObject(HasMute));
-            SubscriptionTracker.Add("level", new SubscriptionTrackingObject(HasLevel));
-
-            
 
             if (HasMute && HasLevel)
             {
