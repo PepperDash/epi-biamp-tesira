@@ -538,34 +538,6 @@ namespace Tesira_DSP_EPI
 
 
 
-        /// <summary>
-        /// Scales two relative values given two sets of relative ranges
-        /// </summary>
-        /// <param name="input">Relative Input Value</param>
-        /// <param name="inMin">Minimum Input Value</param>
-        /// <param name="inMax">Maximum Input Value</param>
-        /// <param name="outMin">Minimum Output Value</param>
-        /// <param name="outMax">Maximum Output Value</param>
-        /// <returns>Relative output value</returns>
-        double Scale(double input, double inMin, double inMax, double outMin, double outMax)
-        {
-            Debug.Console(1, this, "Scaling (double) input '{0}' with min '{1}'/max '{2}' to output range min '{3}'/max '{4}'", input, inMin, inMax, outMin, outMax);
-
-            var inputRange = inMax - inMin;
-
-            if (inputRange <= 0)
-            {
-                throw new ArithmeticException(string.Format("Invalid Input Range '{0}' for Scaling.  Min '{1}' Max '{2}'.", inputRange, inMin, inMax));
-            }
-
-            var outputRange = outMax - outMin;
-
-            var output = (((input - inMin) * outputRange) / inputRange) + outMin;
-
-            Debug.Console(1, this, "Scaled output '{0}'", output);
-
-            return output;
-        }
 
         public enum EPdtLevelTypes
         {
