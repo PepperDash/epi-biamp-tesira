@@ -348,7 +348,7 @@ namespace Tesira_DSP_EPI
                     {
                         MinLevel = Double.Parse(value);
 
-                        Debug.Console(0, this, "MinLevel is '{0}'", MinLevel);
+                        Debug.Console(1, this, "MinLevel is '{0}'", MinLevel);
 
                         break;
                     }
@@ -356,7 +356,7 @@ namespace Tesira_DSP_EPI
                     {
                         MaxLevel = Double.Parse(value);
 
-                        Debug.Console(0, this, "MaxLevel is '{0}'", MaxLevel);
+                        Debug.Console(1, this, "MaxLevel is '{0}'", MaxLevel);
 
                         break;
                     }
@@ -366,7 +366,7 @@ namespace Tesira_DSP_EPI
 
                         VolumeLevel = UseAbsoluteValue ? (ushort) localValue : (ushort)localValue.Scale(MinLevel, MaxLevel, 0, 65535, this);
 
-                        Debug.Console(0, this, "VolumeLevel is '{0}'", VolumeLevel);
+                        Debug.Console(1, this, "VolumeLevel is '{0}'", VolumeLevel);
 
                         break;
 

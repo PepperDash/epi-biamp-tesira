@@ -29,7 +29,8 @@ namespace Tesira_DSP_EPI
 		protected TesiraDspControlPoint(string instanceTag1, string instanceTag2, int index1, int index2, TesiraDsp parent, string key, string name, uint? bridgeIndex)
             : base(key, name)
 		{
-            BridgeIndex = bridgeIndex;
+            if(bridgeIndex != null)
+                BridgeIndex = bridgeIndex;
             Feedbacks = new FeedbackCollection<Feedback>();
 			InstanceTag1 = string.IsNullOrEmpty(instanceTag1) ? "" : instanceTag1;
 			InstanceTag2 = string.IsNullOrEmpty(instanceTag2) ? "" : instanceTag2;

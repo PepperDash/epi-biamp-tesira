@@ -18,16 +18,16 @@ namespace Tesira_DSP_EPI {
         public FeedbackCollection<Feedback> Feedbacks; 
 
         private bool IsVoip { get; set; }
-		private string _DialString;
+		private string _dialString;
 		public string DialString
 		{
 			get
 			{
-				return _DialString;
+				return _dialString;
 			}
 			set
 			{
-				_DialString = value;
+				_dialString = value;
 				DialStringFeedback.FireUpdate();
 			}
 		}
@@ -313,8 +313,8 @@ namespace Tesira_DSP_EPI {
         /// Line Number for component
         /// </summary>
         public int LineNumber { get; protected set; }
-      
-        private string _callerIdNumber { get; set; }
+
+        private string _callerIdNumber;
 
         /// <summary>
         /// CallerId Number
