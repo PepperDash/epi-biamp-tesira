@@ -54,12 +54,13 @@ namespace Tesira_DSP_EPI
 
 		private CTimer _watchDogTimer;
 
-        private CTimer _QueueCheckTimer;
+        private CTimer _queueCheckTimer;
 
         private Thread _subscribeThread;
 
         private readonly bool _isSerialComm;
 
+        private TesiraDspDeviceInfo DevInfo { get; set; }
         private Dictionary<string, TesiraDspFaderControl> Faders { get; set; }
         private Dictionary<string, TesiraDspDialer> Dialers { get; set; }
         private Dictionary<string, TesiraDspSwitcher> Switchers { get; set; }
@@ -75,8 +76,6 @@ namespace Tesira_DSP_EPI
 		private bool WatchDogSniffer { get; set; }
 
 		readonly DeviceConfig _dc;
-
-		bool _commandQueueInProgress;
 
 		public bool ShowHexResponse { get; set; }
 
@@ -94,14 +93,11 @@ namespace Tesira_DSP_EPI
 		{
 			_dc = dc;
 
-
             CommandQueue = new TesiraQueue(2000, this);
 
             CommandPassthruFeedback = new StringFeedback(() => DeviceRx);
 
             Communication = comm;
-
-
 
 			var socket = comm as ISocketStatus;
 
@@ -210,6 +206,7 @@ namespace Tesira_DSP_EPI
 
             Debug.Console(2, this, "Props Exists");
             Debug.Console(2, this, "Here's the props string\n {0}", _dc.Properties.ToString());
+
 
             Faders.Clear();
             Presets.Clear();
@@ -351,11 +348,12 @@ namespace Tesira_DSP_EPI
                 }
             }
 
+
             //Keep me at the end of this method!
-            /*DeviceInfo = new TesiraDspDeviceInfo(this, Presets);
-            if(DeviceInfo != null)
-                DeviceManager.AddDevice(DeviceInfo);
-            */
+            DevInfo = new TesiraDspDeviceInfo(this, Presets);
+            if (DevInfo != null)
+                DeviceManager.AddDevice(DevInfo);
+            
         }
 
 
@@ -386,7 +384,6 @@ namespace Tesira_DSP_EPI
 			{
 				// Cleanup items from this session
                 CommandQueue.Clear();
-				_commandQueueInProgress = false;
 			}
         }
 
@@ -694,6 +691,9 @@ namespace Tesira_DSP_EPI
 
 		private void SubscribeToComponents()
         {
+            DevInfo.GetFirmware();
+            DevInfo.GetIpConfig();
+            DevInfo.GetSerial();
             foreach (var fader in ControlPointList.OfType<IVolumeComponent>())
             {
                 fader.GetMinLevel();
@@ -704,13 +704,13 @@ namespace Tesira_DSP_EPI
                 fader.GetMaxLevel();
             }
 
-            if (_QueueCheckTimer == null)
+            if (_queueCheckTimer == null)
             {
-                _QueueCheckTimer = new CTimer(o => QueueCheck(), null, 1000, 1000);
+                _queueCheckTimer = new CTimer(o => QueueCheck(), null, 1000, 1000);
             }
             else
             {
-                _QueueCheckTimer.Reset(1000, 1000);
+                _queueCheckTimer.Reset(1000, 1000);
             }
 
 		}
@@ -719,15 +719,15 @@ namespace Tesira_DSP_EPI
         {
             if (!CommandQueue.LocalQueue.Any() && !CommandQueue.CommandQueueInProgress)
             {
-                _QueueCheckTimer.Stop();
-                _QueueCheckTimer = null;
+                _queueCheckTimer.Stop();
+                _queueCheckTimer = null;
                 foreach (var component in ControlPointList)
                 {
                     SubscribeToComponent(component);
                 }
             }
             else
-                _QueueCheckTimer.Reset(1000, 1000);
+                _queueCheckTimer.Reset(1000, 1000);
         }
 
         private void SubscribeToComponent(ISubscribedComponent data)
@@ -919,7 +919,7 @@ namespace Tesira_DSP_EPI
             foreach (var preset in Presets)
             {
                 var p = preset as TesiraPreset;
-                if (preset == null) continue;
+                if (p == null) continue;
                 var runPresetIndex = p.PresetData.PresetIndex;
                 var presetIndex = runPresetIndex;
                 trilist.StringInput[(uint)(presetJoinMap.PresetNameFeedback.JoinNumber + presetIndex)].StringValue = p.PresetData.Label;

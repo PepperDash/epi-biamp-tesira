@@ -2,21 +2,26 @@
 using System;
 using System.Text.RegularExpressions;
 using Newtonsoft.Json;
+using System.Linq;
 using PepperDash.Core;
 using PepperDash.Essentials.Core;
 using Crestron.SimplSharpPro.DeviceSupport;
+using PepperDash.Essentials.Core.DeviceInfo;
+using PepperDash.Essentials.Devices.Common.VideoCodec.Cisco;
 using Tesira_DSP_EPI.Bridge.JoinMaps;
 using PepperDash.Essentials.Core.Bridges;
 
 namespace Tesira_DSP_EPI
 {
-    public class TesiraDspDeviceInfo : TesiraDspControlPoint
+    public class TesiraDspDeviceInfo : TesiraDspControlPoint, IDeviceInfoProvider, IHasDspPresets
     {
         /// <summary>
         /// Feedback Collection for Component
         /// </summary>
 
-        private readonly Dictionary<string, TesiraDspPresets> _presets; 
+        public DeviceInfo DeviceInfo { get; private set; }
+
+        public event DeviceInfoChangeHandler DeviceInfoChanged;
 
         readonly TesiraDsp _parent;
 
@@ -31,7 +36,6 @@ namespace Tesira_DSP_EPI
             {
                 _ipAddress = value;
                 IpAddressFeedback.FireUpdate();
-                GetHostname();
             }
         }
 
@@ -56,7 +60,6 @@ namespace Tesira_DSP_EPI
             {
                 _hostname = value;
                 HostnameFeedback.FireUpdate();
-                GetSerial();
             }
         }
 
@@ -69,7 +72,6 @@ namespace Tesira_DSP_EPI
             {
                 _serialNumber = value;
                 SerialNumberFeedback.FireUpdate();
-                GetFirmware();
             }
         }
 
@@ -97,17 +99,21 @@ namespace Tesira_DSP_EPI
         /// </summary>
         /// <param name="parent">Parent Device</param>
         /// <param name="presets">Dictionary of Presets</param>
-        public TesiraDspDeviceInfo(TesiraDsp parent, Dictionary<string, TesiraDspPresets> presets)
+        public TesiraDspDeviceInfo(TesiraDsp parent, List<IDspPreset> presets)
             : base("DEVICE", "DEVICE", 0, 0, parent, String.Format(KeyFormatter, parent.Key, "DeviceInfo"), "DeviceInfo", null)
         {
-            _presets = presets;
             _parent = parent;
+            Presets = presets;
+
+            DeviceInfo = new DeviceInfo();
 
             Init();
         }
 
         private void Init()
         {
+            
+
             NameFeedback = new StringFeedback(() => _parent.Name);
             IpAddressFeedback = new StringFeedback(() => IpAddress);
             HostnameFeedback = new StringFeedback(() => Hostname);
@@ -127,32 +133,18 @@ namespace Tesira_DSP_EPI
             Debug.Console(2, this, "Tesira DeviceInfo \"{0}\" Device Created", Key);
         }
 
-        public override void Subscribe()
-        {
-            GetDeviceInformation();
-        }
 
-        public void GetDeviceInformation()
-        {
-            GetIpConfig();
-        }
-
-        private void GetIpConfig()
+        public void GetIpConfig()
         {
             SendFullCommand("get", "ipStatus", "control", 999);
         }
 
-        private void GetHostname()
-        {
-            SendFullCommand("get", "hostname", "", 999);
-        }
-
-        private void GetSerial()
+        public void GetSerial()
         {
             SendFullCommand("get", "serialNumber", "", 999);            
         }
 
-        private void GetFirmware()
+        public void GetFirmware()
         {
             SendFullCommand("get", "version", "", 999);            
         }
@@ -162,45 +154,41 @@ namespace Tesira_DSP_EPI
         {
             Debug.Console(2, this, "Parsing Message - '{0}' : Message has an attributeCode of {1}", message, attributeCode);
             // Parse an "+OK" message
-            const string pattern = "[^ ]* (.*)";
-
-            const string ipPattern = "\"(.*?)\"";
-
-            var match = Regex.Match(message, pattern);
-
-            if (!match.Success) return;
-
-            var value = match.Groups[1].Value;
-
-            Debug.Console(1, this, "Response: '{0}' Value: '{1}'", attributeCode, value);
+            const string pattern = "([\"\'])(?:(?=(\\\\?))\\2.)*?\\1";
 
             if (message.IndexOf("+OK", StringComparison.OrdinalIgnoreCase) <= -1) return;
+
+            var matches = Regex.Matches(message, pattern);
+
+            if (matches == null) return;
 
             switch (attributeCode)
             {
                 case ("ipStatus") :
                 {
-                    var matches = Regex.Matches(value, ipPattern);
-                    if (matches.Count != 6) return;
-                    MacAddress = matches[0].Value;
-                    IpAddress = matches[1].Value;
-                    break;
-                }
-                case ("hostname") :
-                {
-                    Hostname = value;
+                    Hostname = matches[0].Value.Trim('"');
+                    MacAddress = matches[3].Value.Trim('"');
+                    IpAddress = matches[1].Value.Trim('"');
+                    DeviceInfo.HostName = Hostname;
+                    DeviceInfo.MacAddress = MacAddress;
+                    DeviceInfo.IpAddress = IpAddress;
+                    UpdateDeviceInfo();
                     break;
                 }
                 case("serialNumber") :
                 {
-                    SerialNumber = value;
+                    SerialNumber = matches[0].Value.Trim('"');
+                    DeviceInfo.SerialNumber = SerialNumber;
+                    UpdateDeviceInfo();
                     break;
                 }
                 case ("version") :
-                    Firmware = value;
+                    Firmware = matches[0].Value.Trim('"');
+                    DeviceInfo.FirmwareVersion = Firmware; 
+                    UpdateDeviceInfo();
                     break;
-
             }
+
         }
 
         public override void LinkToApi(BasicTriList trilist, uint joinStart, string joinMapKey, EiscApiAdvanced bridge)
@@ -234,13 +222,14 @@ namespace Tesira_DSP_EPI
 
             trilist.SetStringSigAction(presetJoinMap.PresetName.JoinNumber, _parent.RunPreset);
 
-            foreach (var preset in _presets)
+            foreach (var preset in Presets)
             {
-                var p = preset;
-                var runPresetIndex = preset.Value.PresetIndex;
-                var presetIndex = runPresetIndex - 1;
-                trilist.StringInput[(uint)(presetJoinMap.PresetNameFeedback.JoinNumber + presetIndex)].StringValue = p.Value.Label;
-                trilist.SetSigTrueAction((uint)(presetJoinMap.PresetSelection.JoinNumber + presetIndex), () => _parent.RunPresetNumber((ushort)runPresetIndex));
+                var p = preset as TesiraPreset;
+                if (p == null) continue;
+                var runPresetIndex = p.PresetData.PresetIndex;
+                var presetIndex = runPresetIndex;
+                trilist.StringInput[(uint)(presetJoinMap.PresetNameFeedback.JoinNumber + presetIndex)].StringValue = p.PresetData.Label;
+                trilist.SetSigTrueAction((uint)(presetJoinMap.PresetSelection.JoinNumber + presetIndex), () => RunPresetNumber((ushort)presetIndex));
             }
 
 
@@ -268,5 +257,82 @@ namespace Tesira_DSP_EPI
             };
 
         }
+
+        #region Presets
+
+        public void RunPresetNumber(ushort n)
+        {
+            Debug.Console(2, this, "Attempting to run preset {0}", n);
+
+            foreach (var preset in Presets.OfType<TesiraPreset>().Where(preset => preset.Index == n))
+            {
+                Debug.Console(2, this, "Found a matching Preset - {0}", preset.PresetData.PresetId);
+                RecallPreset(preset);
+            }
+
+        }
+
+        /// <summary>
+        /// Sends a command to execute a preset
+        /// </summary>
+        /// <param name="name">Preset Name</param>
+        public void RunPreset(string name)
+        {
+            Debug.Console(2, this, "Running Preset By Name - {0}", name);
+            _parent.SendLine(string.Format("DEVICE recallPresetByName \"{0}\"", name));
+            //CommandQueue.EnqueueCommand(string.Format("DEVICE recallPresetByName \"{0}\"", name));
+        }
+
+        /// <summary>
+        /// Sends a command to execute a preset
+        /// </summary>
+        /// <param name="id">Preset Id</param>
+        public void RunPreset(int id)
+        {
+            Debug.Console(2, this, "Running Preset By ID - {0}", id);
+            _parent.SendLine(string.Format("DEVICE recallPreset {0}", id));
+            //CommandQueue.EnqueueCommand(string.Format("DEVICE recallPreset {0}", id));
+        }
+
+        public void RecallPreset(IDspPreset preset)
+        {
+            Debug.Console(2, this, "Running preset {0}", preset.Name);
+            var tesiraPreset = preset as TesiraPreset;
+            if (tesiraPreset == null) return;
+            if (!String.IsNullOrEmpty(tesiraPreset.PresetName))
+            {
+                RunPreset(tesiraPreset.PresetData.PresetName);
+            }
+            else
+            {
+                RunPreset(tesiraPreset.PresetData.PresetId);
+            }
+        }
+
+        #endregion
+
+        #region IDeviceInfoProvider Members
+
+
+        public void UpdateDeviceInfo()
+        {
+            var args = new DeviceInfoEventArgs(DeviceInfo);
+
+           var raiseEvent = DeviceInfoChanged;
+
+            if (raiseEvent != null)
+            {
+                raiseEvent(Parent, args);
+            }
+        }
+
+        #endregion
+
+        #region IHasDspPresets Members
+
+        public List<IDspPreset> Presets { get; private set; }
+
+
+        #endregion
     }
 }
