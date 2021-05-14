@@ -59,7 +59,7 @@ This plugin is provided as a published [nuget package](https://www.nuget.org/pac
 
 ### DeviceInfo
 
-This object is built by default with a Biamp Tesira DSP and provides both an interface to `IDeviceInfoProvider` and a method to send hardware-specific data across the bridge to SIMPL
+This object is built by default with a Biamp Tesira DSP and provides a method to send hardware-specific data across the bridge to SIMPL
 
 This data is only accessible by linking the device to the bridge.  The component key is always `DeviceInfo` - therefore when a Biamp Tesira DSP with the key `dsp-1` is instantiated, a DeviceInfo component
 with the key of `dsp-1--DeviceInfo` will be added to the `DeviceManager` and will be accessible to any Essentials Bridge.
@@ -67,6 +67,8 @@ with the key of `dsp-1--DeviceInfo` will be added to the `DeviceManager` and wil
 This device will also allow a direct passthru connection to the device if necessary and a method by which to trigger control resubscription.
 
 If you do not choose to bridge a **Standalone** object, limited data is available on the **Legacy** object.
+
+> This control implements [Essentials](https://github.com/PepperDash/Essentials) interfaces **`IDeviceInfoProvider`** and **`IKeyed`**
 
 #### Digitals
 
@@ -93,7 +95,7 @@ None
 
 #### Config Notes
 
-> This configuration matches a standard essentials device configuration at the base level, with only the type being different.  This may have the type ```tesira```, ```tesiraforte```, ```tesiraserver```, ```tesiradsp```, or ```tesira-dsp```*.
+> This configuration matches a standard essentials device configuration at the base level, with only the type being different.  This may have the type **```tesira```**, **```tesiraforte```**, **```tesiraserver```**, **```tesiradsp```**, or **```tesira-dsp```**.
 
 ``` javascript
 "key": "TesiraDsp-1",
@@ -130,6 +132,8 @@ Within the **Legacy** object, this Join map represents a control that is part of
 
 Within the **Standalone** object, this join map represents a single control as defined by the key in the bridge.
 
+>This Control implements [Essentials](https://github.com/PepperDash/Essentials) interfaces **`IKeyed`** and **`IBasicVolumeWithFeedback`**
+
 #### Digitals
 
 | Legacy Join | Standalone Join | Type (RW) | Description     |
@@ -158,7 +162,7 @@ Within the **Standalone** object, this join map represents a single control as d
 
 #### Config Example
 
-> All Level/Mute configs must be part of a dictionary called ```faderControlBlocks```.  
+> All Level/Mute configs must be part of a dictionary called **faderControlBlocks**.  
 
 ``` javascript
 "faderControlBlocks": {
@@ -206,6 +210,8 @@ Controls objects with the attribute type of "sourceSelection" and subscribes to 
 Within the **Legacy** object, this Join map represents a control that is part of an array of controls.  Each join number = Join Map Number + fader ```bridgeIndex``` as defined by the config.
 
 Within the **Standalone** object, this join map represents a single control as defined by the key in the bridge.
+
+>This control implements [Essentials](https://github.com/PepperDash/Essentials) interfaces **`IKeyed`** and **`IRoutingWithFeedback`**
 
 #### Digitals
 
@@ -270,6 +276,8 @@ Within the **Legacy** object, this Join map represents a control that is part of
 
 Within the **Standalone** object, this join map represents a single control as defined by the key in the bridge.
 
+>This control implements [Essentials](https://github.com/PepperDash/Essentials) interface **`IKeyed`**
+
 #### Digitals
 
 | Legacy Join | Standalone Join | Type (RW) | Description  |
@@ -318,9 +326,9 @@ In the provided example config object, given a base object key of ```dsp-1```, t
 
 ### Presets
 
-> All state configs must be part of a dictionary called **presets**.  
->
-> If you intend to ONLY do direct preset calling by string, this object is NOT required to recall presets. This activity is provided by the base level device object for the Tesira DSP. It is also provided by the **Standalone** object ```Presets```.  This config object is required regardless of control object if preset control iby index is required.
+If you intend to ONLY do direct preset calling by string, this object is NOT required to recall presets. This activity is provided by the base level device object for the Tesira DSP. It is also provided by the **Standalone** object ```Presets```.  This config object is required regardless of control object if preset control iby index is required.
+
+>This control implements [Essentials](https://github.com/PepperDash/Essentials) interfaces **`IHasDspPreset`** and **`IKeyed`**
 
 #### Digitals
 
@@ -342,6 +350,9 @@ None
 
 #### Config Example
 
+> All preset configs must be part of a dictionary called **presets**.  
+
+
 ``` javascript
 "presets" : {
     "SomeUniqueKey": {
@@ -352,6 +363,8 @@ None
         }
 }
 ```
+
+In the provided example config object, given a base object key of ```dsp-1```, this control would have a standalone key of ```dsp-1--Presets```.
 
 #### Config Notes
 
@@ -378,6 +391,8 @@ Within the **Legacy** object, this Join map represents a control that is part of
 For example, Incoming Call for Line 1 would be at join 3101, while the incoming call for Line 2 would be at join 3151.
 
 Within the **Standalone** object, this join map represents a single control as defined by the key in the bridge.
+
+>This control implements [Essentials](https://github.com/PepperDash/Essentials) interfaces **`AudioCodecBase`** and **`IKeyed`**
 
 #### Digitals
 
@@ -428,7 +443,7 @@ Within the **Standalone** object, this join map represents a single control as d
 
 #### Config Example
 
-> All dialer configs must be part of a dictionary called ```dialerControlBlocks```.  
+> All dialer configs must be part of a dictionary called **dialerControlBlocks**.  
 
 ``` javascript
 "dialerControlBlocks" : {
@@ -472,6 +487,9 @@ Using this is a bad idea, please avoid unless specifically requested.
 Within the **Legacy** object this Join map represents a control that is part of an array of controls.  Each join number = Join Map Number + ```bridgeIndex``` as defined by the config.
 
 Within the **Standalone** object, this join map represents a single control as defined by the key in the bridge.
+
+>This control implements [Essentials](https://github.com/PepperDash/Essentials) interface **`IKeyed`**
+
 
 #### Digitals
 
@@ -524,6 +542,9 @@ In the provided example config object, given a base object key of ```dsp-1```, t
 Provides a control point for a single crosspoint on a MatrixMixer.  
 
 This Join map represents a control that is part of an array of controls.  Each join number = Join Map Number + State Index as defined by the config.
+
+>This control implements [Essentials](https://github.com/PepperDash/Essentials) interface **`IKeyed`**
+
 
 #### Digitals
 
@@ -585,6 +606,8 @@ Within the **Legacy** object, this Join map represents a control that is part of
 
 Within the **Standalone** object, this join map represents a single control as defined by the key in the bridge.
 
+>This control implements [Essentials](https://github.com/PepperDash/Essentials) interfaces **`IBasicVolumeWithFeedback`** and **`IKeyed`**
+
 #### Digitals
 
 | Legacy Join | Standalone Join | Type (RW) | Description     |
@@ -613,7 +636,7 @@ Within the **Standalone** object, this join map represents a single control as d
 
 #### Config Example
 
-> All RoomCombiner configs must be part of a dictionary called ```roomCombinerControlBlocks```.  
+> All RoomCombiner configs must be part of a dictionary called **roomCombinerControlBlocks**.  
 
 ``` javascript
 "roomCombinerControlBlocks": {
