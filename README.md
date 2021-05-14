@@ -53,6 +53,8 @@ The only exception to this rule is for the Base **Standalone** object, which has
 
 This plugin is provided as a published [nuget package](https://www.nuget.org/packages/PepperDash.Essentials.Plugin.BiampTesira) for your convenience.  
 
+Place the **\*.cplz** file in the /users/programxx/plugins folder, and restart your program.
+
 ***
 
 ## Controls and Configs
