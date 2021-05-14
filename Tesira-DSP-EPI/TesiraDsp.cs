@@ -277,6 +277,7 @@ namespace Tesira_DSP_EPI
                     //Add ControlPoint to the list for the watchdog
                     ControlPointList.Add(Faders[key]);
                 }
+                DeviceManager.AddDevice(Faders[key]);
             }
         }
 
@@ -294,6 +295,8 @@ namespace Tesira_DSP_EPI
                 {
                     ControlPointList.Add(RoomCombiners[key]);
                 }
+                DeviceManager.AddDevice(RoomCombiners[key]);
+
             }
         }
 

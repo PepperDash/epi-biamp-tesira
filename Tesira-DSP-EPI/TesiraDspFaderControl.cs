@@ -408,12 +408,33 @@ namespace Tesira_DSP_EPI
             if (level > _volumeLevel && AutomaticUnmuteOnVolumeUp)
                 if (_isMuted)
                     MuteOff();
-            var newLevel = (double) level;
+            switch (level)
+            {
+                case (ushort.MinValue):
+                {
+                    SendFullCommand("set", "level", string.Format("{0:0.000000}", MinLevel), 1);
+                    break;
+                }
 
-            var volumeLevel = UseAbsoluteValue ? level : newLevel.Scale(0, 65535, MinLevel, MaxLevel, this);
+                case (ushort.MaxValue):
+                {
+                    SendFullCommand("set", "level", string.Format("{0:0.000000}", MaxLevel), 1);
+                    break;
+                }
+                default:
+                {
+                    var newLevel = Convert.ToDouble(level);
 
-            SendFullCommand("set", "level", string.Format("{0:0.000000}", volumeLevel), 1);
+                    var volumeLevel = UseAbsoluteValue ? level : newLevel.Scale(0, 65535, MinLevel, MaxLevel, this);
+
+                    SendFullCommand("set", "level", string.Format("{0:0.000000}", volumeLevel), 1);
+                    break;
+
+                }
+            }
         }
+
+        
 
         /// <summary>
         /// Polls all data for component
