@@ -280,14 +280,8 @@ namespace Tesira_DSP_EPI {
         [JsonProperty("roomIndex")]
         public int RoomIndex { get; set; }
 
-        [JsonProperty("preferredRoom")]
-        public bool PreferredRoom { get; set; }
-
-        [JsonProperty("hasMute")]
-        public bool HasMute { get; set; }
-
-        [JsonProperty("hasLevel")]
-        public bool HasLevel { get; set; }
+        [JsonProperty("isMic")]
+        public bool IsMic { get; set; }
 
         [JsonProperty("useAbsoluteValue")]
         public bool UseAbsoluteValue { get; set; }

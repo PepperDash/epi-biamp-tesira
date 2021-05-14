@@ -143,11 +143,6 @@ namespace Tesira_DSP_EPI
 
         private void Initialize(TesiraFaderControlBlockConfig config)
         {
-            if (config.Enabled)
-            {
-                DeviceManager.AddDevice(this);
-            }
-
             _type = config.IsMic ? EPdtLevelTypes.Microphone : EPdtLevelTypes.Speaker;
 
             Debug.Console(2, this, "Adding LevelControl '{0}'", Key);
