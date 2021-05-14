@@ -836,7 +836,7 @@ In the provided example config object, given a base object key of ```dsp-1```, t
                             "index" : 1,
                             "bridgeIndex" : 1
                         }
-                    }
+                    },
                     "roomCombinerControlBlocks": {
                         "Room01": {
                             "enabled": true,
@@ -849,6 +849,7 @@ In the provided example config object, given a base object key of ```dsp-1```, t
                             "permissions" : 0,
                             "bridgeIndex" : 1
                         }
+                     },
                     "presets" : {
                         "1": {
                             "label" : "Default",
