@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using Crestron.SimplSharpPro.DeviceSupport;
 using PepperDash.Core;
 using PepperDash.Essentials.Core.Bridges;
@@ -17,6 +18,8 @@ namespace Tesira_DSP_EPI
         public string Label { get; set; }
         public readonly uint? BridgeIndex;
 
+        public List<string> CustomNames { get; set; } 
+
         private const string KeyFormatter = "{0}--{1}";
 
         public virtual bool IsSubscribed { get; protected set; }
@@ -30,6 +33,7 @@ namespace Tesira_DSP_EPI
             Index1 = index1;
             Index2 = index2;
             Parent = parent;
+            CustomNames = new List<string>();
         }
 
         virtual public void Initialize() {}
@@ -125,6 +129,18 @@ namespace Tesira_DSP_EPI
         virtual public void ParseGetMessage(string attributeCode, string message)
         {
 
+        }
+
+        public virtual void ParseSubscriptionMessage(string customName, string value)
+        {
+
+        }
+
+
+        public virtual void AddCustomName(string customName)
+        {
+            if (CustomNames.Contains(customName)) return;
+            CustomNames.Add(customName);
         }
 
         public virtual void SendSubscriptionCommand(string customName, string attributeCode, int responseRate, int instanceTag)

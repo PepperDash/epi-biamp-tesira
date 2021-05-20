@@ -118,7 +118,7 @@ namespace Tesira_DSP_EPI {
         /// </summary>
         public override void Subscribe() {
             SelectorCustomName = string.Format("{0}~Selector{1}", InstanceTag1, Index1);
-
+            AddCustomName(SelectorCustomName);
             SendSubscriptionCommand(SelectorCustomName, "sourceSelection", 250, 1);
         }
 
@@ -139,7 +139,7 @@ namespace Tesira_DSP_EPI {
         /// </summary>
         /// <param name="customName">Subscription Identifier</param>
         /// <param name="value">Response to parse</param>
-        public void ParseSubscriptionMessage(string customName, string value) {
+        public override void ParseSubscriptionMessage(string customName, string value) {
 
             // Check for valid subscription response
 

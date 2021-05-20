@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using Crestron.SimplSharpPro.DeviceSupport;
 using PepperDash.Essentials.Core;
 using PepperDash.Core;
@@ -17,6 +18,8 @@ namespace Tesira_DSP_EPI
 		public string Label { get; set; }
         public readonly uint? BridgeIndex;
 
+        public List<string> CustomNames { get; set; } 
+
 	    public StringFeedback NameFeedback;
 
         public FeedbackCollection<Feedback> Feedbacks; 
@@ -26,7 +29,8 @@ namespace Tesira_DSP_EPI
 		protected TesiraDspControlPoint(string instanceTag1, string instanceTag2, int index1, int index2, TesiraDsp parent, string key, string name, uint? bridgeIndex)
             : base(key, name)
 		{
-            BridgeIndex = bridgeIndex;
+            if(bridgeIndex != null)
+                BridgeIndex = bridgeIndex;
             Feedbacks = new FeedbackCollection<Feedback>();
 			InstanceTag1 = string.IsNullOrEmpty(instanceTag1) ? "" : instanceTag1;
 			InstanceTag2 = string.IsNullOrEmpty(instanceTag2) ? "" : instanceTag2;
@@ -34,6 +38,7 @@ namespace Tesira_DSP_EPI
 			Index2 = index2;
 			Parent = parent;
             NameFeedback = new StringFeedback(key + "-NameFeedback", () => Name);
+            CustomNames = new List<string>();
 		}
 
 		public virtual void Initialize()
@@ -147,6 +152,12 @@ namespace Tesira_DSP_EPI
 
 		}
 
+        public virtual void AddCustomName(string customName)
+        {
+            if (CustomNames.Contains(customName)) return;
+            CustomNames.Add(customName);
+        }
+
 		public virtual void SendSubscriptionCommand(string customName, string attributeCode, int responseRate, int instanceTag)
 		{
 			// Subscription string format: InstanceTag subscribe attributeCode Index1 customName responseRate
@@ -191,6 +202,11 @@ namespace Tesira_DSP_EPI
             //Parent.CommandQueue.EnqueueCommand(new QueuedCommand(cmd, attributeCode, this));
 
 		}
+
+        public virtual void ParseSubscriptionMessage(string customName, string value)
+        {
+            
+        }
 
 		public virtual void SendUnSubscriptionCommand(string customName, string attributeCode, int instanceTag)
 		{

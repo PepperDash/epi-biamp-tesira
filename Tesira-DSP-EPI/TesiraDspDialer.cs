@@ -18,16 +18,16 @@ namespace Tesira_DSP_EPI {
         public FeedbackCollection<Feedback> Feedbacks; 
 
         private bool IsVoip { get; set; }
-		private string _DialString;
+		private string _dialString;
 		public string DialString
 		{
 			get
 			{
-				return _DialString;
+				return _dialString;
 			}
 			set
 			{
-				_DialString = value;
+				_dialString = value;
 				DialStringFeedback.FireUpdate();
 			}
 		}
@@ -313,8 +313,8 @@ namespace Tesira_DSP_EPI {
         /// Line Number for component
         /// </summary>
         public int LineNumber { get; protected set; }
-      
-        private string _callerIdNumber { get; set; }
+
+        private string _callerIdNumber;
 
         /// <summary>
         /// CallerId Number
@@ -363,10 +363,7 @@ namespace Tesira_DSP_EPI {
                 }
                 else if (!IsVoip)
                 {
-                    if (PotsIsSubscribed && HookStateIsSubscribed)
-                        isSubscribed = true;
-                    else
-                        isSubscribed = false;
+                    isSubscribed = PotsIsSubscribed;
                 }
                 else
                     isSubscribed = false;
@@ -377,7 +374,6 @@ namespace Tesira_DSP_EPI {
 
         private bool VoipIsSubscribed { get; set; }
         private bool AutoAnswerIsSubscribed { get; set; }
-        private bool HookStateIsSubscribed { get; set; }
         private bool PotsIsSubscribed { get; set; }
 
 
@@ -485,26 +481,33 @@ namespace Tesira_DSP_EPI {
 
 
                 SendSubscriptionCommand(ControlStatusCustomName, "callState", 250, 2);
+                AddCustomName(ControlStatusCustomName);
 
                 SendSubscriptionCommand(AutoAnswerCustomName, "autoAnswer", 500, 1);
+                AddCustomName(AutoAnswerCustomName);
+
 
                 SendSubscriptionCommand(LastDialedCustomName, "lastNum", 500, 1);
+                AddCustomName(LastDialedCustomName);
 
                 SendFullCommand("get", "dndEnable", null, 1);
             }
             else if (!IsVoip)
             {
 
-                PotsDialerCustomName = string.Format("{0}~PotsDialer{1}", this.InstanceTag1, this.Index1);
-                LastDialedCustomName = string.Format("{0}~PotsLastNumber{1}", this.InstanceTag1, this.Index1);
+                PotsDialerCustomName = string.Format("{0}~PotsDialer{1}", InstanceTag1, Index1);
+                LastDialedCustomName = string.Format("{0}~PotsLastNumber{1}", InstanceTag1, Index1);
 
-                HookStateCustomName = string.Format("{0}~HookState{1}", this.InstanceTag1, this.Index1);
+                HookStateCustomName = string.Format("{0}~HookState{1}", InstanceTag1, Index1);
 
                 SendSubscriptionCommand(PotsDialerCustomName, "callState", 250, 1);
+                AddCustomName(PotsDialerCustomName);
 
                 SendSubscriptionCommand(HookStateCustomName, "hookState", 500, 2);
+                AddCustomName(HookStateCustomName);
 
                 SendSubscriptionCommand(LastDialedCustomName, "lastNum", 500, 1);
+                AddCustomName(LastDialedCustomName);
 
                 SendFullCommand("get", "autoAnswer", null, 1);
             }
@@ -536,10 +539,10 @@ namespace Tesira_DSP_EPI {
             }
             else if (!IsVoip)
             {
-				DialerCustomName = string.Format("{0}~PotsDialer{1}", this.InstanceTag1, this.Index1);
-				LastDialedCustomName = string.Format("{0}~PotsLastNumber{1}", this.InstanceTag1, this.Index1);
+				DialerCustomName = string.Format("{0}~PotsDialer{1}", InstanceTag1, Index1);
+				LastDialedCustomName = string.Format("{0}~PotsLastNumber{1}", InstanceTag1, Index1);
 
-				HookStateCustomName = string.Format("{0}~HookState{1}", this.InstanceTag1, this.Index1);
+				HookStateCustomName = string.Format("{0}~HookState{1}", InstanceTag1, Index1);
 
 				SendUnSubscriptionCommand(DialerCustomName, "callState", 2);
 
@@ -555,7 +558,7 @@ namespace Tesira_DSP_EPI {
         /// </summary>
         /// <param name="customName">CustomName of subscribed control within the component</param>
         /// <param name="value">Data to be parsed</param>
-        public void ParseSubscriptionMessage(string customName, string value)
+        public override void ParseSubscriptionMessage(string customName, string value)
         {
             try
             {
@@ -841,7 +844,7 @@ namespace Tesira_DSP_EPI {
 
 		public override void EndAllCalls()
 		{
-			this.OnHook();
+			OnHook();
 
 		}
         /// <summary>
@@ -932,7 +935,7 @@ namespace Tesira_DSP_EPI {
 						if (DialString.Length > 0)
 						{
 							DialString = DialString.Remove(DialString.Length - 1, 1);
-							this.DialStringFeedback.FireUpdate();
+							DialStringFeedback.FireUpdate();
 
 						} 
                         break;

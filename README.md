@@ -1,3 +1,5 @@
+<img src="https://img.shields.io/badge/3-Tested%20on%203%20series-purple.svg"/></a> <img src="https://img.shields.io/badge/4-Tested%20on%204%20series-teal.svg"/></a>
+
 # Tesira DSP Essentials Plugin (c) 2021
 
 >**NOTE : INVALID TAGS BREAK THIS RELEASE**
@@ -10,6 +12,10 @@ Provided under MIT license
 
 > The Tesira plugin provides device control over the Biamp Tesira family of DSPs with regards
 > to the most commonly used and requested attriute and control types.
+
+## Compatibility
+
+This plugin has been tested with both Crestron 3-Series and 4-Series processors.  It implements all available essentials interfaces relevant to a device of this type.  This includes but is not limited to `AudioCodecBase`, `IHasDspPresets`, `IBasicVolumeWithFeedback`, `IRoutingWithFeedback` and `IDeviceInfoProvider`.  Documentation for which controls implement each interface will be documented in each relevant controls section.  Additionally, every component implements `IKeyed` and all devices are added to the `DeviceManager` unpon instantiation.
 
 ## Cloning Instructions
 
@@ -27,9 +33,11 @@ To verify that the packages installed correctly, open the plugin solution in you
 
 ## Feature Notes
 
-Version 2.0.0 now offers developers the opportunity to individually bridge each control rather than the entire DSP object.  This should lead to more flexibility in development.  In documentation below, all references to the original object type will be referred to as **Legacy**, while new object data will be referred to as **Standalone**
+Version 2.0.0+ now offers developers the opportunity to individually bridge each control rather than the entire DSP object.  This should lead to more flexibility in development.  In documentation below, all references to the original object type will be referred to as **Legacy**, while new object data will be referred to as **Standalone**
 
-When utilizing a standalone object within a Eisc bridge, it is addressed utilizing first the name of the base device, followed by a pair of two hyphens, then the key of the component.  For this reason, it is exceptionally important that all keys are unique.
+When utilizing a standalone object within a Eisc bridge, it is addressed utilizing first the name of the base device, followed by a pair of two hyphens, then the key of the component.  
+
+>It is exceptionally important that **all** keys are unique.  In a future version, it's likely that this naming convention will become *more* verbose, but as of now, to prevent key names from being ridiculously long, I've opted to trust users to police themselves.
 
 For a parent device with a key of ```dsp-1``` and a component with the key of ```Fader01```, the **Standalone** component key is ``dsp-1--Fader01``.
 
@@ -43,34 +51,53 @@ The only exception to this rule is for the Base **Standalone** object, which has
 
 ## Installation
 
-Navigate to the BUILDS folder in the repository.  Place the .cplz file into the Plugins folder for Essentials and reset the application.
+This plugin is provided as a published [nuget package](https://www.nuget.org/packages/PepperDash.Essentials.Plugin.BiampTesira) for your convenience.  
+
+Place the **\*.cplz** file in the /users/programxx/plugins folder, and restart your program.
+
+***
 
 ## Controls and Configs
 
-### Base Device
+### DeviceInfo
 
-This is data relevant to the device as a whole.  This includes directly setting presets, passing controls directly, and recalling presets by name.
+This object is built by default with a Biamp Tesira DSP and provides a method to send hardware-specific data across the bridge to SIMPL
 
-If utilizing the **Standalone** object, preset control is rolled in to this component.  The key suffix for this object type is ```DeviceInfo```.  Given a base device key of ```dsp-1```, the **Standalone** key for this device would be ```dsp-1--DeviceInfo```.
+This data is only accessible by linking the device to the bridge.  The component key is always `DeviceInfo` - therefore when a Biamp Tesira DSP with the key `dsp-1` is instantiated, a DeviceInfo component
+with the key of `dsp-1--DeviceInfo` will be added to the `DeviceManager` and will be accessible to any Essentials Bridge.
+
+This device will also allow a direct passthru connection to the device if necessary and a method by which to trigger control resubscription.
+
+If you do not choose to bridge a **Standalone** object, limited data is available on the **Legacy** object.
+
+> This control implements [Essentials](https://github.com/PepperDash/Essentials) interfaces **`IDeviceInfoProvider`** and **`IKeyed`**
 
 #### Digitals
 
 | Legacy Join | Standalone Join | Type (RW) | Description          |
 | ----------- | --------------- | --------- | -------------------- |
 | 1           | 1               | R         | Device Online        |
-| NA          | 3 - 13          | W         | Direct Select Preset |
+| N/A         | 1               | W         | Resubscribe Controls |
+
+#### Analogs
+
+None
 
 #### Serials
 
-| Legacy Join | Standalone Join | Type (RW) | Description           |
-| ----------- | --------------- | --------- | --------------------- |
-| 1           | 1               | RW        | ControlPassthru       |
-| 100         | 3               | W         | Select Preset By Name |
-| NA          | 3 - 13          | W         | Preset Names          |
+| Legacy Join | Standalone Join | Type (RW) | Description         |
+| ----------- | --------------- | --------- | ------------------- |
+| N/A         | 1               | R         | Device Name         |
+| N/A         | 2               | RW        | Command Passthrough |
+| N/A         | 3               | R         | Serial Number       |
+| N/A         | 4               | R         | Firmware Version    |
+| N/A         | 5               | R         | Hostname            |
+| N/A         | 6               | R         | IP Address          |
+| N/A         | 7               | R         | MAC Address         |
 
 #### Config Notes
 
-> This configuration matches a standard essentials device configuration at the base level, with only the type being different.  This may have the type ```tesira```, ```tesiraforte```, ```tesiraserver```, ```tesiradsp```, or ```tesira-dsp```*.
+> This configuration matches a standard essentials device configuration at the base level, with only the type being different.  This may have the type **```tesira```**, **```tesiraforte```**, **```tesiraserver```**, **```tesiradsp```**, or **```tesira-dsp```**.
 
 ``` javascript
 "key": "TesiraDsp-1",
@@ -107,6 +134,8 @@ Within the **Legacy** object, this Join map represents a control that is part of
 
 Within the **Standalone** object, this join map represents a single control as defined by the key in the bridge.
 
+>This Control implements [Essentials](https://github.com/PepperDash/Essentials) interfaces **`IKeyed`** and **`IBasicVolumeWithFeedback`**
+
 #### Digitals
 
 | Legacy Join | Standalone Join | Type (RW) | Description     |
@@ -135,7 +164,7 @@ Within the **Standalone** object, this join map represents a single control as d
 
 #### Config Example
 
-> All Level/Mute configs must be part of a dictionary called ```faderControlBlocks```.  
+> All Level/Mute configs must be part of a dictionary called **faderControlBlocks**.  
 
 ``` javascript
 "faderControlBlocks": {
@@ -183,6 +212,8 @@ Controls objects with the attribute type of "sourceSelection" and subscribes to 
 Within the **Legacy** object, this Join map represents a control that is part of an array of controls.  Each join number = Join Map Number + fader ```bridgeIndex``` as defined by the config.
 
 Within the **Standalone** object, this join map represents a single control as defined by the key in the bridge.
+
+>This control implements [Essentials](https://github.com/PepperDash/Essentials) interfaces **`IKeyed`** and **`IRoutingWithFeedback`**
 
 #### Digitals
 
@@ -247,6 +278,8 @@ Within the **Legacy** object, this Join map represents a control that is part of
 
 Within the **Standalone** object, this join map represents a single control as defined by the key in the bridge.
 
+>This control implements [Essentials](https://github.com/PepperDash/Essentials) interface **`IKeyed`**
+
 #### Digitals
 
 | Legacy Join | Standalone Join | Type (RW) | Description  |
@@ -295,15 +328,16 @@ In the provided example config object, given a base object key of ```dsp-1```, t
 
 ### Presets
 
-> All state configs must be part of a dictionary called **presets**.  
->
-> If you intend to ONLY do direct preset calling by string, this object is NOT required to recall presets. This activity is provided by the base level device object for the Tesira DSP.  This control method is only available within the **Legacy** object.  It is provided by the **Standalone** object ```DeviceInfo```.  Thisconfig object is required regardless of control object if preset control is required.
+If you intend to ONLY do direct preset calling by string, this object is NOT required to recall presets. This activity is provided by the base level device object for the Tesira DSP. It is also provided by the **Standalone** object ```Presets```.  This config object is required regardless of control object if preset control iby index is required.
+
+>This control implements [Essentials](https://github.com/PepperDash/Essentials) interfaces **`IHasDspPreset`** and **`IKeyed`**
 
 #### Digitals
 
-| Join | Type (RW) | Description            |
-| ---- | --------- | ---------------------- |
-| 100  | W         | Select Preset By Index |
+| Legacy Join | Standalone Join | Type (RW) | Description                  |
+| ----------- | --------------- | --------- | ---------------------------- |
+| 100         | 1               | W         | Select Preset By Index       |
+| N/A         | 1               | R         | Preset is Available By Index |
 
 #### Analogs
 
@@ -311,11 +345,15 @@ None
 
 #### Serials
 
-| Join | Type (RW) | Description          |
-| ---- | --------- | -------------------- |
-| 100  | R         | Preset Name by Index |
+| Legacy Join | Join | Type (RW) | Description           |
+| ----------- | ---- | --------- | --------------------- |
+| 100         | 1    | R         | Preset Name by Index  |
+| 100         | 1    | W         | Recall Preset By Name |
 
 #### Config Example
+
+> All preset configs must be part of a dictionary called **presets**.  
+
 
 ``` javascript
 "presets" : {
@@ -327,6 +365,8 @@ None
         }
 }
 ```
+
+In the provided example config object, given a base object key of ```dsp-1```, this control would have a standalone key of ```dsp-1--Presets```.
 
 #### Config Notes
 
@@ -354,56 +394,58 @@ For example, Incoming Call for Line 1 would be at join 3101, while the incoming 
 
 Within the **Standalone** object, this join map represents a single control as defined by the key in the bridge.
 
+>This control implements [Essentials](https://github.com/PepperDash/Essentials) interfaces **`AudioCodecBase`** and **`IKeyed`**
+
 #### Digitals
 
-| Legacy Join | Standalone Join | Type (RW) | Description                      |
-| ----------- | --------------- | --------- | -------------------------------- |
-| 3100 |1| R         | Incoming Call         |
-| 3106 |2| W         | Answer                |
-| 3107 |3| W         | End Call              |
-| 3110 |4| W         | Keypad 0              |
-| 3111 |5| W         | Keypad 1              |
-| 3112 |6| W         | Keypad 2              |
-| 3113 |7| W         | Keypad 3              |
-| 3114 |8| W         | Keypad 4              |
-| 3115 |9| W         | Keypad 5              |
-| 3116 |10| W         | Keypad 6              |
-| 3117 |11| W         | Keypad 7              |
-| 3118 |12| W         | Keypad 8              |
-| 3119 |13| W         | Keypad 9              |
-| 3120 |14| W         | Keypad *              |
-| 3121 |15| W         | Keypad #              |
-| 3122 |16| W         | Keypad Clear          |
-| 3123 |17| W         | Keypad Backspace      |
-| 3124 |18| RW        | Dial                  |
-| 3125 |19| RW        | Auto Answer On        |
-| 3126 |20| RW        | Auto Answer Off       |
-| 3127 |21| RW        | Auto Answer Toggle    |
-| 3129 |22| RW        | On Hook               |
-| 3130 |23| RW        | Off Hook              |
-| 3132 |24| RW        | Do Not Disturb Toggle |
-| 3133 |25| RW        | Do Not Disturb On     |
-| 3134 |26| RW        | Do Not Disturb Off    |
+| Legacy Join | Standalone Join | Type (RW) | Description           |
+| ----------- | --------------- | --------- | --------------------- |
+| 3100        | 1               | R         | Incoming Call         |
+| 3106        | 2               | W         | Answer                |
+| 3107        | 3               | W         | End Call              |
+| 3110        | 4               | W         | Keypad 0              |
+| 3111        | 5               | W         | Keypad 1              |
+| 3112        | 6               | W         | Keypad 2              |
+| 3113        | 7               | W         | Keypad 3              |
+| 3114        | 8               | W         | Keypad 4              |
+| 3115        | 9               | W         | Keypad 5              |
+| 3116        | 10              | W         | Keypad 6              |
+| 3117        | 11              | W         | Keypad 7              |
+| 3118        | 12              | W         | Keypad 8              |
+| 3119        | 13              | W         | Keypad 9              |
+| 3120        | 14              | W         | Keypad *              |
+| 3121        | 15              | W         | Keypad #              |
+| 3122        | 16              | W         | Keypad Clear          |
+| 3123        | 17              | W         | Keypad Backspace      |
+| 3124        | 18              | RW        | Dial                  |
+| 3125        | 19              | RW        | Auto Answer On        |
+| 3126        | 20              | RW        | Auto Answer Off       |
+| 3127        | 21              | RW        | Auto Answer Toggle    |
+| 3129        | 22              | RW        | On Hook               |
+| 3130        | 23              | RW        | Off Hook              |
+| 3132        | 24              | RW        | Do Not Disturb Toggle |
+| 3133        | 25              | RW        | Do Not Disturb On     |
+| 3134        | 26              | RW        | Do Not Disturb Off    |
 
 #### Analogs
 
-| Legacy Join | Standalone Join | Type (RW) | Description                      |
-| ----------- | --------------- | --------- | -------------------------------- |
-| 3100 |1| R         | CallState Value |
+| Legacy Join | Standalone Join | Type (RW) | Description     |
+| ----------- | --------------- | --------- | --------------- |
+| 3100        | 1               | R         | CallState Value |
 
 #### Serials
 
-| Legacy Join | Standalone Join | Type (RW) | Description                      |
-| ----------- | --------------- | --------- | -------------------------------- |
-| 3100 |1| RW        | Dial String        |
-| 3101 |2| RW        | Dialer Label       |
-| 3102 |3| RW        | Last Number Dialed |
-| 3104 |4| R         | Caller ID Number   |
-| 3105 |5| R         | Caller ID Name     |
+| Legacy Join | Standalone Join | Type (RW) | Description        |
+| ----------- | --------------- | --------- | ------------------ |
+| 3100        | 1               | RW        | Dial String        |
+| 3101        | 2               | RW        | Dialer Label       |
+| 3102        | 3               | RW        | Last Number Dialed |
+| 3104        | 4               | R         | Caller ID Number   |
+| 3105        | 5               | R         | Caller ID Name     |
 
 #### Config Example
 
-> All dialer configs must be part of a dictionary called ```dialerControlBlocks```.  
+> All dialer configs must be part of a dictionary called **dialerControlBlocks**.  
 
 ``` javascript
 "dialerControlBlocks" : {
@@ -448,23 +490,26 @@ Within the **Legacy** object this Join map represents a control that is part of 
 
 Within the **Standalone** object, this join map represents a single control as defined by the key in the bridge.
 
+>This control implements [Essentials](https://github.com/PepperDash/Essentials) interface **`IKeyed`**
+
+
 #### Digitals
 
-| Legacy Join | Standalone Join | Type (RW) | Description                      |
-| ----------- | --------------- | --------- | -------------------------------- |
-| 3501 |1| RW        | Meter Toggle |
+| Legacy Join | Standalone Join | Type (RW) | Description  |
+| ----------- | --------------- | --------- | ------------ |
+| 3501        | 1               | RW        | Meter Toggle |
 
 #### Analogs
 
-| Legacy Join | Standalone Join | Type (RW) | Description                      |
-| ----------- | --------------- | --------- | -------------------------------- |
-| 3501 |1| R         | Meter Feedback |
+| Legacy Join | Standalone Join | Type (RW) | Description    |
+| ----------- | --------------- | --------- | -------------- |
+| 3501        | 1               | R         | Meter Feedback |
 
 #### Serials
 
 | Legacy Join | Standalone Join | Type (RW) | Description                      |
 | ----------- | --------------- | --------- | -------------------------------- |
-| 3501 |1| R         | Control Label (Pass From Config) |
+| 3501        | 1               | R         | Control Label (Pass From Config) |
 
 #### Config Example
 
@@ -492,19 +537,24 @@ In the provided example config object, given a base object key of ```dsp-1```, t
 **index** - Index of the control point.
 **bridgeIndex** - The index of the control on a **Legacy** object
 
+***
+
 ### Crosspoint State Control
 
 Provides a control point for a single crosspoint on a MatrixMixer.  
 
 This Join map represents a control that is part of an array of controls.  Each join number = Join Map Number + State Index as defined by the config.
 
+>This control implements [Essentials](https://github.com/PepperDash/Essentials) interface **`IKeyed`**
+
+
 #### Digitals
 
-| Legacy Join | Standalone Join | Type (RW) | Description                      |
-| ----------- | --------------- | --------- | -------------------------------- |
-| 2001 |1| RW        | Crosspoint Toggle |
-| 2002 |2| W         | Crosspoint On     |
-| 2003 |3| W         | Crosspoint Off    |
+| Legacy Join | Standalone Join | Type (RW) | Description       |
+| ----------- | --------------- | --------- | ----------------- |
+| 2001        | 1               | RW        | Crosspoint Toggle |
+| 2002        | 2               | W         | Crosspoint On     |
+| 2003        | 3               | W         | Crosspoint Off    |
 
 #### Analogs
 
@@ -514,7 +564,7 @@ None
 
 | Legacy Join | Standalone Join | Type (RW) | Description                      |
 | ----------- | --------------- | --------- | -------------------------------- |
-| 2001 |1| R         | Control Label (Pass From Config) |
+| 2001        | 1               | R         | Control Label (Pass From Config) |
 
 #### Config Example
 
@@ -546,7 +596,82 @@ In the provided example config object, given a base object key of ```dsp-1```, t
 
 ***
 
-## Full Example EFS Config
+### RoomCombiner
+
+Controls Biamp Tesira RoomCombiner objects.  Control of LevelOut, MuteOut, and group selection is supported.
+
+> MuteOut is **not** a subscribed control for this block.  Polling is simulated on each trigger of the mute, but there is no unsolicited feedback for mute status.
+
+In order to keep the types of joins similar to a standard fader object, the choice was made to not provide direct control for wall states in this component.  If direct wall state control is required, utilize a `State Control` block.
+
+Within the **Legacy** object, this Join map represents a control that is part of an array of controls.  Each join number = Join Map Number + roomCombiner ```bridgeIndex``` as defined by the config.
+
+Within the **Standalone** object, this join map represents a single control as defined by the key in the bridge.
+
+>This control implements [Essentials](https://github.com/PepperDash/Essentials) interfaces **`IBasicVolumeWithFeedback`** and **`IKeyed`**
+
+#### Digitals
+
+| Legacy Join | Standalone Join | Type (RW) | Description     |
+| ----------- | --------------- | --------- | --------------- |
+| 2206        | 6               | R         | Channel Visible |
+| 2203        | 5               | RW        | Mute Toggle     |
+| 2204        | 3               | RW        | Mute On         |
+| 2205        | 4               | RW        | Mute Off        |
+| 2201        | 1               | W         | Volume Up       |
+| 2202        | 2               | W         | Volume Down     |
+
+#### Analogs
+
+| Legacy Join | Standalone Join | Type (RW) | Description                                           |
+| ----------- | --------------- | --------- | ----------------------------------------------------- |
+| 2201        | 1               | RW        | Volume Level                                          |
+| 2202        | 2               | R         | Icon (0 - Level, 1 - Mic)                             |
+| 2204        | 3               | RW        | Set/Get the Combine Group Number for Room Combination |
+| 2203        | 4               | R         | Permissions (Pass From Config)                        |
+
+#### Serials
+
+| Legacy Join | Standalone Join | Type (RW) | Description                      |
+| ----------- | --------------- | --------- | -------------------------------- |
+| 2201        | 1               | R         | Control Label (Pass From Config) |
+
+#### Config Example
+
+> All RoomCombiner configs must be part of a dictionary called **roomCombinerControlBlocks**.  
+
+``` javascript
+"roomCombinerControlBlocks": {
+    "Room01": {
+        "enabled": true,
+        "label": "Room 1",
+        "isMic": false,
+        "roomIndex" : 1,
+        "roomCombinerInstanceTag": "RoomCombiner1",
+        "unmuteOnVolChange" : true,
+        "incrementAmount" : "2.0",
+        "permissions" : 0,
+        "bridgeIndex" : 1
+    }
+```
+
+#### Config Notes
+
+**enabled** - enables the control to be subscribed and controlled.
+**label** - Passed directly across the eisc as the *Label* value.
+**isMic** - drives the *icon* feedback.
+**roomIndex** - Index of the room on the combiner block.
+**roomCombinerInstanceTag** - Instance tag of the room combiner control.
+**unmuteOnVolChange** - if *true*, will unmute a muted control when the level increases.
+**incrementAmount** - the value in decimals by which a mute increment or decrement command will manipulate the level.
+**permissions** - Passed directly across the eisc as the *Permissions* value.
+**bridgeIndex** - The index of the control on a **Legacy** object
+
+In the provided example config object, given a base object key of ```dsp-1```, this control would have a standalone key of ```dsp-1--Room01```.
+
+***
+
+## Full Example Essentials Device Config
 
 >This config will create an internal loopback EISC on IPID D1 for a ssh-controlled tesira.
 
@@ -728,14 +853,38 @@ In the provided example config object, given a base object key of ```dsp-1```, t
                             "bridgeIndex" : 1
                         }
                     },
+                    "meterControlBlocks" : {
+                        "Meter1" : {
+                            "enabled" : true,
+                            "label" : "State01",
+                            "meterInstanceTag" : "Meter1",
+                            "index" : 1,
+                            "bridgeIndex" : 1
+                        }
+                    },
+                    "roomCombinerControlBlocks": {
+                        "Room01": {
+                            "enabled": true,
+                            "label": "Room 1",
+                            "isMic": false,
+                            "roomIndex" : 1,
+                            "roomCombinerInstanceTag": "RoomCombiner1",
+                            "unmuteOnVolChange" : true,
+                            "incrementAmount" : "2.0",
+                            "permissions" : 0,
+                            "bridgeIndex" : 1
+                        }
+                     },
                     "presets" : {
                         "1": {
                             "label" : "Default",
-                            "preset" : "Default Levels"  
+                            "preset" : "Default Levels"
+                            "presetIndex" : 1  
                         },
                         "2" : {
                             "label" : "High",
                             "Preset" : "Noise Reduction High"
+                            "presetIndex" : 2
                         }
                     }
                 }
@@ -778,8 +927,8 @@ In the provided example config object, given a base object key of ```dsp-1```, t
 }
 ```
 
+***
+
 ## RoadMap
 
-1. "Generic" control - so we don't have to develop new features for controls that only you will use.
-2. RouterBlock Control - It's a rarely used control, but it essentially a n > n audio switcher
-3. Crosspoint Control - Mute/Unmute and Increase/Decrease volume levels on the crosspoint of matrix switches.
+A Method by which we can continue even with *"bad"* instance tags in the config.  Currently, this causes everything to fail upon subscription.

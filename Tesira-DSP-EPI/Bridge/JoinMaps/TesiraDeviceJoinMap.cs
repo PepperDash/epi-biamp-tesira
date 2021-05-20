@@ -35,15 +35,6 @@ namespace Tesira_DSP_EPI.Bridge.JoinMaps
                     JoinType = eJoinType.Serial
                 });
 
-        [JoinName("DirectPreset")] public JoinDataComplete DirectPreset =
-            new JoinDataComplete(new JoinData {JoinNumber = 100, JoinSpan = 1},
-                new JoinMetadata
-                {
-                    Description = "Directly Recall a Preset",
-                    JoinCapabilities = eJoinCapabilities.ToSIMPL,
-                    JoinType = eJoinType.Digital
-                });
-
         public TesiraDspDeviceJoinMapAdvanced(uint joinStart)
             : base(joinStart, typeof (TesiraDspDeviceJoinMapAdvanced))
         {

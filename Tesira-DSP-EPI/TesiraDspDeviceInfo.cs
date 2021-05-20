@@ -1,24 +1,24 @@
-﻿using System.Collections.Generic;
-using System;
+﻿using System;
 using System.Text.RegularExpressions;
 using Newtonsoft.Json;
 using PepperDash.Core;
 using PepperDash.Essentials.Core;
 using Crestron.SimplSharpPro.DeviceSupport;
+using PepperDash.Essentials.Core.DeviceInfo;
 using Tesira_DSP_EPI.Bridge.JoinMaps;
 using PepperDash.Essentials.Core.Bridges;
 
 namespace Tesira_DSP_EPI
 {
-    public class TesiraDspDeviceInfo : TesiraDspControlPoint
+    public class TesiraDspDeviceInfo : TesiraDspControlPoint, IDeviceInfoProvider
     {
         /// <summary>
         /// Feedback Collection for Component
         /// </summary>
 
-        private readonly Dictionary<string, TesiraDspPresets> _presets; 
+        public DeviceInfo DeviceInfo { get; private set; }
 
-        readonly TesiraDsp _parent;
+        public event DeviceInfoChangeHandler DeviceInfoChanged;
 
         private const string KeyFormatter = "{0}--{1}";
 
@@ -31,7 +31,6 @@ namespace Tesira_DSP_EPI
             {
                 _ipAddress = value;
                 IpAddressFeedback.FireUpdate();
-                GetHostname();
             }
         }
 
@@ -56,7 +55,6 @@ namespace Tesira_DSP_EPI
             {
                 _hostname = value;
                 HostnameFeedback.FireUpdate();
-                GetSerial();
             }
         }
 
@@ -69,7 +67,6 @@ namespace Tesira_DSP_EPI
             {
                 _serialNumber = value;
                 SerialNumberFeedback.FireUpdate();
-                GetFirmware();
             }
         }
 
@@ -96,65 +93,56 @@ namespace Tesira_DSP_EPI
         /// Constructor for Device Info Object
         /// </summary>
         /// <param name="parent">Parent Device</param>
-        /// <param name="presets">Dictionary of Presets</param>
-        public TesiraDspDeviceInfo(TesiraDsp parent, Dictionary<string, TesiraDspPresets> presets)
-            : base("DEVICE", "DEVICE", 0, 0, parent, String.Format(KeyFormatter, parent.Key, "DeviceInfo"), "DeviceInfo", null)
+        public TesiraDspDeviceInfo(TesiraDsp parent)
+            : base("DEVICE", "DEVICE", 0, 0, parent, String.Format(KeyFormatter, parent.Key, "DeviceInfo"), "DeviceInfo", 0)
         {
-            _presets = presets;
-            _parent = parent;
+
+            DeviceInfo = new DeviceInfo();
+
 
             Init();
         }
 
         private void Init()
         {
-            NameFeedback = new StringFeedback(() => _parent.Name);
+            NameFeedback = new StringFeedback(() => Parent.Name);
             IpAddressFeedback = new StringFeedback(() => IpAddress);
             HostnameFeedback = new StringFeedback(() => Hostname);
             SerialNumberFeedback = new StringFeedback(() => SerialNumber);
             FirmwareFeedback = new StringFeedback(() => Firmware);
             MacAddressFeedback = new StringFeedback(() => MacAddress);
 
+
+
             Feedbacks.Add(NameFeedback);
-            Feedbacks.Add(_parent.CommunicationMonitor.IsOnlineFeedback);
-            Feedbacks.Add(_parent.CommandPassthruFeedback);
+            Feedbacks.Add(Parent.CommunicationMonitor.IsOnlineFeedback);
+            Feedbacks.Add(Parent.CommandPassthruFeedback);
             Feedbacks.Add(IpAddressFeedback);
             Feedbacks.Add(HostnameFeedback);
             Feedbacks.Add(SerialNumberFeedback);
             Feedbacks.Add(FirmwareFeedback);
             Feedbacks.Add(MacAddressFeedback);
-
-            Debug.Console(2, this, "Tesira DeviceInfo \"{0}\" Device Created", Key);
         }
 
-        public override void Subscribe()
+
+        public void GetIpConfig()
         {
-            GetDeviceInformation();
+            Debug.Console(2, this, "Getting IPConfig");
+            SendFullCommand("get", "networkStatus", null, 999);
         }
 
-        public void GetDeviceInformation()
+        public void GetSerial()
         {
-            GetIpConfig();
+            Debug.Console(2, this, "Getting Serial");
+
+            SendFullCommand("get", "serialNumber", null, 999);            
         }
 
-        private void GetIpConfig()
+        public void GetFirmware()
         {
-            SendFullCommand("get", "ipStatus", "control", 999);
-        }
+            Debug.Console(2, this, "Getting Firmware");
 
-        private void GetHostname()
-        {
-            SendFullCommand("get", "hostname", "", 999);
-        }
-
-        private void GetSerial()
-        {
-            SendFullCommand("get", "serialNumber", "", 999);            
-        }
-
-        private void GetFirmware()
-        {
-            SendFullCommand("get", "version", "", 999);            
+            SendFullCommand("get", "version", null, 999);            
         }
 
 
@@ -162,45 +150,41 @@ namespace Tesira_DSP_EPI
         {
             Debug.Console(2, this, "Parsing Message - '{0}' : Message has an attributeCode of {1}", message, attributeCode);
             // Parse an "+OK" message
-            const string pattern = "[^ ]* (.*)";
-
-            const string ipPattern = "\"(.*?)\"";
-
-            var match = Regex.Match(message, pattern);
-
-            if (!match.Success) return;
-
-            var value = match.Groups[1].Value;
-
-            Debug.Console(1, this, "Response: '{0}' Value: '{1}'", attributeCode, value);
+            const string pattern = "([\"\'])(?:(?=(\\\\?))\\2.)*?\\1";
 
             if (message.IndexOf("+OK", StringComparison.OrdinalIgnoreCase) <= -1) return;
 
+            var matches = Regex.Matches(message, pattern);
+
+            if (matches == null) return;
+
             switch (attributeCode)
             {
-                case ("ipStatus") :
+                case ("networkStatus"):
                 {
-                    var matches = Regex.Matches(value, ipPattern);
-                    if (matches.Count != 6) return;
-                    MacAddress = matches[0].Value;
-                    IpAddress = matches[1].Value;
-                    break;
-                }
-                case ("hostname") :
-                {
-                    Hostname = value;
+                    Hostname = matches[0].Value.Trim('"');
+                    MacAddress = matches[3].Value.Trim('"');
+                    IpAddress = matches[1].Value.Trim('"');
+                    DeviceInfo.HostName = Hostname;
+                    DeviceInfo.MacAddress = MacAddress;
+                    DeviceInfo.IpAddress = IpAddress;
+                    UpdateDeviceInfo();
                     break;
                 }
                 case("serialNumber") :
                 {
-                    SerialNumber = value;
+                    SerialNumber = matches[0].Value.Trim('"');
+                    DeviceInfo.SerialNumber = SerialNumber;
+                    UpdateDeviceInfo();
                     break;
                 }
                 case ("version") :
-                    Firmware = value;
+                    Firmware = matches[0].Value.Trim('"');
+                    DeviceInfo.FirmwareVersion = Firmware; 
+                    UpdateDeviceInfo();
                     break;
-
             }
+
         }
 
         public override void LinkToApi(BasicTriList trilist, uint joinStart, string joinMapKey, EiscApiAdvanced bridge)
@@ -212,40 +196,23 @@ namespace Tesira_DSP_EPI
             if (!string.IsNullOrEmpty(joinMapSerialized))
                 joinMap = JsonConvert.DeserializeObject<TesiraDspDeviceJoinMapAdvancedStandalone>(joinMapSerialized);
 
-            var presetJoinMap = new TesiraPresetJoinMapAdvancedStandalone(joinStart);
-            var presetJoinMapSerialized = JoinMapHelper.GetSerializedJoinMapForDevice(joinMapKey);
 
-            if (!string.IsNullOrEmpty(presetJoinMapSerialized))
-            {
-                presetJoinMap =
-                    JsonConvert.DeserializeObject<TesiraPresetJoinMapAdvancedStandalone>(presetJoinMapSerialized);
-            }
 
             if (bridge != null)
             {
                 bridge.AddJoinMap(Key, joinMap);
-                bridge.AddJoinMap(Key, presetJoinMap);
             }
 
             Debug.Console(1, this, "Linking to Trilist '{0}'", trilist.ID.ToString("X"));
 
             //var comm = DspDevice as IBasicCommunication;
-            trilist.SetSigTrueAction(joinMap.Resubscribe.JoinNumber, _parent.Resubscribe);
-
-            trilist.SetStringSigAction(presetJoinMap.PresetName.JoinNumber, _parent.RunPreset);
-
-            foreach (var preset in _presets)
-            {
-                var p = preset;
-                var runPresetIndex = preset.Value.PresetIndex;
-                var presetIndex = runPresetIndex - 1;
-                trilist.StringInput[(uint)(presetJoinMap.PresetNameFeedback.JoinNumber + presetIndex)].StringValue = p.Value.Label;
-                trilist.SetSigTrueAction((uint)(presetJoinMap.PresetSelection.JoinNumber + presetIndex), () => _parent.RunPresetNumber((ushort)runPresetIndex));
-            }
+            trilist.SetSigTrueAction(joinMap.Resubscribe.JoinNumber, Parent.Resubscribe);
 
 
-            _parent.CommunicationMonitor.IsOnlineFeedback.LinkInputSig(trilist.BooleanInput[joinMap.IsOnline.JoinNumber]);
-            _parent.CommandPassthruFeedback.LinkInputSig(trilist.StringInput[joinMap.CommandPassThru.JoinNumber]);
+
+
+            Parent.CommunicationMonitor.IsOnlineFeedback.LinkInputSig(trilist.BooleanInput[joinMap.IsOnline.JoinNumber]);
+            Parent.CommandPassthruFeedback.LinkInputSig(trilist.StringInput[joinMap.CommandPassThru.JoinNumber]);
             NameFeedback.LinkInputSig(trilist.StringInput[joinMap.Name.JoinNumber]);
             SerialNumberFeedback.LinkInputSig(trilist.StringInput[joinMap.SerialNumber.JoinNumber]);
             FirmwareFeedback.LinkInputSig(trilist.StringInput[joinMap.Firmware.JoinNumber]);
@@ -254,7 +221,7 @@ namespace Tesira_DSP_EPI
             MacAddressFeedback.LinkInputSig(trilist.StringInput[joinMap.MacAddress.JoinNumber]);
 
 
-            trilist.SetStringSigAction(joinMap.CommandPassThru.JoinNumber, _parent.SendLineRaw);
+            trilist.SetStringSigAction(joinMap.CommandPassThru.JoinNumber, Parent.SendLineRaw);
 
             trilist.OnlineStatusChange += (d, args) =>
             {
@@ -268,5 +235,24 @@ namespace Tesira_DSP_EPI
             };
 
         }
+
+
+        #region IDeviceInfoProvider Members
+
+
+        public void UpdateDeviceInfo()
+        {
+            var args = new DeviceInfoEventArgs(DeviceInfo);
+
+           var raiseEvent = DeviceInfoChanged;
+
+            if (raiseEvent != null)
+            {
+                raiseEvent(Parent, args);
+            }
+        }
+
+        #endregion
+
     }
 }
