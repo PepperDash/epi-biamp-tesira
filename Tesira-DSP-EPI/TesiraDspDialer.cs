@@ -182,13 +182,18 @@ namespace Tesira_DSP_EPI {
             {
                 _CallStatusEnum = value;
 				if (CallStatusEnum == ECallStatus.DIAL_TONE ||
+					CallStatusEnum == ECallStatus.SILENT ||
 					CallStatusEnum == ECallStatus.DIALING ||
+					CallStatusEnum == ECallStatus.RINGBACK ||
+					CallStatusEnum == ECallStatus.BUSY ||
 					CallStatusEnum == ECallStatus.ANSWERING ||
+					CallStatusEnum == ECallStatus.INVALID_NUMBER ||
 					CallStatusEnum == ECallStatus.ACTIVE ||
 					CallStatusEnum == ECallStatus.ACTIVE_MUTED ||
-					CallStatusEnum == ECallStatus.BUSY ||
-					CallStatusEnum == ECallStatus.INVALID_NUMBER ||
-					CallStatusEnum == ECallStatus.ON_HOLD)
+					CallStatusEnum == ECallStatus.ON_HOLD ||
+					CallStatusEnum == ECallStatus.WAITING_RING ||
+					CallStatusEnum == ECallStatus.CONF_ACTIVE ||
+					CallStatusEnum == ECallStatus.CONF_HOLD)
 				{
 					OffHookStatus = true;
 					SendFullCommand("get", "cid", null, 2);
@@ -785,11 +790,12 @@ namespace Tesira_DSP_EPI {
         /// </summary>
         public void OffHook()
         {
-            if (IsVoip)
-                Answer();
-            if (!IsVoip) {
-                SendFullCommand("set", "hookState", "OFFHOOK", 2);
-            }
+			//if (IsVoip)
+			//    Answer();
+			//if (!IsVoip) {
+			//    SendFullCommand("set", "hookState", "OFFHOOK", 2);
+			//}
+			SendFullCommand("offHook", "offHook", "", 1);
         }
 
         /// <summary>
@@ -936,7 +942,6 @@ namespace Tesira_DSP_EPI {
 						{
 							DialString = DialString.Remove(DialString.Length - 1, 1);
 							DialStringFeedback.FireUpdate();
-
 						} 
                         break;
                 }
