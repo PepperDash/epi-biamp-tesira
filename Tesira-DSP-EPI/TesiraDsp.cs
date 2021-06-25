@@ -74,6 +74,7 @@ namespace Tesira_DSP_EPI
         //private TesiraDspDeviceInfo DeviceInfo { get; set; }
 
 		private bool WatchDogSniffer { get; set; }
+        public bool WatchdogSuspend { get; private set; }
 
 		readonly DeviceConfig _dc;
 
@@ -416,8 +417,14 @@ namespace Tesira_DSP_EPI
 
 			if (e.Client.IsConnected)
 			{
-				//SubscribeToAttributes();
+
+			    SuspendWatchdog(false);
 			}
+
+		    if (!e.Client.IsConnected)
+		    {
+		        SuspendWatchdog(true);
+		    }
 			else
 			{
 				// Cleanup items from this session
@@ -428,6 +435,12 @@ namespace Tesira_DSP_EPI
         #endregion
 
         #region Watchdog
+
+        private void SuspendWatchdog(bool data)
+        {
+            WatchdogSuspend = data;
+        }
+
 
         private void StartWatchDog()
         {
@@ -453,7 +466,11 @@ namespace Tesira_DSP_EPI
         {
 			try
 			{
-
+			    if (WatchdogSuspend)
+			    {
+			        WatchDogSniffer = false;
+			        return;
+			    }
 				Debug.Console(1, this, "The Watchdog is on the hunt!");
 				if (!WatchDogSniffer)
 				{
@@ -540,8 +557,11 @@ namespace Tesira_DSP_EPI
                 {
                     // Indicates a new TTP session
                     // moved to CustomActivate() method
-                    CommunicationMonitor.Start();
-					CrestronInvoke.BeginInvoke(o => StartSubsciptionThread());
+                    if (!_isSerialComm)
+                    {
+                        CommunicationMonitor.Start();
+                    }
+                    CrestronInvoke.BeginInvoke(o => StartSubsciptionThread());
                   
                 }
 
@@ -795,6 +815,7 @@ namespace Tesira_DSP_EPI
 
         private object HandleAttributeSubscriptions()
         {
+            if (!Communication.IsConnected) return null;
             //_subscriptionLock.Enter();
             SendLine("SESSION set verbose false");
             try
