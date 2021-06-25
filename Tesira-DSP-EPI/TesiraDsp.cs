@@ -446,11 +446,11 @@ namespace Tesira_DSP_EPI
         {
             if (_watchDogTimer == null)
             {
-                _watchDogTimer = new CTimer(o => CheckWatchDog(), null, 20000, 20000);
+                _watchDogTimer = new CTimer(o => CheckWatchDog(), null, 90000, 90000);
             }
             else
             {
-                _watchDogTimer.Reset(20000, 20000);
+                _watchDogTimer.Reset(90000, 90000);
             }
         }
 
