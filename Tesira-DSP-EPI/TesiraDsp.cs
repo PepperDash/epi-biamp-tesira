@@ -475,6 +475,8 @@ namespace Tesira_DSP_EPI
 				if (!WatchDogSniffer)
 				{
 					Debug.Console(1, this, "The Watchdog is picking up a scent!");
+
+
 					var random = new Random(DateTime.Now.Millisecond + DateTime.Now.Second + DateTime.Now.Minute
 						+ DateTime.Now.Hour + DateTime.Now.Day + DateTime.Now.Month + DateTime.Now.Year);
 
@@ -815,26 +817,28 @@ namespace Tesira_DSP_EPI
 
         private object HandleAttributeSubscriptions()
         {
-            if (!Communication.IsConnected) return null;
             //_subscriptionLock.Enter();
-            SendLine("SESSION set verbose false");
-            try
+            if (Communication.IsConnected)
             {
-                if (_isSerialComm)
-                    UnsubscribeFromComponents();
+                SendLine("SESSION set verbose false");
+                try
+                {
+                    if (_isSerialComm)
+                        UnsubscribeFromComponents();
 
-                //Subscribe
-                SubscribeToComponents();
-                StartWatchDog();
-                /*if (!_commandQueueInProgress)
+                    //Subscribe
+                    SubscribeToComponents();
+                    /*if (!_commandQueueInProgress)
                     CommandQueue.SendNextQueuedCommand();*/
+                }
+                catch (Exception ex)
+                {
+                    Debug.ConsoleWithLog(1, this, "Error Subscribing: '{0}'", ex);
+                    //_subscriptionLock.Leave();
+                    //_subscriptionLock.Leave();
+                }
             }
-            catch (Exception ex)
-            {
-                Debug.ConsoleWithLog(1, this, "Error Subscribing: '{0}'", ex);
-                //_subscriptionLock.Leave();
-                //_subscriptionLock.Leave();
-            }
+            StartWatchDog();
             return null;
         }
 
