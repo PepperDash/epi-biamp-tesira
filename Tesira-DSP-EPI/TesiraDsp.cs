@@ -74,6 +74,7 @@ namespace Tesira_DSP_EPI
         //private TesiraDspDeviceInfo DeviceInfo { get; set; }
 
 		private bool WatchDogSniffer { get; set; }
+        public bool WatchdogSuspend { get; private set; }
 
 		readonly DeviceConfig _dc;
 
@@ -416,8 +417,14 @@ namespace Tesira_DSP_EPI
 
 			if (e.Client.IsConnected)
 			{
-				//SubscribeToAttributes();
+
+			    SuspendWatchdog(false);
 			}
+
+		    if (!e.Client.IsConnected)
+		    {
+		        SuspendWatchdog(true);
+		    }
 			else
 			{
 				// Cleanup items from this session
@@ -429,15 +436,21 @@ namespace Tesira_DSP_EPI
 
         #region Watchdog
 
+        private void SuspendWatchdog(bool data)
+        {
+            WatchdogSuspend = data;
+        }
+
+
         private void StartWatchDog()
         {
             if (_watchDogTimer == null)
             {
-                _watchDogTimer = new CTimer(o => CheckWatchDog(), null, 20000, 20000);
+                _watchDogTimer = new CTimer(o => CheckWatchDog(), null, 90000, 90000);
             }
             else
             {
-                _watchDogTimer.Reset(20000, 20000);
+                _watchDogTimer.Reset(90000, 90000);
             }
         }
 
@@ -453,11 +466,17 @@ namespace Tesira_DSP_EPI
         {
 			try
 			{
-
+			    if (WatchdogSuspend)
+			    {
+			        WatchDogSniffer = false;
+			        return;
+			    }
 				Debug.Console(1, this, "The Watchdog is on the hunt!");
 				if (!WatchDogSniffer)
 				{
 					Debug.Console(1, this, "The Watchdog is picking up a scent!");
+
+
 					var random = new Random(DateTime.Now.Millisecond + DateTime.Now.Second + DateTime.Now.Minute
 						+ DateTime.Now.Hour + DateTime.Now.Day + DateTime.Now.Month + DateTime.Now.Year);
 
@@ -540,8 +559,11 @@ namespace Tesira_DSP_EPI
                 {
                     // Indicates a new TTP session
                     // moved to CustomActivate() method
-                    CommunicationMonitor.Start();
-					CrestronInvoke.BeginInvoke(o => StartSubsciptionThread());
+                    if (!_isSerialComm)
+                    {
+                        CommunicationMonitor.Start();
+                    }
+                    CrestronInvoke.BeginInvoke(o => StartSubsciptionThread());
                   
                 }
 
@@ -796,24 +818,27 @@ namespace Tesira_DSP_EPI
         private object HandleAttributeSubscriptions()
         {
             //_subscriptionLock.Enter();
-            SendLine("SESSION set verbose false");
-            try
+            if (Communication.IsConnected)
             {
-                if (_isSerialComm)
-                    UnsubscribeFromComponents();
+                SendLine("SESSION set verbose false");
+                try
+                {
+                    if (_isSerialComm)
+                        UnsubscribeFromComponents();
 
-                //Subscribe
-                SubscribeToComponents();
-                StartWatchDog();
-                /*if (!_commandQueueInProgress)
+                    //Subscribe
+                    SubscribeToComponents();
+                    /*if (!_commandQueueInProgress)
                     CommandQueue.SendNextQueuedCommand();*/
+                }
+                catch (Exception ex)
+                {
+                    Debug.ConsoleWithLog(1, this, "Error Subscribing: '{0}'", ex);
+                    //_subscriptionLock.Leave();
+                    //_subscriptionLock.Leave();
+                }
             }
-            catch (Exception ex)
-            {
-                Debug.ConsoleWithLog(1, this, "Error Subscribing: '{0}'", ex);
-                //_subscriptionLock.Leave();
-                //_subscriptionLock.Leave();
-            }
+            StartWatchDog();
             return null;
         }
 

@@ -139,6 +139,9 @@ namespace Tesira_DSP_EPI
             Debug.Console(2, this, "Running preset {0}", preset.Name);
             var tesiraPreset = preset as TesiraPreset;
             if (tesiraPreset == null) return;
+
+
+
             if (!String.IsNullOrEmpty(tesiraPreset.PresetName))
             {
                 RunPreset(tesiraPreset.PresetData.PresetName);
