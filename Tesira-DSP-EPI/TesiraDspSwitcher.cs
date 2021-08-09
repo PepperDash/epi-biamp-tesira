@@ -80,9 +80,10 @@ namespace Tesira_DSP_EPI {
             IsSubscribed = false;
 
             Label = config.Label;
+
 			if (config.Type != null)
 			{
-				Type = config.Type;
+			    Type = config.Type;
 			}
 
             Enabled = config.Enabled;

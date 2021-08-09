@@ -377,7 +377,7 @@ namespace Tesira_DSP_EPI
         {
             if (props.SwitcherControlBlocks == null) return;
             Debug.Console(2, this, "switcherControlBlocks is not null - There are {0} of them",
-                props.FaderControlBlocks.Count());
+                props.SwitcherControlBlocks.Count());
             foreach (var block in props.SwitcherControlBlocks)
             {
                 var key = block.Key;
