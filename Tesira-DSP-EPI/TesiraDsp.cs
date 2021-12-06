@@ -921,10 +921,9 @@ namespace Tesira_DSP_EPI
                 var p = preset;
                 var runPresetIndex = preset.Value.PresetIndex;
                 var presetIndex = runPresetIndex - 1;
-                trilist.StringInput[(uint)(presetJoinMap.PresetNameFeedback.JoinNumber + presetIndex)].StringValue = p.Value.Label;
                 // TODO [ ] pass preset name (aka control tag) across bridge
-                trilist.StringInput[(uint) (presetJoinMap.PresetControlTagFeedback.JoinNumber + presetIndex)]
-                    .StringValue = p.Value.PresetName;
+                // - Reviewed with TP, updated the below to pass back the presetName (aka controlTag)
+                trilist.StringInput[(uint)(presetJoinMap.PresetNameFeedback.JoinNumber + presetIndex)].StringValue = p.Value.PresetName;                
                 trilist.SetSigTrueAction((uint)(presetJoinMap.PresetSelection.JoinNumber + presetIndex), () => RunPresetNumber((ushort)runPresetIndex));
             }
 
