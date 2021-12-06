@@ -4,6 +4,7 @@ using System.Linq;
 using Crestron.SimplSharp;
 using Crestron.SimplSharpPro.CrestronThread;
 using PepperDash.Core;
+using PepperDash.Core.WebApi.Presets;
 using PepperDash.Essentials.Core;
 using System.Text.RegularExpressions;
 using Newtonsoft.Json;
@@ -915,15 +916,16 @@ namespace Tesira_DSP_EPI
 
             //Presets 
             trilist.SetStringSigAction(presetJoinMap.PresetName.JoinNumber, RunPreset);
+            // TODO [ ] Issue #53
+            trilist.SetUShortSigAction(presetJoinMap.PresetName.JoinNumber, RunPresetNumber);
 
             foreach (var preset in Presets)
             {
                 var p = preset;
                 var runPresetIndex = preset.Value.PresetIndex;
                 var presetIndex = runPresetIndex - 1;
-                // TODO [ ] pass preset name (aka control tag) across bridge
-                // - Reviewed with TP, updated the below to pass back the presetName (aka controlTag)
-                trilist.StringInput[(uint)(presetJoinMap.PresetNameFeedback.JoinNumber + presetIndex)].StringValue = p.Value.PresetName;                
+                // TODO [ ] Issue #53
+                trilist.StringInput[(uint)(presetJoinMap.PresetNameFeedback.JoinNumber + presetIndex)].StringValue = p.Value.PresetName;                 
                 trilist.SetSigTrueAction((uint)(presetJoinMap.PresetSelection.JoinNumber + presetIndex), () => RunPresetNumber((ushort)runPresetIndex));
             }
 
