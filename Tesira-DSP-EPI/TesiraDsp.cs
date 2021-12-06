@@ -993,6 +993,7 @@ namespace Tesira_DSP_EPI
             //Presets 
             // string input executes preset recall using preset name
             trilist.SetStringSigAction(presetJoinMap.PresetName.JoinNumber, RunPreset);
+            trilist.SetUShortSigAction(presetJoinMap.PresetName.JoinNumber, RunPresetNumber);
             // digital input executes preset reall using preset id (RunPresetNumber))
             foreach (var preset in Presets)
             {
@@ -1000,9 +1001,7 @@ namespace Tesira_DSP_EPI
                 if (p == null) continue;
                 var runPresetIndex = p.PresetData.PresetIndex;
                 var presetIndex = runPresetIndex;
-                trilist.StringInput[(uint)(presetJoinMap.PresetNameFeedback.JoinNumber + presetIndex)].StringValue = p.PresetData.Label;
-                // TODO [ ] review with TP
-                // changed method called from 'RunPresetNumber(presetIndex)' to 'RecallPreset(p)'                
+                trilist.StringInput[(uint)(presetJoinMap.PresetNameFeedback.JoinNumber + presetIndex)].StringValue = p.PresetData.PresetName;
                 trilist.SetSigTrueAction((uint) (presetJoinMap.PresetSelection.JoinNumber + presetIndex),
                     () => RecallPreset(p));
             }
