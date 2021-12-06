@@ -30,10 +30,21 @@ namespace Tesira_DSP_EPI.Bridge.JoinMaps
             new JoinDataComplete(new JoinData {JoinNumber = 100, JoinSpan = 1},
                 new JoinMetadata
                 {
-                    Description = "Preset Labels as configured for explicit preset recall",
+                    Description = "Preset Labels as configured",
                     JoinCapabilities = eJoinCapabilities.ToSIMPL,
                     JoinType = eJoinType.Serial
                 });
+
+        // TODO [ ] pass preset name (aka control tag) across bridge
+        [JoinName("PresetControlTagFeedback")]
+        public JoinDataComplete PresetControlTagFeedback =
+            new JoinDataComplete(new JoinData { JoinNumber = 150, JoinSpan = 1 },
+            new JoinMetadata
+            {
+                Description = "Preset control tags as configured for explicit preset recall",
+                JoinCapabilities = eJoinCapabilities.ToSIMPL,
+                JoinType = eJoinType.Serial
+            });
 
         public TesiraPresetJoinMapAdvanced(uint joinStart)
             : base(joinStart, typeof (TesiraPresetJoinMapAdvanced))
