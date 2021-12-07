@@ -110,6 +110,7 @@
     <Compile Include="Bridge\JoinMaps\TesiraRoomCombinerJoinMap.cs" />
     <Compile Include="DeviceFactory.cs" />
     <Compile Include="Extensions\ScalingExtensions.cs" />
+    <Compile Include="Extensions\xSigHelper.cs" />
     <Compile Include="Interfaces\Interfaces.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Bridge\JoinMaps\TesiraSwitcherJoinMap.cs" />

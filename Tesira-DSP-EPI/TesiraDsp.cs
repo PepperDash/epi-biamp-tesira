@@ -986,6 +986,8 @@ namespace Tesira_DSP_EPI
                 trilist.SetUShortSigAction(switcherJoinMap.Index.JoinNumber + x, u => switcher.SetSource(u));
 
                 switcher.NameFeedback.LinkInputSig(trilist.StringInput[switcherJoinMap.Label.JoinNumber + x]);
+
+                switcher.GetSourceNames();
             }
 
 
