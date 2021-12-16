@@ -49,10 +49,20 @@ namespace Tesira_DSP_EPI.Bridge.JoinMaps {
             new JoinDataComplete(new JoinData {JoinNumber = 1, JoinSpan = 1},
                 new JoinMetadata
                 {
-                    Description = "PSource Selector Label",
+                    Description = "Source Selector Label",
                     JoinCapabilities = eJoinCapabilities.ToSIMPL,
                     JoinType = eJoinType.Serial
                 });
+        [JoinName("SourcesLabelXSig")]
+        public JoinDataComplete SourcesLabelXSig =
+            new JoinDataComplete(new JoinData { JoinNumber = 2, JoinSpan = 1 },
+            new JoinMetadata
+            {
+                Description = "SourcesLabelXSig",
+                JoinCapabilities = eJoinCapabilities.ToSIMPL,
+                JoinType = eJoinType.Serial
+            });
+
 
         public TesiraSwitcherJoinMapAdvancedStandalone(uint joinStart)
             : base(joinStart, typeof (TesiraSwitcherJoinMapAdvancedStandalone))

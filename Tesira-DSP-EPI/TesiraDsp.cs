@@ -377,7 +377,7 @@ namespace Tesira_DSP_EPI
         {
             if (props.SwitcherControlBlocks == null) return;
             Debug.Console(2, this, "switcherControlBlocks is not null - There are {0} of them",
-                props.FaderControlBlocks.Count());
+                props.SwitcherControlBlocks.Count());
             foreach (var block in props.SwitcherControlBlocks)
             {
                 var key = block.Key;
@@ -986,6 +986,8 @@ namespace Tesira_DSP_EPI
                 trilist.SetUShortSigAction(switcherJoinMap.Index.JoinNumber + x, u => switcher.SetSource(u));
 
                 switcher.NameFeedback.LinkInputSig(trilist.StringInput[switcherJoinMap.Label.JoinNumber + x]);
+
+                switcher.GetSourceNames();
             }
 
 
@@ -993,6 +995,7 @@ namespace Tesira_DSP_EPI
             //Presets 
             // string input executes preset recall using preset name
             trilist.SetStringSigAction(presetJoinMap.PresetName.JoinNumber, RunPreset);
+            trilist.SetUShortSigAction(presetJoinMap.PresetName.JoinNumber, RunPresetNumber);
             // digital input executes preset reall using preset id (RunPresetNumber))
             foreach (var preset in Presets)
             {
@@ -1000,9 +1003,7 @@ namespace Tesira_DSP_EPI
                 if (p == null) continue;
                 var runPresetIndex = p.PresetData.PresetIndex;
                 var presetIndex = runPresetIndex;
-                trilist.StringInput[(uint)(presetJoinMap.PresetNameFeedback.JoinNumber + presetIndex)].StringValue = p.PresetData.Label;
-                // TODO [ ] review with TP
-                // changed method called from 'RunPresetNumber(presetIndex)' to 'RecallPreset(p)'                
+                trilist.StringInput[(uint)(presetJoinMap.PresetNameFeedback.JoinNumber + presetIndex)].StringValue = p.PresetData.PresetName;
                 trilist.SetSigTrueAction((uint) (presetJoinMap.PresetSelection.JoinNumber + presetIndex),
                     () => RecallPreset(p));
             }

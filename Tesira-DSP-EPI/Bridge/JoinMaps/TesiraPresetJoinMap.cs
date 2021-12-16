@@ -23,7 +23,7 @@ namespace Tesira_DSP_EPI.Bridge.JoinMaps
                 {
                     Description = "Recall Preset by name",
                     JoinCapabilities = eJoinCapabilities.FromSIMPL,
-                    JoinType = eJoinType.Serial
+                    JoinType = eJoinType.AnalogSerial
                 });
 
         [JoinName("PresetNameFeedback")] public JoinDataComplete PresetNameFeedback =
@@ -71,7 +71,7 @@ namespace Tesira_DSP_EPI.Bridge.JoinMaps
                 {
                     Description = "Recall Preset by name",
                     JoinCapabilities = eJoinCapabilities.FromSIMPL,
-                    JoinType = eJoinType.Serial
+                    JoinType = eJoinType.AnalogSerial
                 });
 
         [JoinName("PresetNameFeedback")] public JoinDataComplete PresetNameFeedback =

@@ -484,16 +484,15 @@ namespace Tesira_DSP_EPI {
                 ControlStatusCustomName = string.Format("{0}~VoIPControl{1}", InstanceTag2, Index1);
                 LastDialedCustomName = string.Format("{0}~VoIPLastNumber{1}", InstanceTag1, Index1);
 
-
-                SendSubscriptionCommand(ControlStatusCustomName, "callState", 250, 2);
                 AddCustomName(ControlStatusCustomName);
+                SendSubscriptionCommand(ControlStatusCustomName, "callState", 250, 2);
 
-                SendSubscriptionCommand(AutoAnswerCustomName, "autoAnswer", 500, 1);
                 AddCustomName(AutoAnswerCustomName);
+                SendSubscriptionCommand(AutoAnswerCustomName, "autoAnswer", 500, 1);
 
-
-                SendSubscriptionCommand(LastDialedCustomName, "lastNum", 500, 1);
                 AddCustomName(LastDialedCustomName);
+                SendSubscriptionCommand(LastDialedCustomName, "lastNum", 500, 1);
+                
 
                 SendFullCommand("get", "dndEnable", null, 1);
             }
