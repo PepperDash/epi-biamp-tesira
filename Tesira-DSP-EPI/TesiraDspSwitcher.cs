@@ -226,6 +226,8 @@ namespace Tesira_DSP_EPI {
             foreach (var port in InputPorts)
             {
                 var input = port;
+                var testVal = input.Selector as  ushort?;
+                if (testVal == null) continue;
                 SourceNamesXsig += xSigHelper.CreateByteString((ushort)input.Selector, input.Key);
             }
             SourceNamesFeedback.FireUpdate();
