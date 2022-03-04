@@ -225,10 +225,22 @@ namespace Tesira_DSP_EPI {
 
             foreach (var port in InputPorts)
             {
-                var input = port;
-                var testVal = input.Selector as  ushort?;
-                if (testVal == null) continue;
-                SourceNamesXsig += xSigHelper.CreateByteString((ushort)input.Selector, input.Key);
+
+                var input = port;                                
+                var index = Convert.ToUInt16(input.Selector);
+                SourceNamesXsig += xSigHelper.CreateByteString(index, input.Key);
+
+                Debug.Console(2, this, "{0} {1}", input.Key, new String('-', 50));
+                Debug.Console(2, this, @"    
+                  input.ParentDevice: {0}
+                  input.Selector: {1}
+                  input.Selector(Convert.ToUnit16): {2}
+                  input.Port: {3}
+                  input.ConnectionType: {4}
+                  input.Type: {5}", 
+                  input.ParentDevice, input.Selector, index, input.Port, input.ConnectionType, input.Type);
+                              Debug.Console(2, this, "{0}", new String('-', 50));
+
             }
             SourceNamesFeedback.FireUpdate();
         }
