@@ -53,6 +53,8 @@ namespace Tesira_DSP_EPI
                 Feedbacks.Add(f);
                 Feedbacks.Add(m);
                 Feedbacks.Add(o);
+
+                Debug.Console(2, this, "There are {0} configured expanders", Expanders.Count);
             }
 
             foreach (var feedback in Hostnames)
@@ -84,6 +86,13 @@ namespace Tesira_DSP_EPI
                 var f = feedback.Value;
                 Feedbacks.Add(f);
             }
+
+            if (Debug.Level != 2) return;
+            foreach (var item in Expanders)
+            {
+                var i = item;
+                Debug.Console(2, this, "Expander Index = {0} ; Expander Hostname = {1}", item.Index, item.Hostname);
+            }
         }
 
         public override void Initialize()
@@ -103,13 +112,75 @@ namespace Tesira_DSP_EPI
 
         private void CheckTracker()
         {
-            Parent.SendLine("DEVICE get discoveredExpanders");
+            Debug.Console(2, this, "Getting DiscoveredExpanders");
+
+            SendFullCommand("get", "discoveredExpanders", null, 999);            
+
             StartTimer();
         }
 
-        public void ParseResults(Regex rgx, string data)
+        public override void ParseGetMessage(string attributeCode, string message)
+        {
+            Debug.Console(2, this, "!!!!!!!!EXPANDER DATA!!!!!!!!!!!");
+            const string pattern = @"\[([^\[\]]+)\]?";
+            const string pattern2 = "\\\"([^\\\"\\\"]+)\\\"?";
+
+            var matches = Regex.Matches(message, pattern);
+            /*
+            var newString = Regex.Replace(myString, pattern, "");
+            var matches2 = Regex.Matches(newString, pattern);
+		
+            var someMatches = matches2.RemoveAll(s => s.ToString.Length < 4));
+            */
+            Console.WriteLine("There are {0} Matches", matches.Count);
+            for (int v = 0; v < matches.Count; v++)
+            {
+                if (!matches[v].ToString().Contains('"')) continue;
+                Debug.Console(2, this, "Match {0} is a device", v);
+
+                var matchesEnclosed = Regex.Matches(matches[v].ToString(), pattern2);
+                var data2 = Regex.Replace(matches[v].ToString(), pattern2, "").Trim('"').Trim('[').Trim().Replace("  ", " "); ;
+                Console.WriteLine("Data2 = {0}", data2);
+                var hostname = matchesEnclosed[0].ToString().Trim('"');
+
+                Debug.Console(2, this, "Match {0} Hostname : {1}", v, hostname);
+
+                var newData = Expanders.FirstOrDefault(o => String.Equals(o.Hostname, hostname, StringComparison.CurrentCultureIgnoreCase));
+
+                if (newData == null) return;
+                Debug.Console(2, this, "Found a device Index {0} with Hostname {1}", newData.Index, newData.Hostname);
+
+                newData.SetData(matches[v].ToString());
+                newData.SetMac(matches[v+1].ToString());
+
+                //Console.WriteLine(matches[v]);
+            }
+
+            foreach (var feedback in Feedbacks)
+            {
+                var f = feedback;
+                f.FireUpdate();
+            }
+
+            if (Debug.Level != 2) return;
+            foreach (var device in Expanders)
+            {
+                var i = device;
+
+                Debug.Console(2, this, "Index = {0}", i.Index);
+                Debug.Console(2, this, "Hostname = {0}", i.Hostname);
+                Debug.Console(2, this, "MacAddress = {0}", i.MacAddress);
+                Debug.Console(2, this, "SerialNumber = {0}", i.SerialNumber);
+                Debug.Console(2, this, "Firmware = {0}", i.Firmware);
+                Debug.Console(2, this, "Online = {0}", i.Online);
+
+            }
+        }
+
+        /*public void ParseResults(Regex rgx, string data)
         {
             var matches = rgx.Matches(data);
+            Debug.Console(2, this, "There are {0} matches", matches.Count);
             for (int i = 0; i < matches.Count;  i++)
             {
                 const string pattern = "\\\"([^\\\"\\\"]+)\\\"?";
@@ -126,11 +197,14 @@ namespace Tesira_DSP_EPI
                 var macGroup = newData.Split(' ');
                 var macAddress = macGroup.Aggregate("", (current, oct) => current + int.Parse(oct).ToString("X2"));
 
+                Debug.Console(2, this, "Device {0} - hostname : {1} - serial : {1} - firmware : {2} - mac : {3}", i, hostname, serialNumber, firmware, macAddress);
+
                 var expander = Expanders.FirstOrDefault(v => v.Hostname == hostname);
                 if (expander == null) continue;
                 expander.SetData(serialNumber, firmware, macAddress);
             }
         }
+         * */
 
         public override void LinkToApi(BasicTriList trilist, uint joinStart, string joinMapKey, EiscApiAdvanced bridge)
         {
@@ -202,7 +276,7 @@ namespace Tesira_DSP_EPI
         public string MacAddress { get; private set; }
         public int Index { get; private set; }
 
-        private const string pattern = "\\\"([^\\\"\\\"]+)\\\"?";
+        private const string Pattern = "\\\"([^\\\"\\\"]+)\\\"?";
 
         public TesiraExpanderData(string data, int index)
         {
@@ -214,16 +288,6 @@ namespace Tesira_DSP_EPI
             MacAddress = "";
         }
 
-        public void SetData(string serial , string firmware, string mac)
-        {
-            if (_expanderTimer == null)
-            {
-                _expanderTimer = new CTimer(o => SetOffline(), null, 120000, 120000);
-                return;
-            }
-            _expanderTimer.Reset(120000, 120000);
-
-        }
 
         private void SetOffline()
         {
@@ -231,5 +295,35 @@ namespace Tesira_DSP_EPI
             Online = false;
         }
 
+        public void SetData(string data)
+        {
+            var matches = Regex.Matches(data, Pattern);
+            var data2 = Regex.Replace(data, Pattern, "").Trim('"').Trim('[').Trim().Replace("  ", " "); ;
+            Console.WriteLine("Data2 = {0}", data2);
+            var fData = data2.Split(' ');
+            Hostname = matches[0].ToString().Trim('"');
+            SerialNumber = matches[1].ToString().Trim('"');
+            Firmware = String.Format("{0}.{1}.{2}-build{3}", fData[0], fData[1], fData[2], fData[3]);
+
+            Online = true;
+
+            if (_expanderTimer == null)
+            {
+                _expanderTimer = new CTimer(o => SetOffline(), null, 120000, 120000);
+                return;
+            }
+            _expanderTimer.Reset(120000, 120000);
+        }
+
+        public void SetMac(string data)
+        {
+            var newData = data.Replace("[", "").Replace("]", "");
+            var macGroup = newData.Split(' ');
+            var mac = macGroup.Aggregate("", (current, oct) => current + (int.Parse(oct).ToString("X2") + ":")).Trim(':');
+            MacAddress = mac;
+        }
+
     }
 }
+
+

@@ -237,8 +237,11 @@ namespace Tesira_DSP_EPI
 
             CreateRoomCombiners(props);
 
-            //Keep me at the end of this method!
             CreateDevInfo();
+
+            //Keep me at the end of this method!
+            CreateExpanderTracker(props);
+
         }
 
         private void CreateDevInfo()
@@ -247,7 +250,6 @@ namespace Tesira_DSP_EPI
             if (DevInfo != null)
                 DeviceManager.AddDevice(DevInfo);
         }
-
 
         private void CreatePresets(TesiraDspPropertiesConfig props)
         {
@@ -483,6 +485,7 @@ namespace Tesira_DSP_EPI
         {
 			try
 			{
+			    if (ControlPointList.Count == 0) return;
 			    if (WatchdogSuspend)
 			    {
 			        WatchDogSniffer = false;
@@ -651,8 +654,11 @@ namespace Tesira_DSP_EPI
 				        CommandQueue.AdvanceQueue(args.Text);
 				    }
 				}
+                    /*
 				else
 				{
+
+                    Debug.Console(2, this, "!!!!!!!!EXPANDER DATA!!!!!!!!!!!");
                     const string pattern = @"\[([^\[\]]+)\]?";
 
 				    var rgx = new Regex(pattern);
