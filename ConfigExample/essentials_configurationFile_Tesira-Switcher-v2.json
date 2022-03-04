@@ -1,0 +1,115 @@
+{
+	"system": {},
+	"template": {
+		"devices": [
+			{
+				"key": "processor",
+				"uid": 0,
+				"type": "cp3",
+				"name": "CP3",
+				"group": "processor",
+				"supportedConfigModes": [
+					"compliance",
+					"essentials"
+				],
+				"supportedSystemTypes": [
+					"hudType",
+					"presType",
+					"vtcType",
+					"custom"
+				],
+				"supportsCompliance": true,
+				"properties": {}
+			},
+			{
+				"key": "dsp1",
+				"uid": 4,
+				"type": "tesiradsp",
+				"name": "Biamp Tesira Plugin",
+				"group": "dsp",
+				"properties": {
+					"control": {
+						"method": "ssh",
+						"tcpSshProperties": {
+							"address": "192.168.1.1",
+							"port": 22,
+							"username": "default",
+							"password": "default",
+							"autoReconnect": true,
+							"autoReconnectIntervalMs": 5000
+						}
+					},
+					"faderControlBlocks": {
+						"fader1": {
+							"label": "Room",
+							"enabled": true,
+							"bridgeIndex": 1,
+							"isMic": true,
+							"hasLevel": false,
+							"hasMute": true,
+							"unmuteOnVolChange": false,
+							"permissions": 0,
+							"levelInstanceTag": "ROOM",
+							"muteInstanceTag": "ROOM",
+							"incrementAmount": "2.0",
+							"index1": 1,
+							"index2": 0
+						}
+					},
+					"presets": {
+						"1": {
+							"label": "Room Default",
+							"presetIndex": 1,
+							"presetName": "LEVELS_RESET"
+						}
+					},
+					"switcherControlBlocks": {
+						"SwitcherControl01": {
+							"enabled": true,
+							"label": "switcher1",
+							"index1": 1,
+							"switcherInstanceTag": "SRCSEL",
+							"type:": "sourceSelector",
+							"bridgeIndex": 1,
+							"switcherInputs": {},
+							"switcherOutputs": {}
+						}
+					}
+				}
+			},
+			{
+				"key": "dsp1-bridge",
+				"uid": 5,
+				"name": "Bridge Dsp",
+				"group": "api",
+				"type": "eiscApiAdvanced",
+				"properties": {
+					"control": {
+						"tcpSshProperties": {
+							"address": "127.0.0.2",
+							"port": 0
+						},
+						"ipid": "C4",
+						"method": "ipidTcp"
+					},
+					"devices": [
+						{
+							"deviceKey": "dsp1",
+							"joinStart": 1
+						}
+					]
+				}
+			}
+		],
+		"info": {
+			"comment": "",
+			"lastModifiedDate": "2017-03-06T23:14:40.290Z",
+			"lastUid": 5,
+			"processorType": "cp3",
+			"requiredControlSofwareVersion": "",
+			"systemType": "huddle"
+		},
+		"rooms": [],
+		"tieLines": []
+	}
+}
