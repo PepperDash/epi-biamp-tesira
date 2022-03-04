@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using Crestron.SimplSharp;
+using Crestron.SimplSharp.Ssh;
 using Crestron.SimplSharpPro.CrestronThread;
 using PepperDash.Core;
 using PepperDash.Essentials.Core;
@@ -70,6 +71,8 @@ namespace Tesira_DSP_EPI
         private Dictionary<string, TesiraDspRoomCombiner> RoomCombiners { get; set; }
         public List<IDspPreset> Presets { get; private set; } 
         private List<ISubscribedComponent> ControlPointList { get; set; }
+
+        private TesiraExpanderTracker ExpanderTracker { get; set; }
 
         //private TesiraDspDeviceInfo DeviceInfo { get; set; }
 
@@ -234,8 +237,11 @@ namespace Tesira_DSP_EPI
 
             CreateRoomCombiners(props);
 
-            //Keep me at the end of this method!
             CreateDevInfo();
+
+            //Keep me at the end of this method!
+            CreateExpanderTracker(props);
+
         }
 
         private void CreateDevInfo()
@@ -244,7 +250,6 @@ namespace Tesira_DSP_EPI
             if (DevInfo != null)
                 DeviceManager.AddDevice(DevInfo);
         }
-
 
         private void CreatePresets(TesiraDspPropertiesConfig props)
         {
@@ -349,6 +354,7 @@ namespace Tesira_DSP_EPI
 
                 if (block.Value.Enabled)
                     ControlPointList.Add(States[key]);
+                    
             }
         }
 
@@ -393,7 +399,20 @@ namespace Tesira_DSP_EPI
 
                     ControlPointList.Add(Switchers[key]);
                 }
+                DeviceManager.AddDevice(Switchers[key]);
+
             }
+        }
+
+        private void CreateExpanderTracker(TesiraDspPropertiesConfig props)
+        {
+            if (props.ExpanderBlocks == null) return;
+            Debug.Console(2, this, "ExpanderBlocks is not null - there are {0} of them", props.ExpanderBlocks.Count());
+
+            ExpanderTracker = new TesiraExpanderTracker(this, props.ExpanderBlocks);
+
+            DeviceManager.AddDevice(ExpanderTracker);
+            
         }
 
         #region Communications
@@ -466,6 +485,7 @@ namespace Tesira_DSP_EPI
         {
 			try
 			{
+			    if (ControlPointList.Count == 0) return;
 			    if (WatchdogSuspend)
 			    {
 			        WatchDogSniffer = false;
@@ -616,23 +636,38 @@ namespace Tesira_DSP_EPI
 				}
 				else if (args.Text.IndexOf("-ERR", StringComparison.Ordinal) >= 0)
 				{
-					// Error response
+				    // Error response
 
-                    if (args.Text.IndexOf("ALREADY_SUBSCRIBED", StringComparison.Ordinal) >= 0)
-                    {
-                        if (WatchDogSniffer)
-                            Debug.Console(1, this, "The Watchdog didn't find anything.  Good Boy!");
+				    if (args.Text.IndexOf("ALREADY_SUBSCRIBED", StringComparison.Ordinal) >= 0)
+				    {
+				        if (WatchDogSniffer)
+				            Debug.Console(1, this, "The Watchdog didn't find anything.  Good Boy!");
 
-                        WatchDogSniffer = false;
-                        //CommandQueue.AdvanceQueue(args.Text);
-                    }
+				        WatchDogSniffer = false;
+				        //CommandQueue.AdvanceQueue(args.Text);
+				    }
 
-                    else
-                    {
-                        Debug.Console(1, this, Debug.ErrorLogLevel.Error, "Error From DSP: '{0}'", args.Text);
-                        WatchDogSniffer = false;
-                        CommandQueue.AdvanceQueue(args.Text);
-                    }
+				    else
+				    {
+				        Debug.Console(1, this, Debug.ErrorLogLevel.Error, "Error From DSP: '{0}'", args.Text);
+				        WatchDogSniffer = false;
+				        CommandQueue.AdvanceQueue(args.Text);
+				    }
+				}
+                    /*
+				else
+				{
+
+                    Debug.Console(2, this, "!!!!!!!!EXPANDER DATA!!!!!!!!!!!");
+                    const string pattern = @"\[([^\[\]]+)\]?";
+
+				    var rgx = new Regex(pattern);
+
+				    if (!rgx.IsMatch(DeviceRx)) return;
+
+				    if (ExpanderTracker == null) return;
+
+				    ExpanderTracker.ParseResults(rgx, DeviceRx);
 				}
                     /*
                 else if (args.Text.IndexOf("SESSION", StringComparison.OrdinalIgnoreCase) > -1)
@@ -787,6 +822,11 @@ namespace Tesira_DSP_EPI
             {
                 _queueCheckTimer.Reset(1000, 1000);
             }
+
+		    if (ExpanderTracker != null)
+		    {
+		        ExpanderTracker.Initialize();
+		    }
 
 		}
 
