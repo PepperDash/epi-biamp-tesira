@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using Crestron.SimplSharpPro.DeviceSupport;
 using PepperDash.Core;
 using PepperDash.Essentials.Core.Bridges;
@@ -17,6 +18,8 @@ namespace Tesira_DSP_EPI
         public string Label { get; set; }
         public readonly uint? BridgeIndex;
 
+        public List<string> CustomNames { get; set; } 
+
         private const string KeyFormatter = "{0}--{1}";
 
         public virtual bool IsSubscribed { get; protected set; }
@@ -30,6 +33,7 @@ namespace Tesira_DSP_EPI
             Index1 = index1;
             Index2 = index2;
             Parent = parent;
+            CustomNames = new List<string>();
         }
 
         virtual public void Initialize() {}
@@ -93,7 +97,7 @@ namespace Tesira_DSP_EPI
             }
 
 
-            else if (attributeCode == "dial" || attributeCode == "end" || attributeCode == "onHook" ||
+            else if ( attributeCode == "dial" || attributeCode == "end" || attributeCode == "onHook" ||
                 attributeCode == "offHook" || attributeCode == "answer")
             {
                 //requires index, but does not require command
@@ -112,7 +116,7 @@ namespace Tesira_DSP_EPI
             {
                 // This command will generate a return value response so it needs to be queued
                 if (!string.IsNullOrEmpty(cmd))
-                    Parent.CommandQueue.EnqueueCommand(new QueuedCommand { Command = cmd, AttributeCode = attributeCode, ControlPoint = this });
+                    Parent.CommandQueue.EnqueueCommand(new QueuedCommand(cmd, attributeCode, this));
             }
             else
             {
@@ -125,6 +129,18 @@ namespace Tesira_DSP_EPI
         virtual public void ParseGetMessage(string attributeCode, string message)
         {
 
+        }
+
+        public virtual void ParseSubscriptionMessage(string customName, string value)
+        {
+
+        }
+
+
+        public virtual void AddCustomName(string customName)
+        {
+            if (CustomNames.Contains(customName)) return;
+            CustomNames.Add(customName);
         }
 
         public virtual void SendSubscriptionCommand(string customName, string attributeCode, int responseRate, int instanceTag)
@@ -152,7 +168,7 @@ namespace Tesira_DSP_EPI
                     localInstanceTag = InstanceTag1;
                     break;
             }
-            if (attributeCode == "callState" || attributeCode == "sourceSelection")
+			if (attributeCode == "callState" || attributeCode == "sourceSelection" || attributeCode == "hookState")
             {
                 cmd = string.Format("\"{0}\" subscribe {1} {2} {3}", localInstanceTag, attributeCode, customName, responseRate);
             }
@@ -168,7 +184,7 @@ namespace Tesira_DSP_EPI
 
             //Parent.WatchDogList.Add(customName,cmd);
             //Parent.SendLine(cmd);
-            Parent.CommandQueue.EnqueueCommand(new QueuedCommand { Command = cmd, AttributeCode = attributeCode, ControlPoint = this });
+            Parent.SendLine(cmd);
         }
 
         public virtual void SendUnSubscriptionCommand(string customName, string attributeCode, int instanceTag)
@@ -208,7 +224,7 @@ namespace Tesira_DSP_EPI
 
             //Parent.WatchDogList.Add(customName,cmd);
             //Parent.SendLine(cmd);
-            Parent.CommandQueue.EnqueueCommand(new QueuedCommand { Command = cmd, AttributeCode = attributeCode, ControlPoint = this });
+            Parent.SendLine(cmd);
         }
         
         public virtual void DoPoll()

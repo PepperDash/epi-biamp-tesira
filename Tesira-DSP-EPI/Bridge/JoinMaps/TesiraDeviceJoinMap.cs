@@ -35,15 +35,6 @@ namespace Tesira_DSP_EPI.Bridge.JoinMaps
                     JoinType = eJoinType.Serial
                 });
 
-        [JoinName("DirectPreset")] public JoinDataComplete DirectPreset =
-            new JoinDataComplete(new JoinData {JoinNumber = 100, JoinSpan = 1},
-                new JoinMetadata
-                {
-                    Description = "Directly Recall a Preset",
-                    JoinCapabilities = eJoinCapabilities.ToSIMPL,
-                    JoinType = eJoinType.Digital
-                });
-
         public TesiraDspDeviceJoinMapAdvanced(uint joinStart)
             : base(joinStart, typeof (TesiraDspDeviceJoinMapAdvanced))
         {
@@ -84,13 +75,65 @@ namespace Tesira_DSP_EPI.Bridge.JoinMaps
                 });
 
         [JoinName("CommandPassThru")] public JoinDataComplete CommandPassThru =
-            new JoinDataComplete(new JoinData {JoinNumber = 2, JoinSpan = 2},
+            new JoinDataComplete(new JoinData {JoinNumber = 2, JoinSpan = 1},
                 new JoinMetadata
                 {
                     Description = "Pass discrete commands directly to/from the device",
                     JoinCapabilities = eJoinCapabilities.ToFromSIMPL,
                     JoinType = eJoinType.Serial
                 });
+
+        [JoinName("SerialNumber")]
+        public JoinDataComplete SerialNumber =
+            new JoinDataComplete(new JoinData { JoinNumber = 3, JoinSpan = 1 },
+            new JoinMetadata
+            {
+                Description = "Serial Number of the Device",
+                JoinCapabilities = eJoinCapabilities.ToSIMPL,
+                JoinType = eJoinType.Serial
+            });
+
+        [JoinName("Firmware")]
+        public JoinDataComplete Firmware =
+            new JoinDataComplete(new JoinData { JoinNumber = 4, JoinSpan = 1 },
+            new JoinMetadata
+            {
+                Description = "Firmware of the Device",
+                JoinCapabilities = eJoinCapabilities.ToSIMPL,
+                JoinType = eJoinType.Serial
+            });
+
+        [JoinName("Hostname")]
+        public JoinDataComplete Hostname =
+            new JoinDataComplete(new JoinData { JoinNumber = 5, JoinSpan = 1 },
+            new JoinMetadata
+            {
+                Description = "Hostname of the Device",
+                JoinCapabilities = eJoinCapabilities.ToSIMPL,
+                JoinType = eJoinType.Serial
+            });
+
+        [JoinName("IpAddress")]
+        public JoinDataComplete IpAddress =
+            new JoinDataComplete(new JoinData { JoinNumber = 6, JoinSpan = 1 },
+            new JoinMetadata
+            {
+                Description = "IP Address of the Device",
+                JoinCapabilities = eJoinCapabilities.ToSIMPL,
+                JoinType = eJoinType.Serial
+            });
+
+        [JoinName("MacAddress")]
+        public JoinDataComplete MacAddress =
+            new JoinDataComplete(new JoinData { JoinNumber = 7, JoinSpan = 1 },
+            new JoinMetadata
+            {
+                Description = "Mac Address of the Device",
+                JoinCapabilities = eJoinCapabilities.ToSIMPL,
+                JoinType = eJoinType.Serial
+            });
+
+
 
         public TesiraDspDeviceJoinMapAdvancedStandalone(uint joinStart)
             : base(joinStart, typeof (TesiraDspDeviceJoinMapAdvancedStandalone))

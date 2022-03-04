@@ -23,7 +23,7 @@ namespace Tesira_DSP_EPI.Bridge.JoinMaps
                 {
                     Description = "Recall Preset by name",
                     JoinCapabilities = eJoinCapabilities.FromSIMPL,
-                    JoinType = eJoinType.Serial
+                    JoinType = eJoinType.AnalogSerial
                 });
 
         [JoinName("PresetNameFeedback")] public JoinDataComplete PresetNameFeedback =
@@ -48,25 +48,34 @@ namespace Tesira_DSP_EPI.Bridge.JoinMaps
     public class TesiraPresetJoinMapAdvancedStandalone : JoinMapBaseAdvanced
     {
         [JoinName("PresetSelection")] public JoinDataComplete PresetSelection =
-            new JoinDataComplete(new JoinData {JoinNumber = 3, JoinSpan = 1},
+            new JoinDataComplete(new JoinData {JoinNumber = 1, JoinSpan = 1},
                 new JoinMetadata
                 {
                     Description = "Recall Preset Explicitly by Configured Index",
                     JoinCapabilities = eJoinCapabilities.FromSIMPL,
                     JoinType = eJoinType.Digital
                 });
+        [JoinName("PresetValidFeedback")]
+        public JoinDataComplete PresetValidFeedback =
+            new JoinDataComplete(new JoinData { JoinNumber = 1, JoinSpan = 1 },
+            new JoinMetadata
+            {
+                Description = "Preset Preset and Configured",
+                JoinCapabilities = eJoinCapabilities.ToSIMPL,
+                JoinType = eJoinType.Digital
+            });
 
         [JoinName("PresetName")] public JoinDataComplete PresetName =
-            new JoinDataComplete(new JoinData {JoinNumber = 3, JoinSpan = 1},
+            new JoinDataComplete(new JoinData {JoinNumber = 1, JoinSpan = 1},
                 new JoinMetadata
                 {
                     Description = "Recall Preset by name",
                     JoinCapabilities = eJoinCapabilities.FromSIMPL,
-                    JoinType = eJoinType.Serial
+                    JoinType = eJoinType.AnalogSerial
                 });
 
         [JoinName("PresetNameFeedback")] public JoinDataComplete PresetNameFeedback =
-            new JoinDataComplete(new JoinData {JoinNumber = 3, JoinSpan = 1},
+            new JoinDataComplete(new JoinData {JoinNumber = 1, JoinSpan = 1},
                 new JoinMetadata
                 {
                     Description = "Preset Labels as configured for explicit preset recall",

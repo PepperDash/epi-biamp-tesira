@@ -74,6 +74,7 @@ namespace Tesira_DSP_EPI
         public override void Subscribe()
         {
             MeterCustomName = string.Format("{0}~meter{1}", InstanceTag1, Index1);
+            AddCustomName(MeterCustomName);
             SendSubscriptionCommand(MeterCustomName, MeterAttributeCode, _defaultPollTime, 0);
         }
 
@@ -90,13 +91,13 @@ namespace Tesira_DSP_EPI
             Debug.Console(2, this, "Parsing Message - '{0}' : Message has an attributeCode of {1}", message, attributeCode);  
         }
 
-        public void ParseSubscriptionMessage(string customName, string message)
+        public override void ParseSubscriptionMessage(string customName, string message)
         {
             IsSubscribed = true;
             SubscribedFeedback.FireUpdate();
 
             Debug.Console(2, this, "Parsing Message - '{0}'", message);
-            var value = Double.Parse(message).Scale(_meterMinimum, _meterMaximum, ushort.MinValue, ushort.MaxValue);
+            var value = Double.Parse(message).Scale(_meterMinimum, _meterMaximum, ushort.MinValue, ushort.MaxValue, this);
             _currentMeter = (ushort)value;
 
             Debug.Console(2, this, "Scaled Meter Value - '{0}'", _currentMeter);

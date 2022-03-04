@@ -8,10 +8,11 @@ using Crestron.SimplSharpPro.DeviceSupport;
 using PepperDash.Essentials.Core.Bridges;
 using Tesira_DSP_EPI.Bridge.JoinMaps;
 using System.Collections.Generic;
+using Tesira_DSP_EPI.Extensions;
 
 namespace Tesira_DSP_EPI
 {
-    public class TesiraDspFaderControl : TesiraDspControlPoint, IBasicVolumeWithFeedback
+    public class TesiraDspFaderControl : TesiraDspControlPoint, IBasicVolumeWithFeedback, IVolumeComponent
     {
         private bool _isMuted;
         protected bool IsMuted
@@ -81,40 +82,17 @@ namespace Tesira_DSP_EPI
         /// </summary>
         public string MuteCustomName { get; protected set; }
 
-        private double _minLevel;
+
+
         /// <summary>
         /// Minimum fader level
         /// </summary>
-        double MinLevel
-        {
-            get
-            {
-                return _minLevel;
-            }
-            set
-            {
-                _minLevel = value;
-                SendFullCommand("get", "maxLevel", null, 1);
-            }
-        }
+        public double MinLevel { get; private set; }
 
-        private double _maxLevel;
         /// <summary>
         /// Maximum fader level
         /// </summary>
-        double MaxLevel
-        {
-            get
-            {
-                return _maxLevel;
-            }
-            set
-            {
-                _maxLevel = value;
-                //LevelSubscribed = true;
-                SendSubscriptionCommand(LevelCustomName, "level", 250, 1);
-            }
-        }
+        public double MaxLevel { get; private set; }
 
         /// <summary>
         /// Checks if a valid subscription string has been recieved for all subscriptions
@@ -123,19 +101,17 @@ namespace Tesira_DSP_EPI
         {
             get
             {
-                var trackValue = 0;
-
-                foreach (var subscriptionTrackingObject in SubscriptionTracker)
+                var trackingBool = true;
+                foreach (var item in SubscriptionTracker)
                 {
-                    var data = subscriptionTrackingObject.Value;
-
-                    if (data.Enabled)
+                    Debug.Console(2, this, "{0} is {1} and {2}", item.Key, item.Value.Enabled ? "Enabled" : "Disabled", item.Value.Subscribed ? "Subscribed" : "Not Subscribed");
+                    if (item.Value.Enabled != item.Value.Subscribed)
                     {
-                        trackValue += data.Subscribed ? 1 : -1;
+                        trackingBool = false;
                     }
                 }
+                return trackingBool;
 
-                return trackValue > 0;
             }
             protected set { }
         }
@@ -167,11 +143,6 @@ namespace Tesira_DSP_EPI
 
         private void Initialize(TesiraFaderControlBlockConfig config)
         {
-            if (config.Enabled)
-            {
-                DeviceManager.AddDevice(this);
-            }
-
             _type = config.IsMic ? EPdtLevelTypes.Microphone : EPdtLevelTypes.Speaker;
 
             Debug.Console(2, this, "Adding LevelControl '{0}'", Key);
@@ -190,12 +161,12 @@ namespace Tesira_DSP_EPI
             _volumeUpRepeatDelayTimer = new CTimer(VolumeUpRepeatDelay, Timeout.Infinite);
             _volumeDownRepeatDelayTimer = new CTimer(VolumeDownRepeatDelay, Timeout.Infinite);
 
-            SubscriptionTracker = new Dictionary<string, SubscriptionTrackingObject>();
+            SubscriptionTracker = new Dictionary<string, SubscriptionTrackingObject>
+            {
+                {"mute", new SubscriptionTrackingObject(HasMute)},
+                {"level", new SubscriptionTrackingObject(HasLevel)}
+            };
 
-            SubscriptionTracker.Add("mute", new SubscriptionTrackingObject(HasMute));
-            SubscriptionTracker.Add("level", new SubscriptionTrackingObject(HasLevel));
-
-            
 
             if (HasMute && HasLevel)
             {
@@ -271,6 +242,7 @@ namespace Tesira_DSP_EPI
                     // MUST use InstanceTag2 for mute, it is the second instance tag in the JSON config
                     MuteCustomName = string.Format("{0}~mute{1}", InstanceTag2, Index1);
 
+                    AddCustomName(MuteCustomName);
 
                     SendSubscriptionCommand(MuteCustomName, "mute", 500, 2);
                 }
@@ -280,7 +252,9 @@ namespace Tesira_DSP_EPI
                 {
                     // MUST use InstanceTag1 for levels, it is the first instance tag in the JSON config
                     LevelCustomName = string.Format("{0}~level{1}", InstanceTag1, Index1);
-                    SendFullCommand("get", "minLevel", null, 1);
+                    SendSubscriptionCommand(LevelCustomName, "level", 250, 1);
+                    AddCustomName(LevelCustomName);
+
                 }
             }
             else
@@ -321,9 +295,9 @@ namespace Tesira_DSP_EPI
         /// </summary>
         /// <param name="customName">Subscription Identifier for component</param>
         /// <param name="value">Component data to be parsed</param>
-        public void ParseSubscriptionMessage(string customName, string value)
+        public override void ParseSubscriptionMessage(string customName, string value)
         {
-
+            Debug.Console(1, this, "Parsing Data - Name: {0} - Value {1}", customName, value);
             if (HasMute && customName == MuteCustomName)
             {
                 IsMuted = bool.Parse(value);
@@ -335,7 +309,7 @@ namespace Tesira_DSP_EPI
 
                 var localValue = Double.Parse(value);
 
-                VolumeLevel = UseAbsoluteValue ? (ushort)localValue :  (ushort)Scale(localValue, MinLevel, MaxLevel, 0, 65535);
+                VolumeLevel = UseAbsoluteValue ? (ushort)localValue :  (ushort)localValue.Scale(MinLevel, MaxLevel, 0, 65535, this);
 
                 SubscriptionTracker["level"].Subscribed = true;
             }
@@ -381,9 +355,20 @@ namespace Tesira_DSP_EPI
 
                         break;
                     }
+                    case "level":
+                    {
+                        var localValue = Double.Parse(value);
+
+                        VolumeLevel = UseAbsoluteValue ? (ushort) localValue : (ushort)localValue.Scale(MinLevel, MaxLevel, 0, 65535, this);
+
+                        Debug.Console(1, this, "VolumeLevel is '{0}'", VolumeLevel);
+
+                        break;
+
+                    }
                     default:
                     {
-                        Debug.Console(2, "Response does not match expected attribute codes: '{0}'", message);
+                        Debug.Console(0, "Response does not match expected attribute codes: '{0}'", message);
 
                         break;
                     }
@@ -423,11 +408,33 @@ namespace Tesira_DSP_EPI
             if (level > _volumeLevel && AutomaticUnmuteOnVolumeUp)
                 if (_isMuted)
                     MuteOff();
+            switch (level)
+            {
+                case (ushort.MinValue):
+                {
+                    SendFullCommand("set", "level", string.Format("{0:0.000000}", MinLevel), 1);
+                    break;
+                }
 
-            var volumeLevel = UseAbsoluteValue ? level : Scale(level, 0, 65535, MinLevel, MaxLevel);
+                case (ushort.MaxValue):
+                {
+                    SendFullCommand("set", "level", string.Format("{0:0.000000}", MaxLevel), 1);
+                    break;
+                }
+                default:
+                {
+                    var newLevel = Convert.ToDouble(level);
 
-            SendFullCommand("set", "level", string.Format("{0:0.000000}", volumeLevel), 1);
+                    var volumeLevel = UseAbsoluteValue ? level : newLevel.Scale(0, 65535, MinLevel, MaxLevel, this);
+
+                    SendFullCommand("set", "level", string.Format("{0:0.000000}", volumeLevel), 1);
+                    break;
+
+                }
+            }
         }
+
+        
 
         /// <summary>
         /// Polls all data for component
@@ -449,7 +456,26 @@ namespace Tesira_DSP_EPI
         /// </summary>
         public void GetVolume()
         {
+            if (!HasLevel) return;
             SendFullCommand("get", "level", String.Empty, 1);
+        }
+
+        /// <summary>
+        /// Polls minimum level of fader component
+        /// </summary>
+        public void GetMinLevel()
+        {
+            if (!HasLevel) return;
+            SendFullCommand("get", "minLevel", null, 1);
+        }
+
+        /// <summary>
+        /// poll maximum level of fader component
+        /// </summary>
+        public void GetMaxLevel()
+        {
+            if (!HasLevel) return;
+            SendFullCommand("get", "maxLevel", null, 1);
         }
 
         /// <summary>
@@ -457,6 +483,7 @@ namespace Tesira_DSP_EPI
         /// </summary>
         public void GetMute()
         {
+            if (!HasMute) return;
             SendFullCommand("get", "mute", String.Empty, 2);
         }
 
@@ -465,6 +492,7 @@ namespace Tesira_DSP_EPI
         /// </summary>
         public void MuteToggle()
         {
+            if (!HasMute) return;
             SendFullCommand("toggle", "mute", String.Empty, 2);
         }
 
@@ -474,6 +502,7 @@ namespace Tesira_DSP_EPI
         /// <param name="press">Trigger map to bridge or UI component</param>
         public void VolumeDown(bool press)
         {
+            if (!HasLevel) return;
             Debug.Console(2, "VolumeDown Sent for {0}", LevelControlPointTag);
             if (press)
             {
@@ -501,6 +530,7 @@ namespace Tesira_DSP_EPI
         /// <param name="press">Trigger map to bridge or UI component</param>
         public void VolumeUp(bool press)
         {
+            if (!HasLevel) return;
             Debug.Console(2, "VolumeUp Sent for {0}", LevelControlPointTag);
 
             if (press)
@@ -529,34 +559,6 @@ namespace Tesira_DSP_EPI
             _volumeUpRepeatDelayTimer.Stop();
         }
 
-        /// <summary>
-        /// Scales two relative values given two sets of relative ranges
-        /// </summary>
-        /// <param name="input">Relative Input Value</param>
-        /// <param name="inMin">Minimum Input Value</param>
-        /// <param name="inMax">Maximum Input Value</param>
-        /// <param name="outMin">Minimum Output Value</param>
-        /// <param name="outMax">Maximum Output Value</param>
-        /// <returns>Relative output value</returns>
-        double Scale(double input, double inMin, double inMax, double outMin, double outMax)
-        {
-            Debug.Console(1, this, "Scaling (double) input '{0}' with min '{1}'/max '{2}' to output range min '{3}'/max '{4}'", input, inMin, inMax, outMin, outMax);
-
-            var inputRange = inMax - inMin;
-
-            if (inputRange <= 0)
-            {
-                throw new ArithmeticException(string.Format("Invalid Input Range '{0}' for Scaling.  Min '{1}' Max '{2}'.", inputRange, inMin, inMax));
-            }
-
-            var outputRange = outMax - outMin;
-
-            var output = (((input - inMin) * outputRange) / inputRange) + outMin;
-
-            Debug.Console(1, this, "Scaled output '{0}'", output);
-
-            return output;
-        }
 
         /// <summary>
         /// Possible LevelType enums

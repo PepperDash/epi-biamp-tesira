@@ -8,6 +8,7 @@ using PepperDash.Essentials.Core;
 using System.Text.RegularExpressions;
 using PepperDash.Essentials.Core.Bridges;
 using Tesira_DSP_EPI.Bridge.JoinMaps;
+using Tesira_DSP_EPI.Extensions;
 
 namespace Tesira_DSP_EPI {
     public class TesiraDspSwitcher : TesiraDspControlPoint, IRoutingWithFeedback
@@ -25,6 +26,13 @@ namespace Tesira_DSP_EPI {
         /// Collection of IRouting Output Ports
         /// </summary>
         public RoutingPortCollection<RoutingOutputPort> OutputPorts { get; private set; }
+
+        /// <summary>
+        /// XSig of all Feedback Names
+        /// </summary>
+        public StringFeedback SourceNamesFeedback { get; private set; }
+        
+        private string SourceNamesXsig { get; set; }
 
         /// <summary>
         /// Subscription Identifier for Switcher
@@ -58,12 +66,14 @@ namespace Tesira_DSP_EPI {
             : base(config.SwitcherInstanceTag, String.Empty, config.Index1, 0, parent, string.Format(KeyFormatter, parent.Key, key), config.Label, config.BridgeIndex)
         {
             SourceIndexFeedback = new IntFeedback(Key + "-SourceIndexFeedback", () => SourceIndex);
+            SourceNamesFeedback = new StringFeedback(Key + "-SourceNamesFeedback", () => SourceNamesXsig);
 
             InputPorts = new RoutingPortCollection<RoutingInputPort>();
             OutputPorts = new RoutingPortCollection<RoutingOutputPort>();
 
             Feedbacks.Add(SourceIndexFeedback);
             Feedbacks.Add(NameFeedback);
+            Feedbacks.Add(SourceNamesFeedback);
 
             parent.Feedbacks.AddRange(Feedbacks);
 
@@ -80,9 +90,10 @@ namespace Tesira_DSP_EPI {
             IsSubscribed = false;
 
             Label = config.Label;
+
 			if (config.Type != null)
 			{
-				Type = config.Type;
+			    Type = config.Type;
 			}
 
             Enabled = config.Enabled;
@@ -118,7 +129,7 @@ namespace Tesira_DSP_EPI {
         /// </summary>
         public override void Subscribe() {
             SelectorCustomName = string.Format("{0}~Selector{1}", InstanceTag1, Index1);
-
+            AddCustomName(SelectorCustomName);
             SendSubscriptionCommand(SelectorCustomName, "sourceSelection", 250, 1);
         }
 
@@ -139,7 +150,7 @@ namespace Tesira_DSP_EPI {
         /// </summary>
         /// <param name="customName">Subscription Identifier</param>
         /// <param name="value">Response to parse</param>
-        public void ParseSubscriptionMessage(string customName, string value) {
+        public override void ParseSubscriptionMessage(string customName, string value) {
 
             // Check for valid subscription response
 
@@ -204,6 +215,33 @@ namespace Tesira_DSP_EPI {
         /// <param name="data"></param>
         public void SetDestination(int data) {
             Destination = data;
+        }
+
+        public void GetSourceNames()
+        {
+            SourceNamesXsig = xSigHelper.ClearData();
+            SourceNamesFeedback.FireUpdate();
+            SourceNamesXsig = String.Empty;
+
+            foreach (var port in InputPorts)
+            {
+                var input = port;                                
+                var index = Convert.ToUInt16(input.Selector);
+                SourceNamesXsig += xSigHelper.CreateByteString(index, input.Key);
+
+                Debug.Console(2, this, "{0} {1}", input.Key, new String('-', 50));
+                Debug.Console(2, this, @"    
+    input.ParentDevice: {0}
+    input.Selector: {1}
+    input.Selector(Convert.ToUnit16): {2}
+    input.Port: {3}
+    input.ConnectionType: {4}
+    input.Type: {5}
+", input.ParentDevice, input.Selector, index, input.Port, input.ConnectionType, input.Type);
+                Debug.Console(2, this, "{0}", new String('-', 50));
+
+            }
+            SourceNamesFeedback.FireUpdate();
         }
 
         #region IRouting Members
@@ -280,6 +318,8 @@ namespace Tesira_DSP_EPI {
 
             NameFeedback.LinkInputSig(trilist.StringInput[joinMap.Label.JoinNumber]);
 
+            GetSourceNames();
+
             trilist.OnlineStatusChange += (d, args) =>
             {
                 if (!args.DeviceOnLine) return;
@@ -288,6 +328,8 @@ namespace Tesira_DSP_EPI {
                 {
                     feedback.FireUpdate();
                 }
+
+                GetSourceNames();
 
             };
         }
