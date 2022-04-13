@@ -147,7 +147,7 @@ namespace Tesira_DSP_EPI
 
                 var newData = Expanders.FirstOrDefault(o => String.Equals(o.Hostname, hostname, StringComparison.CurrentCultureIgnoreCase));
 
-                if (newData == null) return;
+				if (newData == null) continue;
                 Debug.Console(2, this, "Found a device Index {0} with Hostname {1}", newData.Index, newData.Hostname);
 
                 newData.SetData(matches[v].ToString());
