@@ -176,6 +176,7 @@ namespace Tesira_DSP_EPI
             _subscribeThread = new Thread(o => HandleAttributeSubscriptions(), null,
                 Thread.eThreadStartOptions.CreateSuspended)
             {
+                Name = string.Format("{0}-queue", Key),
                 Priority = CrestronEnvironment.ProgramCompatibility.Equals(eCrestronSeries.Series4)
                     ? Thread.eThreadPriority.LowestPriority
                     : Thread.eThreadPriority.LowestPriority
