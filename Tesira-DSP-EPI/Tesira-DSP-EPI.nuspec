@@ -2,6 +2,7 @@
 <package >
   <metadata>
     <id>PepperDash.Essentials.Plugin.BiampTesira</id>
+    <readme>docs\README.md</readme>
     <version>2.1.0</version>
     <title>Biamp Tesira Essentials Plugin</title>
     <authors>PepperDash Technologies</authors>
@@ -14,7 +15,6 @@
     <tags>crestron 3series 4series biamp tesira</tags>
     <repository type="git" url="https://github.com/PepperDash/epi-dsp-tesira"/>
   </metadata>
-    <readme>docs\README.md</readme>
     <files>
       <file src="**" target="lib\net35"/>
       <file src="**" target="lib\net47"/>
