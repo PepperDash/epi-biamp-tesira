@@ -18,6 +18,6 @@
     <files>
       <file src="**" target="lib\net35"/>
       <file src="**" target="lib\net47"/>
-      <file src="..\README.md" target="docs\"/>
+      <file src="README.md" target="docs\"/>
     </files>
 </package>
