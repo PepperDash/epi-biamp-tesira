@@ -1,4 +1,5 @@
-<img src="https://img.shields.io/badge/3-Tested%20on%203%20series-purple.svg"/></a> <img src="https://img.shields.io/badge/4-Tested%20on%204%20series-teal.svg"/></a>
+![3Series Tested](https://img.shields.io/badge/3-Tested%20on%203%20series-purple.svg)
+![4Series-Tested](https://img.shields.io/badge/4-Tested%20on%204%20series-teal.svg)
 
 # Tesira DSP Essentials Plugin (c) 2021
 
