@@ -111,7 +111,7 @@ jobs:
           $exclusions = "packages"
           # Trying to get any .json schema files (not currently working)
           # Gets any files with the listed extensions.
-          Get-ChildItem -recurse -Path "$($Env:GITHUB_WORKSPACE)" -include "*.clz", "*.cpz", "*.cplz", "*.nuspec" | ForEach-Object {
+          Get-ChildItem -recurse -Path "$($Env:GITHUB_WORKSPACE)" -include "*.clz", "*.cpz", "*.cplz", "*.nuspec", "*.md" | ForEach-Object {
             $allowed = $true;
             # Exclude any files in submodules
             foreach ($exclude in $exclusions) {
@@ -195,7 +195,7 @@ jobs:
           Remove-Item -Path .\*.zip
       - name: Copy Files to root & delete output directory
         run: |
-          Remove-Item -Path .\* -Include @("*.cpz","*.md","*.cplz","*.json","*.dll","*.clz")  
+          Remove-Item -Path .\* -Include @("*.cpz","*.md","*.cplz","*.json","*.dll","*.clz","*.md")  
           Get-ChildItem -Path .\output\* | Copy-Item -Destination .\
           Remove-Item -Path .\output -Recurse
       - name: Get nuget File 
