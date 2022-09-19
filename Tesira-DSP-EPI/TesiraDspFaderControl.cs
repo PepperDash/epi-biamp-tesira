@@ -327,12 +327,24 @@ namespace Tesira_DSP_EPI
             {
                 Debug.Console(2, this, "Parsing Message - '{0}' : Message has an attributeCode of {1}", message, attributeCode);
                 // Parse an "+OK" message
-                const string pattern = "[^ ]* (.*)";
+				//const string pattern = "[^ ]* (.*)";
+				// TODO [ ] Issue #68 - pattern below evaluates for the the response when verbose is on OR off
+				/*
+				SESSION set verbose true
+				ATC01 get maxLevel 1
+				+OK "value":12.000000
+
+				SESSION set verbose false
+				ATC01 get maxLevel 1
+				+OK 12.000000 
+				 */
+
+				const string pattern = @"^.* (?<type>.*):(?<value>.*)|^.* (?<value>.*)";
 
                 var match = Regex.Match(message, pattern);
 
                 if (!match.Success) return;
-                var value = match.Groups[1].Value;
+                var value = match.Groups["value"].Value;
 
                 Debug.Console(1, this, "Response: '{0}' Value: '{1}'", attributeCode, value);
 
@@ -340,18 +352,20 @@ namespace Tesira_DSP_EPI
                 switch (attributeCode)
                 {
                     case "minLevel":
-                    {
-                        MinLevel = Double.Parse(value);
+	                {
+						// TODO [ ] Issue #68 - Evaluate what happens if the parse fails
+		                MinLevel = Double.Parse(value);
 
-                        Debug.Console(1, this, "MinLevel is '{0}'", MinLevel);
+                        Debug.Console(0, this, "MinLevel is '{0}'", MinLevel);
 
                         break;
                     }
                     case "maxLevel":
                     {
+						// TODO [ ] Issue #68 - Evaluate what happens if the parse fails
                         MaxLevel = Double.Parse(value);
 
-                        Debug.Console(1, this, "MaxLevel is '{0}'", MaxLevel);
+                        Debug.Console(0, this, "MaxLevel is '{0}'", MaxLevel);
 
                         break;
                     }
