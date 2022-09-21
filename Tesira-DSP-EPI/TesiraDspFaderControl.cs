@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Net;
 using Crestron.SimplSharp;
 using Newtonsoft.Json;
 using PepperDash.Core;
@@ -82,7 +83,8 @@ namespace Tesira_DSP_EPI
         /// </summary>
         public string MuteCustomName { get; protected set; }
 
-
+        private double _minLevel{get { return MinLevel < 500 ? -100 : MinLevel; }}
+        private double _maxLevel{get { return MaxLevel < 500 ? 20 : MaxLevel; }}
 
         /// <summary>
         /// Minimum fader level
@@ -160,6 +162,32 @@ namespace Tesira_DSP_EPI
             _volumeDownRepeatTimer = new CTimer(VolumeDownRepeat, Timeout.Infinite);
             _volumeUpRepeatDelayTimer = new CTimer(VolumeUpRepeatDelay, Timeout.Infinite);
             _volumeDownRepeatDelayTimer = new CTimer(VolumeDownRepeatDelay, Timeout.Infinite);
+            if (!String.IsNullOrEmpty(config.FaderMinimum))
+            {
+                try
+                {
+                    MinLevel = Double.Parse(config.FaderMinimum);
+                }
+                catch (FormatException e)
+                {
+                    Debug.Console(2, this, "Configuration property \"faderMimimum\" has an invalid value");
+                    MinLevel = Double.MinValue;
+                } 
+            }
+
+            if (!String.IsNullOrEmpty(config.FaderMaximum))
+            {
+                try
+                {
+                    MaxLevel = Double.Parse(config.FaderMaximum);
+                }
+                catch (FormatException e)
+                {
+                    Debug.Console(2, this, "Configuration property \"faderMimimum\" has an invalid value");
+                    MaxLevel = Double.MinValue;
+                }
+            }
+            
 
             SubscriptionTracker = new Dictionary<string, SubscriptionTrackingObject>
             {
@@ -305,11 +333,9 @@ namespace Tesira_DSP_EPI
             }
             else if (HasLevel && customName == LevelCustomName)
             {
-
-
                 var localValue = Double.Parse(value);
 
-                VolumeLevel = UseAbsoluteValue ? (ushort)localValue :  (ushort)localValue.Scale(MinLevel, MaxLevel, 0, 65535, this);
+                VolumeLevel = UseAbsoluteValue ? (ushort)localValue :  (ushort)localValue.Scale(_minLevel, _maxLevel, 0, 65535, this);
 
                 SubscriptionTracker["level"].Subscribed = true;
             }
@@ -353,27 +379,48 @@ namespace Tesira_DSP_EPI
                 {
                     case "minLevel":
 	                {
-						// TODO [ ] Issue #68 - Evaluate what happens if the parse fails
-		                MinLevel = Double.Parse(value);
-
-                        Debug.Console(0, this, "MinLevel is '{0}'", MinLevel);
-
+                        // TODO [ ] Issue #68 - Evaluate what happens if the parse fails
+                        try
+                        {
+                            if (MinLevel < 500)
+                                MinLevel = Double.Parse(value);
+                        }
+                        catch (FormatException)
+                        {
+                            MinLevel = double.MinValue;
+                        }
+                        finally
+                        {
+                            Debug.Console(0, this, "MinLevel is '{0}'",
+                                MinLevel < 500 ? "invalid - using full range" : MaxLevel.ToString());
+                        }
                         break;
                     }
                     case "maxLevel":
                     {
 						// TODO [ ] Issue #68 - Evaluate what happens if the parse fails
-                        MaxLevel = Double.Parse(value);
-
-                        Debug.Console(0, this, "MaxLevel is '{0}'", MaxLevel);
-
+                        try
+                        {
+                            if (MaxLevel < 500)
+                                MaxLevel = Double.Parse(value);
+                        }
+                        catch (FormatException)
+                        {
+                            MaxLevel = double.MinValue;
+                        }
+                        finally
+                        {
+                            Debug.Console(0, this, "MaxLevel is '{0}'",
+                                MaxLevel < 500 ? "invalid - using full range" : MaxLevel.ToString());
+                        }
                         break;
+
                     }
                     case "level":
                     {
                         var localValue = Double.Parse(value);
 
-                        VolumeLevel = UseAbsoluteValue ? (ushort) localValue : (ushort)localValue.Scale(MinLevel, MaxLevel, 0, 65535, this);
+                        VolumeLevel = UseAbsoluteValue ? (ushort) localValue : (ushort)localValue.Scale(_minLevel, _maxLevel, 0, 65535, this);
 
                         Debug.Console(1, this, "VolumeLevel is '{0}'", VolumeLevel);
 
@@ -426,20 +473,20 @@ namespace Tesira_DSP_EPI
             {
                 case (ushort.MinValue):
                 {
-                    SendFullCommand("set", "level", string.Format("{0:0.000000}", MinLevel), 1);
+                    SendFullCommand("set", "level", string.Format("{0:0.000000}", _minLevel), 1);
                     break;
                 }
 
                 case (ushort.MaxValue):
                 {
-                    SendFullCommand("set", "level", string.Format("{0:0.000000}", MaxLevel), 1);
+                    SendFullCommand("set", "level", string.Format("{0:0.000000}", _maxLevel), 1);
                     break;
                 }
                 default:
                 {
                     var newLevel = Convert.ToDouble(level);
 
-                    var volumeLevel = UseAbsoluteValue ? level : newLevel.Scale(0, 65535, MinLevel, MaxLevel, this);
+                    var volumeLevel = UseAbsoluteValue ? level : newLevel.Scale(0, 65535, _minLevel, _maxLevel, this);
 
                     SendFullCommand("set", "level", string.Format("{0:0.000000}", volumeLevel), 1);
                     break;

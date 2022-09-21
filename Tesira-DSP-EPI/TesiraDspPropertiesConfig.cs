@@ -98,6 +98,12 @@ namespace Tesira_DSP_EPI {
 
         [JsonProperty("bridgeIndex")]
         public uint? BridgeIndex { get; set; }
+
+        [JsonProperty("faderMinimum")]
+        public string FaderMinimum { get; set; }
+
+        [JsonProperty("faderMaximum")]
+        public string FaderMaximum { get; set; }
     }
 
 
@@ -309,6 +315,13 @@ namespace Tesira_DSP_EPI {
 
         [JsonProperty("bridgeIndex")]
         public uint? BridgeIndex { get; set; }
+
+        [JsonProperty("faderMinimum")]
+        public string FaderMinimum { get; set; }
+
+        [JsonProperty("faderMaximum")]
+        public string FaderMaximum { get; set; }
+
     }
 
     public class RoutingPort
