@@ -9,6 +9,8 @@ namespace Tesira_DSP_EPI
 
         public CrestronQueue LocalQueue { get; private set; }
 
+        private readonly CrestronQueue<string> _commandQueue;
+
         private TesiraDsp Parent { get; set; }
 
         //private CEvent DequeueEvent { get; set; }
@@ -25,8 +27,10 @@ namespace Tesira_DSP_EPI
         public TesiraQueue(int queueSize, TesiraDsp parent)
         {
             LocalQueue = new CrestronQueue(queueSize);
+            _commandQueue = new CrestronQueue<string>(queueSize);
             Parent = parent;
             CommandQueueInProgress = false;
+            CrestronInvoke.BeginInvoke(o => ProcessQueuedCommands());
             //DequeueEvent = new CEvent(true, false);
         }
 
@@ -69,6 +73,7 @@ namespace Tesira_DSP_EPI
                 CommandQueueInProgress ? "is" : "is not");
 
             LocalQueue.Enqueue(commandToEnqueue);
+            AddCommandToQueue(commandToEnqueue.Command);
             Debug.Console(2, Parent,
                 "[EqueueCommand(QueuedCommand)] - Command Enqueued '{0}'.  CommandQueue has '{1}' Elements.",
                 commandToEnqueue.Command, LocalQueue.Count);
@@ -76,8 +81,8 @@ namespace Tesira_DSP_EPI
             Debug.Console(2, Parent, "[EnqueueCommand(QueuedCommand)] - Triggering 'SendNextQueuedCommand'");
             if (LastDequeued == null)
                 SendNextQueuedCommand();
-
         }
+
 
         /// <summary>
         /// Adds a raw string command to the queue
@@ -88,12 +93,28 @@ namespace Tesira_DSP_EPI
             Debug.Console(2, Parent, "[EqueueCommand(String)] - Command Queue {0} in progress.", CommandQueueInProgress ? "is" : "is not");
 
             LocalQueue.Enqueue(command);
+            AddCommandToQueue(command);
             Debug.Console(2, Parent, "[EqueueCommand(String)] - Command Enqueued '{0}'.  CommandQueue has '{1}' Elements.", command, LocalQueue.Count);
             Debug.Console(2, Parent, "[EnqueueCommand(String)] - Triggering 'SendNextQueuedCommand'");
 
             if(LastDequeued == null)
                 SendNextQueuedCommand();
         }
+
+        public void AddCommandToQueue(string command)
+        {
+            _commandQueue.Enqueue(command);
+        }
+
+        private void ProcessQueuedCommands()
+        {
+            while (Parent.CommunicationMonitor.IsOnline)
+            {
+                var command = _commandQueue.Dequeue();
+                Parent.SendLine(command);
+            }
+        }
+
 
         /// <summary>
         /// Sends the next queued command to the DSP
@@ -121,7 +142,7 @@ namespace Tesira_DSP_EPI
             {
                 LastDequeued = (QueuedCommand)LocalQueue.Dequeue();
                 Debug.Console(2, Parent, "[SendNextQueuedCommand(QueuedCommand)] - Sending Line - {0}", LastDequeued.Command);
-                Parent.SendLine(LastDequeued.Command);
+                //Parent.SendLine(LastDequeued.Command);
             }
 
             else
@@ -129,7 +150,7 @@ namespace Tesira_DSP_EPI
                 LastDequeued = null;
                 var nextCommand = (string)LocalQueue.Dequeue();
                 Debug.Console(2, Parent, "[SendNextQueuedCommand(String)] - Sending Line - {0}", nextCommand);
-                Parent.SendLine(nextCommand);
+                //Parent.SendLine(nextCommand);
             }
         }
 

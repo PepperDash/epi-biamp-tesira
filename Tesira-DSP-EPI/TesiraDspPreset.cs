@@ -119,7 +119,8 @@ namespace Tesira_DSP_EPI
         public void RunPreset(string name)
         {
             Debug.Console(2, this, "Running Preset By Name - {0}", name);
-            Parent.SendLine(string.Format("DEVICE recallPresetByName \"{0}\"", name));
+            //Parent.SendLine(string.Format("DEVICE recallPresetByName \"{0}\"", name));
+            Parent.CommandQueue.AddCommandToQueue(string.Format("DEVICE recallPresetByName \"{0}\"", name));
             //CommandQueue.EnqueueCommand(string.Format("DEVICE recallPresetByName \"{0}\"", name));
         }
 
@@ -130,7 +131,8 @@ namespace Tesira_DSP_EPI
         public void RunPreset(int id)
         {
             Debug.Console(2, this, "Running Preset By ID - {0}", id);
-            Parent.SendLine(string.Format("DEVICE recallPreset {0}", id));
+            //Parent.SendLine(string.Format("DEVICE recallPreset {0}", id));
+            Parent.CommandQueue.AddCommandToQueue(string.Format("DEVICE recallPreset {0}", id));
             //CommandQueue.EnqueueCommand(string.Format("DEVICE recallPreset {0}", id));
         }
 

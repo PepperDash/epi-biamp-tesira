@@ -828,7 +828,8 @@ namespace Tesira_DSP_EPI
 		public void RunPreset(string name)
 		{
             Debug.Console(2, this, "Running Preset By Name - {0}", name);
-            SendLine(string.Format("DEVICE recallPresetByName \"{0}\"", name));
+            //SendLine(string.Format("DEVICE recallPresetByName \"{0}\"", name));
+            CommandQueue.AddCommandToQueue(string.Format("DEVICE recallPresetByName \"{0}\"", name));
             //CommandQueue.EnqueueCommand(string.Format("DEVICE recallPresetByName \"{0}\"", name));
 		}
 
@@ -839,7 +840,8 @@ namespace Tesira_DSP_EPI
         public void RunPreset(int id)
         {
             Debug.Console(2, this, "Running Preset By ID - {0}", id);
-            SendLine(string.Format("DEVICE recallPreset {0}", id));
+            //SendLine(string.Format("DEVICE recallPreset {0}", id));
+            CommandQueue.AddCommandToQueue(string.Format("DEVICE recallPreset {0}", id));
             //CommandQueue.EnqueueCommand(string.Format("DEVICE recallPreset {0}", id));
         }
 
@@ -1022,7 +1024,8 @@ namespace Tesira_DSP_EPI
             //_subscriptionLock.Enter();
             if (Communication.IsConnected)
             {
-                SendLine("SESSION set verbose false");
+                //SendLine("SESSION set verbose false");
+                CommandQueue.AddCommandToQueue("SESSION set verbose false");
                 try
                 {
                     if (_isSerialComm)

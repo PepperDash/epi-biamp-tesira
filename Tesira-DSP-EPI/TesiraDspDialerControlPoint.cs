@@ -143,7 +143,9 @@ namespace Tesira_DSP_EPI
             {
                 // This command will generate a simple "+OK" response and doesn't need to be queued
                 if (!string.IsNullOrEmpty(cmd))
-                    Parent.SendLine(cmd);
+                    //Parent.SendLine(cmd);
+                    Parent.CommandQueue.AddCommandToQueue(cmd);
+
             }
         }
 
@@ -207,7 +209,8 @@ namespace Tesira_DSP_EPI
 
             //Parent.WatchDogList.Add(customName,cmd);
             //Parent.SendLine(cmd);
-            Parent.SendLine(cmd);
+            //Parent.SendLine(cmd);
+            Parent.CommandQueue.AddCommandToQueue(cmd);
         }
 
         public virtual void SendUnSubscriptionCommand(string customName, string attributeCode, int instanceTag)
@@ -249,7 +252,9 @@ namespace Tesira_DSP_EPI
 
             //Parent.WatchDogList.Add(customName,cmd);
             //Parent.SendLine(cmd);
-            Parent.SendLine(cmd);
+            //Parent.SendLine(cmd);
+            Parent.CommandQueue.AddCommandToQueue(cmd);
+
         }
         
         public virtual void DoPoll()

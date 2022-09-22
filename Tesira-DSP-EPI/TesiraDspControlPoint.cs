@@ -134,26 +134,26 @@ namespace Tesira_DSP_EPI
 				}
 			}
 
-		    else if (attributeCode == "crosspointLevelState")
+		    else switch (attributeCode)
 		    {
-                cmd = string.Format("{0} {1} {2} {3} {4}", instanceTagLocal, command, attributeCode, Index1, Index2);
-            }
-
-
-			else if (attributeCode == "dial" || attributeCode == "end" || attributeCode == "onHook" ||
-				attributeCode == "offHook" || attributeCode == "answer")
-			{
-				//requires index, but does not require command
-				cmd = String.IsNullOrEmpty(value) ? string.Format("{0} {1} {2} {3}", instanceTagLocal, attributeCode, Index1, Index2) : string.Format("{0} {1} {2} {3} {4}", instanceTagLocal, attributeCode, Index1, Index2, value);
-			}
-
-			else
-			{
-				//Command does not require Index
-				cmd = String.IsNullOrEmpty(value) ? 
-                    string.Format("{0} {1} {2}", instanceTagLocal, command, attributeCode) : 
-                    string.Format("{0} {1} {2} {3}", instanceTagLocal, command, attributeCode, value);
-			}
+		        case "crosspointLevelState":
+		            cmd = string.Format("{0} {1} {2} {3} {4}", instanceTagLocal, command, attributeCode, Index1, Index2);
+		            break;
+		        case "answer":
+		        case "offHook":
+		        case "onHook":
+		        case "end":
+		        case "dial":
+		            cmd = String.IsNullOrEmpty(value) ? 
+                        string.Format("{0} {1} {2} {3}", instanceTagLocal, attributeCode, Index1, Index2) 
+                        : string.Format("{0} {1} {2} {3} {4}", instanceTagLocal, attributeCode, Index1, Index2, value);
+		            break;
+		        default:
+		            cmd = String.IsNullOrEmpty(value) ? 
+		                string.Format("{0} {1} {2}", instanceTagLocal, command, attributeCode)
+                        : string.Format("{0} {1} {2} {3}", instanceTagLocal, command, attributeCode, value);
+		            break;
+		    }
 
 			if (command == "get")
 			{
@@ -165,7 +165,9 @@ namespace Tesira_DSP_EPI
 			{
 				// This command will generate a simple "+OK" response and doesn't need to be queued
 				if (!string.IsNullOrEmpty(cmd))
-                    Parent.SendLine(cmd);
+                    //Parent.SendLine(cmd);
+                    Parent.CommandQueue.AddCommandToQueue(cmd);
+
 			}
 		}
 
@@ -222,7 +224,9 @@ namespace Tesira_DSP_EPI
 
 			//Parent.WatchDogList.Add(customName,cmd);
 			//Parent.SendLine(cmd);
-		    Parent.SendLine(cmd);
+		    //Parent.SendLine(cmd);
+            Parent.CommandQueue.AddCommandToQueue(cmd);
+
             //Parent.CommandQueue.EnqueueCommand(new QueuedCommand(cmd, attributeCode, this));
 
 		}
@@ -270,7 +274,8 @@ namespace Tesira_DSP_EPI
 			}
 
 			//Parent.WatchDogList.Add(customName,cmd);
-			Parent.SendLine(cmd);
+			//Parent.SendLine(cmd);
+            Parent.CommandQueue.AddCommandToQueue(cmd);
             //Parent.CommandQueue.EnqueueCommand(new QueuedCommand(cmd, attributeCode, this));
         }
 
