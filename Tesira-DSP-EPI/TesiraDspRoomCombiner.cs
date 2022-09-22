@@ -101,6 +101,9 @@ namespace Tesira_DSP_EPI
         CTimer _volumeDownRepeatTimer;
         CTimer _volumeUpRepeatDelayTimer;
         CTimer _volumeDownRepeatDelayTimer;
+        private CTimer _volumeMinPollTimer;
+        private CTimer _volumeMaxPollTimer;
+
 
         CTimer _pollTimer;
 
@@ -140,6 +143,24 @@ namespace Tesira_DSP_EPI
         private bool AutomaticUnmuteOnVolumeUp { get; set; }
 
         private bool _levelIsSubscribed;
+
+        public EventHandler<VolumeRangeEventArgs> VolumeRangeEvent;
+
+        public void OnVolumeMaxRangeEvent()
+        {
+            var handler = VolumeRangeEvent;
+            if (handler == null) return;
+            handler(this,
+                new VolumeRangeEventArgs(eVolumeRangeSetType.Maximum));
+        }
+        public void OnVolumeMinRangeEvent()
+        {
+            var handler = VolumeRangeEvent;
+            if (handler == null) return;
+            handler(this,
+                new VolumeRangeEventArgs(eVolumeRangeSetType.Minimum));
+        }
+
 
         /// <summary>
         /// Constructor for Tesira Dsp Room Combiner Component
@@ -327,6 +348,7 @@ namespace Tesira_DSP_EPI
                         {
                             Debug.Console(0, this, "MinLevel is '{0}'",
                                 MinLevel < 500 ? "invalid - using full range" : MaxLevel.ToString());
+                            OnVolumeMinRangeEvent();
                         }
                         break;
                     }
@@ -346,6 +368,7 @@ namespace Tesira_DSP_EPI
                         {
                             Debug.Console(0, this, "MaxLevel is '{0}'",
                                 MaxLevel < 500 ? "invalid - using full range" : MaxLevel.ToString());
+                            OnVolumeMaxRangeEvent();
                         }
                         break;
                     }
@@ -445,16 +468,42 @@ namespace Tesira_DSP_EPI
         /// </summary>
         public void GetMinLevel()
         {
+            if (MinLevel > -500) return;
             SendFullCommand("get", "minLevel", null, 1);
         }
+
+        private void GetMinLevel(object data)
+        {
+            if (MinLevel > -500)
+            {
+                _volumeMinPollTimer.Stop();
+                GetVolume();
+                return;
+            }
+            SendFullCommand("get", "minLevel", null, 1);
+        }
+
 
         /// <summary>
         /// poll maximum level of fader component
         /// </summary>
         public void GetMaxLevel()
         {
+            if (MaxLevel > -500) return;
             SendFullCommand("get", "maxLevel", null, 1);
         }
+
+        private void GetMaxLevel(object data)
+        {
+            if (MaxLevel > -500)
+            {
+                _volumeMaxPollTimer.Stop();
+                GetVolume();
+                return;
+            }
+            SendFullCommand("get", "maxLevel", null, 1);
+        }
+
 
 
         /// <summary>
@@ -545,6 +594,19 @@ namespace Tesira_DSP_EPI
                 _volumeUpRepeatDelayTimer.Stop();
             }
         }
+
+        public void CheckRange()
+        {
+            if (MinLevel < -500)
+            {
+                _volumeMinPollTimer = new CTimer(GetMinLevel, null, 500, 5000);
+            }
+            if (MaxLevel < -500)
+            {
+                _volumeMaxPollTimer = new CTimer(GetMaxLevel, null, 1255, 7550);
+            }
+        }
+
 
 
 

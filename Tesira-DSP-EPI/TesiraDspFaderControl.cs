@@ -47,6 +47,23 @@ namespace Tesira_DSP_EPI
         private int Permissions { get; set; }
         private int ControlType { get; set; }
 
+        public EventHandler<VolumeRangeEventArgs> VolumeRangeEvent;
+
+        public void OnVolumeMaxRangeEvent()
+        {
+            var handler = VolumeRangeEvent;
+            if (handler == null) return;
+            handler(this,
+                new VolumeRangeEventArgs(eVolumeRangeSetType.Maximum));
+        }
+        public void OnVolumeMinRangeEvent()
+        {
+            var handler = VolumeRangeEvent;
+            if (handler == null) return;
+            handler(this,
+                new VolumeRangeEventArgs(eVolumeRangeSetType.Minimum));
+        }
+
         private string IncrementAmount { get; set; }
         private bool UseAbsoluteValue { get; set; }
         private EPdtLevelTypes _type;
@@ -67,6 +84,8 @@ namespace Tesira_DSP_EPI
         CTimer _volumeDownRepeatTimer;
         CTimer _volumeUpRepeatDelayTimer;
         CTimer _volumeDownRepeatDelayTimer;
+        private CTimer _volumeMinPollTimer;
+        private CTimer _volumeMaxPollTimer;
 
         //private bool LevelSubscribed { get; set; }
 
@@ -276,14 +295,15 @@ namespace Tesira_DSP_EPI
                 }
 
                 //Subscribe to Level
-                if (HasLevel)
+                if (!HasLevel)
                 {
-                    // MUST use InstanceTag1 for levels, it is the first instance tag in the JSON config
-                    LevelCustomName = string.Format("{0}~level{1}", InstanceTag1, Index1);
-                    SendSubscriptionCommand(LevelCustomName, "level", 250, 1);
-                    AddCustomName(LevelCustomName);
-
+                    OnVolumeMaxRangeEvent();
+                    OnVolumeMinRangeEvent();
                 }
+                // MUST use InstanceTag1 for levels, it is the first instance tag in the JSON config
+                LevelCustomName = string.Format("{0}~level{1}", InstanceTag1, Index1);
+                SendSubscriptionCommand(LevelCustomName, "level", 250, 1);
+                AddCustomName(LevelCustomName);
             }
             else
             {
@@ -382,17 +402,19 @@ namespace Tesira_DSP_EPI
                         // TODO [ ] Issue #68 - Evaluate what happens if the parse fails
                         try
                         {
-                            if (MinLevel < 500)
-                                MinLevel = Double.Parse(value);
+                            MinLevel = Double.Parse(value);
                         }
                         catch (FormatException)
                         {
-                            MinLevel = double.MinValue;
+                            if(MinLevel < -500)
+                                MinLevel = double.MinValue;
                         }
                         finally
                         {
                             Debug.Console(0, this, "MinLevel is '{0}'",
                                 MinLevel < 500 ? "invalid - using full range" : MaxLevel.ToString());
+                            OnVolumeMinRangeEvent();
+
                         }
                         break;
                     }
@@ -401,7 +423,7 @@ namespace Tesira_DSP_EPI
 						// TODO [ ] Issue #68 - Evaluate what happens if the parse fails
                         try
                         {
-                            if (MaxLevel < 500)
+                            if(MaxLevel < -500)
                                 MaxLevel = Double.Parse(value);
                         }
                         catch (FormatException)
@@ -412,6 +434,8 @@ namespace Tesira_DSP_EPI
                         {
                             Debug.Console(0, this, "MaxLevel is '{0}'",
                                 MaxLevel < 500 ? "invalid - using full range" : MaxLevel.ToString());
+                            OnVolumeMaxRangeEvent();
+
                         }
                         break;
 
@@ -527,8 +551,22 @@ namespace Tesira_DSP_EPI
         public void GetMinLevel()
         {
             if (!HasLevel) return;
+            if (MinLevel > -500) return;
             SendFullCommand("get", "minLevel", null, 1);
         }
+
+        private void GetMinLevel(object data)
+        {
+            if (!HasLevel) return;
+            if (MinLevel > -500)
+            {
+                _volumeMinPollTimer.Stop();
+                GetVolume();
+                return;
+            }
+            SendFullCommand("get", "minLevel", null, 1);
+        }
+
 
         /// <summary>
         /// poll maximum level of fader component
@@ -536,8 +574,22 @@ namespace Tesira_DSP_EPI
         public void GetMaxLevel()
         {
             if (!HasLevel) return;
+            if (MaxLevel > -500) return;
             SendFullCommand("get", "maxLevel", null, 1);
         }
+
+        private void GetMaxLevel(object data)
+        {
+            if (!HasLevel) return;
+            if (MaxLevel > -500)
+            {
+                _volumeMaxPollTimer.Stop();
+                GetVolume();
+                return;
+            }
+            SendFullCommand("get", "maxLevel", null, 1);
+        }
+
 
         /// <summary>
         /// Polls the current mute state of Component
@@ -628,6 +680,18 @@ namespace Tesira_DSP_EPI
         {
             Speaker = 0,
             Microphone = 1
+        }
+
+        public void CheckRange()
+        {
+            if (MinLevel < -500)
+            {
+                _volumeMinPollTimer = new CTimer(GetMinLevel, null, 500, 5000);
+            }
+            if (MaxLevel < -500)
+            {
+                _volumeMaxPollTimer = new CTimer(GetMaxLevel, null, 1255, 7550);
+            }
         }
 
         public override void LinkToApi(BasicTriList trilist, uint joinStart, string joinMapKey, EiscApiAdvanced bridge)

@@ -19,7 +19,9 @@ namespace Tesira_DSP_EPI
         private CTimer _expanderTimer;
 
         private const string KeyFormatter = "{0}--{1}";
-        public List<TesiraExpanderData> Expanders = new List<TesiraExpanderData>(); 
+        public List<TesiraExpanderData> Expanders = new List<TesiraExpanderData>();
+
+        public EventHandler<EventArgs> ExpanderDataReceived;
 
         public Dictionary<int, StringFeedback> Hostnames = new Dictionary<int, StringFeedback>();
         public Dictionary<int, StringFeedback> SerialNumbers = new Dictionary<int, StringFeedback>();
@@ -133,14 +135,12 @@ namespace Tesira_DSP_EPI
             var someMatches = matches2.RemoveAll(s => s.ToString.Length < 4));
             */
             Console.WriteLine("There are {0} Matches", matches.Count);
-            for (int v = 0; v < matches.Count; v++)
+            for (var v = 0; v < matches.Count; v++)
             {
                 if (!matches[v].ToString().Contains('"')) continue;
                 Debug.Console(2, this, "Match {0} is a device", v);
 
                 var matchesEnclosed = Regex.Matches(matches[v].ToString(), pattern2);
-                var data2 = Regex.Replace(matches[v].ToString(), pattern2, "").Trim('"').Trim('[').Trim().Replace("  ", " "); ;
-                Console.WriteLine("Data2 = {0}", data2);
                 var hostname = matchesEnclosed[0].ToString().Trim('"');
 
                 Debug.Console(2, this, "Match {0} Hostname : {1}", v, hostname);
@@ -174,6 +174,12 @@ namespace Tesira_DSP_EPI
                 Debug.Console(2, this, "Firmware = {0}", i.Firmware);
                 Debug.Console(2, this, "Online = {0}", i.Online);
 
+            }
+
+            var handler = ExpanderDataReceived;
+            if (handler == null) return;
+            {
+                handler(this, new EventArgs());
             }
         }
 

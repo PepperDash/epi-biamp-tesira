@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Text.RegularExpressions;
 using Newtonsoft.Json;
 using PepperDash.Core;
@@ -19,6 +21,8 @@ namespace Tesira_DSP_EPI
         public DeviceInfo DeviceInfo { get; private set; }
 
         public event DeviceInfoChangeHandler DeviceInfoChanged;
+
+        public event EventHandler<AliasEventArgs> AliasesChanged;
 
         private const string KeyFormatter = "{0}--{1}";
 
@@ -94,7 +98,9 @@ namespace Tesira_DSP_EPI
         /// </summary>
         /// <param name="parent">Parent Device</param>
         public TesiraDspDeviceInfo(TesiraDsp parent)
-            : base("DEVICE", "DEVICE", 0, 0, parent, String.Format(KeyFormatter, parent.Key, "DeviceInfo"), "DeviceInfo", 0)
+            : base(
+                "DEVICE", "DEVICE", 0, 0, parent, String.Format(KeyFormatter, parent.Key, "DeviceInfo"), "DeviceInfo", 0
+                )
         {
 
             DeviceInfo = new DeviceInfo();
@@ -135,61 +141,102 @@ namespace Tesira_DSP_EPI
         {
             Debug.Console(2, this, "Getting Serial");
 
-            SendFullCommand("get", "serialNumber", null, 999);            
+            SendFullCommand("get", "serialNumber", null, 999);
         }
 
         public void GetFirmware()
         {
             Debug.Console(2, this, "Getting Firmware");
 
-            SendFullCommand("get", "version", null, 999);            
+            SendFullCommand("get", "version", null, 999);
+        }
+
+        public void GetAliases()
+        {
+            Debug.Console(2, this, "Getting Aliases");
+            SendFullCommand("get", "aliases", null, 999);
         }
 
 
         public override void ParseGetMessage(string attributeCode, string message)
         {
-            Debug.Console(2, this, "Parsing Message - '{0}' : Message has an attributeCode of {1}", message, attributeCode);
+            const string macPattern =
+                @"([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})|([0-9a-fA-F]{4}\.[0-9a-fA-F]{4}\.[0-9a-fA-F]{4})$";
+            const string iPpattern = @"\b\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\b";
+            const string quotePattern = "([\"])(?:(?=(\\\\?))\\2.)*?\\1";
+            /*Alias
+             * +OK "list":["AMP01" "ATC01" "ATC02" "Aec4" "AecInput4" "AecRef4" "DEVICE" "Dialer1" "Mixer1" "Mixer2" "Output3" "PRIV01" "TUN01" "VTC01" "VoIPControlStatus1" "VoIPReceive2" "VoIPTransmit2"]
+             * 
+             */
+            Debug.Console(2, this, "Parsing Message - '{0}' : Message has an attributeCode of {1}", message,
+                attributeCode);
             // Parse an "+OK" message
-            const string pattern = "([\"\'])(?:(?=(\\\\?))\\2.)*?\\1";
 
             if (message.IndexOf("+OK", StringComparison.OrdinalIgnoreCase) <= -1) return;
 
-            var matches = Regex.Matches(message, pattern);
+            var ipMatches = Regex.Matches(message, iPpattern);
+            var macMatches = Regex.Matches(message, macPattern);
+            var quoteMatches = Regex.Matches(message, quotePattern);
 
-            if (matches == null) return;
+
+            if (quoteMatches == null) return;
 
             switch (attributeCode)
             {
                 case ("networkStatus"):
-                {
-                    Hostname = matches[0].Value.Trim('"');
-                    MacAddress = matches[3].Value.Trim('"');
-                    IpAddress = matches[4].Value.Trim('"');
+
+                    Hostname = quoteMatches[0].Value.Trim('"');
+                    MacAddress = macMatches[0].Value;
+                    IpAddress = ipMatches[1].Value;
 
                     DeviceInfo.HostName = String.IsNullOrEmpty(DeviceInfo.HostName) ? Hostname : DeviceInfo.HostName;
-                    DeviceInfo.MacAddress = String.IsNullOrEmpty(DeviceInfo.MacAddress) ? MacAddress : DeviceInfo.MacAddress;
+                    DeviceInfo.MacAddress = String.IsNullOrEmpty(DeviceInfo.MacAddress)
+                        ? MacAddress
+                        : DeviceInfo.MacAddress;
                     DeviceInfo.IpAddress = String.IsNullOrEmpty(DeviceInfo.IpAddress) ? IpAddress : DeviceInfo.IpAddress;
 
                     UpdateDeviceInfo();
                     break;
-                }
-                case("serialNumber") :
-                {
-                    SerialNumber = matches[0].Value.Trim('"');
 
-                    DeviceInfo.SerialNumber = String.IsNullOrEmpty(DeviceInfo.SerialNumber) ? SerialNumber : DeviceInfo.SerialNumber;
+                case ("serialNumber"):
+
+                    SerialNumber = quoteMatches[0].Value.Trim('"');
+
+                    DeviceInfo.SerialNumber = String.IsNullOrEmpty(DeviceInfo.SerialNumber)
+                        ? SerialNumber
+                        : DeviceInfo.SerialNumber;
 
                     UpdateDeviceInfo();
                     break;
-                }
-                case ("version") :
-                    Firmware = matches[0].Value.Trim('"');
 
-                    DeviceInfo.FirmwareVersion = String.IsNullOrEmpty(DeviceInfo.FirmwareVersion) ? Firmware : DeviceInfo.FirmwareVersion;
+                case ("version"):
+                    Firmware = quoteMatches[0].Value.Trim('"');
+
+                    DeviceInfo.FirmwareVersion = String.IsNullOrEmpty(DeviceInfo.FirmwareVersion)
+                        ? Firmware
+                        : DeviceInfo.FirmwareVersion;
 
                     UpdateDeviceInfo();
+                    break;
+
+                case ("aliases"):
+                    var aliases = (from Match i in quoteMatches select i.Value).ToList();
+                    if (aliases != null)
+                    {
+                        OnAliasesChanged(aliases);
+                    }
                     break;
             }
+
+        }
+
+        private void OnAliasesChanged(List<string> aliases)
+        {
+            if (aliases == null) return;
+            var handler = AliasesChanged;
+            if (handler == null) return;
+            handler(this,
+                new AliasEventArgs(aliases));
 
         }
 
@@ -250,7 +297,7 @@ namespace Tesira_DSP_EPI
         {
             var args = new DeviceInfoEventArgs(DeviceInfo);
 
-           var raiseEvent = DeviceInfoChanged;
+            var raiseEvent = DeviceInfoChanged;
 
             if (raiseEvent != null)
             {
@@ -260,5 +307,15 @@ namespace Tesira_DSP_EPI
 
         #endregion
 
+    }
+
+    public class AliasEventArgs : EventArgs
+    {
+        public readonly List<string> Aliases;
+
+        public AliasEventArgs(List<string> data)
+        {
+            Aliases = data ?? new List<string>();
+        }
     }
 }
