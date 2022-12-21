@@ -51,11 +51,27 @@ namespace Tesira_DSP_EPI
         /// <summary>
         /// True when all components have been subscribed
         /// </summary>
-        public bool IsSubscribed;
+        public bool IsSubscribed {
+            get
+            {
+                var subscribeTracker = true;
+                foreach (var item in ControlPointList.Where(subscribedComponent => !subscribedComponent.IsSubscribed))
+                {
+                    subscribeTracker = false;
+                }
+                if (_subscribeThread == null) return subscribeTracker;
+                if (subscribeTracker && _subscribeThread.ThreadState == Thread.eThreadStates.ThreadRunning)
+                    StopSubscriptionThread();
+                return subscribeTracker;
+            }
+        }
+
 
 		private CTimer _watchDogTimer;
 
         private CTimer _queueCheckTimer;
+
+        private CTimer _unsubCheckTimer;
 
         private Thread _subscribeThread;
 
@@ -73,6 +89,11 @@ namespace Tesira_DSP_EPI
         private List<ISubscribedComponent> ControlPointList { get; set; }
 
         private TesiraExpanderTracker ExpanderTracker { get; set; }
+
+        private bool InitalSubscription = true;
+
+        private bool _skipParse;
+
 
         //private TesiraDspDeviceInfo DeviceInfo { get; set; }
 
@@ -107,12 +128,15 @@ namespace Tesira_DSP_EPI
 
 			if (socket != null)
 			{
+                Debug.Console(1, this, "DEVICE IS CONTROLLED VIA NETWORK CONNECTION");
+
 				// This instance uses IP control
 				socket.ConnectionChange += socket_ConnectionChange;
 				_isSerialComm = false;
 			}
 			else
 			{
+                Debug.Console(1, this, "DEVICE IS CONTROLLED VIA RS232");
 				// This instance uses RS-232 control
 				_isSerialComm = true;
 			}
@@ -186,6 +210,14 @@ namespace Tesira_DSP_EPI
 			};*/
 
             _subscribeThread.Start();
+        }
+
+        private void StopSubscriptionThread()
+        {
+            if (_subscribeThread.ThreadState == Thread.eThreadStates.ThreadRunning)
+            {
+                _subscribeThread = null;
+            }
         }
 
         void CrestronEnvironment_ProgramStatusEventHandler(eProgramStatusEventType programEventType)
@@ -615,15 +647,50 @@ namespace Tesira_DSP_EPI
 
                     foreach (var component in from component in ControlPointList let item = component from n in item.CustomNames.Where(n => n == customName) select component)
                     {
-                        if (component == null) return;
+                        if (component == null)
+                        {
+                            Debug.Console(1, this, "Unable to find matching Custom Name {0}", customName);                            
+                            return;
+                        }
                         component.ParseSubscriptionMessage(customName, value);
                     }
                 }
 
+                if (args.Text.IndexOf("! ", StringComparison.Ordinal) > 0)
+                {
+                    const string pattern = "! [\\\"](.*?[^\\\\])[\\\"] (.*)";
+
+                    var match = Regex.Match(args.Text, pattern);
+
+                    if (!match.Success) return;
+
+                    var customName = match.Groups[1].Value;
+                    var value = match.Groups[2].Value;
+                    Debug.Console(2, this, "Subscription Message: 'Name: {0} Value:{1}'", customName, value);
+                    //CommandQueue.AdvanceQueue(args.Text);
+
+                    foreach (var component in from component in ControlPointList let item = component from n in item.CustomNames.Where(n => n == customName) select component)
+                    {
+                        if (component == null)
+                        {
+                            Debug.Console(1, this, "Unable to find matching Custom Name {0}", customName);
+                            return;
+                        }
+                        component.ParseSubscriptionMessage(customName, value);
+                    }
+
+                }
+
                 else if (args.Text.IndexOf("+OK", StringComparison.Ordinal) == 0)
                 {
-                    if (args.Text == "+OK")       // Check for a simple "+OK" only 'ack' repsonse or a list response and ignore
+                    if (args.Text == "+OK")
+                    {
+                        if (_isSerialComm && !IsSubscribed)
+                        {
+                            CrestronInvoke.BeginInvoke(o => StartSubsciptionThread());
+                        }
                         return;
+                    }
                     // response is not from a subscribed attribute.  From a get/set/toggle/increment/decrement command
                     //string pattern = "(?<=\" )(.*?)(?=\\+)";
                     //string data = Regex.Replace(args.Text, pattern, "");
@@ -755,9 +822,10 @@ namespace Tesira_DSP_EPI
 
         #region Unsubscribe
 
-
+        /*
         private void UnsubscribeFromComponents()
-		{
+        {
+            _skipParse = true;
 			foreach (var control in Dialers.Select(dialer => dialer.Value))
 			{
 			    UnsubscribeFromComponent(control);
@@ -783,6 +851,53 @@ namespace Tesira_DSP_EPI
 			    UnsubscribeFromComponent(control);
 			}
 		}
+         * */
+        private void UnsubscribeFromComponents()
+        {
+            Debug.Console(1, this, "Unsubscribing from Components");
+            _skipParse = false;
+
+            InitalSubscription = false;
+
+            if (_unsubCheckTimer == null)
+            {
+                _unsubCheckTimer = new CTimer(o => QueueCheckUnsubscribe(), null, 1000, 1000);
+            }
+            else
+            {
+                _unsubCheckTimer.Reset(1000, 1000);
+            }
+
+        }
+        private void QueueCheckUnsubscribe()
+        {
+            Debug.Console(1, this, "QueueCheckUnsubscribe");
+
+            if (!CommandQueue.LocalQueue.Any() && !CommandQueue.CommandQueueInProgress)
+            {
+                Debug.Console(1, this, "Run Unsub Queue");
+
+                _unsubCheckTimer.Stop();
+                _unsubCheckTimer = null;
+                Debug.Console(1, this, "Unsubscribing from {0} Components", ControlPointList.Count);
+
+                foreach (var component in ControlPointList)
+                {
+                    Debug.Console(1, this, "Unsubscribing from {0}", component.Key);
+
+                    UnsubscribeFromComponent(component);
+                }
+                _unsubCheckTimer = null;
+                SubscribeToComponents();
+            }
+            else
+            {
+                Debug.Console(1, this, "Reset Unsub Queue");
+
+                _unsubCheckTimer.Reset(1000, 1000);
+            }
+        }
+
 
         private void UnsubscribeFromComponent(ISubscribedComponent data)
 		{
@@ -795,17 +910,22 @@ namespace Tesira_DSP_EPI
 
 		#region Subscribe
 
-		private void SubscribeToComponents()
+        private void SubscribeToComponents()
         {
-		    if (DevInfo != null)
-		    {
+            Debug.Console(1, this, "Subscribing to Components");
+
+            _skipParse = false;
+            _unsubCheckTimer = null;
+            InitalSubscription = false;
+            if (DevInfo != null)
+            {
                 Debug.Console(2, this, "DevInfo Not Null");
 
-		        DevInfo.GetFirmware();
-		        DevInfo.GetIpConfig();
-		        DevInfo.GetSerial();
-		    }
-		    foreach (var fader in ControlPointList.OfType<IVolumeComponent>())
+                DevInfo.GetFirmware();
+                DevInfo.GetIpConfig();
+                DevInfo.GetSerial();
+            }
+            foreach (var fader in ControlPointList.OfType<IVolumeComponent>())
             {
                 fader.GetMinLevel();
             }
@@ -817,21 +937,21 @@ namespace Tesira_DSP_EPI
 
             if (_queueCheckTimer == null)
             {
-                _queueCheckTimer = new CTimer(o => QueueCheck(), null, 1000, 1000);
+                _queueCheckTimer = new CTimer(o => QueueCheckSubscribe(), null, 1000, 1000);
             }
             else
             {
                 _queueCheckTimer.Reset(1000, 1000);
             }
 
-		    if (ExpanderTracker != null)
-		    {
-		        ExpanderTracker.Initialize();
-		    }
+            if (ExpanderTracker != null)
+            {
+                ExpanderTracker.Initialize();
+            }
 
-		}
+        }
 
-        private void QueueCheck()
+        private void QueueCheckSubscribe()
         {
             if (!CommandQueue.LocalQueue.Any() && !CommandQueue.CommandQueueInProgress)
             {
@@ -845,6 +965,7 @@ namespace Tesira_DSP_EPI
             else
                 _queueCheckTimer.Reset(1000, 1000);
         }
+
 
         private void SubscribeToComponent(ISubscribedComponent data)
         {
@@ -868,17 +989,21 @@ namespace Tesira_DSP_EPI
 
         private object HandleAttributeSubscriptions()
         {
+            Debug.Console(1, this, "HandleApptributeSubscriptions - LIVE");
             //_subscriptionLock.Enter();
             if (Communication.IsConnected)
             {
                 SendLine("SESSION set verbose false");
                 try
                 {
-                    if (_isSerialComm)
+                    if (_isSerialComm && InitalSubscription)
+                    {
+                        InitalSubscription = false;
                         UnsubscribeFromComponents();
-
-                    //Subscribe
-                    SubscribeToComponents();
+                    }
+                    else
+                        //Subscribe
+                        SubscribeToComponents();
                     /*if (!_commandQueueInProgress)
                     CommandQueue.SendNextQueuedCommand();*/
                 }

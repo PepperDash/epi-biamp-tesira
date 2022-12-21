@@ -4,6 +4,7 @@ using Crestron.SimplSharpPro.DeviceSupport;
 using PepperDash.Essentials.Core;
 using PepperDash.Core;
 using PepperDash.Essentials.Core.Bridges;
+using PepperDash.Essentials.Devices.Common.VideoCodec.Cisco;
 using Feedback = PepperDash.Essentials.Core.Feedback;
 
 namespace Tesira_DSP_EPI
@@ -228,7 +229,7 @@ namespace Tesira_DSP_EPI
 				case 2:
                     localInstanceTag = InstanceTag2;
 					break;
-
+                    
 				default:
                     localInstanceTag = InstanceTag1;
 					break;
@@ -242,7 +243,7 @@ namespace Tesira_DSP_EPI
 			{
                 cmd = string.Format("\"{0}\" unsubscribe {1} {2} {3}", localInstanceTag, attributeCode, Index1, customName);
 			}
-
+            Debug.Console(1, this, "SendingUnsub - {0}", cmd);
 			//Parent.WatchDogList.Add(customName,cmd);
 			Parent.SendLine(cmd);
             //Parent.CommandQueue.EnqueueCommand(new QueuedCommand(cmd, attributeCode, this));
