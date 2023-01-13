@@ -226,10 +226,16 @@ namespace Tesira_DSP_EPI
         {
             if (programEventType != eProgramStatusEventType.Stopping) return;
 
-            _watchDogTimer.Stop();
-            _watchDogTimer.Dispose();
-            CommunicationMonitor.Stop();
-            Communication.Disconnect();
+			if (_watchDogTimer != null)
+			{
+				_watchDogTimer.Stop();
+				_watchDogTimer.Dispose();
+			}
+			if (CommunicationMonitor != null)
+			{
+				CommunicationMonitor.Stop();
+				Communication.Disconnect();
+			}
         }
 
         private void CreateDspObjects()
