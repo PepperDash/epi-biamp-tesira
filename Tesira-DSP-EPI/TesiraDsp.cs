@@ -86,6 +86,7 @@ namespace Tesira_DSP_EPI
         private Dictionary<string, TesiraDspCrosspointState> CrosspointStates { get; set; }
         private Dictionary<string, TesiraDspRoomCombiner> RoomCombiners { get; set; }
         public List<IDspPreset> Presets { get; private set; } 
+        public List<TesiraPreset> TesiraPresets { get; private set; } 
         private List<ISubscribedComponent> ControlPointList { get; set; }
 
         private TesiraExpanderTracker ExpanderTracker { get; set; }
@@ -157,6 +158,7 @@ namespace Tesira_DSP_EPI
             Feedbacks = new FeedbackCollection<Feedback>();
             Faders = new Dictionary<string, TesiraDspFaderControl>();
             Presets = new List<IDspPreset>();
+            TesiraPresets = new List<TesiraPreset>();
             Dialers = new Dictionary<string, TesiraDspDialer>();
             Switchers = new Dictionary<string, TesiraDspSwitcher>();
             States = new Dictionary<string, TesiraDspStateControl>();
@@ -290,10 +292,13 @@ namespace Tesira_DSP_EPI
             foreach (var preset in props.Presets)
             {
                 var value = preset.Value;
-                Presets.Add(new TesiraPreset(preset.Value));
+                var tesiraPreset = new TesiraPreset(preset.Value);
+                Presets.Add(tesiraPreset);
+                TesiraPresets.Add(tesiraPreset);
                 Debug.Console(2, this, "Added Preset {0} {1}", value.Label, value.PresetName);
             }
-            var presetDevice = new TesiraDspPresetDevice(this, Presets);
+
+            var presetDevice = new TesiraDspPresetDevice(this);
             DeviceManager.AddDevice(presetDevice);
         }
 
