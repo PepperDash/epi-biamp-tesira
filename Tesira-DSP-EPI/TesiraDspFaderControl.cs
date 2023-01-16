@@ -6,6 +6,7 @@ using PepperDash.Essentials.Core;
 using System.Text.RegularExpressions;
 using Crestron.SimplSharpPro.DeviceSupport;
 using PepperDash.Essentials.Core.Bridges;
+using PepperDash.Essentials.Devices.Common.VideoCodec.Cisco;
 using Tesira_DSP_EPI.Bridge.JoinMaps;
 using System.Collections.Generic;
 using Tesira_DSP_EPI.Extensions;
@@ -72,17 +73,6 @@ namespace Tesira_DSP_EPI
         bool _volDownPressTracker;
         bool _volUpPressTracker;
 
-        /// <summary>
-        /// Used to identify level subscription values
-        /// </summary>
-        public string LevelCustomName { get; protected set; }
-
-        /// <summary>
-        /// Used to identify mute subscription value
-        /// </summary>
-        public string MuteCustomName { get; protected set; }
-
-
 
         /// <summary>
         /// Minimum fader level
@@ -105,11 +95,12 @@ namespace Tesira_DSP_EPI
                 foreach (var item in SubscriptionTracker)
                 {
                     Debug.Console(2, this, "{0} is {1} and {2}", item.Key, item.Value.Enabled ? "Enabled" : "Disabled", item.Value.Subscribed ? "Subscribed" : "Not Subscribed");
-                    if (item.Value.Enabled != item.Value.Subscribed)
+                    if (item.Value.Enabled && !item.Value.Subscribed)
                     {
                         trackingBool = false;
                     }
                 }
+                Debug.Console(1, this, "Item is {0}.", trackingBool ? "subscribed" : "not subscribed");
                 return trackingBool;
 
             }
@@ -117,6 +108,9 @@ namespace Tesira_DSP_EPI
         }
 
         private bool AutomaticUnmuteOnVolumeUp { get; set; }
+
+        public readonly string MuteCustomName;
+        public readonly string LevelCustomName;
 
         /// <summary>
         /// Component has Mute
@@ -137,8 +131,12 @@ namespace Tesira_DSP_EPI
         public TesiraDspFaderControl(string key, TesiraFaderControlBlockConfig config, TesiraDsp parent)
             : base(config.LevelInstanceTag, config.MuteInstanceTag, config.Index1, config.Index2, parent, String.Format(KeyFormatter, parent.Key, key), config.Label, config.BridgeIndex)
         {
-            Initialize(config);
 
+            MuteCustomName = string.Format("{0}~mute{1}", InstanceTag2, Index1);
+
+            LevelCustomName = string.Format("{0}~level{1}", InstanceTag1, Index1);
+
+            Initialize(config);
         }
 
         private void Initialize(TesiraFaderControlBlockConfig config)
@@ -146,6 +144,8 @@ namespace Tesira_DSP_EPI
             _type = config.IsMic ? EPdtLevelTypes.Microphone : EPdtLevelTypes.Speaker;
 
             Debug.Console(2, this, "Adding LevelControl '{0}'", Key);
+            AddCustomName(LevelCustomName);
+            AddCustomName(MuteCustomName);
 
             IsSubscribed = false;
 
@@ -166,6 +166,8 @@ namespace Tesira_DSP_EPI
                 {"mute", new SubscriptionTrackingObject(HasMute)},
                 {"level", new SubscriptionTrackingObject(HasLevel)}
             };
+
+
 
 
             if (HasMute && HasLevel)
@@ -234,34 +236,9 @@ namespace Tesira_DSP_EPI
         /// </summary>
         public override void Subscribe()
         {
-            if (!IsSubscribed)
-            {
-                //Subscribe to Mute
-                if (HasMute)
-                {
-                    // MUST use InstanceTag2 for mute, it is the second instance tag in the JSON config
-                    MuteCustomName = string.Format("{0}~mute{1}", InstanceTag2, Index1);
 
-                    AddCustomName(MuteCustomName);
-
-                    SendSubscriptionCommand(MuteCustomName, "mute", 500, 2);
-                }
-
-                //Subscribe to Level
-                if (HasLevel)
-                {
-                    // MUST use InstanceTag1 for levels, it is the first instance tag in the JSON config
-                    LevelCustomName = string.Format("{0}~level{1}", InstanceTag1, Index1);
-                    SendSubscriptionCommand(LevelCustomName, "level", 250, 1);
-                    AddCustomName(LevelCustomName);
-
-                }
-            }
-            else
-            {
                 if (HasMute) SendSubscriptionCommand(MuteCustomName, "mute", 500, 2);
                 if (HasLevel) SendSubscriptionCommand(LevelCustomName, "level", 250, 1);
-            }
         }
 
         /// <summary>
@@ -269,24 +246,29 @@ namespace Tesira_DSP_EPI
         /// </summary>
         public override void Unsubscribe()
         {
-            //Unsubscribe to Mute
-            if (HasMute)
+            try
             {
-                SubscriptionTracker["mute"].Subscribed = false;
-                // MUST use InstanceTag2 for mute, it is the second instance tag in the JSON config
-                MuteCustomName = string.Format("{0}~mute{1}", InstanceTag2, Index1);
+                //Unsubscribe to Mute
+                if (HasMute)
+                {
+                    Debug.Console(1, this, "Unsubscribe from Mute");
 
-                SendUnSubscriptionCommand(MuteCustomName, "mute", 2);
+                    SendUnSubscriptionCommand(MuteCustomName, "mute", 2);
+                    SubscriptionTracker["mute"].Subscribed = false;
+
+                }
+
+                //Unubscribe to Level
+                if (HasLevel)
+                {
+
+                    SendUnSubscriptionCommand(LevelCustomName, "level", 2);
+                    SubscriptionTracker["level"].Subscribed = false;
+                }
             }
-
-            //Unubscribe to Level
-            if (HasLevel)
+            catch (Exception e)
             {
-                SubscriptionTracker["level"].Subscribed = false;
-                // MUST use InstanceTag1 for levels, it is the first instance tag in the JSON config
-                LevelCustomName = string.Format("{0}~level{1}", InstanceTag1, Index1);
-
-                SendUnSubscriptionCommand(LevelCustomName, "level", 2);
+                Debug.Console(0, this, "Exception : {0}", e.Message);
             }
         }
 
@@ -305,8 +287,6 @@ namespace Tesira_DSP_EPI
             }
             else if (HasLevel && customName == LevelCustomName)
             {
-
-
                 var localValue = Double.Parse(value);
 
                 VolumeLevel = UseAbsoluteValue ? (ushort)localValue :  (ushort)localValue.Scale(MinLevel, MaxLevel, 0, 65535, this);
