@@ -132,9 +132,9 @@ namespace Tesira_DSP_EPI
             : base(config.LevelInstanceTag, config.MuteInstanceTag, config.Index1, config.Index2, parent, String.Format(KeyFormatter, parent.Key, key), config.Label, config.BridgeIndex)
         {
 
-            MuteCustomName = string.Format("{0}~mute{1}", InstanceTag2, Index1);
+            MuteCustomName = (string.Format("{0}~mute{1}", InstanceTag2, Index1)).Replace(" ", string.Empty);
 
-            LevelCustomName = string.Format("{0}~level{1}", InstanceTag1, Index1);
+            LevelCustomName = (string.Format("{0}~level{1}", InstanceTag1, Index1)).Replace(" ", string.Empty);
 
             Initialize(config);
         }

@@ -162,6 +162,9 @@ namespace Tesira_DSP_EPI {
 
         [JsonProperty("switcherOutputs")]
         public Dictionary<uint, RoutingPort> SwitcherOutputs { get; set; } 
+
+        [JsonProperty("showRoutedStringFeedback")]
+        public bool ShowRoutedStringFeedback { get; set; }
     }
 
     public class TesiraStateControlBlockConfig

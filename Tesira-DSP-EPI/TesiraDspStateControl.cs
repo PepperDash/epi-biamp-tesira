@@ -60,7 +60,7 @@ namespace Tesira_DSP_EPI {
         /// Subscribe to component
         /// </summary>
         public override void Subscribe() {
-            StateCustomName = string.Format("{0}~state{1}", InstanceTag1, Index1);
+            StateCustomName = (string.Format("{0}~state{1}", InstanceTag1, Index1)).Replace(" ", string.Empty);
             Debug.Console(2, this, "StateCustomName = {0}", StateCustomName);
             AddCustomName(StateCustomName);
             SendSubscriptionCommand(StateCustomName, "state", 250, 1);
@@ -74,7 +74,7 @@ namespace Tesira_DSP_EPI {
         public override void Unsubscribe()
         {
             IsSubscribed = false;
-            StateCustomName = string.Format("{0}~state{1}", InstanceTag1, Index1);
+            StateCustomName = (string.Format("{0}~state{1}", InstanceTag1, Index1)).Replace(" ", string.Empty);
             Debug.Console(2, this, "StateCustomName = {0}", StateCustomName);
             SendUnSubscriptionCommand(StateCustomName, "state", 1);
         }

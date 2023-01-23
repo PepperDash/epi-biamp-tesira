@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using Crestron.SimplSharpPro.DeviceSupport;
@@ -31,8 +32,17 @@ namespace Tesira_DSP_EPI {
         /// XSig of all Feedback Names
         /// </summary>
         public StringFeedback SourceNamesFeedback { get; private set; }
+
+        public StringFeedback RoutedSourceNameFeedback { get; private set; }
+
+        public Dictionary<uint, string> SwitcherInputs { get; private set; } 
         
         private string SourceNamesXsig { get; set; }
+
+        private string RoutedSourceName { get; set; }
+
+        private bool ShowRoutedString { get; set; }
+
 
         /// <summary>
         /// Subscription Identifier for Switcher
@@ -47,6 +57,8 @@ namespace Tesira_DSP_EPI {
             }
             set {
                 _sourceIndex = value;
+                RoutedSourceName = SwitcherInputs[(uint)value] ?? "None";
+                RoutedSourceNameFeedback.FireUpdate();
                 SourceIndexFeedback.FireUpdate();
             }
         }
@@ -65,6 +77,16 @@ namespace Tesira_DSP_EPI {
         public TesiraDspSwitcher(string key, TesiraSwitcherControlBlockConfig config, TesiraDsp parent)
             : base(config.SwitcherInstanceTag, String.Empty, config.Index1, 0, parent, string.Format(KeyFormatter, parent.Key, key), config.Label, config.BridgeIndex)
         {
+            SwitcherInputs = new Dictionary<uint, string>();
+
+            ShowRoutedString = config.ShowRoutedStringFeedback;
+            foreach (var input in config.SwitcherInputs)
+            {
+                SwitcherInputs.Add(input.Key, input.Value.Label);
+            }
+            SwitcherInputs.Add(0, "None");
+
+            RoutedSourceNameFeedback = new StringFeedback(Key + "-RoutedSourceNameFeedback", () => RoutedSourceName);
             SourceIndexFeedback = new IntFeedback(Key + "-SourceIndexFeedback", () => SourceIndex);
             SourceNamesFeedback = new StringFeedback(Key + "-SourceNamesFeedback", () => SourceNamesXsig);
 
@@ -74,6 +96,7 @@ namespace Tesira_DSP_EPI {
             Feedbacks.Add(SourceIndexFeedback);
             Feedbacks.Add(NameFeedback);
             Feedbacks.Add(SourceNamesFeedback);
+            Feedbacks.Add(RoutedSourceNameFeedback);
 
             parent.Feedbacks.AddRange(Feedbacks);
 
@@ -128,7 +151,7 @@ namespace Tesira_DSP_EPI {
         /// Subscribe to component
         /// </summary>
         public override void Subscribe() {
-            SelectorCustomName = string.Format("{0}~Selector{1}", InstanceTag1, Index1);
+            SelectorCustomName = (string.Format("{0}~Selector{1}", InstanceTag1, Index1)).Replace(" ", string.Empty);
             AddCustomName(SelectorCustomName);
             SendSubscriptionCommand(SelectorCustomName, "sourceSelection", 250, 1);
         }
@@ -140,7 +163,7 @@ namespace Tesira_DSP_EPI {
         {
             IsSubscribed = false;
 
-            SelectorCustomName = string.Format("{0}~Selector{1}", InstanceTag1, Index1);
+            SelectorCustomName = (string.Format("{0}~Selector{1}", InstanceTag1, Index1)).Replace(" ", string.Empty);
 
             SendUnSubscriptionCommand(SelectorCustomName, "sourceSelection", 1);
         }
@@ -219,6 +242,7 @@ namespace Tesira_DSP_EPI {
 
         public void GetSourceNames()
         {
+            if (ShowRoutedString) return;
             SourceNamesXsig = xSigHelper.ClearData();
             SourceNamesFeedback.FireUpdate();
             SourceNamesXsig = String.Empty;
@@ -318,6 +342,7 @@ namespace Tesira_DSP_EPI {
             trilist.SetUShortSigAction(joinMap.Index.JoinNumber, u => SetSource(u));
 
             NameFeedback.LinkInputSig(trilist.StringInput[joinMap.Label.JoinNumber]);
+            if (ShowRoutedString) RoutedSourceNameFeedback.LinkInputSig(trilist.StringInput[joinMap.RouteOrSource.JoinNumber]);
 
             GetSourceNames();
 
