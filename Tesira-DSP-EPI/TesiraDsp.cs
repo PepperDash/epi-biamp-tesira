@@ -364,6 +364,7 @@ namespace Tesira_DSP_EPI
                 {
                     ControlPointList.Add(CrosspointStates[key]);
                 }
+                DeviceManager.AddDevice(CrosspointStates[key]);
             }
         }
 
@@ -381,6 +382,8 @@ namespace Tesira_DSP_EPI
                 {
                     ControlPointList.Add(Meters[key]);
                 }
+                DeviceManager.AddDevice(Meters[key]);
+
             }
         }
 
@@ -398,7 +401,8 @@ namespace Tesira_DSP_EPI
 
                 if (block.Value.Enabled)
                     ControlPointList.Add(States[key]);
-                    
+                DeviceManager.AddDevice(States[key]);
+
             }
         }
 
@@ -410,7 +414,7 @@ namespace Tesira_DSP_EPI
             foreach (var block in props.DialerControlBlocks)
             {
                 var key = block.Key;
-                Debug.Console(2, this, "LevelControlBlock Key - {0}", key);
+                Debug.Console(2, this, "DialerControlBlock Key - {0}", key);
                 var value = block.Value;
                 Dialers.Add(key, new TesiraDspDialer(key, value, this));
                 Debug.Console(2, this, "Added DspDialer {0} ControlStatusTag: {1} DialerTag: {2}", key,
@@ -420,6 +424,8 @@ namespace Tesira_DSP_EPI
                 {
                     ControlPointList.Add(Dialers[key]);
                 }
+                DeviceManager.AddDevice(Dialers[key]);
+
             }
         }
 
