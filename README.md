@@ -2,7 +2,7 @@
 ![4Series-Tested](https://img.shields.io/badge/4-Tested%20on%204%20series-teal.svg)
 
 
-# Tesira DSP Essentials Plugin (c) 2021
+# Tesira DSP Essentials Plugin (c) 2023
 
 >**NOTE : INVALID TAGS BREAK THIS RELEASE**
 
