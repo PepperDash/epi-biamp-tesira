@@ -240,7 +240,7 @@ namespace Tesira_DSP_EPI
                 if (HasMute)
                 {
                     // MUST use InstanceTag2 for mute, it is the second instance tag in the JSON config
-                    MuteCustomName = string.Format("{0}~mute{1}", InstanceTag2, Index1);
+                    MuteCustomName = string.Format("{0}__mute{1}", InstanceTag2, Index1);
 
                     AddCustomName(MuteCustomName);
 
@@ -251,7 +251,7 @@ namespace Tesira_DSP_EPI
                 if (HasLevel)
                 {
                     // MUST use InstanceTag1 for levels, it is the first instance tag in the JSON config
-                    LevelCustomName = string.Format("{0}~level{1}", InstanceTag1, Index1);
+                    LevelCustomName = string.Format("{0}__level{1}", InstanceTag1, Index1);
                     SendSubscriptionCommand(LevelCustomName, "level", 250, 1);
                     AddCustomName(LevelCustomName);
 
@@ -274,7 +274,7 @@ namespace Tesira_DSP_EPI
             {
                 SubscriptionTracker["mute"].Subscribed = false;
                 // MUST use InstanceTag2 for mute, it is the second instance tag in the JSON config
-                MuteCustomName = string.Format("{0}~mute{1}", InstanceTag2, Index1);
+                MuteCustomName = string.Format("{0}__mute{1}", InstanceTag2, Index1);
 
                 SendUnSubscriptionCommand(MuteCustomName, "mute", 2);
             }
@@ -284,7 +284,7 @@ namespace Tesira_DSP_EPI
             {
                 SubscriptionTracker["level"].Subscribed = false;
                 // MUST use InstanceTag1 for levels, it is the first instance tag in the JSON config
-                LevelCustomName = string.Format("{0}~level{1}", InstanceTag1, Index1);
+                LevelCustomName = string.Format("{0}__level{1}", InstanceTag1, Index1);
 
                 SendUnSubscriptionCommand(LevelCustomName, "level", 2);
             }

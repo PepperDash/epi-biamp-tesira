@@ -128,7 +128,7 @@ namespace Tesira_DSP_EPI {
         /// Subscribe to component
         /// </summary>
         public override void Subscribe() {
-            SelectorCustomName = string.Format("{0}~Selector{1}", InstanceTag1, Index1);
+            SelectorCustomName = string.Format("{0}__Selector{1}", InstanceTag1, Index1);
             AddCustomName(SelectorCustomName);
             SendSubscriptionCommand(SelectorCustomName, "sourceSelection", 250, 1);
         }
@@ -140,7 +140,7 @@ namespace Tesira_DSP_EPI {
         {
             IsSubscribed = false;
 
-            SelectorCustomName = string.Format("{0}~Selector{1}", InstanceTag1, Index1);
+            SelectorCustomName = string.Format("{0}__Selector{1}", InstanceTag1, Index1);
 
             SendUnSubscriptionCommand(SelectorCustomName, "sourceSelection", 1);
         }

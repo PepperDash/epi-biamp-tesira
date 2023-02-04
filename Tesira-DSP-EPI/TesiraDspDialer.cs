@@ -479,10 +479,10 @@ namespace Tesira_DSP_EPI {
         {
             if (IsVoip)
             {
-                DialerCustomName = string.Format("{0}~VoIPDialer{1}", InstanceTag1, Index1);
-                AutoAnswerCustomName = string.Format("{0}~VoIPDialerAutoAnswer{1}", InstanceTag1, Index1);
-                ControlStatusCustomName = string.Format("{0}~VoIPControl{1}", InstanceTag2, Index1);
-                LastDialedCustomName = string.Format("{0}~VoIPLastNumber{1}", InstanceTag1, Index1);
+                DialerCustomName = string.Format("{0}__VoIPDialer{1}", InstanceTag1, Index1);
+                AutoAnswerCustomName = string.Format("{0}__VoIPDialerAutoAnswer{1}", InstanceTag1, Index1);
+                ControlStatusCustomName = string.Format("{0}__VoIPControl{1}", InstanceTag2, Index1);
+                LastDialedCustomName = string.Format("{0}__VoIPLastNumber{1}", InstanceTag1, Index1);
 
                 AddCustomName(ControlStatusCustomName);
                 SendSubscriptionCommand(ControlStatusCustomName, "callState", 250, 2);
@@ -499,10 +499,10 @@ namespace Tesira_DSP_EPI {
             else if (!IsVoip)
             {
 
-                PotsDialerCustomName = string.Format("{0}~PotsDialer{1}", InstanceTag1, Index1);
-                LastDialedCustomName = string.Format("{0}~PotsLastNumber{1}", InstanceTag1, Index1);
+                PotsDialerCustomName = string.Format("{0}__PotsDialer{1}", InstanceTag1, Index1);
+                LastDialedCustomName = string.Format("{0}__PotsLastNumber{1}", InstanceTag1, Index1);
 
-                HookStateCustomName = string.Format("{0}~HookState{1}", InstanceTag1, Index1);
+                HookStateCustomName = string.Format("{0}__HookState{1}", InstanceTag1, Index1);
 
                 SendSubscriptionCommand(PotsDialerCustomName, "callState", 250, 1);
                 AddCustomName(PotsDialerCustomName);
@@ -529,10 +529,10 @@ namespace Tesira_DSP_EPI {
                 VoipIsSubscribed = false;
                 AutoAnswerIsSubscribed = false;
 
-                DialerCustomName = string.Format("{0}~VoIPDialer{1}", InstanceTag1, Index1);
-                AutoAnswerCustomName = string.Format("{0}~VoIPDialerAutoAnswer{1}", InstanceTag1, Index1);
-                ControlStatusCustomName = string.Format("{0}~VoIPControl{1}", InstanceTag2, Index1);
-                LastDialedCustomName = string.Format("{0}~VoIPLastNumber{1}", InstanceTag1, Index1);
+                DialerCustomName = string.Format("{0}__VoIPDialer{1}", InstanceTag1, Index1);
+                AutoAnswerCustomName = string.Format("{0}__VoIPDialerAutoAnswer{1}", InstanceTag1, Index1);
+                ControlStatusCustomName = string.Format("{0}__VoIPControl{1}", InstanceTag2, Index1);
+                LastDialedCustomName = string.Format("{0}__VoIPLastNumber{1}", InstanceTag1, Index1);
 
 
                 SendUnSubscriptionCommand(ControlStatusCustomName, "callState", 2);
@@ -543,10 +543,10 @@ namespace Tesira_DSP_EPI {
             }
             else if (!IsVoip)
             {
-				DialerCustomName = string.Format("{0}~PotsDialer{1}", InstanceTag1, Index1);
-				LastDialedCustomName = string.Format("{0}~PotsLastNumber{1}", InstanceTag1, Index1);
+				DialerCustomName = string.Format("{0}__PotsDialer{1}", InstanceTag1, Index1);
+				LastDialedCustomName = string.Format("{0}__PotsLastNumber{1}", InstanceTag1, Index1);
 
-				HookStateCustomName = string.Format("{0}~HookState{1}", InstanceTag1, Index1);
+				HookStateCustomName = string.Format("{0}__HookState{1}", InstanceTag1, Index1);
 
 				SendUnSubscriptionCommand(DialerCustomName, "callState", 2);
 
