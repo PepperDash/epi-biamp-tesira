@@ -2,7 +2,7 @@
 ![4Series-Tested](https://img.shields.io/badge/4-Tested%20on%204%20series-teal.svg)
 
 
-# Tesira DSP Essentials Plugin (c) 2021
+# Tesira DSP Essentials Plugin (c) 2023
 
 >**NOTE : INVALID TAGS BREAK THIS RELEASE**
 
@@ -673,6 +673,61 @@ In the provided example config object, given a base object key of ```dsp-1```, t
 
 ***
 
+### Tesira Expanders
+
+Provides status updates for tesira expander devices related to health and device properties
+
+Tesira Expander block is not supported in the Legacy bridge API.  In order to utilize this control, one must directly bridge the control using the key ```<dspKey>--Expanders```
+
+Within the **Standalone** object, this join map represents each element in a list of Expander Devices
+
+#### Digitals
+
+| Legacy Join | Standalone Join | Type (RW) | Description     |
+| ----------- | --------------- | --------- | --------------- |
+| N/A         | 1               | R         | Device Online   |
+
+#### Analogs
+
+| Legacy Join | Standalone Join | Type (RW) | Description                                           |
+| ----------- | --------------- | --------- | ----------------------------------------------------- |
+| N/A         | N/A             | N/A       | N/A                                                   |
+
+#### Serials
+
+| Legacy Join | Standalone Join | Type (RW) | Description                      |
+| ----------- | --------------- | --------- | -------------------------------- |
+| N/A         | 1               | R         | Expander Hostname                |
+| N/A         | 2               | R         | Expander Serial Number           |
+| N/A         | 3               | R         | Expander Firmware                |
+| N/A         | 4               | R         | Expaner MAC Address              |
+
+#### Config Example
+
+> All Tesira Expander config objects must be part of a dictionary called **tesiraExpanderBlocks**.  
+
+``` javascript
+"tesiraExpanderBlocks": {
+    "Expander01": {
+        "hostname" : "MIC-01"
+        "index" : 1
+    },
+    "Expander02": {
+        "hostname" : "AMP-01"
+        "index" : 2
+    }
+}
+```
+
+#### Config Notes
+
+**hostname** - The hostname of the expander to be tracked.  This value must match the configured expander
+**index** - The index within the bridged control where this device ins mapped.  The joinmap of a device is equal to the join multipled by the index
+
+In the provided example config object, given a base object key of ```dsp-1```, this control would have a standalone key of ```dsp-1--Expanders```.
+
+***
+
 ## Full Example Essentials Device Config
 
 >This config will create an internal loopback EISC on IPID D1 for a ssh-controlled tesira.
@@ -887,6 +942,16 @@ In the provided example config object, given a base object key of ```dsp-1```, t
                             "label" : "High",
                             "Preset" : "Noise Reduction High"
                             "presetIndex" : 2
+                        }
+                    },
+                    "tesiraExpanderBlocks": {
+                        "Expander01": {
+                            "hostname" : "MIC-01"
+                            "index" : 1
+                        },
+                        "Expander02": {
+                            "hostname" : "AMP-01"
+                            "index" : 2
                         }
                     }
                 }
