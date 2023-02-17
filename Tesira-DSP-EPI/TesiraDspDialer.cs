@@ -747,7 +747,7 @@ namespace Tesira_DSP_EPI {
 
             else if (!IsVoip) {
                 if (OffHookStatus) {
-                    SendFullCommand(null, "ONHOOK", null, 1);
+                    OnHook();
 
                     if (!ClearOnHangup) return;
                     DialString = String.Empty;
