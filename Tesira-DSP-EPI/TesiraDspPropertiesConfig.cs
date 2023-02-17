@@ -165,6 +165,9 @@ namespace Tesira_DSP_EPI {
 
         [JsonProperty("showRoutedStringFeedback")]
         public bool ShowRoutedStringFeedback { get; set; }
+
+        [JsonProperty("pollIntervalMs")]
+        public long? PollIntervalMs { get; set; }
     }
 
     public class TesiraStateControlBlockConfig

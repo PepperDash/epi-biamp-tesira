@@ -467,10 +467,9 @@ namespace Tesira_DSP_EPI
                 Switchers.Add(key, new TesiraDspSwitcher(key, value, this));
                 Debug.Console(2, this, "Added TesiraSwitcher {0} InstanceTag {1}", key, value.SwitcherInstanceTag);
 
-                if (block.Value.Enabled)
+                if (block.Value.Enabled && block.Value.Type != "router")
                 {
                     //Add ControlPoint to the list for the watchdog
-
                     ControlPointList.Add(Switchers[key]);
                 }
                 DeviceManager.AddDevice(Switchers[key]);
@@ -1300,6 +1299,7 @@ namespace Tesira_DSP_EPI
                 s.SourceIndexFeedback.LinkInputSig(trilist.UShortInput[switcherJoinMap.Index.JoinNumber + x]);
 
                 trilist.SetUShortSigAction(switcherJoinMap.Index.JoinNumber + x, u => switcher.SetSource(u));
+                trilist.SetSigTrueAction(switcherJoinMap.Poll.JoinNumber, switcher.DoPoll);
 
                 switcher.NameFeedback.LinkInputSig(trilist.StringInput[switcherJoinMap.Label.JoinNumber + x]);
 
