@@ -18,21 +18,10 @@ namespace Tesira_DSP_EPI
         public readonly Dictionary<int, BoolFeedback> PresetPresent;
 
 
-        public TesiraDspPresetDevice(TesiraDsp parent, List<IDspPreset> presets)
+        public TesiraDspPresetDevice(TesiraDsp parent)
             : base("", "", 0, 0, parent, String.Format(KeyFormatter, parent.Key, "Presets"), "Presets", 0)
         {
-            Presets = presets;
-
-            PresetName = new Dictionary<int, StringFeedback>();
-            PresetPresent = new Dictionary<int, BoolFeedback>();
-            PresetName.Clear();
-            PresetPresent.Clear();
-            foreach (var preset in Presets.OfType<TesiraPreset>())
-            {
-                var p = preset;
-                PresetName.Add(p.Index, new StringFeedback(() => p.Name));
-                PresetPresent.Add(p.Index, new BoolFeedback(() => true));
-            }
+            Presets = parent.Presets;
 
         }
 
@@ -72,6 +61,8 @@ namespace Tesira_DSP_EPI
 
 
             trilist.SetStringSigAction(presetJoinMap.PresetName.JoinNumber, Parent.RunPreset);
+            trilist.SetUShortSigAction(presetJoinMap.PresetName.JoinNumber, Parent.RunPresetNumber);
+
 
             foreach (var preset in Presets)
             {
@@ -79,11 +70,11 @@ namespace Tesira_DSP_EPI
                 if (p == null) continue;
                 var runPresetIndex = p.PresetData.PresetIndex;
                 var presetIndex = runPresetIndex;
-                trilist.StringInput[(uint)(presetJoinMap.PresetNameFeedback.JoinNumber + presetIndex)].StringValue = p.PresetData.Label;
-                trilist.SetSigTrueAction((uint)(presetJoinMap.PresetSelection.JoinNumber + presetIndex), () => RunPresetNumber((ushort)presetIndex));
-                PresetName[presetIndex].LinkInputSig(trilist.StringInput[(uint)(presetJoinMap.PresetNameFeedback.JoinNumber + presetIndex - 1)]);
-                PresetPresent[presetIndex].LinkInputSig(trilist.BooleanInput[(uint)(presetJoinMap.PresetValidFeedback.JoinNumber + presetIndex - 1)]);
+                trilist.StringInput[(uint)(presetJoinMap.PresetNameFeedback.JoinNumber + presetIndex - 1)].StringValue = p.PresetData.PresetName;
+                trilist.SetSigTrueAction((uint)(presetJoinMap.PresetSelection.JoinNumber + presetIndex - 1),
+                    () => RecallPreset(p));
             }
+
 
             trilist.OnlineStatusChange += (d, args) =>
             {
@@ -102,13 +93,7 @@ namespace Tesira_DSP_EPI
 
         public void RunPresetNumber(ushort n)
         {
-            Debug.Console(2, this, "Attempting to run preset {0}", n);
-
-            foreach (var preset in Presets.OfType<TesiraPreset>().Where(preset => preset.Index == n))
-            {
-                Debug.Console(2, this, "Found a matching Preset - {0}", preset.PresetData.PresetId);
-                RecallPreset(preset);
-            }
+            Parent.RunPresetNumber(n);
 
         }
 
@@ -119,7 +104,7 @@ namespace Tesira_DSP_EPI
         public void RunPreset(string name)
         {
             Debug.Console(2, this, "Running Preset By Name - {0}", name);
-            Parent.SendLine(string.Format("DEVICE recallPresetByName \"{0}\"", name));
+            Parent.RunPreset(name);
             //CommandQueue.EnqueueCommand(string.Format("DEVICE recallPresetByName \"{0}\"", name));
         }
 
@@ -130,26 +115,13 @@ namespace Tesira_DSP_EPI
         public void RunPreset(int id)
         {
             Debug.Console(2, this, "Running Preset By ID - {0}", id);
-            Parent.SendLine(string.Format("DEVICE recallPreset {0}", id));
+            Parent.RunPreset(id);
             //CommandQueue.EnqueueCommand(string.Format("DEVICE recallPreset {0}", id));
         }
 
         public void RecallPreset(IDspPreset preset)
         {
-            Debug.Console(2, this, "Running preset {0}", preset.Name);
-            var tesiraPreset = preset as TesiraPreset;
-            if (tesiraPreset == null) return;
-
-
-
-            if (!String.IsNullOrEmpty(tesiraPreset.PresetName))
-            {
-                RunPreset(tesiraPreset.PresetData.PresetName);
-            }
-            else
-            {
-                RunPreset(tesiraPreset.PresetData.PresetId);
-            }
+            Parent.RecallPreset(preset);
         }
 
         #endregion
@@ -168,6 +140,8 @@ namespace Tesira_DSP_EPI
             PresetData = data;
             Name = data.Label;
             Index = data.PresetIndex;
+
+            Debug.Console(0, "Tesira PresetData = {0} , {1}, {2}", PresetData.PresetName, PresetData.PresetId, PresetData.PresetIndex);
         }
     }
 

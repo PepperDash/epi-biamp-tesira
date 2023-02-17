@@ -53,12 +53,12 @@ namespace Tesira_DSP_EPI.Bridge.JoinMaps {
                     JoinCapabilities = eJoinCapabilities.ToSIMPL,
                     JoinType = eJoinType.Serial
                 });
-        [JoinName("SourcesLabelXSig")]
-        public JoinDataComplete SourcesLabelXSig =
+        [JoinName("RouteOrSource")]
+        public JoinDataComplete RouteOrSource =
             new JoinDataComplete(new JoinData { JoinNumber = 2, JoinSpan = 1 },
             new JoinMetadata
             {
-                Description = "SourcesLabelXSig",
+                Description = "Source List XSIG -or- Routed String",
                 JoinCapabilities = eJoinCapabilities.ToSIMPL,
                 JoinType = eJoinType.Serial
             });
