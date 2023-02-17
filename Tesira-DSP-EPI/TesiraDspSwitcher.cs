@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
+using Crestron.SimplSharp;
 using Crestron.SimplSharpPro.DeviceSupport;
 using Newtonsoft.Json;
 using PepperDash.Core;
@@ -35,13 +36,17 @@ namespace Tesira_DSP_EPI {
 
         public StringFeedback RoutedSourceNameFeedback { get; private set; }
 
-        public Dictionary<uint, string> SwitcherInputs { get; private set; } 
+        public Dictionary<uint, string> SwitcherInputs { get; private set; }
+
+        private CTimer _pollTimer;
         
         private string SourceNamesXsig { get; set; }
 
         private string RoutedSourceName { get; set; }
 
         private bool ShowRoutedString { get; set; }
+
+        public readonly long PollIntervalMs;
 
 
         /// <summary>
@@ -85,6 +90,13 @@ namespace Tesira_DSP_EPI {
                 SwitcherInputs.Add(input.Key, input.Value.Label);
             }
             SwitcherInputs.Add(0, "None");
+
+            PollIntervalMs = config.PollIntervalMs ?? 90000;
+
+            if (Type == "router")
+            {
+                _pollTimer = new CTimer(o => DoPoll(), Timeout.Infinite);
+            }
 
             RoutedSourceNameFeedback = new StringFeedback(Key + "-RoutedSourceNameFeedback", () => RoutedSourceName);
             SourceIndexFeedback = new IntFeedback(Key + "-SourceIndexFeedback", () => SourceIndex);
@@ -155,6 +167,10 @@ namespace Tesira_DSP_EPI {
             if (Type == "router")
             {
                 IsSubscribed = true;
+                if (_pollTimer != null)
+                {
+                    _pollTimer.Reset(PollIntervalMs);
+                }
                 return;
             }
             SelectorCustomName = string.Format("{0}__Selector{1}", InstanceTag1, Index1);
@@ -273,6 +289,12 @@ namespace Tesira_DSP_EPI {
 
             }
             SourceNamesFeedback.FireUpdate();
+        }
+
+        public override void DoPoll()
+        {
+            SendFullCommand("get", "input", String.Empty, 1);
+            _pollTimer.Reset(PollIntervalMs);
         }
 
         #region IRouting Members
