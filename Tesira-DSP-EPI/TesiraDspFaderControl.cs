@@ -1,6 +1,6 @@
 ﻿using System;
-using Crestron.SimplSharp;
 using Newtonsoft.Json;
+using Crestron.SimplSharp;
 using PepperDash.Core;
 using PepperDash.Essentials.Core;
 using System.Text.RegularExpressions;
@@ -60,7 +60,6 @@ namespace Tesira_DSP_EPI
         public IntFeedback PermissionsFeedback { get; private set; }
 
         private Dictionary<string, SubscriptionTrackingObject> SubscriptionTracker { get; set; }
-
 
         
         CTimer _volumeUpRepeatTimer;
@@ -132,9 +131,9 @@ namespace Tesira_DSP_EPI
             : base(config.LevelInstanceTag, config.MuteInstanceTag, config.Index1, config.Index2, parent, String.Format(KeyFormatter, parent.Key, key), config.Label, config.BridgeIndex)
         {
 
-            MuteCustomName = (string.Format("{0}~mute{1}", InstanceTag2, Index1)).Replace(" ", string.Empty);
+            MuteCustomName = (string.Format("{0}__mute{1}", InstanceTag2, Index1)).Replace(" ", string.Empty);
 
-            LevelCustomName = (string.Format("{0}~level{1}", InstanceTag1, Index1)).Replace(" ", string.Empty);
+            LevelCustomName = (string.Format("{0}__level{1}", InstanceTag1, Index1)).Replace(" ", string.Empty);
 
             Initialize(config);
         }
@@ -236,9 +235,25 @@ namespace Tesira_DSP_EPI
         /// </summary>
         public override void Subscribe()
         {
+            if (IsSubscribed) return;
+                //Subscribe to Mute
+            if (HasMute)
+            {
+                // MUST use InstanceTag2 for mute, it is the second instance tag in the JSON config
 
-                if (HasMute) SendSubscriptionCommand(MuteCustomName, "mute", 500, 2);
-                if (HasLevel) SendSubscriptionCommand(LevelCustomName, "level", 250, 1);
+                AddCustomName(MuteCustomName);
+
+                SendSubscriptionCommand(MuteCustomName, "mute", 500, 2);
+            }
+
+            //Subscribe to Level
+            if (HasLevel)
+            {
+                // MUST use InstanceTag1 for levels, it is the first instance tag in the JSON config
+                SendSubscriptionCommand(LevelCustomName, "level", 250, 1);
+                AddCustomName(LevelCustomName);
+
+            }
         }
 
         /// <summary>
@@ -252,7 +267,6 @@ namespace Tesira_DSP_EPI
                 if (HasMute)
                 {
                     Debug.Console(1, this, "Unsubscribe from Mute");
-
                     SendUnSubscriptionCommand(MuteCustomName, "mute", 2);
                     SubscriptionTracker["mute"].Subscribed = false;
 
@@ -261,7 +275,6 @@ namespace Tesira_DSP_EPI
                 //Unubscribe to Level
                 if (HasLevel)
                 {
-
                     SendUnSubscriptionCommand(LevelCustomName, "level", 2);
                     SubscriptionTracker["level"].Subscribed = false;
                 }

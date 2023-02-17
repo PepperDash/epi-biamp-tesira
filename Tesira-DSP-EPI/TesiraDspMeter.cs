@@ -73,7 +73,7 @@ namespace Tesira_DSP_EPI
 
         public override void Subscribe()
         {
-            MeterCustomName = (string.Format("{0}~meter{1}", InstanceTag1, Index1)).Replace(" ", string.Empty);
+            MeterCustomName = string.Format("{0}__meter{1}", InstanceTag1, Index1);
             AddCustomName(MeterCustomName);
             SendSubscriptionCommand(MeterCustomName, MeterAttributeCode, _defaultPollTime, 0);
         }

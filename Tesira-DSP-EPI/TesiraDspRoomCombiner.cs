@@ -224,7 +224,7 @@ namespace Tesira_DSP_EPI
         public override void Subscribe()
         {
             //Subsribe to Level
-            LevelCustomName = (string.Format("{0}~roomCombiner{1}", InstanceTag1, Index1)).Replace(" ", string.Empty);
+            LevelCustomName = string.Format("{0}__roomCombiner{1}", InstanceTag1, Index1);
             AddCustomName(LevelCustomName);
             SendFullCommand("get", "levelOutMin", null, 1);
             SendFullCommand("get", "group", null, 1);
@@ -237,7 +237,7 @@ namespace Tesira_DSP_EPI
         {
 
             _levelIsSubscribed = false;
-            LevelCustomName = (string.Format("{0}~roomCombiner{1}", InstanceTag1, Index1)).Replace(" ", string.Empty);
+            LevelCustomName = string.Format("{0}__roomCombiner{1}", InstanceTag1, Index1);
             SendUnSubscriptionCommand(LevelCustomName, "levelOut", 1);
         }
 
