@@ -150,8 +150,13 @@ namespace Tesira_DSP_EPI {
         /// <summary>
         /// Subscribe to component
         /// </summary>
-        public override void Subscribe() {
-
+        public override void Subscribe()
+        {
+            if (Type == "router")
+            {
+                IsSubscribed = true;
+                return;
+            }
             SelectorCustomName = string.Format("{0}__Selector{1}", InstanceTag1, Index1);
             AddCustomName(SelectorCustomName);
             SendSubscriptionCommand(SelectorCustomName, "sourceSelection", 250, 1);
