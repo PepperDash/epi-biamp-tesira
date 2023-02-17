@@ -368,6 +368,7 @@ namespace Tesira_DSP_EPI {
             s.SourceIndexFeedback.LinkInputSig(trilist.UShortInput[joinMap.Index.JoinNumber]);
 
             trilist.SetUShortSigAction(joinMap.Index.JoinNumber, u => SetSource(u));
+            trilist.SetSigTrueAction(joinMap.Poll.JoinNumber, DoPoll);
 
             NameFeedback.LinkInputSig(trilist.StringInput[joinMap.Label.JoinNumber]);
             if (ShowRoutedString) RoutedSourceNameFeedback.LinkInputSig(trilist.StringInput[joinMap.RouteOrSource.JoinNumber]);

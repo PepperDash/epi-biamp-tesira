@@ -1299,6 +1299,7 @@ namespace Tesira_DSP_EPI
                 s.SourceIndexFeedback.LinkInputSig(trilist.UShortInput[switcherJoinMap.Index.JoinNumber + x]);
 
                 trilist.SetUShortSigAction(switcherJoinMap.Index.JoinNumber + x, u => switcher.SetSource(u));
+                trilist.SetSigTrueAction(switcherJoinMap.Poll.JoinNumber, switcher.DoPoll);
 
                 switcher.NameFeedback.LinkInputSig(trilist.StringInput[switcherJoinMap.Label.JoinNumber + x]);
 
