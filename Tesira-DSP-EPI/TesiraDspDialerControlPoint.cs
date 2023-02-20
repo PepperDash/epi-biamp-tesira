@@ -5,6 +5,7 @@ using PepperDash.Core;
 using PepperDash.Essentials.Core.Bridges;
 using PepperDash.Essentials.Devices.Common.AudioCodec;
 using PepperDash.Essentials.Devices.Common.Codec;
+using Tesira_DSP_EPI.Interfaces;
 
 namespace Tesira_DSP_EPI
 {
@@ -36,7 +37,6 @@ namespace Tesira_DSP_EPI
             CustomNames = new List<string>();
         }
 
-        virtual public void Initialize() {}
 
         virtual public void Subscribe() {}
 

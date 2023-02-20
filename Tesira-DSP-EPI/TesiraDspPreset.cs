@@ -1,7 +1,6 @@
 ﻿using System.Collections.Generic;
 using System;
 using Newtonsoft.Json;
-using System.Linq;
 using PepperDash.Core;
 using PepperDash.Essentials.Core;
 using Crestron.SimplSharpPro.DeviceSupport;
@@ -14,15 +13,12 @@ namespace Tesira_DSP_EPI
     {
         private const string KeyFormatter = "{0}--{1}";
 
-        public readonly Dictionary<int, StringFeedback> PresetName;
-        public readonly Dictionary<int, BoolFeedback> PresetPresent;
 
 
         public TesiraDspPresetDevice(TesiraDsp parent)
             : base("", "", 0, 0, parent, String.Format(KeyFormatter, parent.Key, "Presets"), "Presets", 0)
         {
             Presets = parent.Presets;
-
         }
 
 

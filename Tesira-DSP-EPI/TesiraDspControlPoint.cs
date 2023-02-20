@@ -4,6 +4,7 @@ using Crestron.SimplSharpPro.DeviceSupport;
 using PepperDash.Essentials.Core;
 using PepperDash.Core;
 using PepperDash.Essentials.Core.Bridges;
+using Tesira_DSP_EPI.Interfaces;
 using Feedback = PepperDash.Essentials.Core.Feedback;
 
 namespace Tesira_DSP_EPI
@@ -39,11 +40,6 @@ namespace Tesira_DSP_EPI
 			Parent = parent;
             NameFeedback = new StringFeedback(key + "-NameFeedback", () => Name);
             CustomNames = new List<string>();
-		}
-
-		public virtual void Initialize()
-		{
-
 		}
 
         public virtual void Subscribe()

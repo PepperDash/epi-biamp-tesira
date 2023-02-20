@@ -1,9 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using PepperDash.Core;
 using PepperDash.Essentials.Core;
 
-namespace Tesira_DSP_EPI {
+namespace Tesira_DSP_EPI.Interfaces {
     public interface IRoutingWithFeedback : IRoutingNumeric  {
         IntFeedback SourceIndexFeedback { get; }
     }

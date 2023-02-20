@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Linq;
 using Crestron.SimplSharp;
-using Crestron.SimplSharp.Ssh;
 using Crestron.SimplSharpPro.CrestronThread;
 using PepperDash.Core;
 using PepperDash.Essentials.Core;
@@ -10,10 +9,11 @@ using System.Text.RegularExpressions;
 using Newtonsoft.Json;
 using PepperDash.Essentials.Core.Config;
 using Crestron.SimplSharpPro.DeviceSupport;
-using PepperDash.Essentials.Devices.Common.VideoCodec.Cisco;
 using Tesira_DSP_EPI.Bridge.JoinMaps;
 using PepperDash.Essentials.Core.Bridges;
+using Tesira_DSP_EPI.Interfaces;
 using Feedback = PepperDash.Essentials.Core.Feedback;
+using IRoutingWithFeedback = Tesira_DSP_EPI.Interfaces.IRoutingWithFeedback;
 
 namespace Tesira_DSP_EPI
 {
@@ -55,11 +55,7 @@ namespace Tesira_DSP_EPI
         public bool IsSubscribed {
             get
             {
-                var subscribeTracker = true;
-                foreach (var item in ControlPointList.Where(subscribedComponent => !subscribedComponent.IsSubscribed))
-                {
-                    subscribeTracker = false;
-                }
+                var subscribeTracker = ControlPointList.All(subscribedComponent => subscribedComponent.IsSubscribed);
                 if (_subscribeThread == null) return subscribeTracker;
                 if (subscribeTracker && _subscribeThread.ThreadState == Thread.eThreadStates.ThreadRunning)
                     StopSubscriptionThread();
@@ -72,7 +68,14 @@ namespace Tesira_DSP_EPI
 
         private CTimer _queueCheckTimer;
 
-        private CTimer _unsubCheckTimer;
+        private CTimer _unsubscribeTimer;
+        private CTimer _subscribeTimer;
+        private CTimer _expanderCheckTimer;
+        private CTimer _pacer;
+        private CTimer _paceTimer;
+        private CTimer _getMaxTimer;
+        private CTimer _getMinTimer;
+        private CTimer _componentSubscribeTimer;
 
         private Thread _subscribeThread;
 
@@ -96,9 +99,8 @@ namespace Tesira_DSP_EPI
 
         private TesiraExpanderTracker ExpanderTracker { get; set; }
 
-        private bool InitalSubscription = true;
+        private bool _initalSubscription = true;
 
-        private bool _skipParse;
 
 
         //private TesiraDspDeviceInfo DeviceInfo { get; set; }
@@ -834,7 +836,6 @@ namespace Tesira_DSP_EPI
             var tesiraPreset = preset as TesiraPreset;
             if (tesiraPreset == null) return;            
 
-            // TODO [ ] review with TP
             Debug.Console(2, this, "Checking Preset {0} | presetIndex {1} | presetId {2} | presetName {3}", 
                 tesiraPreset.Name, tesiraPreset.PresetData.PresetIndex, tesiraPreset.PresetData.PresetId, tesiraPreset.PresetData.PresetName);
             // - changed string check reference from 'tesiraPreset.PresetName' to 'tesiraPreset.PreetData.PresetName'
@@ -859,86 +860,12 @@ namespace Tesira_DSP_EPI
 
         #region Unsubscribe
 
-        /*
+        
         private void UnsubscribeFromComponents()
         {
-<<<<<<< HEAD
-            var pacer = new CTimer(o => UnsubscribeFromComponent(0), null, 250);
-=======
-            _skipParse = true;
-			foreach (var control in Dialers.Select(dialer => dialer.Value))
-			{
-			    UnsubscribeFromComponent(control);
-			}
 
-			foreach (var control in Switchers.Select(switcher => switcher.Value))
-			{
-			    UnsubscribeFromComponent(control);
-			}
-
-			foreach (var control in States.Select(state => state.Value))
-			{
-			    UnsubscribeFromComponent(control);
-			}
-
-            foreach (var control in Faders.Select(level => level.Value))
-			{
-			    UnsubscribeFromComponent(control);
-			}
-
-			foreach (var control in RoomCombiners.Select(roomCombiner => roomCombiner.Value))
-			{
-			    UnsubscribeFromComponent(control);
-			}
->>>>>>> main
+            _pacer = new CTimer(o => UnsubscribeFromComponent(0), null, 250);
 		}
-         * */
-        private void UnsubscribeFromComponents()
-        {
-            Debug.Console(1, this, "Unsubscribing from Components");
-            _skipParse = false;
-
-            InitalSubscription = false;
-
-            if (_unsubCheckTimer == null)
-            {
-                _unsubCheckTimer = new CTimer(o => QueueCheckUnsubscribe(), null, 1000, 1000);
-            }
-            else
-            {
-                _unsubCheckTimer.Reset(1000, 1000);
-            }
-
-        }
-        private void QueueCheckUnsubscribe()
-        {
-            Debug.Console(1, this, "QueueCheckUnsubscribe");
-
-            if (!CommandQueue.LocalQueue.Any() && !CommandQueue.CommandQueueInProgress)
-            {
-                Debug.Console(1, this, "Run Unsub Queue");
-
-                _unsubCheckTimer.Stop();
-                _unsubCheckTimer = null;
-                Debug.Console(1, this, "Unsubscribing from {0} Components", ControlPointList.Count);
-
-                foreach (var component in ControlPointList)
-                {
-                    Debug.Console(1, this, "Unsubscribing from {0}", component.Key);
-
-                    UnsubscribeFromComponent(component);
-                }
-                _unsubCheckTimer = null;
-                SubscribeToComponents();
-            }
-            else
-            {
-                Debug.Console(1, this, "Reset Unsub Queue");
-
-                _unsubCheckTimer.Reset(1000, 1000);
-            }
-        }
-
 
         private void UnsubscribeFromComponent(int index )
         {
@@ -948,18 +875,14 @@ namespace Tesira_DSP_EPI
             Debug.Console(0, this, "NewIndex == {0} and ControlPointListCount == {1}", newIndex, ControlPointList.Count() );
             if (newIndex < ControlPointList.Count())
             {
-                using(new CTimer(o => UnsubscribeFromComponent(newIndex), null, 250))
-                {
-                }
+                _unsubscribeTimer = new CTimer(o => UnsubscribeFromComponent(newIndex), null, 250);
             }
             else
             {
                 Debug.Console(0, this, "Subscribe To Components");
-                using (new CTimer(o => SubscribeToComponents(), null, 250))
-                {
-                }
+                if (_unsubscribeTimer != null) _unsubscribeTimer.Dispose();
+                _subscribeTimer = new CTimer(o => SubscribeToComponents(), null, 250);
             }
-
         }
 
         private void UnsubscribeFromComponent(ISubscribedComponent data)
@@ -977,9 +900,9 @@ namespace Tesira_DSP_EPI
         {
             Debug.Console(1, this, "Subscribing to Components");
 
-            _skipParse = false;
-            _unsubCheckTimer = null;
-            InitalSubscription = false;
+            if (_unsubscribeTimer != null) _unsubscribeTimer.Dispose();
+            if (_subscribeTimer != null) _subscribeTimer.Dispose();
+            _initalSubscription = false;
             if (DevInfo != null)
             {
                 Debug.Console(2, this, "DevInfo Not Null");
@@ -988,14 +911,8 @@ namespace Tesira_DSP_EPI
                 DevInfo.GetIpConfig();
                 DevInfo.GetSerial();
             }
-            foreach (var fader in ControlPointList.OfType<IVolumeComponent>())
-            {
-                fader.GetMinLevel();
-            }
 
-            using (new CTimer(o => CheckExpanders(), null, 1000))
-            {
-            }
+            _expanderCheckTimer = new CTimer(o => CheckExpanders(), null, 1000);
         }
 
         private void GetMinLevels()
@@ -1005,7 +922,7 @@ namespace Tesira_DSP_EPI
 
             if (newList.Any())
             {
-                var paceTimer = new CTimer(o => GetMinLevel(newList, 0), null, 250);
+                _paceTimer = new CTimer(o => GetMinLevel(newList, 0), null, 250);
             }
         }
 
@@ -1018,7 +935,7 @@ namespace Tesira_DSP_EPI
 
             if (newList.Any())
             {
-                var paceTimer = new CTimer(o => GetMaxLevel(newList, 0), null, 250);
+                _paceTimer = new CTimer(o => GetMaxLevel(newList, 0), null, 250);
             }
         }
 
@@ -1030,10 +947,11 @@ namespace Tesira_DSP_EPI
             Debug.Console(0, this, "Indexer = {0} : Count = {1} : MaxLevel", indexerOutput, faders.Count());
             if (indexerOutput < faders.Count)
             {
-                var getMaxTimer = new CTimer(o => GetMaxLevel(faders, indexerOutput), null, 250);
+                _getMaxTimer = new CTimer(o => GetMaxLevel(faders, indexerOutput), null, 250);
                 return;
             }
-            var pacer = new CTimer(o => QueueCheckDelayed(), null, 250);
+            if (_getMaxTimer != null) _getMaxTimer.Dispose();
+            _pacer = new CTimer(o => QueueCheckDelayed(), null, 250);
         }
         private void GetMinLevel(IList<IVolumeComponent> faders, int index)
         {
@@ -1043,10 +961,11 @@ namespace Tesira_DSP_EPI
             Debug.Console(0, this, "Indexer = {0} : Count = {1} : MinLevel", indexerOutput, faders.Count());
             if (indexerOutput < faders.Count)
             {
-                var getMinTimer = new CTimer(o => GetMinLevel(faders, indexerOutput), null, 250);
+                _getMinTimer = new CTimer(o => GetMinLevel(faders, indexerOutput), null, 250);
                 return;
             }
-            var pacer = new CTimer(o => GetMaxLevels(), null, 250);
+            if (_getMinTimer != null) _getMinTimer.Dispose();
+            _pacer = new CTimer(o => GetMaxLevels(), null, 250);
         }
 
         
@@ -1068,10 +987,11 @@ namespace Tesira_DSP_EPI
 
         private void CheckExpanders()
         {
+            _expanderCheckTimer.Dispose();
             Debug.Console(0, this, "CheckExpanders Started");
 
             if(ExpanderTracker != null) ExpanderTracker.Initialize();
-            var pacer = new CTimer(o => GetMinLevels(), null, 250);
+            _pacer = new CTimer(o => GetMinLevels(), null, 250);
         }
 
         private void QueueCheckSubscribe()
@@ -1081,14 +1001,8 @@ namespace Tesira_DSP_EPI
             {
                 _queueCheckTimer.Stop();
                 _queueCheckTimer = null;
-                var pacer = new CTimer(o => SubscribeToComponentByIndex(0), null, 250);
+                _pacer = new CTimer(o => SubscribeToComponentByIndex(0), null, 250);
 
-                /*
-                foreach (var component in ControlPointList)
-                {
-                    SubscribeToComponent(component);
-                }
-                 */
             }
             else
             {
@@ -1115,10 +1029,12 @@ namespace Tesira_DSP_EPI
             Debug.Console(0, this, "Indexer = {0} : Count = {1} : ControlPointList", indexerOutput, ControlPointList.Count());
             if (indexerOutput < ControlPointList.Count)
             {
-                using (new CTimer(o => SubscribeToComponentByIndex(indexerOutput), null, 250))
-                {
-                }
+                _componentSubscribeTimer = new CTimer(o => SubscribeToComponentByIndex(indexerOutput), null, 250);
+                return;
             }
+            if (_componentSubscribeTimer != null) _componentSubscribeTimer.Dispose();
+            if (_pacer != null) _pacer.Dispose();
+            if (_paceTimer != null) _paceTimer.Dispose();
         }
 
 
@@ -1145,9 +1061,9 @@ namespace Tesira_DSP_EPI
                 SendLine("SESSION set verbose false");
                 try
                 {
-                    if (_isSerialComm && InitalSubscription)
+                    if (_isSerialComm && _initalSubscription)
                     {
-                        InitalSubscription = false;
+                        _initalSubscription = false;
                         UnsubscribeFromComponents();
                     }
                     else
