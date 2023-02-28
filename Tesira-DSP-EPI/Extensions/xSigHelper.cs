@@ -17,7 +17,7 @@ using PepperDash.Core;
 
 namespace Tesira_DSP_EPI.Extensions
 {
-    public static class xSigHelper
+    public static class XSigHelper
     {
         /// <summary>
         /// Sends the xSig Clear Byte
@@ -141,7 +141,7 @@ namespace Tesira_DSP_EPI.Extensions
             //is String
             if ((headerByte & stringByte) == stringByte)
             {
-                myReturn.sigType = eSigType.sigString;
+                myReturn.SigType = SigType.SigString;
 
 
                 var index = (dataArray[0] << 8) + dataArray[1];
@@ -151,14 +151,14 @@ namespace Tesira_DSP_EPI.Extensions
                 myIndex = myIndex.Remove(0, 5).Remove(3, 1);
                 myReturn.Index = Convert.ToInt16(myIndex, 2);
 
-                myReturn.xString = dataArray.Length > 3 ? Encoding.GetEncoding(28591).GetString(dataArray, 2, dataArray.Length - 3) : "";
+                myReturn.XString = dataArray.Length > 3 ? Encoding.GetEncoding(28591).GetString(dataArray, 2, dataArray.Length - 3) : "";
             }
 
             //is Analog
             else if ((headerByte & intByte) == intByte)
             {
                 if (dataArray.Length != 4) return myReturn;
-                myReturn.sigType = eSigType.sigInt;
+                myReturn.SigType = SigType.SigInt;
 
                 //var packetInfo = dataArray.Select((t, i) => (int) (t << (24 - (i*8)))).Sum();
 
@@ -176,19 +176,19 @@ namespace Tesira_DSP_EPI.Extensions
                 var fullPacket = myIndex + mySupplement;
                 var myAnalog = fullPacket.Remove(0, 2).Remove(2, 13).Remove(9, 1);
 
-                myReturn.xInt = Convert.ToInt16(myAnalog, 2);
+                myReturn.XInt = Convert.ToInt16(myAnalog, 2);
             }
 
             //is Digital
             else if ((headerByte & boolByte) == boolByte)
             {
                 if (dataArray.Length != 2) return myReturn;
-                myReturn.sigType = eSigType.sigBool;
+                myReturn.SigType = SigType.SigBool;
                 var index = 0;
 
                 for (var i = 0; i < 2; i++)
                 {
-                    index += (int)(dataArray[i] << (8 - (i * 8)));
+                    index += dataArray[i] << (8 - (i * 8));
                 }
 
                 var myIndex = Convert.ToString(index, 2).PadLeft(16, '0');
@@ -196,10 +196,10 @@ namespace Tesira_DSP_EPI.Extensions
                 myIndex = myIndex.Remove(0, 3).Remove(5, 1);
                 myReturn.Index = Convert.ToInt32(myIndex, 2);
 
-                myReturn.xBool = myData == '0' ? true : false;
+                myReturn.XBool = myData == '0';
             }
             else
-                myReturn.sigType = eSigType.sigNone;
+                myReturn.SigType = SigType.SigNone;
 
             return myReturn;
 
@@ -210,32 +210,28 @@ namespace Tesira_DSP_EPI.Extensions
     {
 
         public int Index;
-        public string xString;
-        public int xInt;
-        public bool xBool;
-        public eSigType sigType;
+        public string XString;
+        public int XInt;
+        public bool XBool;
+        public SigType SigType;
 
         public XSigData()
         {
-            this.sigType = eSigType.sigNone;
+            SigType = SigType.SigNone;
         }
 
-        public XSigData(int index, string data)
-        {
-            sigType = eSigType.sigString;
-        }
 
         #region Overrides of Object
 
         public override string ToString()
         {
-            return String.Format("index: {0} type: {1} xString: {2} xInt: {3}, xBool:{4}", Index, sigType, xString, xInt,
-                xBool);
+            return String.Format("index: {0} type: {1} xString: {2} xInt: {3}, xBool:{4}", Index, SigType, XString, XInt,
+                XBool);
         }
 
         #endregion
     }
 
-    public enum eSigType { sigString, sigInt, sigBool, sigNone };
+    public enum SigType { SigString, SigInt, SigBool, SigNone };
 
 }

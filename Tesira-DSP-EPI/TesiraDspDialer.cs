@@ -1046,6 +1046,7 @@ namespace Tesira_DSP_EPI {
         /// List of possible Call Status values returned from component
         /// </summary>
         public enum ECallStatus {
+// ReSharper disable InconsistentNaming
             INIT = 1,
             FAULT,
             IDLE,
@@ -1075,6 +1076,7 @@ namespace Tesira_DSP_EPI {
             XFER_Decision,
             XFER_InitError,
             XFER_WAIT
+// ReSharper restore InconsistentNaming
         }
 
         /// <summary>

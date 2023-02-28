@@ -11,6 +11,7 @@ using System.Text.RegularExpressions;
 using PepperDash.Essentials.Core.Bridges;
 using Tesira_DSP_EPI.Bridge.JoinMaps;
 using Tesira_DSP_EPI.Extensions;
+using IRoutingWithFeedback = Tesira_DSP_EPI.Interfaces.IRoutingWithFeedback;
 
 namespace Tesira_DSP_EPI {
     public class TesiraDspSwitcher : TesiraDspControlPoint, IRoutingWithFeedback
@@ -38,7 +39,7 @@ namespace Tesira_DSP_EPI {
 
         public Dictionary<uint, string> SwitcherInputs { get; private set; }
 
-        private CTimer _pollTimer;
+        private readonly CTimer _pollTimer;
         
         private string SourceNamesXsig { get; set; }
 
@@ -265,7 +266,7 @@ namespace Tesira_DSP_EPI {
         public void GetSourceNames()
         {
             if (ShowRoutedString) return;
-            SourceNamesXsig = xSigHelper.ClearData();
+            SourceNamesXsig = XSigHelper.ClearData();
             SourceNamesFeedback.FireUpdate();
             SourceNamesXsig = String.Empty;
 
@@ -274,7 +275,7 @@ namespace Tesira_DSP_EPI {
 
                 var input = port;                                
                 var index = Convert.ToUInt16(input.Selector);
-                SourceNamesXsig += xSigHelper.CreateByteString(index, input.Key);
+                SourceNamesXsig += XSigHelper.CreateByteString(index, input.Key);
 
                 Debug.Console(2, this, "{0} {1}", input.Key, new String('-', 50));
                 Debug.Console(2, this, @"    

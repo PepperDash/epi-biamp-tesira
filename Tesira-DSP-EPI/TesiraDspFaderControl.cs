@@ -6,10 +6,10 @@ using PepperDash.Essentials.Core;
 using System.Text.RegularExpressions;
 using Crestron.SimplSharpPro.DeviceSupport;
 using PepperDash.Essentials.Core.Bridges;
-using PepperDash.Essentials.Devices.Common.VideoCodec.Cisco;
 using Tesira_DSP_EPI.Bridge.JoinMaps;
 using System.Collections.Generic;
 using Tesira_DSP_EPI.Extensions;
+using Tesira_DSP_EPI.Interfaces;
 
 namespace Tesira_DSP_EPI
 {
@@ -235,7 +235,20 @@ namespace Tesira_DSP_EPI
         /// </summary>
         public override void Subscribe()
         {
-            if (IsSubscribed) return;
+            if (IsSubscribed && HasMute)
+            {
+                AddCustomName(MuteCustomName);
+
+                SendSubscriptionCommand(MuteCustomName, "mute", 500, 2);
+                return;
+            }
+
+            if (IsSubscribed && HasLevel)
+            {
+                SendSubscriptionCommand(LevelCustomName, "level", 250, 1);
+                AddCustomName(LevelCustomName);
+                return;
+            }
                 //Subscribe to Mute
             if (HasMute)
             {

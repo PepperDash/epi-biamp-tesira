@@ -1,6 +1,5 @@
 ﻿using System.Collections.Generic;
 using System;
-using System.Runtime.InteropServices;
 using Crestron.SimplSharp;
 using Newtonsoft.Json;
 using System.Linq;
@@ -10,7 +9,6 @@ using Crestron.SimplSharpPro.DeviceSupport;
 using Tesira_DSP_EPI.Bridge.JoinMaps;
 using PepperDash.Essentials.Core.Bridges;
 using System.Text.RegularExpressions;
-using System.Text;
 
 namespace Tesira_DSP_EPI
 {
@@ -90,7 +88,6 @@ namespace Tesira_DSP_EPI
             if (Debug.Level != 2) return;
             foreach (var item in Expanders)
             {
-                var i = item;
                 Debug.Console(2, this, "Expander Index = {0} ; Expander Hostname = {1}", item.Index, item.Hostname);
             }
         }
@@ -139,7 +136,7 @@ namespace Tesira_DSP_EPI
                 Debug.Console(2, this, "Match {0} is a device", v);
 
                 var matchesEnclosed = Regex.Matches(matches[v].ToString(), pattern2);
-                var data2 = Regex.Replace(matches[v].ToString(), pattern2, "").Trim('"').Trim('[').Trim().Replace("  ", " "); ;
+                var data2 = Regex.Replace(matches[v].ToString(), pattern2, "").Trim('"').Trim('[').Trim().Replace("  ", " ");
                 Console.WriteLine("Data2 = {0}", data2);
                 var hostname = matchesEnclosed[0].ToString().Trim('"');
 
@@ -298,7 +295,7 @@ namespace Tesira_DSP_EPI
         public void SetData(string data)
         {
             var matches = Regex.Matches(data, Pattern);
-            var data2 = Regex.Replace(data, Pattern, "").Trim('"').Trim('[').Trim().Replace("  ", " "); ;
+            var data2 = Regex.Replace(data, Pattern, "").Trim('"').Trim('[').Trim().Replace("  ", " ");
             Console.WriteLine("Data2 = {0}", data2);
             var fData = data2.Split(' ');
             Hostname = matches[0].ToString().Trim('"');

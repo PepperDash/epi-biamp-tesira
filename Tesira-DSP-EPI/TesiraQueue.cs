@@ -1,6 +1,7 @@
 ﻿using System;
 using PepperDash.Core;
 using Crestron.SimplSharp;
+using Tesira_DSP_EPI.Interfaces;
 
 namespace Tesira_DSP_EPI
 {
@@ -27,6 +28,7 @@ namespace Tesira_DSP_EPI
             LocalQueue = new CrestronQueue(queueSize);
             Parent = parent;
             CommandQueueInProgress = false;
+
             //DequeueEvent = new CEvent(true, false);
         }
 
