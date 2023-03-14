@@ -174,7 +174,7 @@ namespace Tesira_DSP_EPI {
                 }
                 return;
             }
-            SelectorCustomName = string.Format("{0}__Selector{1}", InstanceTag1, Index1);
+            SelectorCustomName = (string.Format("{0}__Selector{1}", InstanceTag1, Index1)).Replace(" ", string.Empty);
             AddCustomName(SelectorCustomName);
             SendSubscriptionCommand(SelectorCustomName, "sourceSelection", 250, 1);
         }
@@ -186,7 +186,7 @@ namespace Tesira_DSP_EPI {
         {
             IsSubscribed = false;
 
-            SelectorCustomName = string.Format("{0}__Selector{1}", InstanceTag1, Index1);
+			SelectorCustomName = (string.Format("{0}__Selector{1}", InstanceTag1, Index1)).Replace(" ", string.Empty);
 
             SendUnSubscriptionCommand(SelectorCustomName, "sourceSelection", 1);
         }
