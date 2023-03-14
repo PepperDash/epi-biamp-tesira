@@ -665,8 +665,6 @@ namespace Tesira_DSP_EPI
                 //else if (args.Text.IndexOf(ResubsriptionString, StringComparison.Ordinal) > -1)
                 else if (args.Text.Equals(ResubsriptionString, StringComparison.OrdinalIgnoreCase))
                 {
-					Debug.Console(0, this, "DEBUG {0} ResubscriptionSTring", new String('>',10));
-
                     if(!String.IsNullOrEmpty(ResubsriptionString))
                     CommandQueue.Clear();
                     Resubscribe();
@@ -674,8 +672,6 @@ namespace Tesira_DSP_EPI
 
                 else if (args.Text.IndexOf("! ", StringComparison.Ordinal) == 0)
                 {
-					Debug.Console(0, this, "DEBUG {0} IndexOf('!') == 0 | {1}", new String('>', 10), args.Text);
-
                     // response is from a subscribed attribute
 
                     //(if(args.Text
@@ -704,8 +700,6 @@ namespace Tesira_DSP_EPI
 
                 if (args.Text.IndexOf("! ", StringComparison.Ordinal) > 0)
                 {
-					Debug.Console(0, this, "DEBUG {0} IndexOf('!') > 0 | {1}", new String('>', 10), args.Text);
-
                     const string pattern = "! [\\\"](.*?[^\\\\])[\\\"] (.*)";
 
                     var match = Regex.Match(args.Text, pattern);
@@ -731,8 +725,6 @@ namespace Tesira_DSP_EPI
 
                 else if (args.Text.IndexOf("+OK", StringComparison.Ordinal) == 0)
                 {
-					Debug.Console(0, this, "DEBUG {0} IndexOf('OK') == 0 | {1}", new String('>', 10), args.Text);
-
                     if(InitialStart) CheckSerialSendStatus();
                     if (args.Text == "+OK")       // Check for a simple "+OK" only 'ack' repsonse or a list response and ignore
 
@@ -747,14 +739,10 @@ namespace Tesira_DSP_EPI
 
 				else if (args.Text.IndexOf("DEVICE recallPresetByName", StringComparison.Ordinal) == 0)
 				{
-					Debug.Console(0, this, "DEBUG {0} IndexOf('recallPresetByName') == 0", new String('>', 10));
-
 					CommandQueue.AdvanceQueue(args.Text);
 				}
 				else if (args.Text.IndexOf("-ERR", StringComparison.Ordinal) >= 0)
 				{
-					Debug.Console(0, this, "DEBUG {0} IndexOf('-ERR') >= 0 | {1}", new String('>', 10), args.Text);
-
 					// Error response
 
 					if (args.Text.IndexOf("ALREADY_SUBSCRIBED", StringComparison.Ordinal) >= 0)
@@ -794,10 +782,6 @@ namespace Tesira_DSP_EPI
                     AdvanceQueue(args.Text);
                 }
                      */
-				else
-				{
-					Debug.Console(0, this, "DEBUG {0} ELSE: {1}", new String('>', 10), args.Text);
-				}
             }
             catch (Exception e)
             {
