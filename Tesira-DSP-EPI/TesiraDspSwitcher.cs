@@ -294,7 +294,7 @@ namespace Tesira_DSP_EPI {
 
         public override void DoPoll()
         {
-            SendFullCommand("get", "input", String.Empty, 1);
+            SendFullCommand("get", "input", Index1.ToString(CultureInfo.InvariantCulture), 1);
             _pollTimer.Reset(PollIntervalMs);
         }
 
