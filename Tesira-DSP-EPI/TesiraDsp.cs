@@ -198,16 +198,16 @@ namespace Tesira_DSP_EPI
 
         private void CheckSerialSendStatus()
         {
-            Debug.Console(0, this, "CheckSerialSendStatus");
+            Debug.Console(2, this, "CheckSerialSendStatus");
             if (OkayToSend && ControlsAdded && _isSerialComm && InitialStart)
             {
                 InitialStart = false;
-                Debug.Console(0, this, "CheckSerialStatus Ready");
+                Debug.Console(2, this, "CheckSerialStatus Ready");
 
                 CrestronInvoke.BeginInvoke(o => StartSubsciptionThread());
                 return;
             }
-            Debug.Console(0, this, "CheckSerialSendStatus NOT READY");
+            Debug.Console(2, this, "CheckSerialSendStatus NOT READY");
 
         }
 
