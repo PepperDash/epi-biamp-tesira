@@ -443,8 +443,8 @@ namespace Tesira_DSP_EPI
                 Debug.Console(2, this, "DialerControlBlock Key - {0}", key);
                 var value = block.Value;
                 Dialers.Add(key, new TesiraDspDialer(key, value, this));
-                Debug.Console(2, this, "Added DspDialer {0} ControlStatusTag: {1} DialerTag: {2} Line: {3}", key,
-                    value.ControlStatusInstanceTag, value.DialerInstanceTag, value.Index);
+                Debug.Console(2, this, "Added DspDialer {0} ControlStatusTag: {1} DialerTag: {2}", key,
+                    value.ControlStatusInstanceTag, value.DialerInstanceTag);
 
                 if (block.Value.Enabled)
                 {
