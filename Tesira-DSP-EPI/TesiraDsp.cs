@@ -743,25 +743,25 @@ namespace Tesira_DSP_EPI
 				}
 				else if (args.Text.IndexOf("-ERR", StringComparison.Ordinal) >= 0)
 				{
-				    // Error response
+					// Error response
 
-				    if (args.Text.IndexOf("ALREADY_SUBSCRIBED", StringComparison.Ordinal) >= 0)
-				    {
-				        if (WatchDogSniffer)
-				            Debug.Console(1, this, "The Watchdog didn't find anything.  Good Boy!");
+					if (args.Text.IndexOf("ALREADY_SUBSCRIBED", StringComparison.Ordinal) >= 0)
+					{
+						if (WatchDogSniffer)
+							Debug.Console(1, this, "The Watchdog didn't find anything.  Good Boy!");
 
-				        WatchDogSniffer = false;
-				        //CommandQueue.AdvanceQueue(args.Text);
-				    }
+						WatchDogSniffer = false;
+						//CommandQueue.AdvanceQueue(args.Text);
+					}
 
-				    else
-				    {
-				        Debug.Console(1, this, Debug.ErrorLogLevel.Error, "Error From DSP: '{0}'", args.Text);
-				        WatchDogSniffer = false;
-				        CommandQueue.AdvanceQueue(args.Text);
-				    }
+					else
+					{
+						Debug.Console(1, this, Debug.ErrorLogLevel.Error, "Error From DSP: '{0}'", args.Text);
+						WatchDogSniffer = false;
+						CommandQueue.AdvanceQueue(args.Text);
+					}
 				}
-                    /*
+					/*
 				else
 				{
 
