@@ -299,6 +299,7 @@ namespace Tesira_DSP_EPI
 
             Monitor = new TesiraExpanderMonitor(this, 180000, 360000);
             DeviceInfo = new DeviceInfo();
+            Monitor.Start();
         }
 
 
