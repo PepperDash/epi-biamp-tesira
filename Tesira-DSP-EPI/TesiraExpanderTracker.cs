@@ -6,6 +6,7 @@ using System.Linq;
 using PepperDash.Core;
 using PepperDash.Essentials.Core;
 using Crestron.SimplSharpPro.DeviceSupport;
+using PepperDash.Essentials.Core.DeviceInfo;
 using Tesira_DSP_EPI.Bridge.JoinMaps;
 using PepperDash.Essentials.Core.Bridges;
 using System.Text.RegularExpressions;
@@ -32,7 +33,7 @@ namespace Tesira_DSP_EPI
             {
                 var key = tesiraExpanderBlockConfig.Value.Index;
                 var value = tesiraExpanderBlockConfig.Value.Hostname;
-                var expander = new TesiraExpanderData(value, key);
+                var expander = new TesiraExpanderData(value, key, this);
                 Expanders.Add(expander);
                 var h = new StringFeedback(() => expander.Hostname);
                 var s = new StringFeedback(() => expander.SerialNumber);
@@ -52,8 +53,11 @@ namespace Tesira_DSP_EPI
                 Feedbacks.Add(m);
                 Feedbacks.Add(o);
 
-                Debug.Console(2, this, "There are {0} configured expanders", Expanders.Count);
+                DeviceManager.AddDevice(expander);
+
             }
+            Debug.Console(2, this, "There are {0} configured expanders", Expanders.Count);
+
 
             foreach (var feedback in Hostnames)
             {
@@ -130,7 +134,7 @@ namespace Tesira_DSP_EPI
             var someMatches = matches2.RemoveAll(s => s.ToString.Length < 4));
             */
             Console.WriteLine("There are {0} Matches", matches.Count);
-            for (int v = 0; v < matches.Count; v++)
+            for (var v = 0; v < matches.Count; v++)
             {
                 if (!matches[v].ToString().Contains('"')) continue;
                 Debug.Console(2, this, "Match {0} is a device", v);
@@ -262,9 +266,13 @@ namespace Tesira_DSP_EPI
 
     }
 
-    public class TesiraExpanderData
+    public class TesiraExpanderData : IDeviceInfoProvider, IKeyName
     {
         private CTimer _expanderTimer;
+
+        public DeviceInfo DeviceInfo { get; private set; }
+        public event DeviceInfoChangeHandler DeviceInfoChanged;
+
 
         public bool Online { get; private set; }
         public string Hostname { get; private set; }
@@ -272,17 +280,25 @@ namespace Tesira_DSP_EPI
         public string Firmware { get; private set; }
         public string MacAddress { get; private set; }
         public int Index { get; private set; }
+        public string Key { get; private set; }
+        public string Name { get; private set; }
+        public TesiraExpanderMonitor Monitor;
 
         private const string Pattern = "\\\"([^\\\"\\\"]+)\\\"?";
 
-        public TesiraExpanderData(string data, int index)
+        public TesiraExpanderData(string data, int index, IKeyed parent) 
         {
+            Key = String.Format("{0}-{1}", parent.Key, data);
+            Name = data;
             Online = false;
             Index = index;
             Hostname = data;
             SerialNumber = "";
             Firmware = "";
             MacAddress = "";
+
+            Monitor = new TesiraExpanderMonitor(this, 180000, 360000);
+            DeviceInfo = new DeviceInfo();
         }
 
 
@@ -290,6 +306,7 @@ namespace Tesira_DSP_EPI
         {
             _expanderTimer = null;
             Online = false;
+            Monitor.IsOnline = Online;
         }
 
         public void SetData(string data)
@@ -310,6 +327,11 @@ namespace Tesira_DSP_EPI
                 return;
             }
             _expanderTimer.Reset(120000, 120000);
+            DeviceInfo.HostName = Hostname;
+            DeviceInfo.SerialNumber = SerialNumber;
+            DeviceInfo.FirmwareVersion = Firmware;
+            Monitor.IsOnline = Online;
+            UpdateDeviceInfo();
         }
 
         public void SetMac(string data)
@@ -318,8 +340,24 @@ namespace Tesira_DSP_EPI
             var macGroup = newData.Split(' ');
             var mac = macGroup.Aggregate("", (current, oct) => current + (int.Parse(oct).ToString("X2") + ":")).Trim(':');
             MacAddress = mac;
+            DeviceInfo.MacAddress = MacAddress;
+            UpdateDeviceInfo();
+
         }
 
+
+        #region IDeviceInfoProvider Members
+
+
+        public void UpdateDeviceInfo()
+        {
+            var handler = DeviceInfoChanged;
+            if (handler == null) return;
+            handler(this, new DeviceInfoEventArgs(DeviceInfo));
+
+        }
+
+        #endregion
     }
 }
 
