@@ -196,7 +196,8 @@ namespace Tesira_DSP_EPI {
 					CallStatusEnum == ECallStatus.CONF_HOLD)
 				{
 					OffHookStatus = true;
-					SendFullCommand("get", "cid", null, 2);
+				    var cidCmd = IsVoip ? String.Format("cid {0} {1}", Index1, CallAppearance) : "cid";
+                    SendFullCommand("get", cidCmd, null, 2);
 				}
 				else
 				{
@@ -580,7 +581,7 @@ namespace Tesira_DSP_EPI {
 
                     Debug.Console(2, this, "This is the list of Call States - {0}", myMatches.ToString());
 
-                    var match = myMatches[CallAppearance - 1];
+                    var match = myMatches[CallAppearance - 1 + (IsVoip ? ((Index1 - 1) * 6) : 0)];
                     var match2 = Regex.Match(match.Value, pattern2);
                     if (match2.Success)
                     {
