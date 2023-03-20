@@ -132,6 +132,7 @@
     <Compile Include="Bridge\JoinMaps\TesiraStateJoinMap.cs" />
     <Compile Include="Bridge\JoinMaps\TesiraPresetJoinMap.cs" />
     <Compile Include="TesiraDspPreset.cs" />
+    <Compile Include="TesiraExpanderMonitor.cs" />
     <Compile Include="TesiraExpanderTracker.cs" />
     <Compile Include="TesiraQueue.cs" />
     <None Include="Properties\ControlSystem.cfg" />
