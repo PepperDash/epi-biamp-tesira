@@ -469,7 +469,8 @@ namespace Tesira_DSP_EPI
                 Switchers.Add(key, new TesiraDspSwitcher(key, value, this));
                 Debug.Console(2, this, "Added TesiraSwitcher {0} InstanceTag {1}", key, value.SwitcherInstanceTag);
 
-                if (block.Value.Enabled && block.Value.Type != "router")
+                //if (block.Value.Enabled && block.Value.Type != "router")
+                if (block.Value.Enabled)
                 {
                     //Add ControlPoint to the list for the watchdog
                     ControlPointList.Add(Switchers[key]);
