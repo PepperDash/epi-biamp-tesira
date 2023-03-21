@@ -294,7 +294,7 @@ namespace Tesira_DSP_EPI {
 
         public override void DoPoll()
         {
-            SendFullCommand("get", "input", Index1.ToString(CultureInfo.InvariantCulture), 1);
+            SendFullCommand("get", "input", String.Empty, 1);
             _pollTimer.Reset(PollIntervalMs);
         }
 
@@ -313,7 +313,7 @@ namespace Tesira_DSP_EPI {
             if (Type == "router")
             {
                 SendFullCommand("set", "input", Convert.ToString(inputSelector), 1);
-                SendFullCommand("get", "input", Index1.ToString(CultureInfo.InvariantCulture), 1);
+                DoPoll();
 
             }
             else
