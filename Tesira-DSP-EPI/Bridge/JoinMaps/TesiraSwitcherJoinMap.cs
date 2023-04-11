@@ -19,7 +19,7 @@ namespace Tesira_DSP_EPI.Bridge.JoinMaps {
             new JoinDataComplete(new JoinData {JoinNumber = 150, JoinSpan = 1},
                 new JoinMetadata
                 {
-                    Description = "PSource Selector Label",
+                    Description = "Source Selector Label",
                     JoinCapabilities = eJoinCapabilities.ToSIMPL,
                     JoinType = eJoinType.Serial
                 });

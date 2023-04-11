@@ -94,10 +94,10 @@ namespace Tesira_DSP_EPI {
 
             PollIntervalMs = config.PollIntervalMs ?? 90000;
 
-            if (Type == "router")
-            {
-                _pollTimer = new CTimer(o => DoPoll(), Timeout.Infinite);
-            }
+            //if (Type == "router")
+            //{
+            _pollTimer = new CTimer(o => DoPoll(), Timeout.Infinite);   //can only be assigned in constructor
+            //}
 
             RoutedSourceNameFeedback = new StringFeedback(Key + "-RoutedSourceNameFeedback", () => RoutedSourceName);
             SourceIndexFeedback = new IntFeedback(Key + "-SourceIndexFeedback", () => SourceIndex);
@@ -313,7 +313,7 @@ namespace Tesira_DSP_EPI {
             if (Type == "router")
             {
                 SendFullCommand("set", "input", Convert.ToString(inputSelector), 1);
-                SendFullCommand("get", "input", Index1.ToString(CultureInfo.InvariantCulture), 1);
+                DoPoll();
 
             }
             else

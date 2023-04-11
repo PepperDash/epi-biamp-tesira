@@ -198,16 +198,17 @@ namespace Tesira_DSP_EPI
 
         private void CheckSerialSendStatus()
         {
-            Debug.Console(0, this, "CheckSerialSendStatus");
+            if (_isSerialComm) Debug.Console(2, this, "CheckSerialSendStatus");
+
             if (OkayToSend && ControlsAdded && _isSerialComm && InitialStart)
             {
                 InitialStart = false;
-                Debug.Console(0, this, "CheckSerialStatus Ready");
+                Debug.Console(2, this, "CheckSerialStatus Ready");
 
                 CrestronInvoke.BeginInvoke(o => StartSubsciptionThread());
                 return;
             }
-            Debug.Console(0, this, "CheckSerialSendStatus NOT READY");
+            if (_isSerialComm) Debug.Console(2, this, "CheckSerialSendStatus NOT READY");
 
         }
 
@@ -469,7 +470,7 @@ namespace Tesira_DSP_EPI
                 Switchers.Add(key, new TesiraDspSwitcher(key, value, this));
                 Debug.Console(2, this, "Added TesiraSwitcher {0} InstanceTag {1}", key, value.SwitcherInstanceTag);
 
-                if (block.Value.Enabled && block.Value.Type != "router")
+                if (block.Value.Enabled && block.Value.Type != "router") //if you don't do this check, you'll add devices that are unable to be subscribed into the watchdog
                 {
                     //Add ControlPoint to the list for the watchdog
                     ControlPointList.Add(Switchers[key]);
@@ -1215,7 +1216,7 @@ namespace Tesira_DSP_EPI
                 s.SourceIndexFeedback.LinkInputSig(trilist.UShortInput[switcherJoinMap.Index.JoinNumber + x]);
 
                 trilist.SetUShortSigAction(switcherJoinMap.Index.JoinNumber + x, u => switcher.SetSource(u));
-                trilist.SetSigTrueAction(switcherJoinMap.Poll.JoinNumber, switcher.DoPoll);
+                trilist.SetSigTrueAction(switcherJoinMap.Poll.JoinNumber + x, switcher.DoPoll);
 
                 switcher.NameFeedback.LinkInputSig(trilist.StringInput[switcherJoinMap.Label.JoinNumber + x]);
 
