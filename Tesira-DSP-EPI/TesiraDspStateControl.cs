@@ -8,7 +8,7 @@ using PepperDash.Essentials.Core.Bridges;
 using Tesira_DSP_EPI.Bridge.JoinMaps;
 
 namespace Tesira_DSP_EPI {
-    public class TesiraDspStateControl : TesiraDspControlPoint {
+    public class TesiraDspStateControl : TesiraDspControlPoint, IPrivacy {
         bool _state;
 
         private const string KeyFormatter = "{0}--{1}";
@@ -36,6 +36,7 @@ namespace Tesira_DSP_EPI {
             Debug.Console(2, this, "Starting State {0} Initialize", key);
 
             StateFeedback = new BoolFeedback(Key + "-StateFeedback", () => _state);
+            PrivacyModeIsOnFeedback = new BoolFeedback(Key + "-PrivacyFeedback", () => _state);
 
             Feedbacks.Add(StateFeedback);
             Feedbacks.Add(NameFeedback);
@@ -206,5 +207,26 @@ namespace Tesira_DSP_EPI {
             };
         }
 
+
+        #region IPrivacy Members
+
+        public BoolFeedback PrivacyModeIsOnFeedback { get; set; }
+
+        public void PrivacyModeOff()
+        {
+            StateOff();
+        }
+
+        public void PrivacyModeOn()
+        {
+            StateOn();
+        }
+
+        public void PrivacyModeToggle()
+        {
+            StateToggle();
+        }
+
+        #endregion
     }
 }
