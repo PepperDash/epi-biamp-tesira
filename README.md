@@ -244,7 +244,7 @@ None
         "label" : "switcher01",
         "index1" : 1
         "switcherInstanceTag" : "SourceSelector1",
-        "type:": "router",
+        "type": "router",
         "bridgeIndex" : 1,
         "switcherInputs" : {
             "1" : {"label": "Input1" },
