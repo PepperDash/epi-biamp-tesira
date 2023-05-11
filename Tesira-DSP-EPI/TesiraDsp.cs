@@ -671,7 +671,7 @@ namespace Tesira_DSP_EPI
                     Resubscribe();
                 }
 
-                else if (args.Text.IndexOf("! ", StringComparison.Ordinal) == 0)
+                else if (args.Text.IndexOf("! ", StringComparison.Ordinal) >= 0)
                 {
                     // response is from a subscribed attribute
 
@@ -697,31 +697,6 @@ namespace Tesira_DSP_EPI
                         }
                         component.ParseSubscriptionMessage(customName, value);
                     }
-                }
-
-                if (args.Text.IndexOf("! ", StringComparison.Ordinal) > 0)
-                {
-                    const string pattern = "! [\\\"](.*?[^\\\\])[\\\"] (.*)";
-
-                    var match = Regex.Match(args.Text, pattern);
-
-                    if (!match.Success) return;
-
-                    var customName = match.Groups[1].Value;
-                    var value = match.Groups[2].Value;
-                    Debug.Console(2, this, "Subscription Message: 'Name: {0} Value:{1}'", customName, value);
-                    //CommandQueue.AdvanceQueue(args.Text);
-
-                    foreach (var component in from component in ControlPointList let item = component from n in item.CustomNames.Where(n => n == customName) select component)
-                    {
-                        if (component == null)
-                        {
-                            Debug.Console(1, this, "Unable to find matching Custom Name {0}", customName);
-                            return;
-                        }
-                        component.ParseSubscriptionMessage(customName, value);
-                    }
-
                 }
 
                 else if (args.Text.IndexOf("+OK", StringComparison.Ordinal) == 0)
@@ -762,27 +737,6 @@ namespace Tesira_DSP_EPI
 						CommandQueue.AdvanceQueue(args.Text);
 					}
 				}
-					/*
-				else
-				{
-
-                    Debug.Console(2, this, "!!!!!!!!EXPANDER DATA!!!!!!!!!!!");
-                    const string pattern = @"\[([^\[\]]+)\]?";
-
-				    var rgx = new Regex(pattern);
-
-				    if (!rgx.IsMatch(DeviceRx)) return;
-
-				    if (ExpanderTracker == null) return;
-
-				    ExpanderTracker.ParseResults(rgx, DeviceRx);
-				}
-                    /*
-                else if (args.Text.IndexOf("SESSION", StringComparison.OrdinalIgnoreCase) > -1)
-                {
-                    AdvanceQueue(args.Text);
-                }
-                     */
             }
             catch (Exception e)
             {
@@ -1036,6 +990,13 @@ namespace Tesira_DSP_EPI
             if (_componentSubscribeTimer != null) _componentSubscribeTimer.Dispose();
             if (_pacer != null) _pacer.Dispose();
             if (_paceTimer != null) _paceTimer.Dispose();
+
+            foreach (var switcher in Switchers)
+            {
+                var control = switcher.Value;
+                if(control.SelectorCustomName == string.Empty)
+                    control.DoPoll();
+            }
         }
 
 
@@ -1068,10 +1029,11 @@ namespace Tesira_DSP_EPI
                         UnsubscribeFromComponents();
                     }
                     else
+                    {
                         //Subscribe
                         SubscribeToComponents();
-                    /*if (!_commandQueueInProgress)
-                    CommandQueue.SendNextQueuedCommand();*/
+                    }
+
                 }
                 catch (Exception ex)
                 {
