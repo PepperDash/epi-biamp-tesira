@@ -13,9 +13,8 @@ using System.Text.RegularExpressions;
 
 namespace Tesira_DSP_EPI
 {
-    public class TesiraExpanderTracker : TesiraDspControlPoint
+    public class TesiraExpanderTracker : TesiraDspControlPoint, ICommunicationMonitor
     {
-        private CTimer _expanderTimer;
 
         private const string KeyFormatter = "{0}--{1}";
         public List<TesiraExpanderData> Expanders = new List<TesiraExpanderData>(); 
@@ -24,11 +23,16 @@ namespace Tesira_DSP_EPI
         public Dictionary<int, StringFeedback> SerialNumbers = new Dictionary<int, StringFeedback>();
         public Dictionary<int, StringFeedback> Firmwares = new Dictionary<int, StringFeedback>();
         public Dictionary<int, StringFeedback> MacAddresses = new Dictionary<int, StringFeedback>();
-        public Dictionary<int, BoolFeedback> OnlineStatuses = new Dictionary<int, BoolFeedback>(); 
+        public Dictionary<int, BoolFeedback> OnlineStatuses = new Dictionary<int, BoolFeedback>();
+
+        public StatusMonitorBase CommunicationMonitor { get; private set; }
+
 
         public TesiraExpanderTracker(TesiraDsp parent, Dictionary<string, TesiraExpanderBlockConfig> expanders )
             : base("", "", 0, 0, parent, String.Format(KeyFormatter, parent.Key, "Expanders"), "Expanders", 0)
         {
+            CommunicationMonitor = new GenericCommunicationMonitor(this, Parent.Communication, 45000, 90000, 180000, CheckTracker);
+
             foreach (var tesiraExpanderBlockConfig in expanders)
             {
                 var key = tesiraExpanderBlockConfig.Value.Index;
@@ -59,33 +63,28 @@ namespace Tesira_DSP_EPI
             Debug.Console(2, this, "There are {0} configured expanders", Expanders.Count);
 
 
-            foreach (var feedback in Hostnames)
+            foreach (var f in Hostnames.Select(feedback => feedback.Value))
             {
-                var f = feedback.Value;
                 Feedbacks.Add(f);
             }
             
-            foreach (var feedback in SerialNumbers)
+            foreach (var f in SerialNumbers.Select(feedback => feedback.Value))
             {
-                var f = feedback.Value;
                 Feedbacks.Add(f);
             } 
             
-            foreach (var feedback in Firmwares)
+            foreach (var f in Firmwares.Select(feedback => feedback.Value))
             {
-                var f = feedback.Value;
                 Feedbacks.Add(f);
             } 
             
-            foreach (var feedback in MacAddresses)
+            foreach (var f in MacAddresses.Select(feedback => feedback.Value))
             {
-                var f = feedback.Value;
                 Feedbacks.Add(f);
             } 
             
-            foreach (var feedback in OnlineStatuses)
+            foreach (var f in OnlineStatuses.Select(feedback => feedback.Value))
             {
-                var f = feedback.Value;
                 Feedbacks.Add(f);
             }
 
@@ -101,15 +100,6 @@ namespace Tesira_DSP_EPI
             CheckTracker();
         }
 
-        private void StartTimer()
-        {
-            if (_expanderTimer == null)
-            {
-                _expanderTimer = new CTimer(o => CheckTracker(), null, 90000, 90000);
-                return;
-            }
-            _expanderTimer.Reset(90000, 90000);
-        }
 
         private void CheckTracker()
         {
@@ -117,7 +107,7 @@ namespace Tesira_DSP_EPI
 
             SendFullCommand("get", "discoveredExpanders", null, 999);            
 
-            StartTimer();
+            //StartTimer();
         }
 
         public override void ParseGetMessage(string attributeCode, string message)
@@ -264,6 +254,11 @@ namespace Tesira_DSP_EPI
 
         }
 
+
+        #region ICommunicationMonitor Members
+
+
+        #endregion
     }
 
     public class TesiraExpanderData : IDeviceInfoProvider, IKeyName
