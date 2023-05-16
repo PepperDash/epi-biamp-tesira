@@ -17,7 +17,7 @@ using IRoutingWithFeedback = Tesira_DSP_EPI.Interfaces.IRoutingWithFeedback;
 
 namespace Tesira_DSP_EPI
 {
-    public class TesiraDsp : EssentialsBridgeableDevice, IHasDspPresets
+    public class TesiraDsp : EssentialsBridgeableDevice, IHasDspPresets, ICommunicationMonitor
     {
         /// <summary>
         /// Collection of all Device Feedbacks
@@ -42,7 +42,7 @@ namespace Tesira_DSP_EPI
         /// <summary>
         /// Communication Monitor for Device
         /// </summary>
-		public GenericCommunicationMonitor CommunicationMonitor { get; private set; }
+		public StatusMonitorBase CommunicationMonitor { get; private set; }
 
         /// <summary>
         /// Command Responses from Device
