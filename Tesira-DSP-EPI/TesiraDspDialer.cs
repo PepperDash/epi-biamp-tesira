@@ -393,7 +393,7 @@ namespace Tesira_DSP_EPI {
             : base(key, config.DialerInstanceTag, config.ControlStatusInstanceTag, config.Index, config.CallAppearance, parent, config.BridgeIndex)
         {
 
-            Key = string.Format("{0}--Dialer{1}", parent.Key, key);
+            Key = string.Format("{0}--{1}", parent.Key, key);
 
             Feedbacks = new FeedbackCollection<Feedback>();
 
