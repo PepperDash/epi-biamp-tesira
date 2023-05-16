@@ -1119,8 +1119,8 @@ namespace Tesira_DSP_EPI {
 
             for (var i = 0; i < joinMap.KeyPadNumeric.JoinSpan; i++)
             {
-                trilist.SetSigTrueAction((joinMap.KeyPadNumeric.JoinNumber + (uint)i), () => SendKeypad(EKeypadKeys.Num0));
-
+                var keyNumber = i;
+                trilist.SetSigTrueAction((joinMap.KeyPadNumeric.JoinNumber + (uint)keyNumber), () => SendKeypad((EKeypadKeys)keyNumber));
             }
 
             trilist.SetSigTrueAction((joinMap.KeyPadStar.JoinNumber), () => SendKeypad(EKeypadKeys.Star));
