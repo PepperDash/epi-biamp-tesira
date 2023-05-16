@@ -98,7 +98,8 @@ namespace Tesira_DSP_EPI
 
 
             else if ( attributeCode == "dial" || attributeCode == "end" || attributeCode == "onHook" ||
-                attributeCode == "offHook" || attributeCode == "answer")
+                attributeCode == "offHook" || attributeCode == "answer" || attributeCode == "hold" || 
+                attributeCode == "resume")
             {
                 //requires index, but does not require command
                 cmd = String.IsNullOrEmpty(value) ? 
