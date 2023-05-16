@@ -137,7 +137,7 @@ namespace Tesira_DSP_EPI
             Name = data.Label;
             Index = data.PresetIndex;
 
-            Debug.Console(0, "Tesira PresetData = {0} , {1}, {2}", PresetData.PresetName, PresetData.PresetId, PresetData.PresetIndex);
+            Debug.Console(1, "Tesira PresetData = {0} , {1}, {2}", PresetData.PresetName, PresetData.PresetId, PresetData.PresetIndex);
         }
     }
 
