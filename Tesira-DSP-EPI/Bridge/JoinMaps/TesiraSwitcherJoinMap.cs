@@ -23,6 +23,16 @@ namespace Tesira_DSP_EPI.Bridge.JoinMaps {
                     JoinCapabilities = eJoinCapabilities.ToSIMPL,
                     JoinType = eJoinType.Serial
                 });
+        [JoinName("Poll")]
+        public JoinDataComplete Poll =
+            new JoinDataComplete(new JoinData { JoinNumber = 150, JoinSpan = 1 },
+            new JoinMetadata
+            {
+                Description = "Poll Current Route",
+                JoinCapabilities = eJoinCapabilities.FromSIMPL,
+                JoinType = eJoinType.Digital
+            });
+
 
         public TesiraSwitcherJoinMapAdvanced(uint joinStart)
             : base(joinStart, typeof (TesiraSwitcherJoinMapAdvanced))
@@ -53,14 +63,24 @@ namespace Tesira_DSP_EPI.Bridge.JoinMaps {
                     JoinCapabilities = eJoinCapabilities.ToSIMPL,
                     JoinType = eJoinType.Serial
                 });
-        [JoinName("SourcesLabelXSig")]
-        public JoinDataComplete SourcesLabelXSig =
+        [JoinName("RouteOrSource")]
+        public JoinDataComplete RouteOrSource =
             new JoinDataComplete(new JoinData { JoinNumber = 2, JoinSpan = 1 },
             new JoinMetadata
             {
-                Description = "SourcesLabelXSig",
+                Description = "Source List XSIG -or- Routed String",
                 JoinCapabilities = eJoinCapabilities.ToSIMPL,
                 JoinType = eJoinType.Serial
+            });
+
+        [JoinName("Poll")]
+        public JoinDataComplete Poll =
+            new JoinDataComplete(new JoinData { JoinNumber = 1, JoinSpan = 1 },
+            new JoinMetadata
+            {
+                Description = "Poll Current Route",
+                JoinCapabilities = eJoinCapabilities.FromSIMPL,
+                JoinType = eJoinType.Digital
             });
 
 

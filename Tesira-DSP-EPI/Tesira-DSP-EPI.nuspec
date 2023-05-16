@@ -2,7 +2,8 @@
 <package >
   <metadata>
     <id>PepperDash.Essentials.Plugin.BiampTesira</id>
-    <version>2.0.2</version>
+    <readme>docs\README.md</readme>
+    <version>2.1.0</version>
     <title>Biamp Tesira Essentials Plugin</title>
     <authors>PepperDash Technologies</authors>
     <owners>pepperdash</owners>
@@ -17,5 +18,6 @@
     <files>
       <file src="**" target="lib\net35"/>
       <file src="**" target="lib\net47"/>
+      <file src="README.md" target="docs\"/>
     </files>
 </package>

@@ -39,8 +39,20 @@ namespace Tesira_DSP_EPI {
         [JsonProperty("roomCombinerControlBlocks")]
         public Dictionary<string, TesiraRoomCombinerBlockConfig> RoomCombinerControlBlocks { get; set; }
 
+        [JsonProperty("tesiraExpanderBlocks")]
+        public Dictionary<string, TesiraExpanderBlockConfig> ExpanderBlocks { get; set; }
+        
         [JsonProperty("resubscribeString")]
         public string ResubscribeString { get; set; }
+    }
+
+    public class TesiraExpanderBlockConfig
+    {
+        [JsonProperty("hostname")]
+        public string Hostname { get; set; }
+
+        [JsonProperty("index")]
+        public int Index { get; set; }
     }
 
     public class TesiraFaderControlBlockConfig
@@ -150,6 +162,12 @@ namespace Tesira_DSP_EPI {
 
         [JsonProperty("switcherOutputs")]
         public Dictionary<uint, RoutingPort> SwitcherOutputs { get; set; } 
+
+        [JsonProperty("showRoutedStringFeedback")]
+        public bool ShowRoutedStringFeedback { get; set; }
+
+        [JsonProperty("pollIntervalMs")]
+        public long? PollIntervalMs { get; set; }
     }
 
     public class TesiraStateControlBlockConfig

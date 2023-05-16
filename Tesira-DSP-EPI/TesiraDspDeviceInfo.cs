@@ -164,23 +164,29 @@ namespace Tesira_DSP_EPI
                 {
                     Hostname = matches[0].Value.Trim('"');
                     MacAddress = matches[3].Value.Trim('"');
-                    IpAddress = matches[1].Value.Trim('"');
-                    DeviceInfo.HostName = Hostname;
-                    DeviceInfo.MacAddress = MacAddress;
-                    DeviceInfo.IpAddress = IpAddress;
+                    IpAddress = matches[4].Value.Trim('"');
+
+                    DeviceInfo.HostName = String.IsNullOrEmpty(DeviceInfo.HostName) ? Hostname : DeviceInfo.HostName;
+                    DeviceInfo.MacAddress = String.IsNullOrEmpty(DeviceInfo.MacAddress) ? MacAddress : DeviceInfo.MacAddress;
+                    DeviceInfo.IpAddress = String.IsNullOrEmpty(DeviceInfo.IpAddress) ? IpAddress : DeviceInfo.IpAddress;
+
                     UpdateDeviceInfo();
                     break;
                 }
                 case("serialNumber") :
                 {
                     SerialNumber = matches[0].Value.Trim('"');
-                    DeviceInfo.SerialNumber = SerialNumber;
+
+                    DeviceInfo.SerialNumber = String.IsNullOrEmpty(DeviceInfo.SerialNumber) ? SerialNumber : DeviceInfo.SerialNumber;
+
                     UpdateDeviceInfo();
                     break;
                 }
                 case ("version") :
                     Firmware = matches[0].Value.Trim('"');
-                    DeviceInfo.FirmwareVersion = Firmware; 
+
+                    DeviceInfo.FirmwareVersion = String.IsNullOrEmpty(DeviceInfo.FirmwareVersion) ? Firmware : DeviceInfo.FirmwareVersion;
+
                     UpdateDeviceInfo();
                     break;
             }

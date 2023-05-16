@@ -8,6 +8,7 @@ using System.Text.RegularExpressions;
 using PepperDash.Essentials.Core.Bridges;
 using Tesira_DSP_EPI.Bridge.JoinMaps;
 using Tesira_DSP_EPI.Extensions;
+using Tesira_DSP_EPI.Interfaces;
 
 
 namespace Tesira_DSP_EPI
@@ -224,7 +225,7 @@ namespace Tesira_DSP_EPI
         public override void Subscribe()
         {
             //Subsribe to Level
-            LevelCustomName = string.Format("{0}~roomCombiner{1}", InstanceTag1, Index1);
+            LevelCustomName = string.Format("{0}__roomCombiner{1}", InstanceTag1, Index1);
             AddCustomName(LevelCustomName);
             SendFullCommand("get", "levelOutMin", null, 1);
             SendFullCommand("get", "group", null, 1);
@@ -237,7 +238,7 @@ namespace Tesira_DSP_EPI
         {
 
             _levelIsSubscribed = false;
-            LevelCustomName = string.Format("{0}~roomCombiner{1}", InstanceTag1, Index1);
+            LevelCustomName = string.Format("{0}__roomCombiner{1}", InstanceTag1, Index1);
             SendUnSubscriptionCommand(LevelCustomName, "levelOut", 1);
         }
 

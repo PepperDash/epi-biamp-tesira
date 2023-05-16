@@ -1,6 +1,8 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
+using Crestron.SimplSharp;
 using Crestron.SimplSharpPro.DeviceSupport;
 using Newtonsoft.Json;
 using PepperDash.Core;
@@ -9,6 +11,7 @@ using System.Text.RegularExpressions;
 using PepperDash.Essentials.Core.Bridges;
 using Tesira_DSP_EPI.Bridge.JoinMaps;
 using Tesira_DSP_EPI.Extensions;
+using IRoutingWithFeedback = Tesira_DSP_EPI.Interfaces.IRoutingWithFeedback;
 
 namespace Tesira_DSP_EPI {
     public class TesiraDspSwitcher : TesiraDspControlPoint, IRoutingWithFeedback
@@ -31,8 +34,21 @@ namespace Tesira_DSP_EPI {
         /// XSig of all Feedback Names
         /// </summary>
         public StringFeedback SourceNamesFeedback { get; private set; }
+
+        public StringFeedback RoutedSourceNameFeedback { get; private set; }
+
+        public Dictionary<uint, string> SwitcherInputs { get; private set; }
+
+        private readonly CTimer _pollTimer;
         
         private string SourceNamesXsig { get; set; }
+
+        private string RoutedSourceName { get; set; }
+
+        private bool ShowRoutedString { get; set; }
+
+        public readonly long PollIntervalMs;
+
 
         /// <summary>
         /// Subscription Identifier for Switcher
@@ -47,6 +63,8 @@ namespace Tesira_DSP_EPI {
             }
             set {
                 _sourceIndex = value;
+                RoutedSourceName = SwitcherInputs[(uint)value] ?? "None";
+                RoutedSourceNameFeedback.FireUpdate();
                 SourceIndexFeedback.FireUpdate();
             }
         }
@@ -65,6 +83,23 @@ namespace Tesira_DSP_EPI {
         public TesiraDspSwitcher(string key, TesiraSwitcherControlBlockConfig config, TesiraDsp parent)
             : base(config.SwitcherInstanceTag, String.Empty, config.Index1, 0, parent, string.Format(KeyFormatter, parent.Key, key), config.Label, config.BridgeIndex)
         {
+            SwitcherInputs = new Dictionary<uint, string>();
+
+            ShowRoutedString = config.ShowRoutedStringFeedback;
+            foreach (var input in config.SwitcherInputs)
+            {
+                SwitcherInputs.Add(input.Key, input.Value.Label);
+            }
+            SwitcherInputs.Add(0, "None");
+
+            PollIntervalMs = config.PollIntervalMs ?? 90000;
+
+            if (Type == "router")
+            {
+                _pollTimer = new CTimer(o => DoPoll(), Timeout.Infinite);
+            }
+
+            RoutedSourceNameFeedback = new StringFeedback(Key + "-RoutedSourceNameFeedback", () => RoutedSourceName);
             SourceIndexFeedback = new IntFeedback(Key + "-SourceIndexFeedback", () => SourceIndex);
             SourceNamesFeedback = new StringFeedback(Key + "-SourceNamesFeedback", () => SourceNamesXsig);
 
@@ -74,6 +109,7 @@ namespace Tesira_DSP_EPI {
             Feedbacks.Add(SourceIndexFeedback);
             Feedbacks.Add(NameFeedback);
             Feedbacks.Add(SourceNamesFeedback);
+            Feedbacks.Add(RoutedSourceNameFeedback);
 
             parent.Feedbacks.AddRange(Feedbacks);
 
@@ -127,8 +163,18 @@ namespace Tesira_DSP_EPI {
         /// <summary>
         /// Subscribe to component
         /// </summary>
-        public override void Subscribe() {
-            SelectorCustomName = string.Format("{0}~Selector{1}", InstanceTag1, Index1);
+        public override void Subscribe()
+        {
+            if (Type == "router")
+            {
+                IsSubscribed = true;
+                if (_pollTimer != null)
+                {
+                    _pollTimer.Reset(PollIntervalMs);
+                }
+                return;
+            }
+            SelectorCustomName = (string.Format("{0}__Selector{1}", InstanceTag1, Index1)).Replace(" ", string.Empty);
             AddCustomName(SelectorCustomName);
             SendSubscriptionCommand(SelectorCustomName, "sourceSelection", 250, 1);
         }
@@ -140,7 +186,7 @@ namespace Tesira_DSP_EPI {
         {
             IsSubscribed = false;
 
-            SelectorCustomName = string.Format("{0}~Selector{1}", InstanceTag1, Index1);
+			SelectorCustomName = (string.Format("{0}__Selector{1}", InstanceTag1, Index1)).Replace(" ", string.Empty);
 
             SendUnSubscriptionCommand(SelectorCustomName, "sourceSelection", 1);
         }
@@ -219,29 +265,37 @@ namespace Tesira_DSP_EPI {
 
         public void GetSourceNames()
         {
-            SourceNamesXsig = xSigHelper.ClearData();
+            if (ShowRoutedString) return;
+            SourceNamesXsig = XSigHelper.ClearData();
             SourceNamesFeedback.FireUpdate();
             SourceNamesXsig = String.Empty;
 
             foreach (var port in InputPorts)
             {
+
                 var input = port;                                
                 var index = Convert.ToUInt16(input.Selector);
-                SourceNamesXsig += xSigHelper.CreateByteString(index, input.Key);
+                SourceNamesXsig += XSigHelper.CreateByteString(index, input.Key);
 
                 Debug.Console(2, this, "{0} {1}", input.Key, new String('-', 50));
                 Debug.Console(2, this, @"    
-    input.ParentDevice: {0}
-    input.Selector: {1}
-    input.Selector(Convert.ToUnit16): {2}
-    input.Port: {3}
-    input.ConnectionType: {4}
-    input.Type: {5}
-", input.ParentDevice, input.Selector, index, input.Port, input.ConnectionType, input.Type);
-                Debug.Console(2, this, "{0}", new String('-', 50));
+                  input.ParentDevice: {0}
+                  input.Selector: {1}
+                  input.Selector(Convert.ToUnit16): {2}
+                  input.Port: {3}
+                  input.ConnectionType: {4}
+                  input.Type: {5}", 
+                  input.ParentDevice, input.Selector, index, input.Port, input.ConnectionType, input.Type);
+                              Debug.Console(2, this, "{0}", new String('-', 50));
 
             }
             SourceNamesFeedback.FireUpdate();
+        }
+
+        public override void DoPoll()
+        {
+            SendFullCommand("get", "input", String.Empty, 1);
+            _pollTimer.Reset(PollIntervalMs);
         }
 
         #region IRouting Members
@@ -315,8 +369,10 @@ namespace Tesira_DSP_EPI {
             s.SourceIndexFeedback.LinkInputSig(trilist.UShortInput[joinMap.Index.JoinNumber]);
 
             trilist.SetUShortSigAction(joinMap.Index.JoinNumber, u => SetSource(u));
+            trilist.SetSigTrueAction(joinMap.Poll.JoinNumber, DoPoll);
 
             NameFeedback.LinkInputSig(trilist.StringInput[joinMap.Label.JoinNumber]);
+            if (ShowRoutedString) RoutedSourceNameFeedback.LinkInputSig(trilist.StringInput[joinMap.RouteOrSource.JoinNumber]);
 
             GetSourceNames();
 

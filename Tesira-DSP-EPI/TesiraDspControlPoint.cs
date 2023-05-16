@@ -4,6 +4,7 @@ using Crestron.SimplSharpPro.DeviceSupport;
 using PepperDash.Essentials.Core;
 using PepperDash.Core;
 using PepperDash.Essentials.Core.Bridges;
+using Tesira_DSP_EPI.Interfaces;
 using Feedback = PepperDash.Essentials.Core.Feedback;
 
 namespace Tesira_DSP_EPI
@@ -39,11 +40,6 @@ namespace Tesira_DSP_EPI
 			Parent = parent;
             NameFeedback = new StringFeedback(key + "-NameFeedback", () => Name);
             CustomNames = new List<string>();
-		}
-
-		public virtual void Initialize()
-		{
-
 		}
 
         public virtual void Subscribe()
@@ -102,19 +98,19 @@ namespace Tesira_DSP_EPI
 				//Command requires Index
 				if (String.IsNullOrEmpty(value))
 				{
-					cmd = String.IsNullOrEmpty(command) ? string.Format("{0} {1} {2} ", 
-                        instanceTagLocal, attributeCode, Index1) : string.Format("{0} {1} {2} {3}", instanceTagLocal, command, attributeCode, Index1);
+					cmd = String.IsNullOrEmpty(command) ? string.Format("\"{0}\" {1} {2} ", 
+                        instanceTagLocal, attributeCode, Index1) : string.Format("\"{0}\" {1} {2} {3}", instanceTagLocal, command, attributeCode, Index1);
 				}
 				else
 				{
 					// format command with value
-					cmd = string.Format("{0} {1} {2} {3} {4}", instanceTagLocal, command, attributeCode, Index1, value);
+					cmd = string.Format("\"{0}\" {1} {2} {3} {4}", instanceTagLocal, command, attributeCode, Index1, value);
 				}
 			}
 
 		    else if (attributeCode == "crosspointLevelState")
 		    {
-                cmd = string.Format("{0} {1} {2} {3} {4}", instanceTagLocal, command, attributeCode, Index1, Index2);
+                cmd = string.Format("\"{0}\" {1} {2} {3} {4}", instanceTagLocal, command, attributeCode, Index1, Index2);
             }
 
 
@@ -122,15 +118,15 @@ namespace Tesira_DSP_EPI
 				attributeCode == "offHook" || attributeCode == "answer")
 			{
 				//requires index, but does not require command
-				cmd = String.IsNullOrEmpty(value) ? string.Format("{0} {1} {2} {3}", instanceTagLocal, attributeCode, Index1, Index2) : string.Format("{0} {1} {2} {3} {4}", instanceTagLocal, attributeCode, Index1, Index2, value);
+                cmd = String.IsNullOrEmpty(value) ? string.Format("\"{0}\" {1} {2} {3}", instanceTagLocal, attributeCode, Index1, Index2) : string.Format("\"{0}\" {1} {2} {3} {4}", instanceTagLocal, attributeCode, Index1, Index2, value);
 			}
 
 			else
 			{
 				//Command does not require Index
 				cmd = String.IsNullOrEmpty(value) ? 
-                    string.Format("{0} {1} {2}", instanceTagLocal, command, attributeCode) : 
-                    string.Format("{0} {1} {2} {3}", instanceTagLocal, command, attributeCode, value);
+                    string.Format("\"{0}\" {1} {2}", instanceTagLocal, command, attributeCode) : 
+                    string.Format("\"{0}\" {1} {2} {3}", instanceTagLocal, command, attributeCode, value);
 			}
 
 			if (command == "get")
@@ -228,7 +224,7 @@ namespace Tesira_DSP_EPI
 				case 2:
                     localInstanceTag = InstanceTag2;
 					break;
-
+                    
 				default:
                     localInstanceTag = InstanceTag1;
 					break;
@@ -242,7 +238,7 @@ namespace Tesira_DSP_EPI
 			{
                 cmd = string.Format("\"{0}\" unsubscribe {1} {2} {3}", localInstanceTag, attributeCode, Index1, customName);
 			}
-
+            Debug.Console(1, this, "SendingUnsub - {0}", cmd);
 			//Parent.WatchDogList.Add(customName,cmd);
 			Parent.SendLine(cmd);
             //Parent.CommandQueue.EnqueueCommand(new QueuedCommand(cmd, attributeCode, this));

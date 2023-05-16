@@ -11,7 +11,9 @@ using PepperDash.Essentials.Core.Config;
 using Crestron.SimplSharpPro.DeviceSupport;
 using Tesira_DSP_EPI.Bridge.JoinMaps;
 using PepperDash.Essentials.Core.Bridges;
+using Tesira_DSP_EPI.Interfaces;
 using Feedback = PepperDash.Essentials.Core.Feedback;
+using IRoutingWithFeedback = Tesira_DSP_EPI.Interfaces.IRoutingWithFeedback;
 
 namespace Tesira_DSP_EPI
 {
@@ -50,15 +52,38 @@ namespace Tesira_DSP_EPI
         /// <summary>
         /// True when all components have been subscribed
         /// </summary>
-        public bool IsSubscribed;
+        public bool IsSubscribed {
+            get
+            {
+                var subscribeTracker = ControlPointList.All(subscribedComponent => subscribedComponent.IsSubscribed);
+                if (_subscribeThread == null) return subscribeTracker;
+                if (subscribeTracker && _subscribeThread.ThreadState == Thread.eThreadStates.ThreadRunning)
+                    StopSubscriptionThread();
+                return subscribeTracker;
+            }
+        }
+
 
 		private CTimer _watchDogTimer;
 
         private CTimer _queueCheckTimer;
 
+        private CTimer _unsubscribeTimer;
+        private CTimer _subscribeTimer;
+        private CTimer _expanderCheckTimer;
+        private CTimer _pacer;
+        private CTimer _paceTimer;
+        private CTimer _getMaxTimer;
+        private CTimer _getMinTimer;
+        private CTimer _componentSubscribeTimer;
+
         private Thread _subscribeThread;
 
         private readonly bool _isSerialComm;
+
+        public bool InitialStart = true;
+        public bool OkayToSend = false;
+        public bool ControlsAdded = false;
 
         private TesiraDspDeviceInfo DevInfo { get; set; }
         private Dictionary<string, TesiraDspFaderControl> Faders { get; set; }
@@ -69,7 +94,14 @@ namespace Tesira_DSP_EPI
         private Dictionary<string, TesiraDspCrosspointState> CrosspointStates { get; set; }
         private Dictionary<string, TesiraDspRoomCombiner> RoomCombiners { get; set; }
         public List<IDspPreset> Presets { get; private set; } 
+        public List<TesiraPreset> TesiraPresets { get; private set; } 
         private List<ISubscribedComponent> ControlPointList { get; set; }
+
+        private TesiraExpanderTracker ExpanderTracker { get; set; }
+
+        private bool _initalSubscription = true;
+
+
 
         //private TesiraDspDeviceInfo DeviceInfo { get; set; }
 
@@ -104,12 +136,15 @@ namespace Tesira_DSP_EPI
 
 			if (socket != null)
 			{
+                Debug.Console(1, this, "DEVICE IS CONTROLLED VIA NETWORK CONNECTION");
+
 				// This instance uses IP control
 				socket.ConnectionChange += socket_ConnectionChange;
 				_isSerialComm = false;
 			}
 			else
 			{
+                Debug.Console(1, this, "DEVICE IS CONTROLLED VIA RS232");
 				// This instance uses RS-232 control
 				_isSerialComm = true;
 			}
@@ -130,6 +165,7 @@ namespace Tesira_DSP_EPI
             Feedbacks = new FeedbackCollection<Feedback>();
             Faders = new Dictionary<string, TesiraDspFaderControl>();
             Presets = new List<IDspPreset>();
+            TesiraPresets = new List<TesiraPreset>();
             Dialers = new Dictionary<string, TesiraDspDialer>();
             Switchers = new Dictionary<string, TesiraDspSwitcher>();
             States = new Dictionary<string, TesiraDspStateControl>();
@@ -151,17 +187,33 @@ namespace Tesira_DSP_EPI
             AddPostActivationAction(() =>
             {
                 Communication.Connect();
-                if (_isSerialComm)
-                {
-                    CommunicationMonitor.Start();
-                }
+                if (!_isSerialComm) return;
+                CommunicationMonitor.Start();
+                OkayToSend = true;
+                CheckSerialSendStatus();
             });
 
             CreateDspObjects();
         }
 
+        private void CheckSerialSendStatus()
+        {
+            Debug.Console(0, this, "CheckSerialSendStatus");
+            if (OkayToSend && ControlsAdded && _isSerialComm && InitialStart)
+            {
+                InitialStart = false;
+                Debug.Console(0, this, "CheckSerialStatus Ready");
+
+                CrestronInvoke.BeginInvoke(o => StartSubsciptionThread());
+                return;
+            }
+            Debug.Console(0, this, "CheckSerialSendStatus NOT READY");
+
+        }
+
         private void StartSubsciptionThread()
         {
+            Debug.Console(0, this, "Start Subscription Thread");
 			if (_subscribeThread != null)
 			{
 				if(_subscribeThread.ThreadState == Thread.eThreadStates.ThreadRunning)
@@ -173,6 +225,7 @@ namespace Tesira_DSP_EPI
             _subscribeThread = new Thread(o => HandleAttributeSubscriptions(), null,
                 Thread.eThreadStartOptions.CreateSuspended)
             {
+                Name = string.Format("{0}-queue", Key),
                 Priority = CrestronEnvironment.ProgramCompatibility.Equals(eCrestronSeries.Series4)
                     ? Thread.eThreadPriority.LowestPriority
                     : Thread.eThreadPriority.LowestPriority
@@ -184,14 +237,28 @@ namespace Tesira_DSP_EPI
             _subscribeThread.Start();
         }
 
+        private void StopSubscriptionThread()
+        {
+            if (_subscribeThread.ThreadState == Thread.eThreadStates.ThreadRunning)
+            {
+                _subscribeThread = null;
+            }
+        }
+
         void CrestronEnvironment_ProgramStatusEventHandler(eProgramStatusEventType programEventType)
         {
             if (programEventType != eProgramStatusEventType.Stopping) return;
 
-            _watchDogTimer.Stop();
-            _watchDogTimer.Dispose();
-            CommunicationMonitor.Stop();
-            Communication.Disconnect();
+			if (_watchDogTimer != null)
+			{
+				_watchDogTimer.Stop();
+				_watchDogTimer.Dispose();
+			}
+			if (CommunicationMonitor != null)
+			{
+				CommunicationMonitor.Stop();
+				Communication.Disconnect();
+			}
         }
 
         private void CreateDspObjects()
@@ -234,8 +301,14 @@ namespace Tesira_DSP_EPI
 
             CreateRoomCombiners(props);
 
-            //Keep me at the end of this method!
             CreateDevInfo();
+
+            //Keep me at the end of this method!
+            CreateExpanderTracker(props);
+
+            ControlsAdded = true;
+            CheckSerialSendStatus();
+
         }
 
         private void CreateDevInfo()
@@ -245,17 +318,19 @@ namespace Tesira_DSP_EPI
                 DeviceManager.AddDevice(DevInfo);
         }
 
-
         private void CreatePresets(TesiraDspPropertiesConfig props)
         {
             if (props.Presets == null) return;
             foreach (var preset in props.Presets)
             {
                 var value = preset.Value;
-                Presets.Add(new TesiraPreset(preset.Value));
+                var tesiraPreset = new TesiraPreset(preset.Value);
+                Presets.Add(tesiraPreset);
+                TesiraPresets.Add(tesiraPreset);
                 Debug.Console(2, this, "Added Preset {0} {1}", value.Label, value.PresetName);
             }
-            var presetDevice = new TesiraDspPresetDevice(this, Presets);
+
+            var presetDevice = new TesiraDspPresetDevice(this);
             DeviceManager.AddDevice(presetDevice);
         }
 
@@ -315,6 +390,7 @@ namespace Tesira_DSP_EPI
                 {
                     ControlPointList.Add(CrosspointStates[key]);
                 }
+                DeviceManager.AddDevice(CrosspointStates[key]);
             }
         }
 
@@ -332,6 +408,8 @@ namespace Tesira_DSP_EPI
                 {
                     ControlPointList.Add(Meters[key]);
                 }
+                DeviceManager.AddDevice(Meters[key]);
+
             }
         }
 
@@ -349,6 +427,8 @@ namespace Tesira_DSP_EPI
 
                 if (block.Value.Enabled)
                     ControlPointList.Add(States[key]);
+                DeviceManager.AddDevice(States[key]);
+
             }
         }
 
@@ -360,7 +440,7 @@ namespace Tesira_DSP_EPI
             foreach (var block in props.DialerControlBlocks)
             {
                 var key = block.Key;
-                Debug.Console(2, this, "LevelControlBlock Key - {0}", key);
+                Debug.Console(2, this, "DialerControlBlock Key - {0}", key);
                 var value = block.Value;
                 Dialers.Add(key, new TesiraDspDialer(key, value, this));
                 Debug.Console(2, this, "Added DspDialer {0} ControlStatusTag: {1} DialerTag: {2}", key,
@@ -370,6 +450,8 @@ namespace Tesira_DSP_EPI
                 {
                     ControlPointList.Add(Dialers[key]);
                 }
+                DeviceManager.AddDevice(Dialers[key]);
+
             }
         }
 
@@ -387,13 +469,25 @@ namespace Tesira_DSP_EPI
                 Switchers.Add(key, new TesiraDspSwitcher(key, value, this));
                 Debug.Console(2, this, "Added TesiraSwitcher {0} InstanceTag {1}", key, value.SwitcherInstanceTag);
 
-                if (block.Value.Enabled)
+                if (block.Value.Enabled && block.Value.Type != "router")
                 {
                     //Add ControlPoint to the list for the watchdog
-
                     ControlPointList.Add(Switchers[key]);
                 }
+                DeviceManager.AddDevice(Switchers[key]);
+
             }
+        }
+
+        private void CreateExpanderTracker(TesiraDspPropertiesConfig props)
+        {
+            if (props.ExpanderBlocks == null) return;
+            Debug.Console(2, this, "ExpanderBlocks is not null - there are {0} of them", props.ExpanderBlocks.Count());
+
+            ExpanderTracker = new TesiraExpanderTracker(this, props.ExpanderBlocks);
+
+            DeviceManager.AddDevice(ExpanderTracker);
+            
         }
 
         #region Communications
@@ -466,6 +560,7 @@ namespace Tesira_DSP_EPI
         {
 			try
 			{
+			    if (ControlPointList.Count == 0) return;
 			    if (WatchdogSuspend)
 			    {
 			        WatchDogSniffer = false;
@@ -594,15 +689,47 @@ namespace Tesira_DSP_EPI
 
                     foreach (var component in from component in ControlPointList let item = component from n in item.CustomNames.Where(n => n == customName) select component)
                     {
-                        if (component == null) return;
+                        if (component == null)
+                        {
+                            Debug.Console(1, this, "Unable to find matching Custom Name {0}", customName);                            
+                            return;
+                        }
                         component.ParseSubscriptionMessage(customName, value);
                     }
                 }
 
+                if (args.Text.IndexOf("! ", StringComparison.Ordinal) > 0)
+                {
+                    const string pattern = "! [\\\"](.*?[^\\\\])[\\\"] (.*)";
+
+                    var match = Regex.Match(args.Text, pattern);
+
+                    if (!match.Success) return;
+
+                    var customName = match.Groups[1].Value;
+                    var value = match.Groups[2].Value;
+                    Debug.Console(2, this, "Subscription Message: 'Name: {0} Value:{1}'", customName, value);
+                    //CommandQueue.AdvanceQueue(args.Text);
+
+                    foreach (var component in from component in ControlPointList let item = component from n in item.CustomNames.Where(n => n == customName) select component)
+                    {
+                        if (component == null)
+                        {
+                            Debug.Console(1, this, "Unable to find matching Custom Name {0}", customName);
+                            return;
+                        }
+                        component.ParseSubscriptionMessage(customName, value);
+                    }
+
+                }
+
                 else if (args.Text.IndexOf("+OK", StringComparison.Ordinal) == 0)
                 {
+                    if(InitialStart) CheckSerialSendStatus();
                     if (args.Text == "+OK")       // Check for a simple "+OK" only 'ack' repsonse or a list response and ignore
+
                         return;
+                    
                     // response is not from a subscribed attribute.  From a get/set/toggle/increment/decrement command
                     //string pattern = "(?<=\" )(.*?)(?=\\+)";
                     //string data = Regex.Replace(args.Text, pattern, "");
@@ -618,21 +745,36 @@ namespace Tesira_DSP_EPI
 				{
 					// Error response
 
-                    if (args.Text.IndexOf("ALREADY_SUBSCRIBED", StringComparison.Ordinal) >= 0)
-                    {
-                        if (WatchDogSniffer)
-                            Debug.Console(1, this, "The Watchdog didn't find anything.  Good Boy!");
+					if (args.Text.IndexOf("ALREADY_SUBSCRIBED", StringComparison.Ordinal) >= 0)
+					{
+						if (WatchDogSniffer)
+							Debug.Console(1, this, "The Watchdog didn't find anything.  Good Boy!");
 
-                        WatchDogSniffer = false;
-                        //CommandQueue.AdvanceQueue(args.Text);
-                    }
+						WatchDogSniffer = false;
+						//CommandQueue.AdvanceQueue(args.Text);
+					}
 
-                    else
-                    {
-                        Debug.Console(1, this, Debug.ErrorLogLevel.Error, "Error From DSP: '{0}'", args.Text);
-                        WatchDogSniffer = false;
-                        CommandQueue.AdvanceQueue(args.Text);
-                    }
+					else
+					{
+						Debug.Console(1, this, Debug.ErrorLogLevel.Error, "Error From DSP: '{0}'", args.Text);
+						WatchDogSniffer = false;
+						CommandQueue.AdvanceQueue(args.Text);
+					}
+				}
+					/*
+				else
+				{
+
+                    Debug.Console(2, this, "!!!!!!!!EXPANDER DATA!!!!!!!!!!!");
+                    const string pattern = @"\[([^\[\]]+)\]?";
+
+				    var rgx = new Regex(pattern);
+
+				    if (!rgx.IsMatch(DeviceRx)) return;
+
+				    if (ExpanderTracker == null) return;
+
+				    ExpanderTracker.ParseResults(rgx, DeviceRx);
 				}
                     /*
                 else if (args.Text.IndexOf("SESSION", StringComparison.OrdinalIgnoreCase) > -1)
@@ -694,7 +836,6 @@ namespace Tesira_DSP_EPI
             var tesiraPreset = preset as TesiraPreset;
             if (tesiraPreset == null) return;            
 
-            // TODO [ ] review with TP
             Debug.Console(2, this, "Checking Preset {0} | presetIndex {1} | presetId {2} | presetName {3}", 
                 tesiraPreset.Name, tesiraPreset.PresetData.PresetIndex, tesiraPreset.PresetData.PresetId, tesiraPreset.PresetData.PresetName);
             // - changed string check reference from 'tesiraPreset.PresetName' to 'tesiraPreset.PreetData.PresetName'
@@ -719,34 +860,30 @@ namespace Tesira_DSP_EPI
 
         #region Unsubscribe
 
-
+        
         private void UnsubscribeFromComponents()
-		{
-			foreach (var control in Dialers.Select(dialer => dialer.Value))
-			{
-			    UnsubscribeFromComponent(control);
-			}
+        {
 
-			foreach (var control in Switchers.Select(switcher => switcher.Value))
-			{
-			    UnsubscribeFromComponent(control);
-			}
-
-			foreach (var control in States.Select(state => state.Value))
-			{
-			    UnsubscribeFromComponent(control);
-			}
-
-            foreach (var control in Faders.Select(level => level.Value))
-			{
-			    UnsubscribeFromComponent(control);
-			}
-
-			foreach (var control in RoomCombiners.Select(roomCombiner => roomCombiner.Value))
-			{
-			    UnsubscribeFromComponent(control);
-			}
+            _pacer = new CTimer(o => UnsubscribeFromComponent(0), null, 250);
 		}
+
+        private void UnsubscribeFromComponent(int index )
+        {
+            var controlPoint = ControlPointList[index];
+            if (controlPoint != null) UnsubscribeFromComponent(controlPoint);
+            var newIndex = index + 1;
+            Debug.Console(0, this, "NewIndex == {0} and ControlPointListCount == {1}", newIndex, ControlPointList.Count() );
+            if (newIndex < ControlPointList.Count())
+            {
+                _unsubscribeTimer = new CTimer(o => UnsubscribeFromComponent(newIndex), null, 250);
+            }
+            else
+            {
+                Debug.Console(0, this, "Subscribe To Components");
+                if (_unsubscribeTimer != null) _unsubscribeTimer.Dispose();
+                _subscribeTimer = new CTimer(o => SubscribeToComponents(), null, 250);
+            }
+        }
 
         private void UnsubscribeFromComponent(ISubscribedComponent data)
 		{
@@ -759,59 +896,149 @@ namespace Tesira_DSP_EPI
 
 		#region Subscribe
 
-		private void SubscribeToComponents()
+        private void SubscribeToComponents()
         {
-		    if (DevInfo != null)
-		    {
+            Debug.Console(1, this, "Subscribing to Components");
+
+            if (_unsubscribeTimer != null) _unsubscribeTimer.Dispose();
+            if (_subscribeTimer != null) _subscribeTimer.Dispose();
+            _initalSubscription = false;
+            if (DevInfo != null)
+            {
                 Debug.Console(2, this, "DevInfo Not Null");
 
-		        DevInfo.GetFirmware();
-		        DevInfo.GetIpConfig();
-		        DevInfo.GetSerial();
-		    }
-		    foreach (var fader in ControlPointList.OfType<IVolumeComponent>())
-            {
-                fader.GetMinLevel();
+                DevInfo.GetFirmware();
+                DevInfo.GetIpConfig();
+                DevInfo.GetSerial();
             }
 
-            foreach (var fader in ControlPointList.OfType<IVolumeComponent>())
+            _expanderCheckTimer = new CTimer(o => CheckExpanders(), null, 1000);
+        }
+
+        private void GetMinLevels()
+        {
+            Debug.Console(0, this, "GetMinLevels Started");
+            var newList = ControlPointList.OfType<IVolumeComponent>().ToList();
+
+            if (newList.Any())
             {
-                fader.GetMaxLevel();
+                _paceTimer = new CTimer(o => GetMinLevel(newList, 0), null, 250);
             }
+        }
+
+        private void 
+            
+        GetMaxLevels()
+        {
+            Debug.Console(0, this, "GetMaxLevels Started");
+            var newList = ControlPointList.OfType<IVolumeComponent>().ToList();
+
+            if (newList.Any())
+            {
+                _paceTimer = new CTimer(o => GetMaxLevel(newList, 0), null, 250);
+            }
+        }
+
+        private void GetMaxLevel(IList<IVolumeComponent> faders, int index)
+        {
+            var data = faders[index];
+            if (data != null) data.GetMaxLevel();
+            var indexerOutput = index + 1;
+            Debug.Console(0, this, "Indexer = {0} : Count = {1} : MaxLevel", indexerOutput, faders.Count());
+            if (indexerOutput < faders.Count)
+            {
+                _getMaxTimer = new CTimer(o => GetMaxLevel(faders, indexerOutput), null, 250);
+                return;
+            }
+            if (_getMaxTimer != null) _getMaxTimer.Dispose();
+            _pacer = new CTimer(o => QueueCheckDelayed(), null, 250);
+        }
+        private void GetMinLevel(IList<IVolumeComponent> faders, int index)
+        {
+            var data = faders[index];
+            if (data != null) data.GetMinLevel();
+            var indexerOutput = index + 1;
+            Debug.Console(0, this, "Indexer = {0} : Count = {1} : MinLevel", indexerOutput, faders.Count());
+            if (indexerOutput < faders.Count)
+            {
+                _getMinTimer = new CTimer(o => GetMinLevel(faders, indexerOutput), null, 250);
+                return;
+            }
+            if (_getMinTimer != null) _getMinTimer.Dispose();
+            _pacer = new CTimer(o => GetMaxLevels(), null, 250);
+        }
+
+        
+        private void QueueCheckDelayed()
+        {
+            Debug.Console(0, this, "Queue Check Delayed Started");
 
             if (_queueCheckTimer == null)
             {
-                _queueCheckTimer = new CTimer(o => QueueCheck(), null, 1000, 1000);
+                _queueCheckTimer = new CTimer(o => QueueCheckSubscribe(), null, 1000, 1000);
             }
             else
             {
-                _queueCheckTimer.Reset(1000, 1000);
+                _queueCheckTimer.Reset(250, 250);
             }
 
-		}
+        }
+         
 
-        private void QueueCheck()
+        private void CheckExpanders()
         {
+            _expanderCheckTimer.Dispose();
+            Debug.Console(0, this, "CheckExpanders Started");
+
+            if(ExpanderTracker != null) ExpanderTracker.Initialize();
+            _pacer = new CTimer(o => GetMinLevels(), null, 250);
+        }
+
+        private void QueueCheckSubscribe()
+        {
+            Debug.Console(0, this, "LocalQueue Size = {0} and Command Queue {1} in Progress", CommandQueue.LocalQueue.Count, CommandQueue.CommandQueueInProgress ? "is" : "is not");
             if (!CommandQueue.LocalQueue.Any() && !CommandQueue.CommandQueueInProgress)
             {
                 _queueCheckTimer.Stop();
                 _queueCheckTimer = null;
-                foreach (var component in ControlPointList)
-                {
-                    SubscribeToComponent(component);
-                }
+                _pacer = new CTimer(o => SubscribeToComponentByIndex(0), null, 250);
+
             }
             else
+            {
+                CommandQueue.SendNextQueuedCommand();
                 _queueCheckTimer.Reset(1000, 1000);
+            }
         }
+
 
         private void SubscribeToComponent(ISubscribedComponent data)
         {
             if (data == null) return;
             if (!data.Enabled) return;
-            Debug.Console(2, this, "Subscribing To Object - {0}", data.InstanceTag1);
+            Debug.Console(0, this, "Subscribing To Object - {0}", data.InstanceTag1);
             data.Subscribe();
 		}
+
+        private void SubscribeToComponentByIndex(int indexer)
+        {
+            Debug.Console(0, this, "Subscribing to Component {0}", indexer);
+            var data = ControlPointList[indexer];
+            SubscribeToComponent(data);
+            var indexerOutput = indexer + 1;
+            Debug.Console(0, this, "Indexer = {0} : Count = {1} : ControlPointList", indexerOutput, ControlPointList.Count());
+            if (indexerOutput < ControlPointList.Count)
+            {
+                _componentSubscribeTimer = new CTimer(o => SubscribeToComponentByIndex(indexerOutput), null, 250);
+                return;
+            }
+            if (_componentSubscribeTimer != null) _componentSubscribeTimer.Dispose();
+            if (_pacer != null) _pacer.Dispose();
+            if (_paceTimer != null) _paceTimer.Dispose();
+        }
+
+
+
 
 		#endregion
 
@@ -827,17 +1054,21 @@ namespace Tesira_DSP_EPI
 
         private object HandleAttributeSubscriptions()
         {
+            Debug.Console(1, this, "HandleApptributeSubscriptions - LIVE");
             //_subscriptionLock.Enter();
             if (Communication.IsConnected)
             {
                 SendLine("SESSION set verbose false");
                 try
                 {
-                    if (_isSerialComm)
+                    if (_isSerialComm && _initalSubscription)
+                    {
+                        _initalSubscription = false;
                         UnsubscribeFromComponents();
-
-                    //Subscribe
-                    SubscribeToComponents();
+                    }
+                    else
+                        //Subscribe
+                        SubscribeToComponents();
                     /*if (!_commandQueueInProgress)
                     CommandQueue.SendNextQueuedCommand();*/
                 }
@@ -984,6 +1215,7 @@ namespace Tesira_DSP_EPI
                 s.SourceIndexFeedback.LinkInputSig(trilist.UShortInput[switcherJoinMap.Index.JoinNumber + x]);
 
                 trilist.SetUShortSigAction(switcherJoinMap.Index.JoinNumber + x, u => switcher.SetSource(u));
+                trilist.SetSigTrueAction(switcherJoinMap.Poll.JoinNumber, switcher.DoPoll);
 
                 switcher.NameFeedback.LinkInputSig(trilist.StringInput[switcherJoinMap.Label.JoinNumber + x]);
 

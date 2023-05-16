@@ -94,7 +94,7 @@ namespace Tesira_DSP_EPI.Bridge.JoinMaps
 
 
         public TesiraStateJoinMapAdvancedStandalone(uint joinStart)
-            : base(joinStart, typeof (TesiraStateJoinMapAdvanced))
+            : base(joinStart, typeof(TesiraStateJoinMapAdvancedStandalone))
         {
         }
 
