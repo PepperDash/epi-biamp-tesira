@@ -40,6 +40,7 @@ namespace Tesira_DSP_EPI {
 
             Feedbacks.Add(StateFeedback);
             Feedbacks.Add(NameFeedback);
+            Feedbacks.Add(PrivacyModeIsOnFeedback);
             parent.Feedbacks.AddRange(Feedbacks);
 
             Initialize(config);
@@ -89,10 +90,17 @@ namespace Tesira_DSP_EPI {
 
             // Check for valid subscription response
 
-            if (customName == StateCustomName) {
-                _state = bool.Parse(value);
-                StateFeedback.FireUpdate();
-                IsSubscribed = true;
+            if (customName != StateCustomName) return;
+            _state = bool.Parse(value);
+            FireFeedbacks();
+            IsSubscribed = true;
+        }
+
+        private void FireFeedbacks()
+        {
+            foreach (var feedback in Feedbacks)
+            {
+                feedback.FireUpdate();
             }
         }
 
@@ -120,7 +128,7 @@ namespace Tesira_DSP_EPI {
                 if (attributeCode != "state") return;
 
                 _state = bool.Parse(value);
-                StateFeedback.FireUpdate();
+                FireFeedbacks();
                 IsSubscribed = true;
             }
             catch (Exception e) {
