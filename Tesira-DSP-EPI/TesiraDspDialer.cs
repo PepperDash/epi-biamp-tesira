@@ -398,7 +398,7 @@ namespace Tesira_DSP_EPI {
             : base(key, config.DialerInstanceTag, config.ControlStatusInstanceTag, config.Index, config.CallAppearance, parent, config.BridgeIndex)
         {
 
-            Key = string.Format("{0}--Dialer{1}", parent.Key, key);
+            Key = string.Format("{0}--{1}", parent.Key, key);
 
             Feedbacks = new FeedbackCollection<Feedback>();
 
@@ -1149,8 +1149,8 @@ namespace Tesira_DSP_EPI {
 
             for (var i = 0; i < joinMap.KeyPadNumeric.JoinSpan; i++)
             {
-                trilist.SetSigTrueAction((joinMap.KeyPadNumeric.JoinNumber + (uint)i), () => SendKeypad(EKeypadKeys.Num0));
-
+                var keyNumber = i;
+                trilist.SetSigTrueAction((joinMap.KeyPadNumeric.JoinNumber + (uint)keyNumber), () => SendKeypad((EKeypadKeys)keyNumber));
             }
 
             trilist.SetSigTrueAction((joinMap.KeyPadStar.JoinNumber), () => SendKeypad(EKeypadKeys.Star));
