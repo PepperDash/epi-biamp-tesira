@@ -673,10 +673,6 @@ namespace Tesira_DSP_EPI
 
                 else if (args.Text.IndexOf("! ", StringComparison.Ordinal) >= 0)
                 {
-                    // response is from a subscribed attribute
-
-                    //(if(args.Text
-
                     const string pattern = "! [\\\"](.*?[^\\\\])[\\\"] (.*)";
 
                     var match = Regex.Match(args.Text, pattern);
