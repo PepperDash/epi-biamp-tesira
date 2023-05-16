@@ -169,7 +169,12 @@ namespace Tesira_DSP_EPI {
         /// </summary>
         public StringFeedback DisplayNumberFeedback;
 
-// ReSharper disable once InconsistentNaming
+        /// <summary>
+        /// Bool Feedback for Hold Status
+        /// </summary>
+        public BoolFeedback HoldCallFeedback;
+
+        // ReSharper disable once InconsistentNaming
         private ECallStatus _CallStatusEnum { get; set; }
 
         public ECallStatus CallStatusEnum
@@ -408,6 +413,7 @@ namespace Tesira_DSP_EPI {
             LastDialedFeedback = new StringFeedback(Key + "-LastDialedFeedback", () => LastDialed);
             NameFeedback = new StringFeedback(Key + "-NameFeedback", () => Name);
             DisplayNumberFeedback = new StringFeedback(Key + "-DisplayNumberFeedback", () => DisplayNumber);
+            HoldCallFeedback = new BoolFeedback(Key + "-HoldCallFeedback", () => CallStatusEnum == ECallStatus.ON_HOLD);
 
             Feedbacks.Add(DialStringFeedback);
             Feedbacks.Add(OffHookFeedback);
@@ -420,6 +426,7 @@ namespace Tesira_DSP_EPI {
             Feedbacks.Add(LastDialedFeedback);
             Feedbacks.Add(NameFeedback);
             Feedbacks.Add(DisplayNumberFeedback);
+            Feedbacks.Add(HoldCallFeedback);
 
             parent.Feedbacks.AddRange(Feedbacks);
 
@@ -817,6 +824,27 @@ namespace Tesira_DSP_EPI {
         }
 
         /// <summary>
+        /// Hold Call
+        /// </summary>
+        public void HoldCall()
+        {
+            SendFullCommand("set", "hold", null, 1);
+        }
+        /// <summary>
+        /// Resume Call
+        /// </summary>
+        public void ResumeCall()
+        {
+            SendFullCommand("set", "resume", null, 1);
+        }
+
+        public void HoldToggle()
+        {
+            if (CallStatusEnum != ECallStatus.ON_HOLD) ResumeCall();
+            else HoldCall();
+        }
+
+        /// <summary>
         /// Disable Auto Answer for the component
         /// </summary>
         public void AutoAnswerOff() {
@@ -850,10 +878,12 @@ namespace Tesira_DSP_EPI {
             SendFullCommand("get", "dndEnable", null, 1);
         }
 
+        /// <summary>
+        /// End all connected calls
+        /// </summary>
 		public override void EndAllCalls()
 		{
 			OnHook();
-
 		}
         /// <summary>
         /// Toggle Do Not Disturb for the component.
@@ -1140,6 +1170,11 @@ namespace Tesira_DSP_EPI {
             trilist.SetSigTrueAction(joinMap.OnHook.JoinNumber, OnHook);
             trilist.SetSigTrueAction(joinMap.OffHook.JoinNumber, OffHook);
 
+            trilist.SetSigTrueAction(joinMap.HoldCall.JoinNumber, HoldCall);
+            trilist.SetSigTrueAction(joinMap.ResumeCall.JoinNumber, ResumeCall);
+            trilist.SetSigTrueAction(joinMap.HoldToggle.JoinNumber, HoldToggle);
+
+
             trilist.SetStringSigAction(joinMap.DialString.JoinNumber, SetDialString);
 
             DisplayNumberFeedback.LinkInputSig(trilist.StringInput[joinMap.DisplayNumber.JoinNumber]);
@@ -1162,6 +1197,12 @@ namespace Tesira_DSP_EPI {
             CallerIdNumberFeedback.LinkInputSig(trilist.StringInput[joinMap.CallerIdNumberFb.JoinNumber]);
             CallerIdNameFeedback.LinkInputSig(trilist.StringInput[joinMap.CallerIdNameFb.JoinNumber]);
             LastDialedFeedback.LinkInputSig(trilist.StringInput[joinMap.LastNumberDialerFb.JoinNumber]);
+
+            HoldCallFeedback.LinkInputSig(trilist.BooleanInput[joinMap.HoldCall.JoinNumber]);
+            HoldCallFeedback.LinkComplementInputSig(trilist.BooleanInput[joinMap.ResumeCall.JoinNumber]);
+            HoldCallFeedback.LinkInputSig(trilist.BooleanInput[joinMap.HoldToggle.JoinNumber]);
+
+
 
 
             CallStateFeedback.LinkInputSig(trilist.UShortInput[joinMap.CallState.JoinNumber]);
