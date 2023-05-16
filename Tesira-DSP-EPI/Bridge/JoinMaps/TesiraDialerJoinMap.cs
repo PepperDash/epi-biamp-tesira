@@ -160,6 +160,37 @@ namespace Tesira_DSP_EPI.Bridge.JoinMaps
                     JoinCapabilities = eJoinCapabilities.ToFromSIMPL,
                     JoinType = eJoinType.Digital
                 });
+        [JoinName("HoldToggle")]
+        public JoinDataComplete HoldToggle =
+            new JoinDataComplete(new JoinData { JoinNumber = 3135, JoinSpan = 1 },
+            new JoinMetadata
+            {
+                Description = "Hold Toggle and Feedback",
+                JoinCapabilities = eJoinCapabilities.ToFromSIMPL,
+                JoinType = eJoinType.Digital
+            });
+
+        [JoinName("HoldCall")]
+        public JoinDataComplete HoldCall =
+            new JoinDataComplete(new JoinData { JoinNumber = 3136, JoinSpan = 1 },
+            new JoinMetadata
+            {
+                Description = "Hold Call Set and Feedback",
+                JoinCapabilities = eJoinCapabilities.ToFromSIMPL,
+                JoinType = eJoinType.Digital
+            });
+
+        [JoinName("ResumeCall")]
+        public JoinDataComplete ResumeCall =
+            new JoinDataComplete(new JoinData { JoinNumber = 3137, JoinSpan = 1 },
+            new JoinMetadata
+            {
+                Description = "Resume Call Set and Feedback",
+                JoinCapabilities = eJoinCapabilities.ToFromSIMPL,
+                JoinType = eJoinType.Digital
+            });
+
+
 
         [JoinName("CallState")] public JoinDataComplete CallState =
             new JoinDataComplete(new JoinData {JoinNumber = 3100, JoinSpan = 1},
@@ -362,32 +393,64 @@ namespace Tesira_DSP_EPI.Bridge.JoinMaps
                     JoinType = eJoinType.Digital
                 });
 
-        [JoinName("DoNotDisturbOn")] public JoinDataComplete DoNotDisturbOn =
-            new JoinDataComplete(new JoinData {JoinNumber = 24, JoinSpan = 1},
-                new JoinMetadata
-                {
-                    Description = "Do Not Disturb On Set and Feedback",
-                    JoinCapabilities = eJoinCapabilities.ToFromSIMPL,
-                    JoinType = eJoinType.Digital
-                });
+        [JoinName("DoNotDisturbOn")]
+        public JoinDataComplete DoNotDisturbOn =
+            new JoinDataComplete(new JoinData { JoinNumber = 24, JoinSpan = 1 },
+            new JoinMetadata
+            {
+                Description = "Do Not Disturb On Set and Feedback",
+                JoinCapabilities = eJoinCapabilities.ToFromSIMPL,
+                JoinType = eJoinType.Digital
+            });
 
-        [JoinName("DoNotDisturbOff")] public JoinDataComplete DoNotDisturbOff =
-            new JoinDataComplete(new JoinData {JoinNumber = 25, JoinSpan = 1},
-                new JoinMetadata
-                {
-                    Description = "Do Not Disturb Of Set and Feedback",
-                    JoinCapabilities = eJoinCapabilities.ToFromSIMPL,
-                    JoinType = eJoinType.Digital
-                });
+        [JoinName("DoNotDisturbOff")]
+        public JoinDataComplete DoNotDisturbOff =
+            new JoinDataComplete(new JoinData { JoinNumber = 25, JoinSpan = 1 },
+            new JoinMetadata
+            {
+                Description = "Do Not Disturb Off Set and Feedback",
+                JoinCapabilities = eJoinCapabilities.ToFromSIMPL,
+                JoinType = eJoinType.Digital
+            });
 
-        [JoinName("DoNotDisturbToggle")] public JoinDataComplete DoNotDisturbToggle =
-            new JoinDataComplete(new JoinData {JoinNumber = 26, JoinSpan = 1},
-                new JoinMetadata
-                {
-                    Description = "Do Not Disturb Toggle and Feedback",
-                    JoinCapabilities = eJoinCapabilities.ToFromSIMPL,
-                    JoinType = eJoinType.Digital
-                });
+        [JoinName("DoNotDisturbToggle")]
+        public JoinDataComplete DoNotDisturbToggle =
+            new JoinDataComplete(new JoinData { JoinNumber = 26, JoinSpan = 1 },
+            new JoinMetadata
+            {
+                Description = "Do Not Disturb Toggle and Feedback",
+                JoinCapabilities = eJoinCapabilities.ToFromSIMPL,
+                JoinType = eJoinType.Digital
+            });
+        [JoinName("HoldCall")]
+        public JoinDataComplete HoldCall =
+            new JoinDataComplete(new JoinData { JoinNumber = 27, JoinSpan = 1 },
+            new JoinMetadata
+            {
+                Description = "Hold Call Set and Feedback",
+                JoinCapabilities = eJoinCapabilities.ToFromSIMPL,
+                JoinType = eJoinType.Digital
+            });
+
+        [JoinName("Resume Call")]
+        public JoinDataComplete ResumeCall =
+            new JoinDataComplete(new JoinData { JoinNumber = 28, JoinSpan = 1 },
+            new JoinMetadata
+            {
+                Description = "Resume Call Set and Feedback",
+                JoinCapabilities = eJoinCapabilities.ToFromSIMPL,
+                JoinType = eJoinType.Digital
+            });
+
+        [JoinName("HoldToggle")]
+        public JoinDataComplete HoldToggle =
+            new JoinDataComplete(new JoinData { JoinNumber = 29, JoinSpan = 1 },
+            new JoinMetadata
+            {
+                Description = "Hold Toggle and Feedback",
+                JoinCapabilities = eJoinCapabilities.ToFromSIMPL,
+                JoinType = eJoinType.Digital
+            });
 
         [JoinName("CallState")] public JoinDataComplete CallState =
             new JoinDataComplete(new JoinData {JoinNumber = 1, JoinSpan = 1},
