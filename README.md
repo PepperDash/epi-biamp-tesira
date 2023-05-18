@@ -209,7 +209,9 @@ In the provided example config object, given a base object key of ```dsp-1```, t
 
 ### Switcher
 
-Controls objects with the attribute type of "sourceSelection" and subscribes to them as necessary.
+> Note - Version 2.5.0 added the ability to configure SourceSelectors and Routers as different objects.  It is recommended to use this mechanism in new projects.
+
+Controls objects with the attribute type of `sourceSelection` and subscribes to them as necessary; `input` is not subscribed to.
 
 Within the **Legacy** object, this Join map represents a control that is part of an array of controls.  Each join number = Join Map Number + fader ```bridgeIndex``` as defined by the config.
 
@@ -219,7 +221,10 @@ Within the **Standalone** object, this join map represents a single control as d
 
 #### Digitals
 
-None
+| Legacy Join | Standalone Join | Type (RW) | Description      |
+| ----------- | --------------- | --------- | ---------------- |
+| 150         | 1               | W         | Poll |
+
 
 #### Analogs
 
@@ -229,9 +234,10 @@ None
 
 #### Serials
 
-| Legacy Join | Standalone Join | Type (RW) | Description                      |
-| ----------- | --------------- | --------- | -------------------------------- |
-| 150         | 1               | R         | Control Label (Pass From Config) |
+| Legacy Join | Standalone Join | Type (RW) | Description                                       |
+| ----------- | --------------- | --------- | ------------------------------------------------- |
+| 150         | 1               | R         | Control Label (Pass From Config)                  |
+| N/A         | 2               | R         | Source List XSIG (If Configured) or Routed Source |
 
 #### Config Example
 
@@ -246,6 +252,8 @@ None
         "switcherInstanceTag" : "SourceSelector1",
         "type": "router",
         "bridgeIndex" : 1,
+        "showRoutedStringFeedback": true,
+        "pollIntervalMs" : 90000,
         "switcherInputs" : {
             "1" : {"label": "Input1" },
             "2" : {"label": "Input2" },
@@ -263,12 +271,147 @@ None
 > **enabled** - enables the control to be subscribed and controlled.
 **label** - Passed directly across the eisc as the *Label* value.
 **index1** - Index 1 of the control point.
+**type** - Valid Types are **sourceSelector** or **router**
 **switcherInstanceTag** - Instance tag of the sourceSelection control
 **bridgeIndex** - The index of the control on a **Legacy** object
-**switcherInputs** - This is a dictionary of labels for inputs of the switcher.  This is earmarked for future usage.  The keys **must** be integers.
+**switcherInputs** - This is a dictionary of labels for inputs of the switcher.  The keys **must** be integers.
 **switcherOutputs** - This is a dictionary of labels for outputs of the switcher.  This is earmarked for future usage.  The keys **must** be integers.
 
 In the provided example config object, given a base object key of ```dsp-1```, this control would have a standalone key of ```dsp-1--SwitcherControl01```.
+
+***
+
+### Router
+
+Controls objects with the attribute type of `input`.  No Subscriptions available on this control block
+
+Within the **Legacy** object, this Join map represents a control that is part of an array of controls.  Each join number = Join Map Number + fader ```bridgeIndex``` as defined by the config.
+
+Within the **Standalone** object, this join map represents a single control as defined by the key in the bridge.
+
+>This control implements [Essentials](https://github.com/PepperDash/Essentials) interfaces **`IKeyed`** and **`IRoutingWithFeedback`**
+
+#### Digitals
+
+| Legacy Join | Standalone Join | Type (RW) | Description      |
+| ----------- | --------------- | --------- | ---------------- |
+| 150         | 1               | W         | Poll |
+
+
+#### Analogs
+
+| Legacy Join | Standalone Join | Type (RW) | Description      |
+| ----------- | --------------- | --------- | ---------------- |
+| 150         | 1               | RW        | Source Selection |
+
+#### Serials
+
+| Legacy Join | Standalone Join | Type (RW) | Description                                       |
+| ----------- | --------------- | --------- | ------------------------------------------------- |
+| 150         | 1               | R         | Control Label (Pass From Config)                  |
+| N/A         | 2               | R         | Source List XSIG (If Configured) or Routed Source |
+
+#### Config Example
+
+> All sourceSelector and router configs must be part of a dictionary called **routerControlBlocks**.
+
+``` javascript
+"routerControlBlocks" : {
+    "RouterControl01" : {
+        "enabled" : true,
+        "label" : "switcher01",
+        "index1" : 1
+        "routerInstanceTag" : "Router1",
+        "bridgeIndex" : 1,
+        "showRoutedStringFeedback": true,
+        "pollIntervalMs" : 90000,
+        "routerInputs" : {
+            "1" : {"label": "Input1" },
+            "2" : {"label": "Input2" },
+        },
+        "routerOutput" : {
+            "label": "Output1" }
+        }
+    }
+}
+```
+
+#### Config Notes
+
+> **enabled** - enables the control to be subscribed and controlled.
+**label** - Passed directly across the eisc as the *Label* value.
+**index1** - Index of the output number on the router that you wish to control.
+**routerInstanceTag** - Instance tag of the router input selection control
+**bridgeIndex** - The index of the control on a **Legacy** object
+**routerInputs** - This is a dictionary of labels for inputs of the router block.  The keys **must** be integers.
+**routerOutput** - This is an object defining the label of the associated output.  This is earmarked for future usage.
+
+In the provided example config object, given a base object key of ```dsp-1```, this control would have a standalone key of ```dsp-1--RouterControl01```.
+
+***
+
+### SourceSelector
+
+Controls and subscribes to objects with the attribute type of `sourceSelector`.  
+
+Within the **Legacy** object, this Join map represents a control that is part of an array of controls.  Each join number = Join Map Number + fader ```bridgeIndex``` as defined by the config.
+
+Within the **Standalone** object, this join map represents a single control as defined by the key in the bridge.
+
+>This control implements [Essentials](https://github.com/PepperDash/Essentials) interfaces **`IKeyed`** and **`IRoutingWithFeedback`**
+
+#### Digitals
+
+| Legacy Join | Standalone Join | Type (RW) | Description      |
+| ----------- | --------------- | --------- | ---------------- |
+| 150         | 1               | W         | Poll |
+
+
+#### Analogs
+
+| Legacy Join | Standalone Join | Type (RW) | Description      |
+| ----------- | --------------- | --------- | ---------------- |
+| 150         | 1               | RW        | Source Selection |
+
+#### Serials
+
+| Legacy Join | Standalone Join | Type (RW) | Description                                       |
+| ----------- | --------------- | --------- | ------------------------------------------------- |
+| 150         | 1               | R         | Control Label (Pass From Config)                  |
+| N/A         | 2               | R         | Source List XSIG (If Configured) or Routed Source |
+
+#### Config Example
+
+> All sourceSelector and router configs must be part of a dictionary called **routerControlBlocks**.
+
+``` javascript
+"sourceSelectorControlBlocks" : {
+    "sourceSelectorControl01" : {
+        "enabled" : true,
+        "label" : "sourceSelector01",
+        "index1" : 1
+        "sourceSelectorInstanceTag" : "SourceSelector1",
+        "bridgeIndex" : 1,
+        "showRoutedStringFeedback": true,
+        "pollIntervalMs" : 90000,
+        "sourceSelectorInputs" : {
+            "1" : {"label": "Input1" },
+            "2" : {"label": "Input2" },
+        }
+    }
+}
+```
+
+#### Config Notes
+
+> **enabled** - enables the control to be subscribed and controlled.
+**label** - Passed directly across the eisc as the *Label* value.
+**index1** - Index of the output number on the sourceSelector that you wish to control.
+**sourceSelectorInstanceTag** - Instance tag of the sourceSelection control
+**bridgeIndex** - The index of the control on a **Legacy** object
+**sourceSelectorInputs** - This is a dictionary of labels for inputs of the source selector block.  The keys **must** be integers.
+
+In the provided example config object, given a base object key of ```dsp-1```, this control would have a standalone key of ```dsp-1--sourceSelectorControl01```.
 
 ***
 

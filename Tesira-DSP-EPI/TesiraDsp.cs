@@ -1203,14 +1203,14 @@ namespace Tesira_DSP_EPI
             }
 
 
-            //Source Selectors
+            //Legacy Switchers
             Debug.Console(2, this, "There are {0} SourceSelector Control Points", Switchers.Count());
             foreach (var item in Switchers)
             {
                 var switcher = item.Value;
                 var data = switcher.BridgeIndex;
                 if (data == null) continue;
-                var y = (uint) data;
+                var y = (uint)data;
                 var x = (ushort)(((y - 1) * 2) + 1);
                 //3 switchers
                 //((1 - 1) * 2) + 1 = 1
@@ -1220,8 +1220,70 @@ namespace Tesira_DSP_EPI
                 Debug.Console(2, this, "Tesira Switcher {0} connect to {1}", switcher.Key, y);
 
                 if (!switcher.Enabled) continue;
-                
-                
+
+
+                Debug.Console(2, this, "Tesira Switcher {0} is Enabled", x);
+
+                var s = switcher as IRoutingWithFeedback;
+                s.SourceIndexFeedback.LinkInputSig(trilist.UShortInput[switcherJoinMap.Index.JoinNumber + x]);
+
+                trilist.SetUShortSigAction(switcherJoinMap.Index.JoinNumber + x, u => switcher.SetSource(u));
+                trilist.SetSigTrueAction(switcherJoinMap.Poll.JoinNumber + x, switcher.DoPoll);
+
+                switcher.NameFeedback.LinkInputSig(trilist.StringInput[switcherJoinMap.Label.JoinNumber + x]);
+
+                switcher.GetSourceNames();
+            }
+            //Source Selectors
+            Debug.Console(2, this, "There are {0} SourceSelector Control Points", Switchers.Count());
+            foreach (var item in Routers)
+            {
+                var switcher = item.Value;
+                var data = switcher.BridgeIndex;
+                if (data == null) continue;
+                var y = (uint)data;
+                var x = (ushort)(((y - 1) * 2) + 1);
+                //3 switchers
+                //((1 - 1) * 2) + 1 = 1
+                //((2 - 1) * 2) + 1 = 3
+                //((3 - 1) * 2) + 1 = 5
+
+                Debug.Console(2, this, "Tesira Switcher {0} connect to {1}", switcher.Key, y);
+
+                if (!switcher.Enabled) continue;
+
+
+                Debug.Console(2, this, "Tesira Switcher {0} is Enabled", x);
+
+                var s = switcher as IRoutingWithFeedback;
+                s.SourceIndexFeedback.LinkInputSig(trilist.UShortInput[switcherJoinMap.Index.JoinNumber + x]);
+
+                trilist.SetUShortSigAction(switcherJoinMap.Index.JoinNumber + x, u => switcher.SetSource(u));
+                trilist.SetSigTrueAction(switcherJoinMap.Poll.JoinNumber + x, switcher.DoPoll);
+
+                switcher.NameFeedback.LinkInputSig(trilist.StringInput[switcherJoinMap.Label.JoinNumber + x]);
+
+                switcher.GetSourceNames();
+            }
+            //Source Selectors
+            Debug.Console(2, this, "There are {0} SourceSelector Control Points", Switchers.Count());
+            foreach (var item in SourceSelectors)
+            {
+                var switcher = item.Value;
+                var data = switcher.BridgeIndex;
+                if (data == null) continue;
+                var y = (uint)data;
+                var x = (ushort)(((y - 1) * 2) + 1);
+                //3 switchers
+                //((1 - 1) * 2) + 1 = 1
+                //((2 - 1) * 2) + 1 = 3
+                //((3 - 1) * 2) + 1 = 5
+
+                Debug.Console(2, this, "Tesira Switcher {0} connect to {1}", switcher.Key, y);
+
+                if (!switcher.Enabled) continue;
+
+
                 Debug.Console(2, this, "Tesira Switcher {0} is Enabled", x);
 
                 var s = switcher as IRoutingWithFeedback;

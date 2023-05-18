@@ -186,8 +186,8 @@ namespace Tesira_DSP_EPI {
         [JsonProperty("routerInstanceTag")]
         public string RouterInstanceTag { get; set; }
 
-        [JsonProperty("outputIndex")]
-        public int OutputIndex { get; set; }
+        [JsonProperty("index1")]
+        public int Index1 { get; set; }
 
         [JsonProperty("routerInputs")]
         public Dictionary<uint, RoutingPort> RouterInputs { get; set; }
@@ -200,6 +200,10 @@ namespace Tesira_DSP_EPI {
 
         [JsonProperty("pollIntervalMs")]
         public long? PollIntervalMs { get; set; }
+
+        [JsonProperty("bridgeIndex")]
+        public uint? BridgeIndex { get; set; }
+
     }
 
     public class TesiraSourceSelectorControlBlockConfig
@@ -224,6 +228,10 @@ namespace Tesira_DSP_EPI {
 
         [JsonProperty("showSelectedStringFeedback")]
         public bool ShowSelectedStringFeedback { get; set; }
+
+        [JsonProperty("bridgeIndex")]
+        public uint? BridgeIndex { get; set; }
+
     }
 
     public class TesiraStateControlBlockConfig

@@ -78,7 +78,7 @@ namespace Tesira_DSP_EPI
         /// <param name="config">Sqitcher Config Object</param>
         /// <param name="parent">Parent Object</param>
         public TesiraDspSourceSelector(string key, TesiraSourceSelectorControlBlockConfig config, TesiraDsp parent)
-            : base(config.SourceSelectorInstanceTag, String.Empty, parent, string.Format(KeyFormatter, parent.Key, key), config.Label, null)
+            : base(config.SourceSelectorInstanceTag, String.Empty, parent, string.Format(KeyFormatter, parent.Key, key), config.Label, config.BridgeIndex)
         {
             SourceSelectorInputs = new Dictionary<uint, string>();
 
@@ -304,12 +304,12 @@ namespace Tesira_DSP_EPI
 
         public override void LinkToApi(BasicTriList trilist, uint joinStart, string joinMapKey, EiscApiAdvanced bridge)
         {
-            var joinMap = new TesiraSourceSelectorJoinMapAdvancedStandalone(joinStart);
+            var joinMap = new TesiraSwitcherJoinMapAdvancedStandalone(joinStart);
 
             var joinMapSerialized = JoinMapHelper.GetSerializedJoinMapForDevice(joinMapKey);
 
             if (!string.IsNullOrEmpty(joinMapSerialized))
-                joinMap = JsonConvert.DeserializeObject<TesiraSourceSelectorJoinMapAdvancedStandalone>(joinMapSerialized);
+                joinMap = JsonConvert.DeserializeObject<TesiraSwitcherJoinMapAdvancedStandalone>(joinMapSerialized);
 
             if (bridge != null)
             {

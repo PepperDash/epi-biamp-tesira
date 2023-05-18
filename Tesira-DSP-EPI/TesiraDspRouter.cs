@@ -75,7 +75,7 @@ namespace Tesira_DSP_EPI {
         /// <param name="config">Sqitcher Config Object</param>
         /// <param name="parent">Parent Object</param>
         public TesiraDspRouter(string key, TesiraRouterControlBlockConfig config, TesiraDsp parent)
-            : base(config.RouterInstanceTag, String.Empty, config.OutputIndex, 0, parent, string.Format(KeyFormatter, parent.Key, key), config.Label, null)
+            : base(config.RouterInstanceTag, String.Empty, config.Index1, 0, parent, string.Format(KeyFormatter, parent.Key, key), config.Label, config.BridgeIndex)
         {
             SwitcherInputs = new Dictionary<uint, string>();
 
