@@ -24,6 +24,12 @@ namespace Tesira_DSP_EPI {
         [JsonProperty("switcherControlBlocks")]
         public Dictionary<string, TesiraSwitcherControlBlockConfig> SwitcherControlBlocks { get; set; }
 
+        [JsonProperty("routerControlBlocks")]
+        public Dictionary<string, TesiraRouterControlBlockConfig> RouterControlBlocks { get; set; }
+
+        [JsonProperty("sourceSelectorControlBlocks")]
+        public Dictionary<string, TesiraSourceSelectorControlBlockConfig> SourceSelectorControlBlocks { get; set; }
+
         [JsonProperty("presets")]
         public Dictionary<string, TesiraDspPresets> Presets { get; set; }
 
@@ -161,13 +167,71 @@ namespace Tesira_DSP_EPI {
         public Dictionary<uint, RoutingPort> SwitcherInputs { get; set; }
 
         [JsonProperty("switcherOutputs")]
-        public Dictionary<uint, RoutingPort> SwitcherOutputs { get; set; } 
+        public Dictionary<uint, RoutingPort> SwitcherOutputs { get; set; }
 
         [JsonProperty("showRoutedStringFeedback")]
         public bool ShowRoutedStringFeedback { get; set; }
 
         [JsonProperty("pollIntervalMs")]
         public long? PollIntervalMs { get; set; }
+    }
+    public class TesiraRouterControlBlockConfig
+    {
+        [JsonProperty("enabled")]
+        public bool Enabled { get; set; }
+
+        [JsonProperty("label")]
+        public string Label { get; set; }
+
+        [JsonProperty("routerInstanceTag")]
+        public string RouterInstanceTag { get; set; }
+
+        [JsonProperty("index1")]
+        public int Index1 { get; set; }
+
+        [JsonProperty("routerInputs")]
+        public Dictionary<uint, RoutingPort> RouterInputs { get; set; }
+
+        [JsonProperty("routerOutput")]
+        public RoutingPort RouterOutput { get; set; }
+
+        [JsonProperty("showRoutedStringFeedback")]
+        public bool ShowRoutedStringFeedback { get; set; }
+
+        [JsonProperty("pollIntervalMs")]
+        public long? PollIntervalMs { get; set; }
+
+        [JsonProperty("bridgeIndex")]
+        public uint? BridgeIndex { get; set; }
+
+    }
+
+    public class TesiraSourceSelectorControlBlockConfig
+    {
+        [JsonProperty("enabled")]
+        public bool Enabled { get; set; }
+
+        [JsonProperty("label")]
+        public string Label { get; set; }
+
+        [JsonProperty("type")]
+        public string Type { get; set; }
+
+        [JsonProperty("sourceSelectorInstanceTag")]
+        public string SourceSelectorInstanceTag { get; set; }
+
+        [JsonProperty("sourceSelectorInputs")]
+        public Dictionary<uint, RoutingPort> SourceSelectorInputs { get; set; }
+
+        [JsonProperty("sourceSelectorOutput")]
+        public RoutingPort SourceSelectorOutput { get; set; }
+
+        [JsonProperty("showSelectedStringFeedback")]
+        public bool ShowSelectedStringFeedback { get; set; }
+
+        [JsonProperty("bridgeIndex")]
+        public uint? BridgeIndex { get; set; }
+
     }
 
     public class TesiraStateControlBlockConfig
