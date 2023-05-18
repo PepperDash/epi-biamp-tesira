@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Globalization;
 using Crestron.SimplSharpPro.DeviceSupport;
 using PepperDash.Essentials.Core;
 using PepperDash.Core;
@@ -27,20 +28,34 @@ namespace Tesira_DSP_EPI
 
 		public virtual bool IsSubscribed { get; protected set; }
 
-		protected TesiraDspControlPoint(string instanceTag1, string instanceTag2, int index1, int index2, TesiraDsp parent, string key, string name, uint? bridgeIndex)
+        protected TesiraDspControlPoint(string instanceTag1, string instanceTag2, int index1, int index2, TesiraDsp parent, string key, string name, uint? bridgeIndex)
             : base(key, name)
-		{
-            if(bridgeIndex != null)
+        {
+            if (bridgeIndex != null)
                 BridgeIndex = bridgeIndex;
             Feedbacks = new FeedbackCollection<Feedback>();
-			InstanceTag1 = string.IsNullOrEmpty(instanceTag1) ? "" : instanceTag1;
-			InstanceTag2 = string.IsNullOrEmpty(instanceTag2) ? "" : instanceTag2;
-			Index1 = index1;
-			Index2 = index2;
-			Parent = parent;
+            InstanceTag1 = string.IsNullOrEmpty(instanceTag1) ? "" : instanceTag1;
+            InstanceTag2 = string.IsNullOrEmpty(instanceTag2) ? "" : instanceTag2;
+            Index1 = index1;
+            Index2 = index2;
+            Parent = parent;
             NameFeedback = new StringFeedback(key + "-NameFeedback", () => Name);
             CustomNames = new List<string>();
-		}
+        }
+        protected TesiraDspControlPoint(string instanceTag1, string instanceTag2, TesiraDsp parent, string key, string name, uint? bridgeIndex)
+            : base(key, name)
+        {
+            if (bridgeIndex != null)
+                BridgeIndex = bridgeIndex;
+            Feedbacks = new FeedbackCollection<Feedback>();
+            InstanceTag1 = string.IsNullOrEmpty(instanceTag1) ? "" : instanceTag1;
+            InstanceTag2 = string.IsNullOrEmpty(instanceTag2) ? "" : instanceTag2;
+            Index1 = 0;
+            Index2 = 0;
+            Parent = parent;
+            NameFeedback = new StringFeedback(key + "-NameFeedback", () => Name);
+            CustomNames = new List<string>();
+        }
 
         public virtual void Subscribe()
         {
@@ -115,8 +130,8 @@ namespace Tesira_DSP_EPI
             {
                 //requires Index for both get and set commands
                 cmd = String.IsNullOrEmpty(value) ? string.Format("\"{0}\" {1} {2} {3}",
-                    instanceTagLocal, command, attributeCode, Index1) : string.Format("\"{0}\" {1} {2} {3} {4}",
-                    instanceTagLocal, command, attributeCode, Index1, value);
+                    instanceTagLocal, command, attributeCode, Index1 == 0 ? "" : Index1.ToString(CultureInfo.InvariantCulture)) : string.Format("\"{0}\" {1} {2} {3} {4}",
+                    instanceTagLocal, command, attributeCode, Index1 == 0 ? "" : Index1.ToString(CultureInfo.InvariantCulture), value);
             }
 
 

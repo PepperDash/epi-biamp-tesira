@@ -89,6 +89,8 @@ namespace Tesira_DSP_EPI
         private Dictionary<string, TesiraDspFaderControl> Faders { get; set; }
         private Dictionary<string, TesiraDspDialer> Dialers { get; set; }
         private Dictionary<string, TesiraDspSwitcher> Switchers { get; set; }
+        private Dictionary<string, TesiraDspRouter> Routers { get; set; }
+        private Dictionary<string, TesiraDspSourceSelector> SourceSelectors { get; set; }
         private Dictionary<string, TesiraDspStateControl> States { get; set; }
         private Dictionary<string, TesiraDspMeter> Meters { get; set; }
         private Dictionary<string, TesiraDspCrosspointState> CrosspointStates { get; set; }
@@ -172,6 +174,8 @@ namespace Tesira_DSP_EPI
             Meters = new Dictionary<string, TesiraDspMeter>();
             CrosspointStates = new Dictionary<string, TesiraDspCrosspointState>();
             RoomCombiners = new Dictionary<string, TesiraDspRoomCombiner>();
+            Routers = new Dictionary<string, TesiraDspRouter>();
+            SourceSelectors = new Dictionary<string, TesiraDspSourceSelector>();
 
             CrestronEnvironment.ProgramStatusEventHandler += CrestronEnvironment_ProgramStatusEventHandler;
 
@@ -289,6 +293,10 @@ namespace Tesira_DSP_EPI
             CreateFaders(props);
 
             CreateSwitchers(props);
+
+            CreateRouters(props);
+
+            CreateSourceSelectors(props);
 
             CreateDialers(props);
 
@@ -476,6 +484,44 @@ namespace Tesira_DSP_EPI
                     ControlPointList.Add(Switchers[key]);
                 }
                 DeviceManager.AddDevice(Switchers[key]);
+
+            }
+        }
+        private void CreateSourceSelectors(TesiraDspPropertiesConfig props)
+        {
+            if (props.SourceSelectorControlBlocks == null) return;
+            Debug.Console(2, this, "sourceSelectorControlBlocks is not null - There are {0} of them",
+                props.SourceSelectorControlBlocks.Count());
+            foreach (var block in props.SourceSelectorControlBlocks)
+            {
+                var key = block.Key;
+                Debug.Console(2, this, "Source Selector ControlBlock Key - {0}", key);
+                var value = block.Value;
+
+                SourceSelectors.Add(key, new TesiraDspSourceSelector(key, value, this));
+                Debug.Console(2, this, "Added TesiraSwitcher {0} InstanceTag {1}", key, value.SourceSelectorInstanceTag);
+
+                ControlPointList.Add(SourceSelectors[key]);
+                DeviceManager.AddDevice(SourceSelectors[key]);
+
+            }
+        }
+
+        private void CreateRouters(TesiraDspPropertiesConfig props)
+        {
+            if (props.RouterControlBlocks == null) return;
+            Debug.Console(2, this, "routerControlBlocks is not null - There are {0} of them",
+                props.RouterControlBlocks.Count());
+            foreach (var block in props.RouterControlBlocks)
+            {
+                var key = block.Key;
+                Debug.Console(2, this, "RouterControlBlock Key - {0}", key);
+                var value = block.Value;
+
+                Routers.Add(key, new TesiraDspRouter(key, value, this));
+                Debug.Console(2, this, "Added Router {0} InstanceTag {1}", key, value.RouterInstanceTag);
+
+                DeviceManager.AddDevice(Routers[key]);
 
             }
         }
@@ -973,26 +1019,34 @@ namespace Tesira_DSP_EPI
 
         private void SubscribeToComponentByIndex(int indexer)
         {
+            if (indexer >= ControlPointList.Count)
+            {
+                EndSubscriptionProcess();
+                return;
+            }
             Debug.Console(1, this, "Subscribing to Component {0}", indexer);
             var data = ControlPointList[indexer];
             SubscribeToComponent(data);
             var indexerOutput = indexer + 1;
             Debug.Console(2, this, "Indexer = {0} : Count = {1} : ControlPointList", indexerOutput, ControlPointList.Count());
-            if (indexerOutput < ControlPointList.Count)
-            {
-                _componentSubscribeTimer = new CTimer(o => SubscribeToComponentByIndex(indexerOutput), null, 250);
-                return;
-            }
+            _componentSubscribeTimer = new CTimer(o => SubscribeToComponentByIndex(indexerOutput), null, 250);
+        }
+
+        private void EndSubscriptionProcess()
+        {
             if (_componentSubscribeTimer != null) _componentSubscribeTimer.Dispose();
             if (_pacer != null) _pacer.Dispose();
             if (_paceTimer != null) _paceTimer.Dispose();
 
-            foreach (var switcher in Switchers)
+            foreach (var control in Switchers.Select(switcher => switcher.Value).Where(control => control.SelectorCustomName == string.Empty))
             {
-                var control = switcher.Value;
-                if(control.SelectorCustomName == string.Empty)
-                    control.DoPoll();
+                control.DoPoll();
             }
+            foreach (var control in Routers.Select(router => router.Value))
+            {
+                control.DoPoll();
+            }
+
         }
 
 
