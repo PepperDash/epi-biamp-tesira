@@ -10,6 +10,7 @@ using Tesira_DSP_EPI.Bridge.JoinMaps;
 namespace Tesira_DSP_EPI {
     public class TesiraDspStateControl : TesiraDspControlPoint, IPrivacy {
         bool _state;
+        int _tagForSubscription;
 
         private const string KeyFormatter = "{0}--{1}";
 
@@ -30,7 +31,7 @@ namespace Tesira_DSP_EPI {
         /// <param name="config">Config Object for Component</param>
         /// <param name="parent">Component Parent Object</param>
 		public TesiraDspStateControl(string key, TesiraStateControlBlockConfig config, TesiraDsp parent)
-            : base(config.StateInstanceTag, String.Empty, config.Index, 0, parent, string.Format(KeyFormatter, parent.Key, key), config.Label, config.BridgeIndex)
+            : base(config.StateInstanceTag, config.SubscriptionInstanceTag, config.Index, 0, parent, string.Format(KeyFormatter, parent.Key, key), config.Label, config.BridgeIndex)
         {
             Debug.Console(2, this, "New State Instance Tag = {0}", config.StateInstanceTag);
             Debug.Console(2, this, "Starting State {0} Initialize", key);
@@ -38,34 +39,32 @@ namespace Tesira_DSP_EPI {
             StateFeedback = new BoolFeedback(Key + "-StateFeedback", () => _state);
             PrivacyModeIsOnFeedback = new BoolFeedback(Key + "-PrivacyFeedback", () => _state);
 
+            //Look for second instance tag for subscription on state, if not defined just try to subscribe to the state object (instance tag 1)
+            _tagForSubscription = string.IsNullOrEmpty(config.SubscriptionInstanceTag) ? 1 : 2;
+            StateCustomName = string.Format("{0}__state{1}", config.StateInstanceTag, Index1);
+
             Feedbacks.Add(StateFeedback);
             Feedbacks.Add(NameFeedback);
             Feedbacks.Add(PrivacyModeIsOnFeedback);
             parent.Feedbacks.AddRange(Feedbacks);
 
             Initialize(config);
-
         }
 
 		private void Initialize(TesiraStateControlBlockConfig config)
 		{
             Debug.Console(2, this, "Adding StateControl '{0}'", Key);
-
             IsSubscribed = false;
-
-
             Enabled = config.Enabled;
-
         }
 
         /// <summary>
         /// Subscribe to component
         /// </summary>
         public override void Subscribe() {
-            StateCustomName = string.Format("{0}__state{1}", InstanceTag1, Index1);
             Debug.Console(2, this, "StateCustomName = {0}", StateCustomName);
             AddCustomName(StateCustomName);
-            SendSubscriptionCommand(StateCustomName, "state", 250, 1);
+            SendSubscriptionCommand(StateCustomName, "state", 250, _tagForSubscription);
 
             GetState();
         }
@@ -76,9 +75,8 @@ namespace Tesira_DSP_EPI {
         public override void Unsubscribe()
         {
             IsSubscribed = false;
-            StateCustomName = string.Format("{0}__state{1}", InstanceTag1, Index1);
             Debug.Console(2, this, "StateCustomName = {0}", StateCustomName);
-            SendUnSubscriptionCommand(StateCustomName, "state", 1);
+            SendUnSubscriptionCommand(StateCustomName, "state", _tagForSubscription);
         }
 
         /// <summary>
