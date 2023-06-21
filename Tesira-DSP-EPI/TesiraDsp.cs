@@ -216,6 +216,8 @@ namespace Tesira_DSP_EPI
 
         }
 
+
+
         private void StartSubsciptionThread()
         {
             Debug.Console(1, this, "Start Subscription Thread");
@@ -903,14 +905,13 @@ namespace Tesira_DSP_EPI
             if (DevInfo != null)
             {
                 Debug.Console(2, this, "DevInfo Not Null");
+                DevInfo.GetDeviceInfo();
 
-                DevInfo.GetFirmware();
-                DevInfo.GetIpConfig();
-                DevInfo.GetSerial();
             }
 
             _expanderCheckTimer = new CTimer(o => CheckExpanders(), null, 1000);
         }
+
 
         private void GetMinLevels()
         {

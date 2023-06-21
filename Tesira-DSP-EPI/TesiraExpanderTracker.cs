@@ -37,7 +37,7 @@ namespace Tesira_DSP_EPI
             {
                 var key = tesiraExpanderBlockConfig.Value.Index;
                 var value = tesiraExpanderBlockConfig.Value.Hostname;
-                var expander = new TesiraExpanderData(value, key, this);
+                var expander = new TesiraExpanderData(value, key, this, CheckTracker);
                 Expanders.Add(expander);
                 var h = new StringFeedback(() => expander.Hostname);
                 var s = new StringFeedback(() => expander.SerialNumber);
@@ -140,9 +140,9 @@ namespace Tesira_DSP_EPI
 
 				if (newData == null) continue;
                 Debug.Console(2, this, "Found a device Index {0} with Hostname {1}", newData.Index, newData.Hostname);
-
-                newData.SetData(matches[v].ToString());
-                newData.SetMac(matches[v+1].ToString());
+                var macData = matches[v + 1].ToString();
+                var otherData = matches[v].ToString();
+                newData.SetData(otherData, macData);
 
                 //Console.WriteLine(matches[v]);
             }
@@ -167,35 +167,6 @@ namespace Tesira_DSP_EPI
 
             }
         }
-
-        /*public void ParseResults(Regex rgx, string data)
-        {
-            var matches = rgx.Matches(data);
-            Debug.Console(2, this, "There are {0} matches", matches.Count);
-            for (int i = 0; i < matches.Count;  i++)
-            {
-                const string pattern = "\\\"([^\\\"\\\"]+)\\\"?";
-
-                var matches2 = Regex.Matches(data, pattern);
-                var dataMod = Regex.Replace(data, pattern, "").Trim('"').Trim('[').Trim().Replace("  ", " "); ;
-                //Console.WriteLine("Data2 = {0}", data2);
-                var fData = dataMod.Split(' ');
-                var hostname = matches2[0].ToString().Trim('"');
-                var serialNumber = matches2[1].ToString().Trim('"');
-                var firmware = String.Format("{0}.{1}.{2}-build{3}", fData[0], fData[1], fData[2], fData[3]);
-
-                var newData = data.Replace("[", "").Replace("]", "");
-                var macGroup = newData.Split(' ');
-                var macAddress = macGroup.Aggregate("", (current, oct) => current + int.Parse(oct).ToString("X2"));
-
-                Debug.Console(2, this, "Device {0} - hostname : {1} - serial : {1} - firmware : {2} - mac : {3}", i, hostname, serialNumber, firmware, macAddress);
-
-                var expander = Expanders.FirstOrDefault(v => v.Hostname == hostname);
-                if (expander == null) continue;
-                expander.SetData(serialNumber, firmware, macAddress);
-            }
-        }
-         * */
 
         public override void LinkToApi(BasicTriList trilist, uint joinStart, string joinMapKey, EiscApiAdvanced bridge)
         {
@@ -261,14 +232,17 @@ namespace Tesira_DSP_EPI
         #endregion
     }
 
-    public class TesiraExpanderData : IDeviceInfoProvider, IKeyName
+    public class TesiraExpanderData : IDeviceInfoProvider, IKeyName, IOnline
     {
         private CTimer _expanderTimer;
 
         public DeviceInfo DeviceInfo { get; private set; }
         public event DeviceInfoChangeHandler DeviceInfoChanged;
+        private readonly Action DataPoll;
 
+        public StringFeedback NameFeedback { get; private set; }
 
+        public BoolFeedback IsOnline { get; private set; }
         public bool Online { get; private set; }
         public string Hostname { get; private set; }
         public string SerialNumber { get; private set; }
@@ -281,7 +255,7 @@ namespace Tesira_DSP_EPI
 
         private const string Pattern = "\\\"([^\\\"\\\"]+)\\\"?";
 
-        public TesiraExpanderData(string data, int index, IKeyed parent) 
+        public TesiraExpanderData(string data, int index, IKeyed parent, Action dataPoll) 
         {
             Key = String.Format("{0}-{1}", parent.Key, data);
             Name = data;
@@ -291,6 +265,10 @@ namespace Tesira_DSP_EPI
             SerialNumber = "";
             Firmware = "";
             MacAddress = "";
+            DataPoll = dataPoll;
+
+            IsOnline = new BoolFeedback(() => Online);
+            NameFeedback = new StringFeedback(() => Name);
 
             Monitor = new TesiraExpanderMonitor(this, 180000, 360000);
             DeviceInfo = new DeviceInfo();
@@ -305,7 +283,7 @@ namespace Tesira_DSP_EPI
             Monitor.IsOnline = Online;
         }
 
-        public void SetData(string data)
+        public void SetData(string data, string macData)
         {
             var matches = Regex.Matches(data, Pattern);
             var data2 = Regex.Replace(data, Pattern, "").Trim('"').Trim('[').Trim().Replace("  ", " ");
@@ -314,6 +292,7 @@ namespace Tesira_DSP_EPI
             Hostname = matches[0].ToString().Trim('"');
             SerialNumber = matches[1].ToString().Trim('"');
             Firmware = String.Format("{0}.{1}.{2}-build{3}", fData[0], fData[1], fData[2], fData[3]);
+            MacAddress = FormatMac(macData);
 
             Online = true;
 
@@ -326,19 +305,26 @@ namespace Tesira_DSP_EPI
             DeviceInfo.HostName = Hostname;
             DeviceInfo.SerialNumber = SerialNumber;
             DeviceInfo.FirmwareVersion = Firmware;
+            DeviceInfo.MacAddress = MacAddress;
+
             Monitor.IsOnline = Online;
-            UpdateDeviceInfo();
+            OnDeviceInfoChanged();
         }
 
-        public void SetMac(string data)
+        private static string FormatMac(string data)
         {
             var newData = data.Replace("[", "").Replace("]", "");
             var macGroup = newData.Split(' ');
             var mac = macGroup.Aggregate("", (current, oct) => current + (int.Parse(oct).ToString("X2") + ":")).Trim(':');
-            MacAddress = mac;
-            DeviceInfo.MacAddress = MacAddress;
-            UpdateDeviceInfo();
+            return mac;
+        }
 
+
+        private void OnDeviceInfoChanged()
+        {
+            var handler = DeviceInfoChanged;
+            if (handler == null) return;
+            handler(this, new DeviceInfoEventArgs(DeviceInfo));
         }
 
 
@@ -347,10 +333,8 @@ namespace Tesira_DSP_EPI
 
         public void UpdateDeviceInfo()
         {
-            var handler = DeviceInfoChanged;
-            if (handler == null) return;
-            handler(this, new DeviceInfoEventArgs(DeviceInfo));
-
+            if (DataPoll == null) return;
+            DataPoll.Invoke();
         }
 
         #endregion

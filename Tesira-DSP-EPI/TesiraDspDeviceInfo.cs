@@ -98,8 +98,6 @@ namespace Tesira_DSP_EPI
         {
 
             DeviceInfo = new DeviceInfo();
-
-
             Init();
         }
 
@@ -123,22 +121,28 @@ namespace Tesira_DSP_EPI
             Feedbacks.Add(FirmwareFeedback);
             Feedbacks.Add(MacAddressFeedback);
         }
+        public void GetDeviceInfo()
+        {
+            GetFirmware();
+            GetIpConfig();
+            GetSerial();
+        }
 
 
-        public void GetIpConfig()
+        private void GetIpConfig()
         {
             Debug.Console(2, this, "Getting IPConfig");
             SendFullCommand("get", "networkStatus", null, 999);
         }
 
-        public void GetSerial()
+        private void GetSerial()
         {
             Debug.Console(2, this, "Getting Serial");
 
             SendFullCommand("get", "serialNumber", null, 999);            
         }
 
-        public void GetFirmware()
+        private void GetFirmware()
         {
             Debug.Console(2, this, "Getting Firmware");
 
@@ -170,7 +174,7 @@ namespace Tesira_DSP_EPI
                     DeviceInfo.MacAddress = String.IsNullOrEmpty(DeviceInfo.MacAddress) ? MacAddress : DeviceInfo.MacAddress;
                     DeviceInfo.IpAddress = String.IsNullOrEmpty(DeviceInfo.IpAddress) ? IpAddress : DeviceInfo.IpAddress;
 
-                    UpdateDeviceInfo();
+                    OnDeviceInfoChanged();
                     break;
                 }
                 case("serialNumber") :
@@ -179,7 +183,7 @@ namespace Tesira_DSP_EPI
 
                     DeviceInfo.SerialNumber = String.IsNullOrEmpty(DeviceInfo.SerialNumber) ? SerialNumber : DeviceInfo.SerialNumber;
 
-                    UpdateDeviceInfo();
+                    OnDeviceInfoChanged();
                     break;
                 }
                 case ("version") :
@@ -187,7 +191,7 @@ namespace Tesira_DSP_EPI
 
                     DeviceInfo.FirmwareVersion = String.IsNullOrEmpty(DeviceInfo.FirmwareVersion) ? Firmware : DeviceInfo.FirmwareVersion;
 
-                    UpdateDeviceInfo();
+                    OnDeviceInfoChanged();
                     break;
             }
 
@@ -214,9 +218,6 @@ namespace Tesira_DSP_EPI
             //var comm = DspDevice as IBasicCommunication;
             trilist.SetSigTrueAction(joinMap.Resubscribe.JoinNumber, Parent.Resubscribe);
 
-
-
-
             Parent.CommunicationMonitor.IsOnlineFeedback.LinkInputSig(trilist.BooleanInput[joinMap.IsOnline.JoinNumber]);
             Parent.CommandPassthruFeedback.LinkInputSig(trilist.StringInput[joinMap.CommandPassThru.JoinNumber]);
             NameFeedback.LinkInputSig(trilist.StringInput[joinMap.Name.JoinNumber]);
@@ -242,20 +243,25 @@ namespace Tesira_DSP_EPI
 
         }
 
+        public void OnDeviceInfoChanged()
+        {
+            var args = new DeviceInfoEventArgs(DeviceInfo);
+
+            var raiseEvent = DeviceInfoChanged;
+
+            if (raiseEvent != null)
+            {
+                raiseEvent(Parent, args);
+            }
+        }
+
 
         #region IDeviceInfoProvider Members
 
 
         public void UpdateDeviceInfo()
         {
-            var args = new DeviceInfoEventArgs(DeviceInfo);
-
-           var raiseEvent = DeviceInfoChanged;
-
-            if (raiseEvent != null)
-            {
-                raiseEvent(Parent, args);
-            }
+            GetDeviceInfo();
         }
 
         #endregion
