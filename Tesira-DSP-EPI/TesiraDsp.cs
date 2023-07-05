@@ -680,6 +680,9 @@ namespace Tesira_DSP_EPI
 			Communication.SendText(s);
 		}
 
+        const string SubscriptionPattern = "! [\\\"](.*?[^\\\\])[\\\"] (.*)";
+        private readonly static Regex SubscriptionRegex = new Regex(SubscriptionPattern);
+
         private void Port_LineReceived(object dev, GenericCommMethodReceiveTextArgs args)
         {
             if (args == null) return;
@@ -721,9 +724,8 @@ namespace Tesira_DSP_EPI
 
                 else if (args.Text.IndexOf("! ", StringComparison.Ordinal) >= 0)
                 {
-                    const string pattern = "! [\\\"](.*?[^\\\\])[\\\"] (.*)";
 
-                    var match = Regex.Match(args.Text, pattern);
+                    var match = SubscriptionRegex.Match(args.Text);
 
                     if (!match.Success) return;
 

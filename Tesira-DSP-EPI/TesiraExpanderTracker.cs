@@ -109,28 +109,27 @@ namespace Tesira_DSP_EPI
 
             //StartTimer();
         }
+        const string Pattern = @"\[([^\[\]]+)\]?";
+        private readonly static Regex Regex1 = new Regex(Pattern);
+        const string Pattern2 = "\\\"([^\\\"\\\"]+)\\\"?";
+        private readonly static Regex Regex2 = new Regex(Pattern2);
+
+
 
         public override void ParseGetMessage(string attributeCode, string message)
         {
             Debug.Console(2, this, "!!!!!!!!EXPANDER DATA!!!!!!!!!!!");
-            const string pattern = @"\[([^\[\]]+)\]?";
-            const string pattern2 = "\\\"([^\\\"\\\"]+)\\\"?";
 
-            var matches = Regex.Matches(message, pattern);
-            /*
-            var newString = Regex.Replace(myString, pattern, "");
-            var matches2 = Regex.Matches(newString, pattern);
-		
-            var someMatches = matches2.RemoveAll(s => s.ToString.Length < 4));
-            */
-            Console.WriteLine("There are {0} Matches", matches.Count);
+            var matches = Regex1.Matches(message);
+
+            Debug.Console(2, this, "There are {0} Matches", matches.Count);
             for (var v = 0; v < matches.Count; v++)
             {
                 if (!matches[v].ToString().Contains('"')) continue;
                 Debug.Console(2, this, "Match {0} is a device", v);
 
-                var matchesEnclosed = Regex.Matches(matches[v].ToString(), pattern2);
-                var data2 = Regex.Replace(matches[v].ToString(), pattern2, "").Trim('"').Trim('[').Trim().Replace("  ", " ");
+                var matchesEnclosed = Regex2.Matches(matches[v].ToString());
+                var data2 = Regex2.Replace(matches[v].ToString(),  "").Trim('"').Trim('[').Trim().Replace("  ", " ");
                 Console.WriteLine("Data2 = {0}", data2);
                 var hostname = matchesEnclosed[0].ToString().Trim('"');
 
@@ -253,7 +252,8 @@ namespace Tesira_DSP_EPI
         public string Name { get; private set; }
         public TesiraExpanderMonitor Monitor;
 
-        private const string Pattern = "\\\"([^\\\"\\\"]+)\\\"?";
+        private const string ExpanderPattern = "\\\"([^\\\"\\\"]+)\\\"?";
+        private static readonly Regex ExpanderRegex = new Regex(ExpanderPattern);
 
         public TesiraExpanderData(string data, int index, IKeyed parent, Action dataPoll) 
         {
@@ -285,8 +285,8 @@ namespace Tesira_DSP_EPI
 
         public void SetData(string data, string macData)
         {
-            var matches = Regex.Matches(data, Pattern);
-            var data2 = Regex.Replace(data, Pattern, "").Trim('"').Trim('[').Trim().Replace("  ", " ");
+            var matches = ExpanderRegex.Matches(data);
+            var data2 = ExpanderRegex.Replace(data, "").Trim('"').Trim('[').Trim().Replace("  ", " ");
             Console.WriteLine("Data2 = {0}", data2);
             var fData = data2.Split(' ');
             Hostname = matches[0].ToString().Trim('"');
