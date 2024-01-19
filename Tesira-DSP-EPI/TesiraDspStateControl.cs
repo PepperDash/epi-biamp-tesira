@@ -102,6 +102,9 @@ namespace Tesira_DSP_EPI {
             }
         }
 
+        const string ParsePattern = "[^ ]* (.*)";
+        private readonly static Regex ParseRegex = new Regex(ParsePattern);
+
         /// <summary>
         /// Parses a non subscription response
         /// </summary>
@@ -111,9 +114,8 @@ namespace Tesira_DSP_EPI {
             try {
                 Debug.Console(2, this, "Parsing Message - '{0}' : Message has an attributeCode of {1}", message, attributeCode);
                 // Parse an "+OK" message
-                const string pattern = "[^ ]* (.*)";
 
-                var match = Regex.Match(message, pattern);
+                var match = ParseRegex.Match(message);
 
                 if (!match.Success) return;
 

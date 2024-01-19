@@ -564,6 +564,15 @@ namespace Tesira_DSP_EPI {
 
             }
         }
+        //Pulls Entire Value "array" and seperates call appearances
+        const string AppearancePattern = "\\[([^\\[\\]]+)\\]";
+        private static readonly Regex AppearanceRegex = new Regex(AppearancePattern);
+        //Seperates each call appearance into their constituent parts
+        const string ParseAppearancePattern = "\\[(?<state>\\d+)\\s+(?<line>\\d+)\\s+(?<call>\\d+)\\s+(?<action>\\d+)\\s+(?<cid>\".+\"|\"\")\\s+(?<prompt>\\d+)\\]";
+        private static readonly Regex ParseAppearanceRegex = new Regex(ParseAppearancePattern);
+        //Pulls CallerID Data
+        const string CallerIdPattern = "(?:(?:\\\\\"(?<time>.*)\\\\\")(?:\\\\\"(?<number>.*)\\\\\")(?:\\\\\"(?<name>.*)\\\\\"))|\"\"";
+        private static readonly Regex CallerIdRegex = new Regex(CallerIdPattern);
 
         /// <summary>
         /// Parses incoming subscription-related messages directed to this object
@@ -577,19 +586,13 @@ namespace Tesira_DSP_EPI {
                 Debug.Console(2, this, "New Subscription Message to Dialer");
                 if (customName == ControlStatusCustomName || customName == PotsDialerCustomName)
                 {
-                    //Pulls Entire Value "array" and seperates call appearances
-                    const string pattern1 = "\\[([^\\[\\]]+)\\]";
-                    //Seperates each call appearance into their constituent parts
-                    const string pattern2 = "\\[(?<state>\\d+)\\s+(?<line>\\d+)\\s+(?<call>\\d+)\\s+(?<action>\\d+)\\s+(?<cid>\".+\"|\"\")\\s+(?<prompt>\\d+)\\]";
-                    //Pulls CallerID Data
-                    const string pattern3 = "(?:(?:\\\\\"(?<time>.*)\\\\\")(?:\\\\\"(?<number>.*)\\\\\")(?:\\\\\"(?<name>.*)\\\\\"))|\"\"";
 
-                    var myMatches = Regex.Matches(value, pattern1);
+                    var myMatches = AppearanceRegex.Matches(value);
 
                     Debug.Console(2, this, "This is the list of Call States - {0}", myMatches.ToString());
 
                     var match = myMatches[CallAppearance - 1 + (IsVoip ? ((Index1 - 1) * 6) : 0)];
-                    var match2 = Regex.Match(match.Value, pattern2);
+                    var match2 = ParseAppearanceRegex.Match(match.Value);
                     if (match2.Success)
                     {
                         Debug.Console(2, this, "VoIPControlStatus Subscribed Response = {0}", match.Value);
@@ -629,7 +632,7 @@ namespace Tesira_DSP_EPI {
 
                         OffHookFeedback.FireUpdate();
 
-                        var match3 = Regex.Match(match2.Groups["cid"].Value, pattern3);
+                        var match3 = CallerIdRegex.Match(match2.Groups["cid"].Value);
                         if (match3.Success)
                         {
                             CallerIdNumber = match3.Groups["number"].Value;
@@ -683,6 +686,10 @@ namespace Tesira_DSP_EPI {
             LastDialedFeedback.FireUpdate();
         }
 
+        private const string MessagePattern = "[^ ]* (.*)";
+        private readonly static Regex MessageRegex = new Regex(MessagePattern);
+
+
         /// <summary>
         /// Parses any subscription-unrelated messages directed to this object
         /// </summary>
@@ -692,9 +699,8 @@ namespace Tesira_DSP_EPI {
             try {
                 Debug.Console(2, this, "Parsing Message - '{0}' : Message has an attributeCode of {1}", message, attributeCode);
                 // Parse an "+OK" message
-                const string pattern = "[^ ]* (.*)";
 
-                var match = Regex.Match(message, pattern);
+                var match = MessageRegex.Match(message);
 
                 if (!match.Success) return;
                 var value = match.Groups[1].Value;

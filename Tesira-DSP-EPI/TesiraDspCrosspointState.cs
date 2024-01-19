@@ -20,7 +20,6 @@ namespace Tesira_DSP_EPI
 
         private const string KeyFormatter = "{0}--{1}";
 
-        private const string Pattern = "[^ ]* (.*)";
 
         bool _state;
 
@@ -121,6 +120,10 @@ namespace Tesira_DSP_EPI
             GetState();
         }
 
+        const string ParsePattern = "[^ ]* (.*)";
+        private readonly static Regex ParseRegex = new Regex(ParsePattern);
+
+
         /// <summary>
         /// Parse non-subscription data
         /// </summary>
@@ -134,7 +137,7 @@ namespace Tesira_DSP_EPI
                     attributeCode);
                 // Parse an "+OK" message
 
-                var match = Regex.Match(message, Pattern);
+                var match = ParseRegex.Match(message);
 
                 if (!match.Success) return;
                 var value = match.Groups[1].Value;
