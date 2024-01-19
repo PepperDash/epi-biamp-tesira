@@ -188,7 +188,7 @@ namespace Tesira_DSP_EPI {
 
                 if (message.Contains("-ERR address not found"))
                 {
-                    Debug.ConsoleWithLog(2, this, "Baimp Error Address not found: '{0}'\n", InstanceTag1);
+                    Debug.ConsoleWithLog(2, this, "Biamp Error Address not found: '{0}'\n", InstanceTag1);
                     return;
                 }
 

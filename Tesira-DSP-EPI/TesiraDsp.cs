@@ -744,9 +744,8 @@ namespace Tesira_DSP_EPI
                 else if (args.Text.IndexOf("+OK", StringComparison.Ordinal) == 0)
                 {
                     if(InitialStart) CheckSerialSendStatus();
-                    if (args.Text == "+OK")       // Check for a simple "+OK" only 'ack' repsonse or a list response and ignore
-
-                        return;
+                    // if (args.Text == "+OK")       // Check for a simple "+OK" only 'ack' repsonse or a list response and ignore
+                       // return;
                     
                     // response is not from a subscribed attribute.  From a get/set/toggle/increment/decrement command
                     //string pattern = "(?<=\" )(.*?)(?=\\+)";
