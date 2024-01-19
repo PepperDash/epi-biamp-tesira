@@ -245,6 +245,9 @@ namespace Tesira_DSP_EPI {
         [JsonProperty("stateInstanceTag")]
         public string StateInstanceTag { get; set; }
 
+        [JsonProperty("subscriptionInstanceTag")]
+        public string SubscriptionInstanceTag { get; set; }
+
         [JsonProperty("index")]
         public int Index { get; set; }
 
