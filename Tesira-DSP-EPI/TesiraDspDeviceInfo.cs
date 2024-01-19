@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using System.Text.RegularExpressions;
 using Newtonsoft.Json;
 using PepperDash.Core;
@@ -17,6 +18,9 @@ namespace Tesira_DSP_EPI
         /// </summary>
 
         public DeviceInfo DeviceInfo { get; private set; }
+
+        public const string Make = "Biamp";
+        public string Model { get; private set; }
 
         public event DeviceInfoChangeHandler DeviceInfoChanged;
 
@@ -88,6 +92,8 @@ namespace Tesira_DSP_EPI
         public StringFeedback SerialNumberFeedback { get; set; }
         public StringFeedback FirmwareFeedback { get; set; }
         public StringFeedback MacAddressFeedback { get; set; }
+        public StringFeedback MakeFeedback { get; set; }
+        public StringFeedback ModelFeedback { get; set; }
 
         /// <summary>
         /// Constructor for Device Info Object
@@ -98,8 +104,6 @@ namespace Tesira_DSP_EPI
         {
 
             DeviceInfo = new DeviceInfo();
-
-
             Init();
         }
 
@@ -111,6 +115,9 @@ namespace Tesira_DSP_EPI
             SerialNumberFeedback = new StringFeedback(() => SerialNumber);
             FirmwareFeedback = new StringFeedback(() => Firmware);
             MacAddressFeedback = new StringFeedback(() => MacAddress);
+            MakeFeedback = new StringFeedback(() => Make);
+            ModelFeedback = new StringFeedback(() => Model);
+
 
 
 
@@ -123,38 +130,52 @@ namespace Tesira_DSP_EPI
             Feedbacks.Add(FirmwareFeedback);
             Feedbacks.Add(MacAddressFeedback);
         }
+        public void GetDeviceInfo()
+        {
+            GetFirmware();
+            GetIpConfig();
+            GetSerial();
+            GetServers();
+        }
 
 
-        public void GetIpConfig()
+        private void GetIpConfig()
         {
             Debug.Console(2, this, "Getting IPConfig");
             SendFullCommand("get", "networkStatus", null, 999);
         }
 
-        public void GetSerial()
+        private void GetSerial()
         {
             Debug.Console(2, this, "Getting Serial");
 
             SendFullCommand("get", "serialNumber", null, 999);            
         }
 
-        public void GetFirmware()
+        private void GetFirmware()
         {
             Debug.Console(2, this, "Getting Firmware");
 
             SendFullCommand("get", "version", null, 999);            
         }
 
+        private void GetServers()
+        {
+            Debug.Console(2, this, "Getting Servers");
+            SendFullCommand("get", "discoveredServers", null, 999);
+        }
+        private const string Pattern = "([\"\'])(?:(?=(\\\\?))\\2.)*?\\1";
+
+        private static readonly Regex ParseRegex = new Regex(Pattern);
 
         public override void ParseGetMessage(string attributeCode, string message)
         {
             Debug.Console(2, this, "Parsing Message - '{0}' : Message has an attributeCode of {1}", message, attributeCode);
             // Parse an "+OK" message
-            const string pattern = "([\"\'])(?:(?=(\\\\?))\\2.)*?\\1";
 
             if (message.IndexOf("+OK", StringComparison.OrdinalIgnoreCase) <= -1) return;
 
-            var matches = Regex.Matches(message, pattern);
+            var matches = ParseRegex.Matches(message);
 
             if (matches == null) return;
 
@@ -170,7 +191,7 @@ namespace Tesira_DSP_EPI
                     DeviceInfo.MacAddress = String.IsNullOrEmpty(DeviceInfo.MacAddress) ? MacAddress : DeviceInfo.MacAddress;
                     DeviceInfo.IpAddress = String.IsNullOrEmpty(DeviceInfo.IpAddress) ? IpAddress : DeviceInfo.IpAddress;
 
-                    UpdateDeviceInfo();
+                    OnDeviceInfoChanged();
                     break;
                 }
                 case("serialNumber") :
@@ -179,15 +200,29 @@ namespace Tesira_DSP_EPI
 
                     DeviceInfo.SerialNumber = String.IsNullOrEmpty(DeviceInfo.SerialNumber) ? SerialNumber : DeviceInfo.SerialNumber;
 
-                    UpdateDeviceInfo();
+                    OnDeviceInfoChanged();
                     break;
                 }
-                case ("version") :
+                case ("version"):
                     Firmware = matches[0].Value.Trim('"');
 
                     DeviceInfo.FirmwareVersion = String.IsNullOrEmpty(DeviceInfo.FirmwareVersion) ? Firmware : DeviceInfo.FirmwareVersion;
 
-                    UpdateDeviceInfo();
+                    OnDeviceInfoChanged();
+                    break;
+
+                case ("discoveredServers"):
+                    for (var i = 0; i <= matches.Count; i = i + 2)
+                    {
+                        if (!matches[i].Value.Trim('"').Equals(IpAddress)) continue;
+                        var substring = message.Substring(4, message.Length - 4).Replace("]]", string.Empty).Replace("[[", string.Empty).Replace("][", "|");
+                        var chunks = substring.Split('|');
+                        var chunkSelector = i == 0 ? 0 : i/2;
+                        Model = chunks[chunkSelector].Split(' ').Last();
+                    }
+                    ModelFeedback.FireUpdate();
+                    MakeFeedback.FireUpdate();
+                    OnDeviceInfoChanged();
                     break;
             }
 
@@ -214,9 +249,6 @@ namespace Tesira_DSP_EPI
             //var comm = DspDevice as IBasicCommunication;
             trilist.SetSigTrueAction(joinMap.Resubscribe.JoinNumber, Parent.Resubscribe);
 
-
-
-
             Parent.CommunicationMonitor.IsOnlineFeedback.LinkInputSig(trilist.BooleanInput[joinMap.IsOnline.JoinNumber]);
             Parent.CommandPassthruFeedback.LinkInputSig(trilist.StringInput[joinMap.CommandPassThru.JoinNumber]);
             NameFeedback.LinkInputSig(trilist.StringInput[joinMap.Name.JoinNumber]);
@@ -242,20 +274,25 @@ namespace Tesira_DSP_EPI
 
         }
 
+        public void OnDeviceInfoChanged()
+        {
+            var args = new DeviceInfoEventArgs(DeviceInfo);
+
+            var raiseEvent = DeviceInfoChanged;
+
+            if (raiseEvent != null)
+            {
+                raiseEvent(Parent, args);
+            }
+        }
+
 
         #region IDeviceInfoProvider Members
 
 
         public void UpdateDeviceInfo()
         {
-            var args = new DeviceInfoEventArgs(DeviceInfo);
-
-           var raiseEvent = DeviceInfoChanged;
-
-            if (raiseEvent != null)
-            {
-                raiseEvent(Parent, args);
-            }
+            GetDeviceInfo();
         }
 
         #endregion

@@ -453,6 +453,7 @@ None
         "enabled" : true,
         "label" : "State01",
         "stateInstanceTag" : "LogicState1",
+        "subscriptionInstanceTag" : "LogicMeter1",
         "index" : 1,
         "bridgeIndex" : 1
     }
@@ -467,6 +468,7 @@ In the provided example config object, given a base object key of ```dsp-1```, t
 **label** - Passed directly across the eisc as the *Label* value.
 **index** - Index of the control point.
 **stateInstanceTag** - Instance tag of the state control
+**subscriptionInstanceTag** - (Optional) Instance tag of the meter control for subscribing to feedback. If null or empty, will attempt to subscribe to stateInstanceTag
 **bridgeIndex** - The index of the control on a **Legacy** object
 
 ***
