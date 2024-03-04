@@ -271,7 +271,8 @@ namespace Tesira_DSP_EPI
 
         public override void DoPoll()
         {
-            SendFullCommand("get", "input", String.Empty, 1);
+            // Debug.Console(2, this, "SourceSelector DoPoll() {0}",Label);
+            SendFullCommand("get", "sourceSelection", String.Empty, 1);
         }
 
         #region IRouting Members

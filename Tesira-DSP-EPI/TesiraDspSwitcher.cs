@@ -297,8 +297,12 @@ namespace Tesira_DSP_EPI {
 
         public override void DoPoll()
         {
-            SendFullCommand("get", "input", String.Empty, 1);
-            _pollTimer.Reset(PollIntervalMs);
+            if(Type == "router"){
+                SendFullCommand("get", "input", String.Empty, 1);
+                _pollTimer.Reset(PollIntervalMs);
+                return
+            }
+            SendFullCommand("get", "sourceSelection", String.Empty, 1);
         }
 
         #region IRouting Members
