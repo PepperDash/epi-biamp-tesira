@@ -300,7 +300,7 @@ namespace Tesira_DSP_EPI {
             if(Type == "router"){
                 SendFullCommand("get", "input", String.Empty, 1);
                 _pollTimer.Reset(PollIntervalMs);
-                return
+                return;
             }
             SendFullCommand("get", "sourceSelection", String.Empty, 1);
         }
