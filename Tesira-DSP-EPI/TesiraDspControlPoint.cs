@@ -153,18 +153,20 @@ namespace Tesira_DSP_EPI
             }
 
 
-			if (command == "get")
-			{
-				// This command will generate a return value response so it needs to be queued
-				if (!string.IsNullOrEmpty(cmd))
-                    Parent.CommandQueue.EnqueueCommand(new QueuedCommand(cmd, attributeCode, this));
-			}
-			else
-			{
-				// This command will generate a simple "+OK" response and doesn't need to be queued
-				if (!string.IsNullOrEmpty(cmd))
-                    Parent.SendLine(cmd);
-			}
+            //if (command == "get")
+            //{
+            //    // This command will generate a return value response so it needs to be queued
+            //    if (!string.IsNullOrEmpty(cmd))
+            //        Parent.CommandQueue.EnqueueCommand(new QueuedCommand(cmd, attributeCode, this));
+            //}
+            //else
+            //{
+            //    // This command will generate a simple "+OK" response and doesn't need to be queued
+            //    if (!string.IsNullOrEmpty(cmd))
+            //        Parent.SendLine(cmd);
+            //}
+
+            Parent.CommandQueue.EnqueueCommand(new QueuedCommand(cmd, attributeCode, this));
 		}
 
 		virtual public void ParseGetMessage(string attributeCode, string message)
