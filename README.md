@@ -4,7 +4,14 @@
 
 # Tesira DSP Essentials Plugin (c) 2023
 
->**NOTE : INVALID TAGS BREAK THIS RELEASE**
+> [!WARNING]
+> 1. INVALID TAGS BREAK THIS RELEASE
+> 2. Do not update Biamp FW independent of Crestron Software and Essentials
+
+> [!IMPORTANT]
+> Biamp FW v4.7.2 requires Essentials v1.15.5, or newer
+>
+> Biamp FW v.4.7.2 includes a change of "deprecated SSH ciphers" which eliminates the ability to connect over SSH using Essentials v1.15.4 and prior.  Essentials v1.15.5 is compiled with the latest Crestron libraries, which are rleied upon for the SSH connection and resolves the issue.
 
 ## License
 
@@ -45,7 +52,7 @@ For a parent device with a key of ```dsp-1``` and a component with the key of ``
 
 The only exception to this rule is for the Base **Standalone** object, which has a key suffix of **DeviceInfo**
 
->**Important to note this version of the plugin currently implements both eiscApi and EiscApiAdvanced as valid bridge types**
+>[!IMPORTANT]Important to note this version of the plugin currently implements both eiscApi and EiscApiAdvanced as valid bridge types**
 
 ``` javascript
 "type": "eiscApiAdvanced"
@@ -101,8 +108,9 @@ None
 
 > This configuration matches a standard essentials device configuration at the base level, with only the type being different.  This may have the type **```tesira```**, **```tesiraforte```**, **```tesiraserver```**, **```tesiradsp```**, or **```tesira-dsp```**.
 
-``` javascript
-"key": "TesiraDsp-1",
+```json
+{    
+    "key": "TesiraDsp-1",
     "name": "TesiraDspTesting",
     "type": "tesiraDsp",
     "group": "dsp",
@@ -168,7 +176,7 @@ Within the **Standalone** object, this join map represents a single control as d
 
 > All Level/Mute configs must be part of a dictionary called **faderControlBlocks**.  
 
-``` javascript
+```json
 "faderControlBlocks": {
     "LevelControl01": {
         "enabled": true,
@@ -185,6 +193,7 @@ Within the **Standalone** object, this join map represents a single control as d
         "permissions" : 0,
         "bridgeIndex" : 1
     }
+}
 ```
 
 #### Config Notes
@@ -209,7 +218,8 @@ In the provided example config object, given a base object key of ```dsp-1```, t
 
 ### Switcher
 
-> Note - Version 2.5.0 added the ability to configure SourceSelectors and Routers as different objects.  It is recommended to use this mechanism in new projects.
+> [!NOTE]
+> Version 2.5.0 added the ability to configure SourceSelectors and Routers as different objects.  It is recommended to use this mechanism in new projects.
 
 Controls objects with the attribute type of `sourceSelection` and subscribes to them as necessary; `input` is not subscribed to.
 
@@ -221,9 +231,9 @@ Within the **Standalone** object, this join map represents a single control as d
 
 #### Digitals
 
-| Legacy Join | Standalone Join | Type (RW) | Description      |
-| ----------- | --------------- | --------- | ---------------- |
-| 150         | 1               | W         | Poll |
+| Legacy Join | Standalone Join | Type (RW) | Description |
+| ----------- | --------------- | --------- | ----------- |
+| 150         | 1               | W         | Poll        |
 
 
 #### Analogs
@@ -243,7 +253,7 @@ Within the **Standalone** object, this join map represents a single control as d
 
 > All sourceSelector and router configs must be part of a dictionary called **switcherControlBlocks**. Router configs require that the "type" be set to "router"
 
-``` javascript
+```json
 "switcherControlBlocks" : {
     "SwitcherControl01" : {
         "enabled" : true,
@@ -293,9 +303,9 @@ Within the **Standalone** object, this join map represents a single control as d
 
 #### Digitals
 
-| Legacy Join | Standalone Join | Type (RW) | Description      |
-| ----------- | --------------- | --------- | ---------------- |
-| 150         | 1               | W         | Poll |
+| Legacy Join | Standalone Join | Type (RW) | Description |
+| ----------- | --------------- | --------- | ----------- |
+| 150         | 1               | W         | Poll        |
 
 
 #### Analogs
@@ -315,22 +325,24 @@ Within the **Standalone** object, this join map represents a single control as d
 
 > All sourceSelector and router configs must be part of a dictionary called **routerControlBlocks**.
 
-``` javascript
-"routerControlBlocks" : {
-    "RouterControl01" : {
-        "enabled" : true,
-        "label" : "switcher01",
-        "index1" : 1
-        "routerInstanceTag" : "Router1",
-        "bridgeIndex" : 1,
-        "showRoutedStringFeedback": true,
-        "pollIntervalMs" : 90000,
-        "routerInputs" : {
-            "1" : {"label": "Input1" },
-            "2" : {"label": "Input2" },
-        },
-        "routerOutput" : {
-            "label": "Output1" }
+```json
+{
+    "routerControlBlocks" : {
+        "RouterControl01" : {
+            "enabled" : true,
+            "label" : "switcher01",
+            "index1" : 1,
+            "routerInstanceTag" : "Router1",
+            "bridgeIndex" : 1,
+            "showRoutedStringFeedback": true,
+            "pollIntervalMs" : 90000,
+            "routerInputs" : {
+                "1" : {"label": "Input1" },
+                "2" : {"label": "Input2" },
+            },
+            "routerOutput" : {
+                "label": "Output1" 
+            }
         }
     }
 }
@@ -362,9 +374,9 @@ Within the **Standalone** object, this join map represents a single control as d
 
 #### Digitals
 
-| Legacy Join | Standalone Join | Type (RW) | Description      |
-| ----------- | --------------- | --------- | ---------------- |
-| 150         | 1               | W         | Poll |
+| Legacy Join | Standalone Join | Type (RW) | Description |
+| ----------- | --------------- | --------- | ----------- |
+| 150         | 1               | W         | Poll        |
 
 
 #### Analogs
@@ -384,19 +396,21 @@ Within the **Standalone** object, this join map represents a single control as d
 
 > All sourceSelector and router configs must be part of a dictionary called **routerControlBlocks**.
 
-``` javascript
-"sourceSelectorControlBlocks" : {
-    "sourceSelectorControl01" : {
-        "enabled" : true,
-        "label" : "sourceSelector01",
-        "index1" : 1
-        "sourceSelectorInstanceTag" : "SourceSelector1",
-        "bridgeIndex" : 1,
-        "showRoutedStringFeedback": true,
-        "pollIntervalMs" : 90000,
-        "sourceSelectorInputs" : {
-            "1" : {"label": "Input1" },
-            "2" : {"label": "Input2" },
+```json
+{
+    "sourceSelectorControlBlocks" : {
+        "sourceSelectorControl01" : {
+            "enabled" : true,
+            "label" : "sourceSelector01",
+            "index1" : 1,
+            "sourceSelectorInstanceTag" : "SourceSelector1",
+            "bridgeIndex" : 1,
+            "showRoutedStringFeedback": true,
+            "pollIntervalMs" : 90000,
+            "sourceSelectorInputs" : {
+                "1" : {"label": "Input1" },
+                "2" : {"label": "Input2" },
+            }
         }
     }
 }
@@ -447,15 +461,17 @@ None
 
 > All state configs must be part of a dictionary called **stateControlBlocks**.  
 
-``` javascript
-"stateControlBlocks" : {
-    "StateControl1" : {
-        "enabled" : true,
-        "label" : "State01",
-        "stateInstanceTag" : "LogicState1",
-        "subscriptionInstanceTag" : "LogicMeter1",
-        "index" : 1,
-        "bridgeIndex" : 1
+```json
+{
+    "stateControlBlocks" : {
+        "StateControl1" : {
+            "enabled" : true,
+            "label" : "State01",
+            "stateInstanceTag" : "LogicState1",
+            "subscriptionInstanceTag" : "LogicMeter1",
+            "index" : 1,
+            "bridgeIndex" : 1
+        }
     }
 }
 ```
@@ -502,14 +518,16 @@ None
 > All preset configs must be part of a dictionary called **presets**.  
 
 
-``` javascript
-"presets" : {
-    "SomeUniqueKey": {
-        "label" : "Default",
-        "presetName" : "Default Levels",
-        "presetId" : 1101,
-        "presetIndex" : 1
+```json
+{
+    "presets" : {
+        "SomeUniqueKey": {
+            "label" : "Default",
+            "presetName" : "Default Levels",
+            "presetId" : 1101,
+            "presetIndex" : 1
         }
+    }
 }
 ```
 
@@ -594,19 +612,21 @@ Within the **Standalone** object, this join map represents a single control as d
 
 > All dialer configs must be part of a dictionary called **dialerControlBlocks**.  
 
-``` javascript
-"dialerControlBlocks" : {
-    "Dialer1" : {
-        "enabled" : true,
-        "label" : "Dialer 01",
-        "isVoip" : true,
-        "dialerInstanceTag" : "Dialer1",
-        "controlStatusInstanceTag" : "VoIPControlStatus1",
-        "index" : 1,
-        "callAppearance" : 1,
-        "clearOnHangup" : true,
-        "appendDtmf" : false,
-        "bridgeIndex" : 1
+```json
+{
+    "dialerControlBlocks" : {
+        "Dialer1" : {
+            "enabled" : true,
+            "label" : "Dialer 01",
+            "isVoip" : true,
+            "dialerInstanceTag" : "Dialer1",
+            "controlStatusInstanceTag" : "VoIPControlStatus1",
+            "index" : 1,
+            "callAppearance" : 1,
+            "clearOnHangup" : true,
+            "appendDtmf" : false,
+            "bridgeIndex" : 1
+        }
     }
 }
 ```
@@ -662,7 +682,7 @@ Within the **Standalone** object, this join map represents a single control as d
 
 > All state configs must be part of a dictionary called **meterControlBlocks**.  
 
-``` javascript
+```json
 "meterControlBlocks" : {
     "Meter1" : {
         "enabled" : true,
@@ -717,7 +737,7 @@ None
 
 > All state configs must be part of a dictionary called **crosspointStateControlBlocks**.  
 
-``` javascript
+```json
 "crosspointStateControlBlocks" : {
     "Crosspoint1" : {
         "enabled" : true,
@@ -787,7 +807,7 @@ Within the **Standalone** object, this join map represents a single control as d
 
 > All RoomCombiner configs must be part of a dictionary called **roomCombinerControlBlocks**.  
 
-``` javascript
+```json
 "roomCombinerControlBlocks": {
     "Room01": {
         "enabled": true,
@@ -828,30 +848,30 @@ Within the **Standalone** object, this join map represents each element in a lis
 
 #### Digitals
 
-| Legacy Join | Standalone Join | Type (RW) | Description     |
-| ----------- | --------------- | --------- | --------------- |
-| N/A         | 1               | R         | Device Online   |
+| Legacy Join | Standalone Join | Type (RW) | Description   |
+| ----------- | --------------- | --------- | ------------- |
+| N/A         | 1               | R         | Device Online |
 
 #### Analogs
 
-| Legacy Join | Standalone Join | Type (RW) | Description                                           |
-| ----------- | --------------- | --------- | ----------------------------------------------------- |
-| N/A         | N/A             | N/A       | N/A                                                   |
+| Legacy Join | Standalone Join | Type (RW) | Description |
+| ----------- | --------------- | --------- | ----------- |
+| N/A         | N/A             | N/A       | N/A         |
 
 #### Serials
 
-| Legacy Join | Standalone Join | Type (RW) | Description                      |
-| ----------- | --------------- | --------- | -------------------------------- |
-| N/A         | 1               | R         | Expander Hostname                |
-| N/A         | 2               | R         | Expander Serial Number           |
-| N/A         | 3               | R         | Expander Firmware                |
-| N/A         | 4               | R         | Expaner MAC Address              |
+| Legacy Join | Standalone Join | Type (RW) | Description            |
+| ----------- | --------------- | --------- | ---------------------- |
+| N/A         | 1               | R         | Expander Hostname      |
+| N/A         | 2               | R         | Expander Serial Number |
+| N/A         | 3               | R         | Expander Firmware      |
+| N/A         | 4               | R         | Expaner MAC Address    |
 
 #### Config Example
 
 > All Tesira Expander config objects must be part of a dictionary called **tesiraExpanderBlocks**.  
 
-``` javascript
+```json
 "tesiraExpanderBlocks": {
     "Expander01": {
         "hostname" : "MIC-01"
@@ -877,7 +897,7 @@ In the provided example config object, given a base object key of ```dsp-1```, t
 
 >This config will create an internal loopback EISC on IPID D1 for a ssh-controlled tesira.
 
-```javascript
+```json
 {
     "system": {},
     "system_url": "http://portal-QA.devcloud.pepperdash.com/templates/0f50640b-bc89-42d5-998f-81d137d3fc98#/template_summary",
