@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 10.00
 # Visual Studio 2008
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Tesira-DSP-EPI", "Tesira-DSP-EPI\Tesira-DSP-EPI.csproj", "{D916DE89-C361-4F87-8694-3E281BEE03B8}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Tesira-DSP-EPI", "src\Tesira-DSP-EPI.csproj", "{D916DE89-C361-4F87-8694-3E281BEE03B8}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
