@@ -13,7 +13,7 @@ using Tesira_DSP_EPI.Interfaces;
 
 namespace Tesira_DSP_EPI
 {
-    public class TesiraDspFaderControl : TesiraDspControlPoint, IBasicVolumeWithFeedback, IVolumeComponent
+    public class TesiraDspFaderControl : TesiraDspControlPoint, IBasicVolumeWithFeedbackAdvanced, IVolumeComponent
     {
         private bool _isMuted;
         protected bool IsMuted
@@ -120,6 +120,10 @@ namespace Tesira_DSP_EPI
         /// Component Has Level
         /// </summary>
         public bool HasLevel { get; private set; }
+
+        public int RawVolumeLevel { get; private set; }
+
+        public eVolumeLevelUnits Units => eVolumeLevelUnits.Decibels;
 
         /// <summary>
         /// Constructor for Component
@@ -314,6 +318,7 @@ namespace Tesira_DSP_EPI
             {
                 var localValue = Double.Parse(value);
 
+                RawVolumeLevel = (int)localValue;
                 VolumeLevel = UseAbsoluteValue ? (ushort)localValue :  (ushort)localValue.Scale(MinLevel, MaxLevel, 0, 65535, this);
 
                 SubscriptionTracker["level"].Subscribed = true;
@@ -367,6 +372,7 @@ namespace Tesira_DSP_EPI
                     {
                         var localValue = Double.Parse(value);
 
+                        RawVolumeLevel = (int) localValue; ;
                         VolumeLevel = UseAbsoluteValue ? (ushort) localValue : (ushort)localValue.Scale(MinLevel, MaxLevel, 0, 65535, this);
 
                         Debug.Console(1, this, "VolumeLevel is '{0}'", VolumeLevel);
