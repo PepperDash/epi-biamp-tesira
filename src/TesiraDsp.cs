@@ -17,7 +17,7 @@ using IRoutingWithFeedback = Tesira_DSP_EPI.Interfaces.IRoutingWithFeedback;
 
 namespace Tesira_DSP_EPI
 {
-    public class TesiraDsp : EssentialsBridgeableDevice, IHasDspPresets, ICommunicationMonitor
+    public class TesiraDsp : EssentialsBridgeableDevice, IDspPresets, ICommunicationMonitor
     {
         /// <summary>
         /// Collection of all Device Feedbacks
@@ -95,7 +95,7 @@ namespace Tesira_DSP_EPI
         private Dictionary<string, TesiraDspMeter> Meters { get; set; }
         private Dictionary<string, TesiraDspCrosspointState> CrosspointStates { get; set; }
         private Dictionary<string, TesiraDspRoomCombiner> RoomCombiners { get; set; }
-        public List<IDspPreset> Presets { get; private set; } 
+        public Dictionary<string, IKeyName> Presets { get; private set; } 
         public List<TesiraPreset> TesiraPresets { get; private set; } 
         private List<ISubscribedComponent> ControlPointList { get; set; }
 
@@ -166,7 +166,7 @@ namespace Tesira_DSP_EPI
             //Initialize Dictionaries
             Feedbacks = new FeedbackCollection<Feedback>();
             Faders = new Dictionary<string, TesiraDspFaderControl>();
-            Presets = new List<IDspPreset>();
+            Presets = new Dictionary<string, IKeyName>();
             TesiraPresets = new List<TesiraPreset>();
             Dialers = new Dictionary<string, TesiraDspDialer>();
             Switchers = new Dictionary<string, TesiraDspSwitcher>();
@@ -335,8 +335,8 @@ namespace Tesira_DSP_EPI
             foreach (var preset in props.Presets)
             {
                 var value = preset.Value;
-                var tesiraPreset = new TesiraPreset(preset.Value);
-                Presets.Add(tesiraPreset);
+                var tesiraPreset = new TesiraPreset(preset.Key, preset.Value);
+                Presets.Add(preset.Key, tesiraPreset);
                 TesiraPresets.Add(tesiraPreset);
                 Debug.Console(2, this, "Added Preset {0} {1}", value.Label, value.PresetName);
             }
@@ -803,7 +803,7 @@ namespace Tesira_DSP_EPI
             foreach (var preset in Presets.OfType<TesiraPreset>().Where(preset => preset.Index == n))
             {
                 Debug.Console(2, this, "Found a matching Preset - {0}", preset.PresetData.PresetId);
-                RecallPreset(preset);
+                RecallPreset(preset.Key);
             }
 
 		}
@@ -830,27 +830,27 @@ namespace Tesira_DSP_EPI
             //CommandQueue.EnqueueCommand(string.Format("DEVICE recallPreset {0}", id));
         }
 
-        public void RecallPreset(IDspPreset preset)
+        public void RecallPreset(string key)
         {
+            var preset = Presets[key] as TesiraPreset;
             Debug.Console(2, this, "Running preset {0}", preset.Name);
-            var tesiraPreset = preset as TesiraPreset;
-            if (tesiraPreset == null) return;            
+            if (preset == null) return;            
 
             Debug.Console(2, this, "Checking Preset {0} | presetIndex {1} | presetId {2} | presetName {3}", 
-                tesiraPreset.Name, tesiraPreset.PresetData.PresetIndex, tesiraPreset.PresetData.PresetId, tesiraPreset.PresetData.PresetName);
+                preset.Name, preset.PresetData.PresetIndex, preset.PresetData.PresetId, preset.PresetData.PresetName);
             // - changed string check reference from 'tesiraPreset.PresetName' to 'tesiraPreset.PreetData.PresetName'
-            if (!string.IsNullOrEmpty(tesiraPreset.PresetData.PresetName))
+            if (!string.IsNullOrEmpty(preset.PresetData.PresetName))
             {
-                RunPreset(tesiraPreset.PresetData.PresetName);
+                RunPreset(preset.PresetData.PresetName);
             }
             else
             {
-                if (tesiraPreset.PresetData.PresetId == 0)
+                if (preset.PresetData.PresetId == 0)
                 {
-                    Debug.Console(2, this, "Preset {0} has an invalid presetId {1}", tesiraPreset.Name, tesiraPreset.PresetData.PresetId);
+                    Debug.Console(2, this, "Preset {0} has an invalid presetId {1}", preset.Name, preset.PresetData.PresetId);
                     return;
                 }
-                RunPreset(tesiraPreset.PresetData.PresetId);
+                RunPreset(preset.PresetData.PresetId);
             }
         }
 
@@ -1308,13 +1308,13 @@ namespace Tesira_DSP_EPI
             // digital input executes preset reall using preset id (RunPresetNumber))
             foreach (var preset in Presets)
             {
-                var p = preset as TesiraPreset;
+                var p = preset.Value as TesiraPreset;
                 if (p == null) continue;
                 var runPresetIndex = p.PresetData.PresetIndex;
                 var presetIndex = runPresetIndex;
                 trilist.StringInput[(uint)(presetJoinMap.PresetNameFeedback.JoinNumber + presetIndex)].StringValue = p.PresetData.Label;
                 trilist.SetSigTrueAction((uint) (presetJoinMap.PresetSelection.JoinNumber + presetIndex),
-                    () => RecallPreset(p));
+                    () => RecallPreset(p.Key));
             }
 
             // VoIP Dialer

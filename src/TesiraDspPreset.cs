@@ -9,7 +9,7 @@ using PepperDash.Essentials.Core.Bridges;
 
 namespace Tesira_DSP_EPI
 {
-    public class TesiraDspPresetDevice : TesiraDspControlPoint, IHasDspPresets
+    public class TesiraDspPresetDevice : TesiraDspControlPoint, IDspPresets
     {
         private const string KeyFormatter = "{0}--{1}";
 
@@ -24,7 +24,7 @@ namespace Tesira_DSP_EPI
 
         #region IHasDspPresets Members
 
-        public List<IDspPreset> Presets { get; private set; }
+        public Dictionary<string, IKeyName> Presets { get; private set; }
 
 
         #endregion
@@ -62,13 +62,13 @@ namespace Tesira_DSP_EPI
 
             foreach (var preset in Presets)
             {
-                var p = preset as TesiraPreset;
+                var p = preset.Value as TesiraPreset;
                 if (p == null) continue;
                 var runPresetIndex = p.PresetData.PresetIndex;
                 var presetIndex = runPresetIndex;
                 trilist.StringInput[(uint)(presetJoinMap.PresetNameFeedback.JoinNumber + presetIndex - 1)].StringValue = p.PresetData.PresetName;
                 trilist.SetSigTrueAction((uint)(presetJoinMap.PresetSelection.JoinNumber + presetIndex - 1),
-                    () => RecallPreset(p));
+                    () => RecallPreset(p.Key));
             }
 
 
@@ -115,24 +115,26 @@ namespace Tesira_DSP_EPI
             //CommandQueue.EnqueueCommand(string.Format("DEVICE recallPreset {0}", id));
         }
 
-        public void RecallPreset(IDspPreset preset)
+        public void RecallPreset(string key)
         {
-            Parent.RecallPreset(preset);
+            Parent.RecallPreset(key);
         }
 
         #endregion
 
     }
 
-    public class TesiraPreset : TesiraDspPresets, IDspPreset
+    public class TesiraPreset : TesiraDspPresets, IKeyName
     {
+        public string Key { get; private set; }
         public string Name { get; private set; }
         public int Index { get; private set; }
 
         public TesiraDspPresets PresetData { get; private set; }
 
-        public TesiraPreset(TesiraDspPresets data)
+        public TesiraPreset(string key, TesiraDspPresets data)
         {
+            Key = key;
             PresetData = data;
             Name = data.Label;
             Index = data.PresetIndex;
