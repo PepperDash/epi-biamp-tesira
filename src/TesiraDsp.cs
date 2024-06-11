@@ -5,6 +5,7 @@ using Crestron.SimplSharp;
 using Crestron.SimplSharpPro.CrestronThread;
 using PepperDash.Core;
 using PepperDash.Essentials.Core;
+using PepperDash.Essentials.Core.DeviceInfo;
 using System.Text.RegularExpressions;
 using Newtonsoft.Json;
 using PepperDash.Essentials.Core.Config;
@@ -17,7 +18,7 @@ using IRoutingWithFeedback = Tesira_DSP_EPI.Interfaces.IRoutingWithFeedback;
 
 namespace Tesira_DSP_EPI
 {
-    public class TesiraDsp : EssentialsBridgeableDevice, IDspPresets, ICommunicationMonitor
+    public class TesiraDsp : EssentialsBridgeableDevice, IDspPresets, ICommunicationMonitor, IDeviceInfoProvider
     {
         /// <summary>
         /// Collection of all Device Feedbacks
@@ -116,6 +117,11 @@ namespace Tesira_DSP_EPI
 
         public string ResubsriptionString { get; set; }
 
+        public DeviceInfo DeviceInfo
+        {
+            get { return DevInfo.DeviceInfo; }
+        }
+
         /// <summary>
         /// Consturctor for base Tesira DSP Device
         /// </summary>
@@ -134,7 +140,7 @@ namespace Tesira_DSP_EPI
 
             Communication = comm;
 
-			var socket = comm as ISocketStatus;
+            var socket = comm as ISocketStatus;
 
 			if (socket != null)
 			{
@@ -143,6 +149,22 @@ namespace Tesira_DSP_EPI
 				// This instance uses IP control
 				socket.ConnectionChange += socket_ConnectionChange;
 				_isSerialComm = false;
+
+                var ssh = comm as GenericSshClient;
+
+                if(ssh != null)
+                {
+                    DeviceInfo.IpAddress = ssh.Hostname;
+                    DeviceInfo.HostName = ssh.Hostname;
+                }
+
+                var tcp = comm as GenericTcpIpClient;
+
+                if(tcp != null)
+                {
+                    DeviceInfo.IpAddress = tcp.Hostname;
+                    DeviceInfo.HostName = tcp.Hostname;
+                }
 			}
 			else
 			{
@@ -682,6 +704,8 @@ namespace Tesira_DSP_EPI
 
         const string SubscriptionPattern = "! [\\\"](.*?[^\\\\])[\\\"] (.*)";
         private readonly static Regex SubscriptionRegex = new Regex(SubscriptionPattern);
+
+        public event DeviceInfoChangeHandler DeviceInfoChanged;
 
         private void Port_LineReceived(object dev, GenericCommMethodReceiveTextArgs args)
         {
@@ -1490,5 +1514,9 @@ namespace Tesira_DSP_EPI
             };
         }
 
+        public void UpdateDeviceInfo()
+        {
+            DevInfo.UpdateDeviceInfo();
+        }
     }
 }
