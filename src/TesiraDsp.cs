@@ -119,7 +119,11 @@ namespace Tesira_DSP_EPI
 
         public DeviceInfo DeviceInfo
         {
-            get { return DevInfo.DeviceInfo; }
+            get {
+                if (DevInfo != null) return DevInfo.DeviceInfo;
+            
+                else return new DeviceInfo();
+            }
         }
 
         /// <summary>
