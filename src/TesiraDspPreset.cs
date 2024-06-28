@@ -9,7 +9,12 @@ using PepperDash.Essentials.Core.Bridges;
 
 namespace Tesira_DSP_EPI
 {
-    public class TesiraDspPresetDevice : TesiraDspControlPoint, IDspPresets
+    public class TesiraDspPresetDevice : TesiraDspControlPoint,
+        #if SERIES4
+        IDspPresets
+#else
+        IHasDspPresets
+#endif
     {
         private const string KeyFormatter = "{0}--{1}";
 
@@ -24,8 +29,11 @@ namespace Tesira_DSP_EPI
 
         #region IHasDspPresets Members
 
+#if SERIES4
         public Dictionary<string, IKeyName> Presets { get; private set; }
-
+#else
+        public List<IDspPreset> Presets { get; set; }
+#endif
 
         #endregion
 
@@ -115,10 +123,21 @@ namespace Tesira_DSP_EPI
             //CommandQueue.EnqueueCommand(string.Format("DEVICE recallPreset {0}", id));
         }
 
+
+#if SERIES4
         public void RecallPreset(string key)
         {
             Parent.RecallPreset(key);
         }
+#else
+        public void RecallPreset(IDspPreset preset)
+        {
+            Parent.RecallPreset(preset);
+        }
+#endif
+
+
+
 
         #endregion
 

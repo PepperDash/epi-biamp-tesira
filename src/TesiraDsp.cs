@@ -18,7 +18,14 @@ using IRoutingWithFeedback = Tesira_DSP_EPI.Interfaces.IRoutingWithFeedback;
 
 namespace Tesira_DSP_EPI
 {
-    public class TesiraDsp : EssentialsBridgeableDevice, IDspPresets, ICommunicationMonitor, IDeviceInfoProvider
+    public class TesiraDsp : EssentialsBridgeableDevice,
+#if SERIES4
+        IDspPresets,
+#else
+        IHasDspPresets,
+#endif
+        ICommunicationMonitor,
+        IDeviceInfoProvider
     {
         /// <summary>
         /// Collection of all Device Feedbacks
@@ -96,9 +103,14 @@ namespace Tesira_DSP_EPI
         private Dictionary<string, TesiraDspMeter> Meters { get; set; }
         private Dictionary<string, TesiraDspCrosspointState> CrosspointStates { get; set; }
         private Dictionary<string, TesiraDspRoomCombiner> RoomCombiners { get; set; }
-        public Dictionary<string, IKeyName> Presets { get; private set; } 
         public List<TesiraPreset> TesiraPresets { get; private set; } 
         private List<ISubscribedComponent> ControlPointList { get; set; }
+
+#if SERIES4
+        public Dictionary<string, IKeyName> Presets { get; private set; }
+#else
+        public List<IDspPreset> Presets { get; private set; }
+#endif
 
         private TesiraExpanderTracker ExpanderTracker { get; set; }
 
@@ -688,7 +700,7 @@ namespace Tesira_DSP_EPI
 			if (string.IsNullOrEmpty(s))
 				return;
 
-			Debug.Console(1, this, "TX: '{0}'", s);
+			//Debug.Console(1, this, "TX: '{0}'", s);
             
 			Communication.SendText(s + "\x0D");
 		}
@@ -721,7 +733,7 @@ namespace Tesira_DSP_EPI
             try
             {
 
-                Debug.Console(1, this, "RX: '{0}'", ShowHexResponse ? ComTextHelper.GetEscapedText(args.Text) : args.Text);
+                //Debug.Console(1, this, "RX: '{0}'", ShowHexResponse ? ComTextHelper.GetEscapedText(args.Text) : args.Text);
 
                 DeviceRx = args.Text;
 
@@ -858,6 +870,8 @@ namespace Tesira_DSP_EPI
             //CommandQueue.EnqueueCommand(string.Format("DEVICE recallPreset {0}", id));
         }
 
+
+#if SERIES4
         public void RecallPreset(string key)
         {
             var preset = Presets[key] as TesiraPreset;
@@ -881,6 +895,16 @@ namespace Tesira_DSP_EPI
                 RunPreset(preset.PresetData.PresetId);
             }
         }
+#else
+        public void RecallPreset(IDspPreset preset)
+        {
+            if (preset == null) return;
+
+            Debug.Console(2, this, "Running preset {0}", preset.Name);
+
+            RunPreset(preset.Name);
+        }
+#endif
 
 		#endregion
 
