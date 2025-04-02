@@ -51,8 +51,8 @@ namespace Tesira_DSP_EPI
 
         private int Permissions { get; set; }
         private int ControlType { get; set; }
+
         private string IncrementAmount { get; set; }
-        private int _incrementAmountFaderScale;
         private bool UseAbsoluteValue { get; set; }
         private EPdtLevelTypes _type;
         private string LevelControlPointTag { get { return InstanceTag1; } }
@@ -81,35 +81,12 @@ namespace Tesira_DSP_EPI
         /// <summary>
         /// Minimum fader level
         /// </summary>
-        private double _minLevel;
-        public double MinLevel 
-        {
-            get {
-                return _minLevel;
-            }
-            private set
-            {
-                _minLevel = value;
-                SetIncrementAmountFaderScale();
-            }
-        }
+        public double MinLevel { get; private set; }
 
         /// <summary>
         /// Maximum fader level
         /// </summary>
-        private double _maxLevel;
-        public double MaxLevel
-        {
-            get
-            {
-                return _maxLevel;
-            }
-            private set
-            {
-                _maxLevel = value;
-                SetIncrementAmountFaderScale();
-            }
-        }
+        public double MaxLevel { get; private set; }
 
         /// <summary>
         /// Checks if a valid subscription string has been recieved for all subscriptions
@@ -416,7 +393,6 @@ namespace Tesira_DSP_EPI
                         Debug.Console(1, this, "VolumeLevel is '{0}'", VolumeLevel);
 
                         break;
-
                     }
                     default:
                     {
@@ -433,25 +409,6 @@ namespace Tesira_DSP_EPI
 
         }
 
-        private void SetIncrementAmountFaderScale()
-        {
-            if (IncrementAmount != null && MinLevel < MaxLevel)
-                _incrementAmountFaderScale = GetFaderScaleOfValue(IncrementAmount);
-        }
-
-        private int GetIncrementAmountFaderScale()
-        {
-            return _incrementAmountFaderScale;
-        }
-
-        private int GetFaderScaleOfValue( string value)
-        {
-            var valueDbl = Convert.ToDouble(value) + MinLevel;
-            var valueScaled = (int)valueDbl.Scale(MinLevel, MaxLevel, 0, 65535, this);
-            //var valueScaled = (int)((valueDbl / (MaxLevel - MinLevel)) * (65535 - 0));
-            Debug.Console(1, this, "Amount [{0}] Scaled to Range[{1}]-[{2}]: [{3}]", valueDbl, MinLevel, MaxLevel, valueScaled);
-            return valueScaled;
-        }
         /// <summary>
         /// Disable Mute
         /// </summary>
@@ -468,16 +425,6 @@ namespace Tesira_DSP_EPI
             SendFullCommand("set", "mute", "true", 2);
         }
 
-        private void MuteAutoOffCheck()
-        {
-            if (!AutomaticUnmuteOnVolumeUp) return;
-
-            if (_isMuted)
-            {
-                MuteOff();
-            }
-        }
-
         /// <summary>
         /// Set level to specified value
         /// </summary>
@@ -486,24 +433,32 @@ namespace Tesira_DSP_EPI
         {
             Debug.Console(1, this, "volume: {0}", level);
             // Unmute volume if new level is higher than existing
-            if (level > VolumeLevel)
-                MuteAutoOffCheck();
-            
-            if (level <= 0 + GetIncrementAmountFaderScale())
+            if (level > _volumeLevel && AutomaticUnmuteOnVolumeUp)
+                if (_isMuted)
+                    MuteOff();
+            switch (level)
             {
-                SendFullCommand("set", "level", string.Format("{0:0.000000}", MinLevel), 1);
-            }
-            else if (level >= 65535 - GetIncrementAmountFaderScale())
-            {
-                SendFullCommand("set", "level", string.Format("{0:0.000000}", MaxLevel), 1);
-            }
-            else
-            {
-                var newLevel = Convert.ToDouble(level);
+                case (ushort.MinValue):
+                {
+                    SendFullCommand("set", "level", string.Format("{0:0.000000}", MinLevel), 1);
+                    break;
+                }
 
-                var volumeLevel = UseAbsoluteValue ? level : newLevel.Scale(0, 65535, MinLevel, MaxLevel, this);
+                case (ushort.MaxValue):
+                {
+                    SendFullCommand("set", "level", string.Format("{0:0.000000}", MaxLevel), 1);
+                    break;
+                }
+                default:
+                {
+                    var newLevel = Convert.ToDouble(level);
 
-                SendFullCommand("set", "level", string.Format("{0:0.000000}", volumeLevel), 1);
+                    var volumeLevel = UseAbsoluteValue ? level : newLevel.Scale(0, 65535, MinLevel, MaxLevel, this);
+
+                    SendFullCommand("set", "level", string.Format("{0:0.000000}", volumeLevel), 1);
+                    break;
+
+                }
             }
         }
 
@@ -577,30 +532,21 @@ namespace Tesira_DSP_EPI
         {
             if (!HasLevel) return;
             Debug.Console(2, "VolumeDown Sent for {0}", LevelControlPointTag);
-            if (!press)
+            if (press)
             {
-                VolumeDownRampStop();
-            }
-            else if (VolumeLevel <= 0 + GetIncrementAmountFaderScale())
-            {
-                VolumeDownRampStop();
-                SendFullCommand("set", "level", string.Format("{0:0.000000}", MinLevel), 1);
-            }
-            else if (_volDownPressTracker)
-            {
-                _volumeDownRepeatTimer.Reset(100);
-                SendFullCommand("decrement", "level", IncrementAmount, 1);
-            }
-            else
-            {
-                _volumeDownRepeatDelayTimer.Reset(750);
-                SendFullCommand("decrement", "level", IncrementAmount, 1);
+                if (_volDownPressTracker)
+                {
+                    _volumeDownRepeatTimer.Reset(100);
+                    SendFullCommand("decrement", "level", IncrementAmount, 1);
+                }
+                else if (!_volDownPressTracker)
+                {
+                    _volumeDownRepeatDelayTimer.Reset(750);
+                    SendFullCommand("decrement", "level", IncrementAmount, 1);
+                }
+                return;
             }
 
-        }
-
-        private void VolumeDownRampStop()
-        {
             _volDownPressTracker = false;
             _volumeDownRepeatTimer.Stop();
             _volumeDownRepeatDelayTimer.Stop();
@@ -615,38 +561,31 @@ namespace Tesira_DSP_EPI
             if (!HasLevel) return;
             Debug.Console(2, "VolumeUp Sent for {0}", LevelControlPointTag);
 
+            if (press)
+            {
+                if (_volUpPressTracker)
+                {
+                    _volumeUpRepeatTimer.Reset(100);
+                    SendFullCommand("increment", "level", IncrementAmount, 1);
+                }
+                else if (!_volUpPressTracker)
+                {
+                    _volumeUpRepeatDelayTimer.Reset(750);
+                    SendFullCommand("increment", "level", IncrementAmount, 1);
+                    if (!AutomaticUnmuteOnVolumeUp) return;
 
-            if (!press)
-            {
-                VolumeUpRampStop();
+                    if (_isMuted)
+                    {
+                        MuteOff();
+                    }
+                }
+                return;
             }
-            else if (VolumeLevel >= 65535 - GetIncrementAmountFaderScale())
-            {
-                VolumeUpRampStop();
-                SendFullCommand("set", "level", string.Format("{0:0.000000}", MaxLevel), 1);
-                MuteAutoOffCheck();
-            }
-            else if (_volUpPressTracker)
-            {
-                _volumeUpRepeatTimer.Reset(100);
-                SendFullCommand("increment", "level", IncrementAmount, 1);
-            }
-            else
-            {
-                _volumeUpRepeatDelayTimer.Reset(750);
-                SendFullCommand("increment", "level", IncrementAmount, 1);
-                MuteAutoOffCheck();
-            }
-        }
 
-        private void VolumeUpRampStop()
-        {
             _volUpPressTracker = false;
             _volumeUpRepeatTimer.Stop();
             _volumeUpRepeatDelayTimer.Stop();
         }
-
-        
 
 
         /// <summary>
