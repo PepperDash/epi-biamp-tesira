@@ -25,6 +25,10 @@
 		<DefineConstants>$(DefineConstants);SERIES4</DefineConstants>
 	</PropertyGroup>
 
+	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
+		<DefineConstants>$(DefineConstants);SERIES4</DefineConstants>
+	</PropertyGroup>
+
 	<ItemGroup>
 		<Compile Remove="Properties\**" />
 		<EmbeddedResource Remove="Properties\**" />
