@@ -1,0 +1,20 @@
+<Project>
+  <ItemGroup>
+    <None Include="$(TargetDir)\$(TargetName).$(Version).cpz" Condition="$(ProjectType) == 'Program'">
+      <Pack>true</Pack>
+      <PackagePath>content;</PackagePath>
+    </None>
+    <None Include="$(PackageOutputPath)\$(TargetName).$(Version).cplz" Condition="$(ProjectType) == 'ProgramLibrary'">
+      <Pack>true</Pack>
+      <PackagePath>content;</PackagePath>
+    </None>
+  </ItemGroup>
+  <Target Name="Create CPLZ" AfterTargets="Build; Rebuild" Condition="$(ProjectType) == 'ProgramLibrary'">
+    <Message Text="Creating CPLZ"></Message>
+    <MakeDir Directories="$(PackageOutputPath)" Condition="!Exists($(PackageOutputPath))"></MakeDir>
+    <ZipDirectory SourceDirectory="$(TargetDir)" DestinationFile="$(PackageOutputPath)\$(TargetName).$(Version).cplz" Overwrite="true"/>    
+  </Target>
+  <Target Name="Clean CPLZ" AfterTargets="AfterClean" Condition="$(ProjectType) == 'ProgramLibrary'">
+    <Delete Files="$(PackageOutputPath)\$(TargetName).$(Version).cplz"/>
+  </Target>
+</Project>
