@@ -1363,8 +1363,7 @@ namespace Tesira_DSP_EPI
 				}
 
 				var dialerLineOffset = lineOffset;
-                this.LogVerbose("AddingDialerBRidge {0} {1} Offset", dialer.Key, dialerLineOffset);
-
+                this.LogVerbose("AddingDialerBridge {0} {1} Offset", dialer.Key, dialerLineOffset);
                 for (var i = 0; i < dialerJoinMap.KeyPadNumeric.JoinSpan; i++)
                 {
 					var tempi = i;
