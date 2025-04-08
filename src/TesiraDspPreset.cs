@@ -9,12 +9,8 @@ using PepperDash.Essentials.Core.Bridges;
 
 namespace Tesira_DSP_EPI
 {
-    public class TesiraDspPresetDevice : TesiraDspControlPoint,
-        #if SERIES4
-        IDspPresets
-#else
-        IHasDspPresets
-#endif
+    public class TesiraDspPresetDevice : TesiraDspControlPoint, IDspPresets       
+
     {
         private const string KeyFormatter = "{0}--{1}";
 
@@ -29,11 +25,7 @@ namespace Tesira_DSP_EPI
 
         #region IHasDspPresets Members
 
-#if SERIES4
         public Dictionary<string, IKeyName> Presets { get; private set; }
-#else
-        public List<IDspPreset> Presets { get; set; }
-#endif
 
         #endregion
 
@@ -72,9 +64,9 @@ namespace Tesira_DSP_EPI
             {
                 var p = preset.Value as TesiraPreset;
                 if (p == null) continue;
-                var runPresetIndex = p.PresetData.PresetIndex;
+                var runPresetIndex = p.PresetIndex;
                 var presetIndex = runPresetIndex;
-                trilist.StringInput[(uint)(presetJoinMap.PresetNameFeedback.JoinNumber + presetIndex - 1)].StringValue = p.PresetData.PresetName;
+                trilist.StringInput[(uint)(presetJoinMap.PresetNameFeedback.JoinNumber + presetIndex - 1)].StringValue = p.PresetName;
                 trilist.SetSigTrueAction((uint)(presetJoinMap.PresetSelection.JoinNumber + presetIndex - 1),
                     () => RecallPreset(p.Key));
             }
@@ -123,21 +115,10 @@ namespace Tesira_DSP_EPI
             //CommandQueue.EnqueueCommand(string.Format("DEVICE recallPreset {0}", id));
         }
 
-
-#if SERIES4
         public void RecallPreset(string key)
         {
             Parent.RecallPreset(key);
         }
-#else
-        public void RecallPreset(IDspPreset preset)
-        {
-            Parent.RecallPreset(preset);
-        }
-#endif
-
-
-
 
         #endregion
 
@@ -146,19 +127,12 @@ namespace Tesira_DSP_EPI
     public class TesiraPreset : TesiraDspPresets, IKeyName
     {
         public string Key { get; private set; }
-        public string Name { get; private set; }
-        public int Index { get; private set; }
+        public string Name => Label;
+        public int Index => PresetIndex;
 
-        public TesiraDspPresets PresetData { get; private set; }
-
-        public TesiraPreset(string key, TesiraDspPresets data)
+        public TesiraPreset(string key):base()
         {
             Key = key;
-            PresetData = data;
-            Name = data.Label;
-            Index = data.PresetIndex;
-
-            Debug.Console(1, "Tesira PresetData = {0} , {1}, {2}", PresetData.PresetName, PresetData.PresetId, PresetData.PresetIndex);
         }
     }
 
