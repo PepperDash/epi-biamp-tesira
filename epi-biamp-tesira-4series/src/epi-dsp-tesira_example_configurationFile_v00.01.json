@@ -1,0 +1,213 @@
+{
+    "system": {},
+    "system_url": "http://portal-QA.devcloud.pepperdash.com/templates/0f50640b-bc89-42d5-998f-81d137d3fc98#/template_summary",
+    "template": {
+        "devices": [
+            {
+                "key": "processor",
+                "uid": 0,
+                "type": "cp3n",
+                "name": "CP3N",
+                "group": "processor",
+                "supportedConfigModes": [
+                    "compliance",
+                    "essentials"
+                ],
+                "supportedSystemTypes": [
+                    "hudType",
+                    "presType",
+                    "vtcType",
+                    "custom"
+                ],
+                "supportsCompliance": true,
+                "properties": {}
+            },            
+			{
+				"key": "app1-dsp1",
+				"uid": 4,
+				"type": "tesiraDsp",
+				"name": "Biamp Tesira DSP",
+				"group": "dsp",
+				"properties": {
+					"control": {
+						"endOfLineString": "\n",
+						"deviceReadyResponsePattern": "",
+						"method": "ssh",
+						"tcpSshProperties": {
+							"address": "192.168.1.110",
+							"port": 22,
+							"autoReconnect": true,
+							"AutoReconnectIntervalMs": 10000,
+							"username": "default",
+							"password": "default"
+						}
+					},
+					"levelControlBlocks": {
+						"1": {
+							"label": "Privacy 1",
+							"enabled": true,
+							"levelInstanceTag": "privacy1",
+							"muteInstanceTag": "privacy1",
+							"index1": 1,
+							"index2": 0,
+							"incrementAmount": "2.0",
+							"unmuteOnVolChange": true,							
+							"hasLevel": false,
+							"hasMute": true,
+							"isMic": true,
+							"permissions": 0
+						},
+						"2": {
+							"label": "Privacy 2",
+							"enabled": true,
+							"levelInstanceTag": "privacy2",
+							"muteInstanceTag": "privacy2",
+							"index1": 1,
+							"index2": 0,
+							"incrementAmount": "2.0",
+							"unmuteOnVolChange": true,							
+							"hasLevel": false,
+							"hasMute": true,
+							"isMic": true,
+							"permissions": 0
+						},
+						"3": {
+							"label": "Fader 1",
+							"enabled": true,
+							"levelInstanceTag": "room",
+							"muteInstanceTag": "room",
+							"index1": 1,
+							"index2": 0,
+							"incrementAmount": "2.0",
+							"unmuteOnVolChange": true,							
+							"hasLevel": true,
+							"hasMute": true,
+							"isMic": false,
+							"permissions": 0
+						},
+						"4": {
+							"label": "Fader 2",
+							"enabled": true,
+							"levelInstanceTag": "program",
+							"muteInstanceTag": "program",
+							"index1": 1,
+							"index2": 0,
+							"incrementAmount": "2.0",
+							"unmuteOnVolChange": true,							
+							"hasLevel": true,
+							"hasMute": true,
+							"isMic": false,
+							"permissions": 0
+						},
+						"05-Fader": {
+							"label": "Fader 3",
+							"enabled": true,
+							"levelInstanceTag": "speech",
+							"muteInstanceTag": "speech",
+							"index1": 1,
+							"index2": 0,
+							"incrementAmount": "2.0",
+							"unmuteOnVolChange": true,							
+							"hasLevel": true,
+							"hasMute": false,
+							"isMic": false,
+							"permissions": 0
+						},
+						"06-Fader": {
+							"label": "Fader 4",
+							"enabled": true,
+							"levelInstanceTag": "aconfRx",
+							"muteInstanceTag": "aconfRx",
+							"index1": 1,
+							"index2": 0,
+							"incrementAmount": "2.0",
+							"unmuteOnVolChange": true,							
+							"hasLevel": true,
+							"hasMute": true,
+							"isMic": false,
+							"permissions": 0
+						},
+						"07-Fader": {
+							"label": "Fader 5",
+							"enabled": true,
+							"levelInstanceTag": "aconfTx",
+							"muteInstanceTag": "aconfTx",
+							"index1": 1,
+							"index2": 0,
+							"incrementAmount": "2.0",
+							"unmuteOnVolChange": true,							
+							"hasLevel": true,
+							"hasMute": true,
+							"isMic": false,
+							"permissions": 2
+						}
+					},
+					"presets": {
+						"1": {
+							"label": "Preset 1",
+							"preset": "1001"
+						},
+						"2": {
+							"label": "Preset 2",
+							"preset": "Preset02"
+						}
+					},
+					"stateControlBlocks": {
+						"1": {
+							"enabled": false,
+							"label": "State 1",
+							"stateInstanceTag": "state1",
+							"index": 1
+						}
+					}
+				},
+				"dialerControlBlocks" : {
+					"1" : {
+						"enabled" : true,
+						"label" : "Dialer 01",
+						"isVoip" : true,
+						"dialerInstanceTag" : "Dialer1",
+						"controlStatusInstanceTag" : "VoIPControlStatus1",
+						"index" : 1,
+						"callAppearance" : 1,
+						"clearOnHangup" : true,
+						"appendDtmf" : false
+					}
+				}
+			},
+			{
+				"key": "app1-dsp1-bridge",
+				"uid": 5,
+				"name": "Bridge Dsp",
+				"group": "api",
+				"type": "eiscApi",
+				"properties": {
+					"control": {
+						"tcpSshProperties": {
+							"address": "127.0.0.2",
+							"port": 0
+						},
+						"ipid": "C1",
+						"method": "ipidTcp"
+					},
+					"devices": [
+						{
+							"deviceKey": "app1-dsp1",
+							"joinStart": 1
+						}
+					]
+				}
+			}
+        ],
+        "info": {
+            "comment": "",
+            "lastModifiedDate": "2017-03-06T23:14:40.290Z",
+            "lastUid": 12,
+            "processorType": "Cp3n",
+            "requiredControlSofwareVersion": "",
+            "systemType": "huddle"
+        },
+        "rooms": [],
+        "tieLines": []
+    }
+}

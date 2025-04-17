@@ -1,0 +1,1658 @@
+[33mcommit 6c11c6bbe6353ff324f641703980c6518d1a4948[m[33m ([m[1;36mHEAD -> [m[1;32mmain[m[33m, [m[1;31morigin/feature/multiple-Local[m[33m, [m[1;32mfeature/multiple-Local[m[33m, [m[1;32mdevelopment[m[33m)[m
+Merge: 84c2ede b5a3620
+Author: Trevor Payne <tpayne@pepperdash.com>
+Date:   Thu Mar 16 15:44:43 2023 -0500
+
+    Merge branch 'hotfix/lineAppearanceStatus'
+
+[33mcommit 84c2ede69173042e76bc9f7e25f70df7b8de1135[m[33m ([m[1;31morigin/feature/ExpanderTrackerDeviceMonitor[m[33m, [m[1;32mfeature/ExpanderTrackerDeviceMonitor[m[33m)[m
+Author: Trevor Payne <tpayne@pepperdash.com>
+Date:   Thu Mar 16 15:42:24 2023 -0500
+
+    fix: added statusmonitor start
+
+[33mcommit 683621d53eec3e48ec4cc4614a164eb767984380[m
+Author: Trevor Payne <tpayne@pepperdash.com>
+Date:   Thu Mar 16 15:38:18 2023 -0500
+
+    feat: add deviceInfo and StatusMonitor to individual tesira expanders
+
+[33mcommit b5a362099b3ff37bda7fc53994663b173bef79ab[m[33m ([m[1;33mtag: 2.3.4-hotfix-66[m[33m, [m[1;31morigin/hotfix/lineAppearanceStatus[m[33m, [m[1;32mhotfix/lineAppearanceStatus[m[33m)[m
+Author: Trevor Payne <tpayne@pepperdash.com>
+Date:   Thu Mar 16 14:23:13 2023 -0500
+
+    fix(#85): fix voip line 2 call status update
+
+[33mcommit ae999ee0b96eaa05bf6e16c5049828692a77cfc6[m[33m ([m[1;33mtag: 2.3.3[m[33m, [m[1;31morigin/main[m[33m, [m[1;31morigin/HEAD[m[33m)[m
+Merge: 113c270 eb1b968
+Author: Trevor Payne <44117050+TrevorPayne@users.noreply.github.com>
+Date:   Wed Mar 15 11:01:24 2023 -0500
+
+    Merge pull request #83 from PepperDash/hotfix/source-selector-feedback
+    
+    Hotfix/source selector feedback
+
+[33mcommit eb1b9686e0534289fb86228947fb37cfa7f92812[m[33m ([m[1;33mtag: 2.3.3-hotfix-64[m[33m, [m[1;31morigin/hotfix/source-selector-feedback[m[33m)[m
+Author: jdevito <jdevito@pepperdash.com>
+Date:   Tue Mar 14 15:14:28 2023 -0500
+
+    chore: Cleaned up debug statements
+    
+    Removed debug statements added to TesiraDsp.cs Port_LineReceived method
+    to help troubleshoot the source selector feedback issue.
+
+[33mcommit 89c6467f4977bb667996ad23e8a6c92ca40d4c2e[m[33m ([m[1;33mtag: 2.3.3-hotfix-63[m[33m)[m
+Author: jdevito <jdevito@pepperdash.com>
+Date:   Tue Mar 14 15:10:39 2023 -0500
+
+    fix: Updates to TesiraDspSwitcher to support source selector feedback
+    
+    Updated TesiraDspSWitcher to implement debug statements.
+    
+    Added `.Replace` to `Subscribe` method per @tpayne's suggestion.
+
+[33mcommit 113c2708b0909d67243e8524866784d024ffda1c[m[33m ([m[1;33mtag: 2.3.2[m[33m)[m
+Merge: bb43f04 6a5a09f
+Author: Trevor Payne <44117050+TrevorPayne@users.noreply.github.com>
+Date:   Tue Feb 28 13:36:45 2023 -0600
+
+    Merge pull request #80 from PepperDash/hotfix/SubscribeThreadFix
+    
+    fix: watchdog would continueally trigger on faders
+
+[33mcommit 6a5a09f94f574c778918513ac0939dc170d5a55a[m[33m ([m[1;33mtag: 2.3.1-hotfix-62[m[33m, [m[1;31morigin/hotfix/SubscribeThreadFix[m[33m, [m[1;32mhotfix/SubscribeThreadFix[m[33m)[m
+Author: Trevor Payne <tpayne@pepperdash.com>
+Date:   Mon Feb 20 17:05:43 2023 -0600
+
+    fix: watchdog would continueally trigger on faders
+    
+    fix: sometimes the subscription thread wouldn't trigger all of the subscribing actions
+
+[33mcommit bb43f047de23a079ea2af4d1528fd41e6917ba78[m[33m ([m[1;33mtag: 2.3.1[m[33m, [m[1;33mtag: 2.3.0[m[33m)[m
+Merge: c32faff 9142dad
+Author: Trevor Payne <44117050+TrevorPayne@users.noreply.github.com>
+Date:   Thu Feb 16 23:19:18 2023 -0600
+
+    Merge pull request #79 from PepperDash/feature/RouterImprovements
+    
+    Feature/router improvements
+
+[33mcommit 9142dadc2bb9e1cf6a887a121c7c916992b7af14[m[33m ([m[1;33mtag: 2.2.2-alpha-61[m[33m, [m[1;31morigin/feature/RouterImprovements[m[33m, [m[1;32mfeature/RouterImprovements[m[33m)[m
+Author: Trevor Payne <tpayne@pepperdash.com>
+Date:   Thu Feb 16 22:44:39 2023 -0600
+
+    feat: add discrete polling signal for Routers
+
+[33mcommit 55773fc60c8d7c2e49934837169b4f0f5a0b488f[m
+Author: Trevor Payne <tpayne@pepperdash.com>
+Date:   Thu Feb 16 22:35:08 2023 -0600
+
+    resolves: #73
+    
+    feat: configurable polling for switcher object
+
+[33mcommit 4b30c3af0bdc91f6f477bb4c3f621651701a489b[m
+Author: Trevor Payne <tpayne@pepperdash.com>
+Date:   Thu Feb 16 22:09:40 2023 -0600
+
+    fix: remove subscription request for router blocks
+    resolves: #72
+
+[33mcommit c32faff453becc8f4ef17500d27e2df734ef4e7b[m
+Merge: 42aee56 ac17cd7
+Author: Trevor Payne <44117050+TrevorPayne@users.noreply.github.com>
+Date:   Thu Feb 16 21:55:41 2023 -0600
+
+    Merge pull request #78 from PepperDash/feature/subscription-pacing
+    
+    Feature/subscription pacing
+
+[33mcommit ac17cd7bf00bf3d81e8a2d148857aef9ee04593c[m[33m ([m[1;33mtag: 2.2.2-alpha-60[m[33m, [m[1;31morigin/feature/subscription-pacing[m[33m, [m[1;32mfeature/subscription-pacing[m[33m)[m
+Merge: 9194de8 42aee56
+Author: Trevor Payne <tpayne@pepperdash.com>
+Date:   Thu Feb 16 21:36:05 2023 -0600
+
+    Merge branch 'main' into feature/subscription-pacing
+
+[33mcommit 9194de85f7716d8ce00e66c0d7b1e57782bac9fc[m[33m ([m[1;33mtag: 2.2.2-alpha-59[m[33m)[m
+Merge: c7841d0 c251a3d
+Author: Trevor Payne <tpayne@pepperdash.com>
+Date:   Thu Feb 16 21:33:34 2023 -0600
+
+    chore: merged main into branch
+
+[33mcommit 42aee56e842118685d3a0a98b7fbb3e334ffe87f[m
+Merge: c251a3d d1d614d
+Author: Trevor Payne <44117050+TrevorPayne@users.noreply.github.com>
+Date:   Thu Feb 16 09:30:32 2023 -0600
+
+    Merge pull request #76 from PepperDash/hotfix/pots-hangup
+    
+    Hotfix/pots hangup
+
+[33mcommit d1d614d492cf5ec6a5ee1ba92610e25eca79405b[m[33m ([m[1;33mtag: 2.2.2-hotfix-58[m[33m, [m[1;31morigin/hotfix/pots-hangup[m[33m)[m
+Author: jta <jalborough@pepperdash.com>
+Date:   Thu Feb 9 14:36:21 2023 -0500
+
+    fix: pots dial button hangup.
+
+[33mcommit ad482905c879b9777c09fc6af063cf3b4ba15752[m
+Merge: b30a8cd c251a3d
+Author: jta <jalborough@pepperdash.com>
+Date:   Thu Feb 9 14:19:14 2023 -0500
+
+    Merge branch 'main' into hotfix/pots-hangup
+
+[33mcommit b30a8cdee819edc628473a1e7c450256f23cb32d[m
+Author: jta <jalborough@pepperdash.com>
+Date:   Thu Feb 9 14:18:29 2023 -0500
+
+    fix: pots hangup
+
+[33mcommit c7841d0b2f247468668ea22dbe7da565209ffb53[m[33m ([m[1;33mtag: 2.2.2-alpha-57[m[33m)[m
+Author: Trevor Payne <tpayne@pepperdash.com>
+Date:   Fri Feb 3 20:18:22 2023 -0600
+
+    feat: RS232 Support Finalized
+    
+    perf: improvements to subscription handling for all connection types
+    
+    docs: updated readme to properly document router config object
+    
+    perf: improved performance in TesiraQueue
+
+[33mcommit c251a3d87c461f904eb6203c227e19f5d1c055bb[m[33m ([m[1;33mtag: 2.2.1[m[33m, [m[1;32mhotfix/StateBuildingIncorrectly[m[33m)[m
+Author: Trevor Payne <44117050+TrevorPayne@users.noreply.github.com>
+Date:   Thu Jan 26 00:04:40 2023 -0600
+
+    Update README.md
+
+[33mcommit 047fe60ef0e1764e96e417cd91c473151ff48e16[m
+Author: Trevor Payne <44117050+TrevorPayne@users.noreply.github.com>
+Date:   Thu Jan 26 00:04:09 2023 -0600
+
+    Update README.md
+    
+    Added information for expander blocks
+
+[33mcommit fd503da9ec520c73208481b917a0b997f49d4f6e[m
+Merge: 289aee6 c628357
+Author: Trevor Payne <44117050+TrevorPayne@users.noreply.github.com>
+Date:   Wed Jan 25 23:46:21 2023 -0600
+
+    Merge pull request #75 from PepperDash/feature/Subscription-Name-Fix
+    
+    Feature/subscription name fix
+
+[33mcommit c628357dc096e961d01418795efad4aae15715d1[m[33m ([m[1;33mtag: 2.2.1-alpha-56[m[33m, [m[1;31morigin/feature/Subscription-Name-Fix[m[33m, [m[1;32mfeature/Subscription-Name-Fix[m[33m)[m
+Author: Trevor Payne <tpayne@pepperdash.com>
+Date:   Wed Jan 25 23:26:55 2023 -0600
+
+    fix: not adding all controls to Device Manager
+
+[33mcommit 26afe735a0ddad2667aef65bc8d486a48508caa8[m[33m ([m[1;33mtag: 2.2.1-alpha-55[m[33m)[m
+Author: Trevor Payne <tpayne@pepperdash.com>
+Date:   Mon Jan 23 17:12:12 2023 -0600
+
+    fix: issue where instance tags with spaces would cause issues with named subscriptions
+
+[33mcommit 289aee65614e0b5558eb154823dfbd6f5e8186eb[m[33m ([m[1;33mtag: 2.2.0[m[33m)[m
+Merge: d0e883d e6f17a7
+Author: Trevor Payne <44117050+TrevorPayne@users.noreply.github.com>
+Date:   Mon Jan 16 16:08:06 2023 -0600
+
+    Merge pull request #74 from PepperDash/feature/Rs232-Support
+    
+    Feature/rs232 support
+
+[33mcommit e6f17a7751cfbe3b60cf40aff59d0017da836da1[m[33m ([m[1;33mtag: 2.1.2-alpha-54[m[33m, [m[1;33mtag: 2.1.2-alpha-53[m[33m, [m[1;31morigin/feature/nullFixMerge[m[33m, [m[1;31morigin/feature/Rs232-Support[m[33m, [m[1;32mfeature/nullFixMerge[m[33m, [m[1;32mfeature/Rs232-Support[m[33m)[m
+Merge: 443cd8a d0e883d
+Author: Trevor Payne <44117050+TrevorPayne@users.noreply.github.com>
+Date:   Fri Jan 13 14:14:52 2023 -0600
+
+    Merge branch 'main' into feature/Rs232-Support
+
+[33mcommit 443cd8a3fba732827790d4236e1f53563cfa60a5[m[33m ([m[1;33mtag: 2.1.2-alpha-52[m[33m)[m
+Author: Trevor Payne <tpayne@pepperdash.com>
+Date:   Fri Jan 13 14:13:55 2023 -0600
+
+    fix: standalone Presets
+
+[33mcommit d0e883d432abfe4916853b6ec5d180c378fe4d62[m
+Merge: 2708012 e2b0133
+Author: Jason T Alborough <jtalborough@gmail.com>
+Date:   Mon Jan 9 19:33:59 2023 -0500
+
+    Merge pull request #70 from PepperDash/hotfix/stopping-null-ref
+    
+    fix: adds null reference check on a stopping program event.
+
+[33mcommit 298924e563f9195753d6981437abc096031d910a[m[33m ([m[1;33mtag: 2.1.2-alpha-51[m[33m)[m
+Author: Trevor Payne <tpayne@pepperdash.com>
+Date:   Wed Dec 21 17:14:34 2022 -0600
+
+    feat: Add RS232 Support
+    
+    feat: clean up some threading concerns
+
+[33mcommit e2b0133f8c3541c39642b6a5e8107cb9b8314308[m[33m ([m[1;33mtag: 2.1.2-hotfix-45[m[33m, [m[1;31morigin/hotfix/stopping-null-ref[m[33m)[m
+Author: Jason T Alborough <jtalborough@gmail.com>
+Date:   Sun Aug 28 08:46:16 2022 -0400
+
+    fix: adds null reference check on a stopping program event.
+
+[33mcommit 2708012c2733a9e64131dd3cdf99f19bda7392a7[m[33m ([m[1;33mtag: 2.1.1[m[33m)[m
+Author: Trevor Payne <44117050+TrevorPayne@users.noreply.github.com>
+Date:   Tue Jul 19 09:49:22 2022 -0500
+
+    Update README.md
+
+[33mcommit f8affc76ddf5f691141354a8594ed46d1cbc5c32[m[33m ([m[1;33mtag: 2.1.0[m[33m)[m
+Merge: a6ca9a2 f0b01a3
+Author: Trevor Payne <44117050+TrevorPayne@users.noreply.github.com>
+Date:   Tue Jul 19 08:56:50 2022 -0500
+
+    Merge pull request #62 from PepperDash/feature/UpdateNuspec-MainBranch
+    
+    Feature/update nuspec main branch
+
+[33mcommit f0b01a35be312d0d9fa7bf33c09e04f2dae846be[m[33m ([m[1;33mtag: 2.0.12-alpha-44[m[33m)[m
+Author: Trevor Payne <tpayne@pepperdash.com>
+Date:   Mon Jul 18 17:20:39 2022 -0500
+
+    Another Nuspec -_-
+
+[33mcommit c877f95494949055c5a670e83cb0815136ca114f[m[33m ([m[1;33mtag: 2.0.12-alpha-43[m[33m)[m
+Author: Trevor Payne <tpayne@pepperdash.com>
+Date:   Mon Jul 18 16:31:50 2022 -0500
+
+    another change to nuspec
+
+[33mcommit 602fff4d7aa218ec4cb5f8733d13def646e4e203[m[33m ([m[1;33mtag: 2.0.12-alpha-42[m[33m)[m
+Author: Trevor Payne <tpayne@pepperdash.com>
+Date:   Mon Jul 18 16:16:07 2022 -0500
+
+    another change to nuspec
+
+[33mcommit feea945821849181d3ae9f04ea5923e37130c16a[m[33m ([m[1;33mtag: 2.0.12-alpha-41[m[33m)[m
+Author: Trevor Payne <tpayne@pepperdash.com>
+Date:   Mon Jul 18 15:29:08 2022 -0500
+
+    Update Nuspec
+
+[33mcommit f80170f43f831e5f01847a892a74712156bd867a[m[33m ([m[1;33mtag: 2.0.12-hotfix-38[m[33m, [m[1;31morigin/hotfix/queue-key-name[m[33m)[m
+Author: Jason DeVito <jdevito@pepperdash.com>
+Date:   Fri Apr 29 15:38:00 2022 -0500
+
+    feat: added '{key}-queue' to subscription thread, updated packages.config to reference Essentials 1.10.0
+
+[33mcommit a6ca9a267f81a279656acf0c1a475a3b253c8841[m
+Merge: d0054e7 e9c31ff
+Author: Trevor Payne <44117050+TrevorPayne@users.noreply.github.com>
+Date:   Wed Apr 20 10:55:54 2022 -0500
+
+    Merge pull request #61 from PepperDash/feature/Expanders-fix-DeviceFault
+    
+    fix: subsequent dsp expander device information would fail to parse if a previous device reports a fault
+
+[33mcommit e9c31ffe40eef141dc6e96d8a78ea292bd470f94[m[33m ([m[1;33mtag: 2.0.12-alpha-37[m[33m, [m[1;31morigin/feature/Expanders-fix-DeviceFault[m[33m)[m
+Author: Evan DiLallo <56933078+ediablo80@users.noreply.github.com>
+Date:   Wed Apr 13 12:01:17 2022 -0400
+
+    fix: subsequent dsp expander device information would fail to parse if a previous device reports a fault
+
+[33mcommit d0054e7a9b95d3b7c320ee23ce15b766b76a4b82[m[33m ([m[1;33mtag: 2.0.11[m[33m)[m
+Merge: bf64929 4445b26
+Author: Trevor Payne <44117050+TrevorPayne@users.noreply.github.com>
+Date:   Fri Mar 4 11:07:51 2022 -0600
+
+    Merge pull request #60 from PepperDash/feature/Expanders
+    
+    Feature/expanders
+
+[33mcommit 4445b2654c1a222e97e07bd31757ac56468c8617[m[33m ([m[1;33mtag: 2.0.11-alpha-36[m[33m, [m[1;31morigin/feature/Expanders[m[33m)[m
+Merge: 0131052 bf64929
+Author: Trevor Payne <44117050+TrevorPayne@users.noreply.github.com>
+Date:   Fri Mar 4 10:25:23 2022 -0600
+
+    Merge branch 'main' into feature/Expanders
+
+[33mcommit 013105282274ad5fcefab0761e5ea0a9ad9251d4[m
+Author: Trevor Payne <tpayne@pepperdash.com>
+Date:   Fri Mar 4 10:21:19 2022 -0600
+
+    Added expander data
+
+[33mcommit bf64929d35256b12593c6ac800ee582f5e4fbd0c[m
+Merge: 11597f8 3582d9d
+Author: Trevor Payne <44117050+TrevorPayne@users.noreply.github.com>
+Date:   Fri Mar 4 10:19:33 2022 -0600
+
+    Merge pull request #58 from PepperDash/hotfix/switcher-invalid-cast-exception
+    
+    Hotfix/switcher invalid cast exception
+
+[33mcommit 3582d9d6618b7e9ca816778d39fdb68612bc6780[m[33m ([m[1;33mtag: 2.0.11-hotfix-33[m[33m, [m[1;31morigin/hotfix/switcher-invalid-cast-exception[m[33m)[m
+Author: Jason DeVito <jdevito@pepperdash.com>
+Date:   Mon Feb 21 12:28:02 2022 -0600
+
+    updated yaml files to point to windows-2019
+
+[33mcommit a019e41ce60625a73a1796facf5130054be71cd3[m
+Author: Jason DeVito <jdevito@pepperdash.com>
+Date:   Mon Feb 21 12:24:55 2022 -0600
+
+    fix: udpated GetSourceNames debug statements to change from level 0 to 2
+
+[33mcommit 25888dfcc5358e0d2d441ff2a1d90d577f223d15[m
+Author: Jason DeVito <jdevito@pepperdash.com>
+Date:   Mon Feb 21 12:11:38 2022 -0600
+
+    fix: updated GetSourceNames method to resolve invalid cast exception
+
+[33mcommit 6bfd78d90e319bfc17fc77c3a1935f23c634f6e3[m
+Author: Trevor Payne <tpayne@pepperdash.com>
+Date:   Fri Feb 11 16:19:44 2022 -0600
+
+    feature: Add capability to discover and report data about Tesira Expander Devices
+
+[33mcommit 11597f857777fd6781941d3d4d2ff6b04026d0e7[m[33m ([m[1;33mtag: 2.0.10[m[33m)[m
+Merge: f049b41 45ef63b
+Author: Trevor Payne <44117050+TrevorPayne@users.noreply.github.com>
+Date:   Thu Dec 16 11:33:35 2021 -0600
+
+    Merge pull request #56 from PepperDash/feature/sourceSelector-report-sources
+    
+    Feature/source selector report sources
+
+[33mcommit 45ef63b40569f45cd1b57215e269fa6e3e085bf9[m[33m ([m[1;33mtag: 2.0.10-alpha-29[m[33m, [m[1;31morigin/feature/sourceSelector-report-sources[m[33m)[m
+Author: Trevor Payne <tpayne@pepperdash.com>
+Date:   Tue Dec 7 09:22:37 2021 -0600
+
+    feature:added ability to report all source names
+
+[33mcommit 47f54ea4df389459d004eed50ef1d351ed2844aa[m[33m ([m[1;33mtag: 2.0.10-alpha-28[m[33m, [m[1;31morigin/feature/preset-name-recall[m[33m)[m
+Author: Trevor Payne <tpayne@pepperdash.com>
+Date:   Mon Dec 6 16:14:51 2021 -0600
+
+    feature:show preset names from DSP in feedback, not from config
+
+[33mcommit d5e8c052ba1f38223fc966814af42742a5365c16[m[33m ([m[1;33mtag: 2.0.10-hotfix-26[m[33m, [m[1;31morigin/hotfix/voip-registration-bug[m[33m)[m
+Author: Trevor Payne <tpayne@pepperdash.com>
+Date:   Thu Oct 21 11:30:07 2021 -0500
+
+    fix:Improper queuing logic for voip registration
+
+[33mcommit e36ed294baab0191340879f72a4bfc1af6e22931[m[33m ([m[1;33mtag: 2.0.10-alpha-25[m[33m, [m[1;31morigin/feature/switchercontrolblock-fix[m[33m)[m
+Merge: aca6c8a f049b41
+Author: Evan DiLallo <56933078+ediablo80@users.noreply.github.com>
+Date:   Wed Oct 20 16:04:40 2021 -0400
+
+    Merge branch 'main' of https://github.com/PepperDash-Engineering/epi-dsp-tesira into feature/switchercontrolblock-fix
+
+[33mcommit f049b416a9c94d5ed4cbed21851794771b9ac44e[m[33m ([m[1;33mtag: 2.0.9[m[33m)[m
+Merge: 7a56bad c9f83de
+Author: Jason T Alborough <jalborough@pepperdash.com>
+Date:   Wed Sep 29 09:04:44 2021 -0400
+
+    Merge pull request #52 from PepperDash/hotfix/digital-preset-select-recall-by-name-or-id
+    
+    fix: Updated LinkToApi digital preset selection to reference RecallPr…
+
+[33mcommit c9f83de082a60ed63ca397207a7bdf7955f0dfdf[m[33m ([m[1;33mtag: 2.0.9-hotfix-24[m[33m)[m
+Author: Jason DeVito <jdevito@pepperdash.com>
+Date:   Tue Sep 28 17:20:49 2021 -0500
+
+    fix: Updated LinkToApi digital preset selection to reference RecallPreset() method.  fix: Updated RecallPreset() method to reference 'tesiraDsp.PresetData.PresetName'.  If defined recall preset by name, else fall back to recalling preset by ID if > 0.
+
+[33mcommit aca6c8a38ab00c7ef28d20055ed44cbd74ac2d8a[m[33m ([m[1;33mtag: 2.0.9-alpha-23[m[33m)[m
+Author: Evan DiLallo <56933078+ediablo80@users.noreply.github.com>
+Date:   Mon Aug 9 10:27:25 2021 -0400
+
+    Fix SwitcherControlBlocks when building without faders
+
+[33mcommit 7a56bad8798513bbfa468cd7710b00b00b7a4086[m[33m ([m[1;33mtag: 2.0.8[m[33m)[m
+Merge: e277cb4 0dfc869
+Author: jdevito <jdevito@pepperdash.com>
+Date:   Mon Jul 12 10:50:13 2021 -0500
+
+    Merge pull request #48 from PepperDash/feature/WatchdogSuspend
+    
+    Feature/watchdog suspend, reviewed and discussed with TP.
+
+[33mcommit 0dfc869d7a3ee5c825c65667a631d39b1e28ca32[m[33m ([m[1;33mtag: 2.0.8-alpha-22[m[33m, [m[1;31morigin/feature/WatchdogSuspend[m[33m)[m
+Author: Trevor Payne <44117050+TrevorPayne@users.noreply.github.com>
+Date:   Mon Jul 12 10:16:52 2021 -0500
+
+    Tested in the field
+
+[33mcommit 85d7e8cef3f43b3d08b100c71d41c914a8eedf36[m[33m ([m[1;33mtag: 2.0.8-alpha-21[m[33m)[m
+Author: Trevor Payne <44117050+TrevorPayne@users.noreply.github.com>
+Date:   Fri Jun 25 10:26:59 2021 -0500
+
+    Slow Down watchdog to 90s from 20s
+
+[33mcommit 44bce7089e4e2a9487be97a3b7514feac3cf4f2b[m[33m ([m[1;33mtag: 2.0.8-alpha-20[m[33m)[m
+Author: Trevor Payne <44117050+TrevorPayne@users.noreply.github.com>
+Date:   Fri Jun 25 10:24:10 2021 -0500
+
+    Added WatchDogSuspend
+    
+    if WatchDogSuspend is true, it blocks Watchdog checks
+    
+    WatchdogSuspend becomes true if the processor loses connection
+
+[33mcommit c4c58cbcbae8bea0ac1047552964a50f86ca7e44[m[33m ([m[1;33mtag: 2.0.8-alpha-19[m[33m, [m[1;31morigin/feature/offhook-dialing[m[33m)[m
+Author: Jason Alborough <jalborough@pepperdash.com>
+Date:   Tue Jun 15 15:34:28 2021 -0400
+
+    Fixes issue with POTS onhook / offhook commands.
+
+[33mcommit 5a97741acbb001f8e31f6315e01e81b9e05c73f6[m[33m ([m[1;33mtag: 2.0.8-alpha-18[m[33m)[m
+Author: Evan DiLallo <56933078+ediablo80@users.noreply.github.com>
+Date:   Fri Jun 11 17:24:44 2021 -0400
+
+    [x] Modify off-Hook method to send proper off-Hook command and irregardless of dialer type
+    [x] Update Off Hook fb to account for additional call status types
+
+[33mcommit e277cb4ac1665b65a116707b5a8dbf2259912d6a[m[33m ([m[1;33mtag: 2.0.7[m[33m)[m
+Merge: dbbf387 5ace50e
+Author: Trevor Payne <44117050+TrevorPayne@users.noreply.github.com>
+Date:   Thu May 20 13:42:27 2021 -0500
+
+    Merge pull request #45 from PepperDash/feature/DeviceInfoAdd
+    
+    Feature/device info add
+
+[33mcommit 5ace50ed981a9c0935ae455018490878c3c2eacd[m[33m ([m[1;33mtag: 2.0.7-alpha-17[m[33m, [m[1;31morigin/feature/DeviceInfoAdd[m[33m)[m
+Merge: d1fcbb9 d7ea13c
+Author: Trevor Payne <44117050+TrevorPayne@users.noreply.github.com>
+Date:   Fri May 14 16:59:58 2021 -0500
+
+    Merge branch 'feature/DeviceInfoAdd' of https://github.com/PepperDash/epi-dsp-tesira into feature/DeviceInfoAdd
+
+[33mcommit d1fcbb93a6d7eb7392c0840c7810c37378fdabbd[m
+Author: Trevor Payne <44117050+TrevorPayne@users.noreply.github.com>
+Date:   Fri May 14 16:59:40 2021 -0500
+
+    Fixed issue where faders were not being added to the device list
+
+[33mcommit d7ea13c5fd656634011d7cfe3db7882e6af78029[m[33m ([m[1;33mtag: 2.0.7-alpha-16[m[33m)[m
+Author: Trevor Payne <44117050+TrevorPayne@users.noreply.github.com>
+Date:   Fri May 14 12:14:09 2021 -0500
+
+    Modified installation instructions
+
+[33mcommit 222daf8e74fba5d0da65d922e443444cb9c5444c[m[33m ([m[1;33mtag: 2.0.7-alpha-15[m[33m)[m
+Author: Trevor Payne <44117050+TrevorPayne@users.noreply.github.com>
+Date:   Fri May 14 11:50:48 2021 -0500
+
+    Fix multiple typos in readme
+    
+    Fix formatting inconsistencies
+
+[33mcommit a8c0aed3252725a7a56b69d47c02cdf2ba6db561[m
+Author: Trevor Payne <44117050+TrevorPayne@users.noreply.github.com>
+Date:   Fri May 14 11:26:58 2021 -0500
+
+    Fixed issues in example config
+    
+    Forgot to lint the example config
+
+[33mcommit f392247d2301d5b29586b2b4a56814051ebc90b7[m
+Author: Trevor Payne <44117050+TrevorPayne@users.noreply.github.com>
+Date:   Fri May 14 11:19:38 2021 -0500
+
+    Multiple Readme Updates
+
+[33mcommit e94ad0e08353f8fbff3e99b180d833b515c615a8[m[33m ([m[1;33mtag: 2.0.7-alpha-12[m[33m)[m
+Author: Trevor Payne <44117050+TrevorPayne@users.noreply.github.com>
+Date:   Thu May 13 18:27:57 2021 -0500
+
+    Seperated Presets
+    
+    Fixed DeviceInfo
+    
+    Updated Debug Statements
+
+[33mcommit 42c76c563c97534537bca190614ca149e9cf6fa3[m
+Author: Trevor Payne <44117050+TrevorPayne@users.noreply.github.com>
+Date:   Thu May 13 14:39:29 2021 -0500
+
+    Add DeviceInfo 2
+
+[33mcommit 226a982cdac16dbde16e133aa244b5eaaf87b0ad[m
+Author: Trevor Payne <44117050+TrevorPayne@users.noreply.github.com>
+Date:   Thu May 13 14:39:03 2021 -0500
+
+    Add DeviceInfo
+
+[33mcommit 89ea556847389349bcda3f1737bfb19f42bd7ea8[m[33m ([m[1;33mtag: 2.0.7-alpha-11[m[33m, [m[1;31morigin/feature/update-workflow-again[m[33m)[m
+Author: Trevor Payne <44117050+TrevorPayne@users.noreply.github.com>
+Date:   Wed May 12 16:45:28 2021 -0500
+
+    Rework Queue
+    
+    Refactor Interfaces
+
+[33mcommit ea65ac17f825d55c6492d343bdb815953f8067d6[m
+Author: Trevor Payne <44117050+TrevorPayne@users.noreply.github.com>
+Date:   Wed May 12 16:10:34 2021 -0500
+
+    Pre-Queue Change
+
+[33mcommit 6d032869085a2957a6b90f98010d2ce5e6f04a73[m[33m ([m[1;33mtag: 2.0.7-alpha-10[m[33m)[m
+Author: Trevor Payne <44117050+TrevorPayne@users.noreply.github.com>
+Date:   Tue May 11 22:48:34 2021 -0500
+
+    Copy Workflow
+
+[33mcommit fbf8fdf3720c4a03f506b7af664c9829d7bc78b6[m
+Author: Trevor Payne <44117050+TrevorPayne@users.noreply.github.com>
+Date:   Tue May 11 22:36:18 2021 -0500
+
+    update build number
+
+[33mcommit e8e055eddbcb6e196d4c37693faaba0c9e1cbe90[m
+Author: Trevor Payne <44117050+TrevorPayne@users.noreply.github.com>
+Date:   Tue May 11 22:18:00 2021 -0500
+
+    .gitignore fix
+    
+    Fix Some git workflows
+
+[33mcommit dbbf387d425fe289b68708de9c21e6ddccdc6b1d[m[33m ([m[1;33mtag: 2.0.6[m[33m)[m
+Merge: 4089714 2dad484
+Author: Trevor Payne <44117050+TrevorPayne@users.noreply.github.com>
+Date:   Tue May 11 13:00:07 2021 -0500
+
+    Merge pull request #43 from PepperDash/feature/public-nuget
+    
+    Feature/public nuget
+
+[33mcommit 2dad484d8265e4053bee68bd2e1403f1d0d930f8[m[33m ([m[1;33mtag: 2.0.6-alpha-7[m[33m, [m[1;31morigin/feature/public-nuget[m[33m)[m
+Author: Trevor Payne <44117050+TrevorPayne@users.noreply.github.com>
+Date:   Tue May 11 12:42:13 2021 -0500
+
+    Fixed issue related to build number
+
+[33mcommit 56ef5810b4075c620968beb4ca1ad0e5f25f25bc[m[33m ([m[1;33mtag: 2.0.6-alpha-6[m[33m)[m
+Author: Trevor Payne <44117050+TrevorPayne@users.noreply.github.com>
+Date:   Tue May 11 12:28:03 2021 -0500
+
+    Fixed issue related to IHasDspPreset integration
+
+[33mcommit 4089714b141596e9e26e404883f3b8c7517f22d8[m[33m ([m[1;33mtag: 2.0.5[m[33m)[m
+Merge: 7240128 fbcab3e
+Author: Trevor Payne <44117050+TrevorPayne@users.noreply.github.com>
+Date:   Fri Apr 16 12:36:53 2021 -0500
+
+    Merge pull request #42 from PepperDash/feature/public-nuget
+    
+    uncommented public nuget
+
+[33mcommit fbcab3ebfb54a5652f37da3e44ecd2739639c7cc[m[33m ([m[1;33mtag: 2.0.5-alpha-5[m[33m)[m
+Author: Trevor Payne <tpayne@pepperdash.com>
+Date:   Wed Apr 14 16:38:25 2021 -0500
+
+    Updated API Key
+
+[33mcommit 902403223eeac2bf91c1917fdf74793e29a89f54[m[33m ([m[1;33mtag: 2.0.5-alpha-4[m[33m)[m
+Author: Trevor Payne <tpayne@pepperdash.com>
+Date:   Wed Apr 14 15:58:01 2021 -0500
+
+    uncommented public nuget
+
+[33mcommit 72401280bea21d531db7a771c9ddfb467e141776[m[33m ([m[1;33mtag: 2.0.4[m[33m)[m
+Merge: 824e404 b2c3e2e
+Author: Trevor Payne <44117050+TrevorPayne@users.noreply.github.com>
+Date:   Wed Apr 14 15:23:08 2021 -0500
+
+    Merge pull request #41 from PepperDash/feature/IDspPreset
+    
+    Add IDspPreset
+
+[33mcommit b2c3e2e64844e7850def53c43bbbbe01b5397d4f[m[33m ([m[1;33mtag: 2.0.4-alpha-3[m[33m, [m[1;31morigin/feature/IDspPreset[m[33m)[m
+Author: Trevor Payne <tpayne@pepperdash.com>
+Date:   Wed Apr 14 15:02:56 2021 -0500
+
+    removed phantom .sln file
+
+[33mcommit e84f601461f0451e4e9b7e04f9cd8fde4555e4ca[m
+Author: Trevor Payne <tpayne@pepperdash.com>
+Date:   Wed Apr 14 14:58:50 2021 -0500
+
+    More Workflow Fixes
+
+[33mcommit 0c185d73d438a4170c736070078fe999c591f7b0[m
+Author: Trevor Payne <tpayne@pepperdash.com>
+Date:   Wed Apr 14 14:44:49 2021 -0500
+
+    Try to fix workflows
+
+[33mcommit 5e47fe87c2b2a0118a5aba422832a58e2ca438f7[m[33m ([m[1;33mtag: 2.0.4-alpha-83[m[33m)[m
+Author: Trevor Payne <tpayne@pepperdash.com>
+Date:   Tue Apr 13 11:00:22 2021 -0500
+
+    Resolves #40
+    
+    Implements IHasDspPresets in TesiraDsp class
+
+[33mcommit 2572a884ea45726d6afb382bedc103eedd6afa92[m[33m ([m[1;33mtag: 2.0.4-alpha-82[m[33m, [m[1;31morigin/feature/4-SeriesTesting[m[33m)[m
+Author: Trevor Payne <tpayne@pepperdash.com>
+Date:   Thu Apr 1 14:38:27 2021 -0500
+
+    Fixed debug levels for all messages
+
+[33mcommit c5f5c13f71ce19bd0e6e869840c98fe587bcafb3[m[33m ([m[1;33mtag: 2.0.4-alpha-81[m[33m)[m
+Author: Trevor Payne <tpayne@pepperdash.com>
+Date:   Thu Apr 1 13:49:51 2021 -0500
+
+    Tested and fixed issues with 4-series
+    
+    Needs tested with 3-series
+    
+    Major changes with threading and queuing
+
+[33mcommit 9233a021987cb8f797a3a477919231655a14d5f8[m[33m ([m[1;33mtag: 2.0.4-alpha-80[m[33m)[m
+Author: Trevor Payne <tpayne@pepperdash.com>
+Date:   Thu Apr 1 10:23:23 2021 -0500
+
+    More Tests
+
+[33mcommit afe6c5aa7ea7fcaed3180e7afca9a7dafaa92976[m[33m ([m[1;33mtag: 2.0.4-alpha-79[m[33m)[m
+Author: Trevor Payne <tpayne@pepperdash.com>
+Date:   Wed Mar 31 13:27:06 2021 -0500
+
+    New Debugging
+
+[33mcommit 824e404cad696cbf2679e30d7445ac13335ad265[m[33m ([m[1;33mtag: 2.0.3[m[33m)[m
+Merge: b8dd158 d788da2
+Author: Sumanth Rayancha <srayancha@pepperdash.com>
+Date:   Mon Mar 29 23:08:33 2021 -0400
+
+    Merge pull request #38 from PepperDash/feature/ResolveCommit
+    
+    Feature/resolve commit
+
+[33mcommit d788da2f6c9e458a9ef9838b357158a998a547ac[m[33m ([m[1;33mtag: 2.0.3-alpha-78[m[33m, [m[1;31morigin/feature/ResolveCommit[m[33m, [m[1;31morigin/ResolveCommit[m[33m)[m
+Author: Trevor Payne <tpayne@pepperdash.com>
+Date:   Mon Mar 29 20:40:13 2021 -0500
+
+    Revert "Merge remote-tracking branch 'origin/main' into main"
+    
+    This reverts commit cbb88bc0cbdfc49d0286bef1053b6e0bdf4c8219.
+
+[33mcommit cbb88bc0cbdfc49d0286bef1053b6e0bdf4c8219[m
+Merge: 599a453 b8dd158
+Author: Trevor Payne <tpayne@pepperdash.com>
+Date:   Mon Mar 29 20:40:13 2021 -0500
+
+    Merge remote-tracking branch 'origin/main' into main
+
+[33mcommit b8dd158a0dd044f1bb9f7d024e8112810638b77b[m
+Merge: 599a453 7b977d6
+Author: Trevor Payne <44117050+TrevorPayne@users.noreply.github.com>
+Date:   Wed Mar 3 13:09:36 2021 -0600
+
+    Merge pull request #36 from PepperDash/hotfix/RoomCombiner-NoSubscribe
+    
+    Hotfix/room combiner no subscribe
+
+[33mcommit 7b977d6ae823da4b56d7fd74633026c558fa9908[m[33m ([m[1;33mtag: 2.0.3-hotfix-77[m[33m)[m
+Author: Trevor Payne <tpayne@pepperdash.com>
+Date:   Wed Mar 3 12:50:54 2021 -0600
+
+    FIxed issue with Room COmbiner Subscription
+
+[33mcommit a396630020ff16b6b30af3190bfaeadd58ce7e19[m[33m ([m[1;33mtag: 2.0.3-hotfix-76[m[33m)[m
+Author: Trevor Payne <tpayne@pepperdash.com>
+Date:   Mon Feb 22 14:11:20 2021 -0600
+
+    Fixed issue where TesiraDsp.cs was not passing subscribed messages back to the RoomCombiner instance
+
+[33mcommit f1fc3bda34e6157ea9c1ec3281b953c4e027a701[m[33m ([m[1;33mtag: 2.0.3-hotfix-75[m[33m)[m
+Author: Trevor Payne <tpayne@pepperdash.com>
+Date:   Mon Feb 22 12:23:58 2021 -0600
+
+    Fixed issue where roomCombiner omitted room selection data
+
+[33mcommit 599a45333d599d29f83fa220980fc61530ba24bd[m[33m ([m[1;33mtag: 2.0.2[m[33m)[m
+Merge: 9319340 12443d9
+Author: Trevor Payne <44117050+TrevorPayne@users.noreply.github.com>
+Date:   Mon Feb 22 10:09:37 2021 -0600
+
+    Merge pull request #35 from PepperDash/hotfix/fix-debugging
+    
+    Hotfix/fix debugging
+
+[33mcommit 93193407ef63776e30652b9eea6e73b1b31dff14[m
+Merge: 9452dcd fb89efe
+Author: Trevor Payne <44117050+TrevorPayne@users.noreply.github.com>
+Date:   Mon Feb 22 10:07:15 2021 -0600
+
+    Merge pull request #34 from PepperDash/hotfix/VoipDialerIssue
+    
+    Issue with Dial/End
+
+[33mcommit fb89efed6859025d411cb4afd4628ecc6c88f549[m[33m ([m[1;33mtag: 2.0.2-hotfix-74[m[33m, [m[1;31morigin/hotfix/VoipDialerIssue[m[33m)[m
+Merge: d75fac8 9452dcd
+Author: Trevor Payne <44117050+TrevorPayne@users.noreply.github.com>
+Date:   Mon Feb 22 09:16:27 2021 -0600
+
+    Merge branch 'main' into hotfix/VoipDialerIssue
+
+[33mcommit 12443d907b888f7a6e9de823016fee29488a5992[m[33m ([m[1;33mtag: 2.0.2-hotfix-73[m[33m, [m[1;31morigin/hotfix/fix-debugging[m[33m)[m
+Author: Andrew Welker <andrew.welker@gmail.com>
+Date:   Thu Feb 4 09:09:10 2021 -0700
+
+    remove TX debug statements
+
+[33mcommit 5d1c6e8b00f8e9b7d4fa0a5f79ad98b7bc7b30d3[m[33m ([m[1;33mtag: 2.0.2-hotfix-72[m[33m)[m
+Author: Andrew Welker <andrew.welker@gmail.com>
+Date:   Thu Feb 4 09:07:10 2021 -0700
+
+    remove RX debugging
+    
+    use stream debugging if RX is needed
+
+[33mcommit 9452dcd997c831fb3200ba59df69347e33dd98bd[m
+Merge: f83320a 5f4e272
+Author: Andrew Welker <awelker@pepperdash.com>
+Date:   Wed Feb 3 08:56:38 2021 -0700
+
+    Merge pull request #32 from PepperDash/feature/DeviceInfo
+    
+    Feature/device info
+
+[33mcommit d75fac87be8283b34ccc4fa01b8a18c2569ba0fb[m[33m ([m[1;33mtag: 2.0.2-hotfix-68[m[33m)[m
+Author: Trevor Payne <tpayne@pepperdash.com>
+Date:   Tue Feb 2 11:41:53 2021 -0600
+
+    Issue with Dial/End
+
+[33mcommit 5f4e272c975451189e12aba7eeed1323848236b6[m[33m ([m[1;33mtag: 2.0.2-alpha-66[m[33m, [m[1;31morigin/feature/DeviceInfo[m[33m)[m
+Merge: 8fbb397 f83320a
+Author: Trevor Payne <tpayne@pepperdash.com>
+Date:   Thu Dec 17 13:34:17 2020 -0600
+
+    Merge In Main Changes
+
+[33mcommit f83320a2e640ea99de7db314dd0547af5ab3a277[m
+Merge: 73d8663 ae2c37d
+Author: Trevor Payne <44117050+TrevorPayne@users.noreply.github.com>
+Date:   Thu Dec 17 13:15:27 2020 -0600
+
+    Merge pull request #30 from PepperDash/feature/preset-fixes
+    
+    Feature/preset fixes
+
+[33mcommit ae2c37dc6c7ca00fa6f52c63c1fcf28adc090d44[m[33m ([m[1;33mtag: 2.0.2-alpha-64[m[33m)[m
+Author: Trevor Payne <tpayne@pepperdash.com>
+Date:   Thu Dec 17 12:48:26 2020 -0600
+
+    Update Nuget Push Workflow
+
+[33mcommit f2cba4e386e28b547b940256f051598995078c9b[m[33m ([m[1;33mtag: 2.0.2-alpha-63[m[33m)[m
+Author: Trevor Payne <tpayne@pepperdash.com>
+Date:   Thu Dec 17 12:28:26 2020 -0600
+
+    nuspec Fixes
+
+[33mcommit 8282ab47775934130f96f4020db6664efb52b4be[m[33m ([m[1;33mtag: 2.0.2-alpha-62[m[33m)[m
+Author: Trevor Payne <tpayne@pepperdash.com>
+Date:   Thu Dec 17 11:01:12 2020 -0600
+
+    Fixed Solution Name in Workflow
+
+[33mcommit 811956ad9748058da6556521ca4a1feecc05439d[m
+Author: Trevor Payne <tpayne@pepperdash.com>
+Date:   Thu Dec 17 10:37:33 2020 -0600
+
+    More workflow Fixes
+
+[33mcommit 464b9098c40b1d6a0e148df534c5b5e08f1ec7e1[m
+Merge: 4f1e9b4 6157c3a
+Author: Trevor Payne <tpayne@pepperdash.com>
+Date:   Thu Dec 17 10:32:20 2020 -0600
+
+    Merge branch 'feature/preset-fixes' of https://github.com/PepperDash/epi-dsp-tesira into feature/preset-fixes
+
+[33mcommit 4f1e9b497971666d054afd3c47bc87e81c28cb44[m
+Author: Trevor Payne <tpayne@pepperdash.com>
+Date:   Thu Dec 17 10:32:03 2020 -0600
+
+    Fixed some ps scripts
+
+[33mcommit 6157c3a8d9c747cae63654609682b98e4a61b3d9[m
+Merge: a1f13a3 73d8663
+Author: Trevor Payne <44117050+TrevorPayne@users.noreply.github.com>
+Date:   Thu Dec 17 10:28:18 2020 -0600
+
+    Merge branch 'main' into feature/preset-fixes
+
+[33mcommit a1f13a38fe3b089b8e470e3404ccb38e8740ddcb[m
+Author: Trevor Payne <tpayne@pepperdash.com>
+Date:   Thu Dec 17 10:27:15 2020 -0600
+
+    Workflow Fixes - Add Token
+
+[33mcommit 8f808eba63b49d7f574cb70aac18426018cd0c5b[m
+Author: Trevor Payne <tpayne@pepperdash.com>
+Date:   Thu Dec 17 10:24:04 2020 -0600
+
+    workflow fixes
+
+[33mcommit 8fbb39706c980f8aac97c6e4052307c435b5d8d3[m[33m ([m[1;31morigin/feature/DeviceInfo-Initial[m[33m)[m
+Author: Trevor Payne <tpayne@pepperdash.com>
+Date:   Thu Dec 17 10:16:49 2020 -0600
+
+    Fix Merge Issues
+
+[33mcommit 687fd7c60e6f3f735fe265966e55680ca44f55dc[m
+Author: Trevor Payne <tpayne@pepperdash.com>
+Date:   Thu Dec 17 10:09:30 2020 -0600
+
+    Fixed issue related to TesiraDeviceInfo class excepting when added
+
+[33mcommit 16bbdfec41a957f8bdd6f73d4a06fcd7faee762d[m
+Author: Jason Alborough <jalborough@pepperdash.com>
+Date:   Mon Dec 14 15:18:26 2020 -0500
+
+    workflow fixes
+
+[33mcommit 1c5012407ace6005711200a0879383ddbba86f9d[m
+Author: Jason Alborough <jalborough@pepperdash.com>
+Date:   Mon Dec 14 14:35:14 2020 -0500
+
+    workflow fixes
+
+[33mcommit 2dcf6c36ccdff9be2cdcf708fd6d618ef34c9e13[m
+Author: Jason Alborough <jalborough@pepperdash.com>
+Date:   Mon Dec 14 11:19:20 2020 -0500
+
+    Fixes preset recalling.
+    Previously preset recalls were being queued but the DEVICE response was not advancing the Queue, this would cause a backup in the queue which could break operation.
+    Preset recall joins were off by one.
+
+[33mcommit e7db5dbd9c573cfc2891efd2a36ed5d3ae63ea0b[m[33m ([m[1;31morigin/feature/pots-fixes[m[33m)[m
+Author: Jason Alborough <jalborough@pepperdash.com>
+Date:   Mon Dec 7 20:14:44 2020 -0500
+
+    Fixes multiple issues with pots line. More vetting required for both POTS and VOIP
+
+[33mcommit c46766c047837d47d6202cf8c3304ffb174c2f8b[m[33m ([m[1;33mtag: 2.0.2-alpha-46[m[33m, [m[1;31morigin/feature/locking-issue[m[33m)[m
+Author: Jason Alborough <jalborough@pepperdash.com>
+Date:   Fri Oct 30 19:08:12 2020 -0400
+
+    Fixes an issue that could lock the processor
+
+[33mcommit 745555f02e66f40c9e87e2d9031ab2b4eff4a376[m[33m ([m[1;33mtag: 2.0.2-alpha-45[m[33m)[m
+Author: Jason Alborough <jalborough@pepperdash.com>
+Date:   Tue Oct 27 13:17:44 2020 -0400
+
+    fixes standardMixerSupport
+
+[33mcommit 24c2e46d4d4cec9f8092be9dab9acec4bd062be4[m[33m ([m[1;33mtag: 2.0.2-alpha-44[m[33m)[m
+Author: Jason Alborough <jalborough@pepperdash.com>
+Date:   Mon Oct 26 18:17:18 2020 -0400
+
+    Fixes support for the standard mixer block.
+
+[33mcommit 6a701eab1740a0e513c18e04df6f6e761fe525cf[m[33m ([m[1;33mtag: 2.0.2-alpha-43[m[33m)[m
+Author: Jason Alborough <jalborough@pepperdash.com>
+Date:   Mon Oct 26 15:32:20 2020 -0400
+
+    readds meters to the subscription process
+
+[33mcommit e344edeb4f21a355a84ddb6bd491fdcc35a5fb9b[m[33m ([m[1;33mtag: 2.0.2-beta-42[m[33m)[m
+Merge: 3ee3609 510cae4
+Author: jdevito <jdevito@pepperdash.com>
+Date:   Fri Oct 23 15:28:11 2020 -0500
+
+    Merge pull request #26 from PepperDash/feature/Manual-Addition-Fixes
+    
+    Feature/manual addition fixes
+
+[33mcommit 510cae4e39dd217ac2cf56c371a660d88c32df26[m[33m ([m[1;33mtag: 2.0.2-alpha-41[m[33m)[m
+Author: Trevor Payne <tpayne@pepperdash.com>
+Date:   Fri Oct 23 11:29:44 2020 -0500
+
+    Added mechanism for automated polling for unsubscribed controls
+
+[33mcommit 5875e019165634c7a6d73b1d3077a306c6459007[m[33m ([m[1;33mtag: 2.0.2-alpha-40[m[33m)[m
+Author: Trevor Payne <tpayne@pepperdash.com>
+Date:   Fri Oct 23 10:21:30 2020 -0500
+
+    Refactor queue logic
+    
+    refactor watchdong
+    
+    subscription thread fixes
+    
+    too much to list
+
+[33mcommit 6f767d95369edaf32da53f3bf3bd4cd24721fe12[m[33m ([m[1;33mtag: 2.0.2-alpha-39[m[33m)[m
+Author: Trevor Payne <tpayne@pepperdash.com>
+Date:   Mon Oct 12 16:03:11 2020 -0500
+
+    Manually added fixes for Router block and Low-Priority Subscriptions
+
+[33mcommit 50063a01c923361dc96c9760616a5ee281beefea[m[33m ([m[1;33mtag: 2.0.2-alpha-38[m[33m, [m[1;31morigin/feature/Fix-Subscription-timeout[m[33m)[m
+Author: Trevor Payne <tpayne@pepperdash.com>
+Date:   Mon Oct 12 13:41:55 2020 -0500
+
+    Subscription Fixes
+
+[33mcommit ba2bf58999d542a2b30f840b2f458656b9e9ee36[m[33m ([m[1;33mtag: 2.0.2-alpha-33[m[33m)[m
+Author: Trevor Payne <tpayne@pepperdash.com>
+Date:   Fri Sep 18 13:33:58 2020 -0500
+
+    Added Missing Files
+
+[33mcommit 8ed28fa8cd5f5b742e9979bd22a0bc63a60e69c0[m
+Author: Trevor Payne <tpayne@pepperdash.com>
+Date:   Fri Sep 18 11:55:05 2020 -0500
+
+    Resolves #25
+    
+    Watchdog now only checks for controls that have been previously subscribed
+
+[33mcommit 3ee3609a3a83d280e047859aee2802acd2940b3f[m[33m ([m[1;33mtag: 2.0.2-beta-31[m[33m)[m
+Merge: d582f30 6f3bdbe
+Author: Andrew Welker <awelker@pepperdash.com>
+Date:   Thu Sep 17 15:28:30 2020 -0600
+
+    Merge pull request #24 from PepperDash/feature/fix-main-action
+    
+    Feature/fix main action
+
+[33mcommit 73d8663af6ac2720edf22289daf24279cea71e33[m
+Merge: 2e65b9f 6f3bdbe
+Author: Andrew Welker <awelker@pepperdash.com>
+Date:   Thu Sep 17 15:28:20 2020 -0600
+
+    Merge pull request #23 from PepperDash/feature/fix-main-action
+    
+    Fix token for uploading release & add nuget publishing
+
+[33mcommit 6f3bdbe28a9ec1a605abca5e1af608f36b81bf30[m[33m ([m[1;33mtag: 2.0.2-alpha-29[m[33m, [m[1;31morigin/feature/fix-main-action[m[33m)[m
+Author: Andrew Welker <awelker@pepperdash.com>
+Date:   Thu Sep 17 15:12:47 2020 -0600
+
+    add version.txt steps to docker.yml
+
+[33mcommit c4481812555c01bd671f6e5f5d37985502a1d8ca[m[33m ([m[1;33mtag: 2.0.2-alpha-28[m[33m)[m
+Author: Andrew Welker <awelker@pepperdash.com>
+Date:   Thu Sep 17 14:51:59 2020 -0600
+
+    Update ZipBuildOutput.ps1
+
+[33mcommit c46fb322bdc145f93d5f77573a5245d460e70b0e[m[33m ([m[1;33mtag: 2.0.2-alpha-27[m[33m)[m
+Author: Andrew Welker <awelker@pepperdash.com>
+Date:   Thu Sep 17 14:51:37 2020 -0600
+
+    fix .nuspec file name
+
+[33mcommit 08f70b0eafbae877302aabbe9f7a6f59e203388a[m[33m ([m[1;33mtag: 2.0.2-alpha-26[m[33m)[m
+Author: Andrew Welker <awelker@pepperdash.com>
+Date:   Thu Sep 17 14:50:18 2020 -0600
+
+    Add nuget push to docker.yml
+
+[33mcommit cb9705a8f57abfd705c2f594db298d7f4e3b6946[m[33m ([m[1;33mtag: 2.0.2-alpha-25[m[33m)[m
+Author: Andrew Welker <awelker@pepperdash.com>
+Date:   Thu Sep 17 14:48:41 2020 -0600
+
+    Add nuget push to main.yml
+
+[33mcommit 25b06d1441c4c9dc8016e796c21723a26356e65b[m[33m ([m[1;33mtag: 2.0.2-alpha-24[m[33m)[m
+Author: Trevor Payne <tpayne@pepperdash.com>
+Date:   Thu Sep 17 15:46:28 2020 -0500
+
+    Change ID
+
+[33mcommit be30a14dbdf1efbf009fe85997235099b9921bdb[m[33m ([m[1;33mtag: 2.0.2-alpha-23[m[33m)[m
+Author: Trevor Payne <tpayne@pepperdash.com>
+Date:   Thu Sep 17 15:40:18 2020 -0500
+
+    Added Nuget Package Build
+
+[33mcommit 0bf6bdd55ff45b8525834ed0f31065baabc34343[m[33m ([m[1;33mtag: 2.0.2-alpha-22[m[33m)[m
+Author: Andrew Welker <awelker@pepperdash.com>
+Date:   Thu Sep 17 14:26:57 2020 -0600
+
+    Update main.yml
+
+[33mcommit 2e65b9f8e5e87692597af6451dcc1080e604d3a8[m[33m ([m[1;33mtag: 2.0.1[m[33m)[m
+Merge: a416664 73a2190
+Author: Trevor Payne <44117050+TrevorPayne@users.noreply.github.com>
+Date:   Fri Sep 4 15:26:14 2020 -0500
+
+    Merge pull request #22 from PepperDash/hotfix/envToken-Update
+    
+    Updated Environmental Token
+
+[33mcommit 73a2190d0d5d002935c699cd68462822711b098c[m[33m ([m[1;33mtag: 2.0.2-hotfix-21[m[33m, [m[1;31morigin/hotfix/envToken-Update[m[33m)[m
+Author: Trevor Payne <tpayne@pepperdash.com>
+Date:   Fri Sep 4 14:57:45 2020 -0500
+
+    Updated Environmental Token
+
+[33mcommit a416664a8721c98715cc85ddf683aee5de7272b0[m
+Merge: ed2223d 297e8bc
+Author: Andrew Welker <awelker@pepperdash.com>
+Date:   Fri Sep 4 12:28:41 2020 -0600
+
+    Merge pull request #21 from PepperDash/hotfix/dockerSecrets
+    
+    update Docker Secrets (again)
+
+[33mcommit 297e8bc099089bfb974d4b4dc627576dbebd4f1b[m[33m ([m[1;33mtag: 2.0.2-hotfix-20[m[33m, [m[1;31morigin/hotfix/dockerSecrets[m[33m)[m
+Author: Trevor Payne <tpayne@pepperdash.com>
+Date:   Fri Sep 4 13:02:51 2020 -0500
+
+    update DOcker Secrets (again)
+
+[33mcommit ed2223d72f4d49881bc8e6bc3b387621ceb01612[m
+Merge: 6ffa4dd bc47a8b
+Author: Andrew Welker <awelker@pepperdash.com>
+Date:   Fri Sep 4 11:44:03 2020 -0600
+
+    Merge pull request #20 from PepperDash/hotfix/docker-secrets
+    
+    fix docker secrets issue
+
+[33mcommit bc47a8b52c6a2caf066591d91815368cdc3b858b[m[33m ([m[1;33mtag: 2.0.2-hotfix-19[m[33m, [m[1;31morigin/hotfix/docker-secrets[m[33m)[m
+Author: Trevor Payne <tpayne@pepperdash.com>
+Date:   Fri Sep 4 11:51:49 2020 -0500
+
+    fix docker secrets issue
+
+[33mcommit 6ffa4ddcc8314c00b7228dacd340f43ddfed7853[m
+Merge: 9b319df d3f3cbd
+Author: Trevor Payne <44117050+TrevorPayne@users.noreply.github.com>
+Date:   Fri Sep 4 11:37:15 2020 -0500
+
+    Merge pull request #19 from PepperDash/hotfix/yml-fix
+    
+    fix main.yml
+
+[33mcommit d3f3cbd867719842009e1c8650e447d6b7ac62a0[m[33m ([m[1;33mtag: 2.0.2-hotfix-18[m[33m, [m[1;31morigin/hotfix/yml-fix[m[33m)[m
+Author: Trevor Payne <tpayne@pepperdash.com>
+Date:   Fri Sep 4 11:13:53 2020 -0500
+
+    fix main.yml
+
+[33mcommit 9b319df105e83a0eec0cd9b5d339f11610b8839f[m
+Merge: 8fa5f43 d582f30
+Author: Andrew Welker <awelker@pepperdash.com>
+Date:   Fri Sep 4 09:38:54 2020 -0600
+
+    Merge pull request #18 from PepperDash/development
+    
+    Development
+
+[33mcommit d582f30caba94ab7b9d8fb0fdb038ac1a3ddbc37[m[33m ([m[1;33mtag: 2.0.2-beta-17[m[33m)[m
+Merge: e908030 faf7bf7
+Author: Trevor Payne <44117050+TrevorPayne@users.noreply.github.com>
+Date:   Fri Sep 4 10:07:34 2020 -0500
+
+    Merge pull request #17 from PepperDash/feature/workflow-fixes
+    
+    Feature/workflow fixes
+
+[33mcommit faf7bf7b11b1ee2afc8236bd9bbdaf9164b7a82c[m[33m ([m[1;33mtag: 2.0.2-alpha-16[m[33m)[m
+Author: Trevor Payne <tpayne@pepperdash.com>
+Date:   Fri Sep 4 09:38:21 2020 -0500
+
+    changes to Assembly version
+
+[33mcommit c4d603c21a82a0dcd7948e374d4d5d1468bdb26f[m[33m ([m[1;33mtag: 2.0.2-alpha-15[m[33m)[m
+Author: Trevor Payne <tpayne@pepperdash.com>
+Date:   Fri Sep 4 09:33:23 2020 -0500
+
+    changes to *.yaml files
+    resolves #16
+
+[33mcommit 8fa5f4319b14ba5a9a38b71d9776c1915a70d36a[m[33m ([m[1;33mtag: 2.0.1--14[m[33m)[m
+Merge: 3d3d5c6 e908030
+Author: Trevor Payne <44117050+TrevorPayne@users.noreply.github.com>
+Date:   Thu Sep 3 23:36:14 2020 -0500
+
+    Merge pull request #15 from PepperDash/development
+    
+    Development
+
+[33mcommit e908030dd9762fec66df0314a04ccf30c01abebe[m[33m ([m[1;33mtag: 2.0.1-beta-13[m[33m)[m
+Merge: 3d3d5c6 ee9322f
+Author: Trevor Payne <44117050+TrevorPayne@users.noreply.github.com>
+Date:   Thu Sep 3 23:14:14 2020 -0500
+
+    Merge pull request #14 from PepperDash/feature/nuget
+    
+    Feature/nuget
+
+[33mcommit ee9322f8b4263dc244da79cd836065b03abf03df[m[33m ([m[1;33mtag: 2.0.1-alpha-12[m[33m, [m[1;31morigin/feature/nuget[m[33m)[m
+Author: Trevor Payne <tpayne@pepperdash.com>
+Date:   Thu Sep 3 23:00:29 2020 -0500
+
+    Updated readme to include license, cloning instructions, and dependancy notes
+    
+    Resolves #13
+
+[33mcommit 5b33fd983077da22fafe02d19a041a0c793c6116[m[33m ([m[1;33mtag: 2.0.1-alpha-11[m[33m)[m
+Author: Trevor Payne <tpayne@pepperdash.com>
+Date:   Thu Sep 3 22:44:33 2020 -0500
+
+    update build scripts
+
+[33mcommit f1bfbb2a4495e35614c84a3c8d4f9ed51b2fd83f[m
+Author: Trevor Payne <tpayne@pepperdash.com>
+Date:   Thu Sep 3 22:39:00 2020 -0500
+
+    Modified for nuget
+
+[33mcommit 3d3d5c6601e7addb34ebb6eea602ba9970467bbd[m[33m ([m[1;33mtag: 2.0.0[m[33m)[m
+Author: Trevor Payne <tpayne@pepperdash.com>
+Date:   Wed Sep 2 14:57:23 2020 -0500
+
+    Fix issue in main.yml
+
+[33mcommit bbe24804e0939d30936ae0edac905fb5c6189ecf[m
+Merge: c7f9698 b830539
+Author: Trevor Payne <44117050+TrevorPayne@users.noreply.github.com>
+Date:   Wed Sep 2 12:26:58 2020 -0500
+
+    Merge pull request #11 from PepperDash-Engineering/feature/v2.0.xx
+    
+    Update - 2.0
+
+[33mcommit b8305392f97ccd1d021cb5dd114bfa72eecbb8b4[m[33m ([m[1;33mtag: 0.0.1-alpha-8[m[33m, [m[1;31morigin/feature/v2.0.xx[m[33m)[m
+Merge: 736c812 07e65e8
+Author: Nick Genovese <23391587+ngenovese11@users.noreply.github.com>
+Date:   Wed Sep 2 12:56:44 2020 -0400
+
+    Merge pull request #12 from PepperDash-Engineering/legacy-joinmap-off-by-one
+    
+    Legacy join maps off by one
+
+[33mcommit 07e65e836f73a4b227a1f5432aaadf6c851732ec[m[33m ([m[1;31morigin/legacy-joinmap-off-by-one[m[33m)[m
+Author: Nick Genovese <23391587+ngenovese11@users.noreply.github.com>
+Date:   Mon Aug 24 08:59:47 2020 -0400
+
+    Update TesiraDsp.cs
+
+[33mcommit 736c8124ae606bc52cf114f9db891b5b684c1fb7[m[33m ([m[1;33mtag: 0.0.1-alpha-7[m[33m)[m
+Author: Trevor Payne <tpayne@pepperdash.com>
+Date:   Fri Aug 14 14:57:40 2020 -0500
+
+    Fixed issues related to watchdog
+    
+    update preset object
+
+[33mcommit 3885de3f6ba1201832991cb9483717394f241e25[m[33m ([m[1;33mtag: 0.0.1-alpha-6[m[33m)[m
+Author: Trevor Payne <tpayne@pepperdash.com>
+Date:   Wed Aug 5 12:28:22 2020 -0500
+
+    More changes to build actions
+    
+    Added Project Documentation HTML
+
+[33mcommit 271d22d193d0f5c07a6d4d82ad1e192ad09d42ec[m
+Author: Trevor Payne <tpayne@pepperdash.com>
+Date:   Wed Aug 5 12:07:17 2020 -0500
+
+    Build action fixes
+
+[33mcommit 06dc6c6e384f42348d48afb9f14b82086f427770[m
+Author: Trevor Payne <tpayne@pepperdash.com>
+Date:   Tue Aug 4 16:38:35 2020 -0500
+
+    Readme Updates
+    
+    Updates to Build Actions
+
+[33mcommit 2dc2c186ed98928fdeaecab03c68c3843f487d8a[m
+Author: Trevor Payne <tpayne@pepperdash.com>
+Date:   Mon Aug 3 15:04:51 2020 -0500
+
+    Readme Changes
+
+[33mcommit 1cec59acdaea4088ce678f5114261494a4681033[m
+Author: Trevor Payne <tpayne@pepperdash.com>
+Date:   Thu Jul 30 21:34:36 2020 -0500
+
+    add build scripts
+
+[33mcommit 2bc1eb0b8cf921ae784dc0a6f9e5c7d2a4d78bde[m
+Author: Trevor Payne <tpayne@pepperdash.com>
+Date:   Thu Jul 30 15:48:20 2020 -0500
+
+    several small bridge fixes
+    
+    renamed MatrixMixer to CrosspointState
+
+[33mcommit ec1f6dee7861a95f5409e6e7bb638bbca7c27b7f[m
+Author: Trevor Payne <tpayne@pepperdash.com>
+Date:   Thu Jul 30 13:15:00 2020 -0500
+
+    Fixed null reference issue in constructor
+
+[33mcommit 024544c5281e92f4fb4bec76ff7c7dbb6a45f23b[m
+Author: Trevor Payne <tpayne@pepperdash.com>
+Date:   Thu Jul 30 11:45:34 2020 -0500
+
+    Cleanup Commit
+
+[33mcommit f35c834d34c44f7705cd812fc313378a5eadcff5[m
+Author: Trevor Payne <tpayne@pepperdash.com>
+Date:   Thu Jul 30 11:41:46 2020 -0500
+
+    Updated references to Essentials-Builds
+
+[33mcommit 8050f2a041efa153eb3ca3c4a25a4e46235893d6[m
+Author: Trevor Payne <tpayne@pepperdash.com>
+Date:   Thu Jul 30 00:00:34 2020 -0500
+
+    improved XML Comments
+    
+    Modified Matrix Switcher to be CrosspointStateControl - which is what it really is
+    
+    Added some better support for IRouting in the SourceSelector component
+
+[33mcommit 7f4e0c013d9690d8a37b073c35e4c2acceb77fe8[m
+Author: Trevor Payne <tpayne@pepperdash.com>
+Date:   Tue Jul 28 22:59:28 2020 -0500
+
+    Complete Refactor
+    
+    Added ability to individually bridge controls.
+    
+    Legacy Bridge Method still intact
+    
+    audited code for consistency
+    
+    TODO: Additional XML Comments
+    
+    TODO: Build Actions
+
+[33mcommit 8d429173dbcafbcc362b52a2f43a43b4af6fd8ca[m[33m ([m[1;31morigin/feature/uint-dictionaries[m[33m)[m
+Author: Trevor Payne <tpayne@pepperdash.com>
+Date:   Thu Jul 9 16:26:02 2020 -0500
+
+    Incorrect Edit to branch
+
+[33mcommit a1bca4994348e036d754a1f6343e7d0ed8408c4d[m
+Author: Trevor Payne <tpayne@pepperdash.com>
+Date:   Thu Jul 9 12:17:23 2020 -0500
+
+    changed the way that keys are assigned
+
+[33mcommit 50c4edf2d3392795c4667ce56f74e091dae7cf96[m
+Author: Jason DeVito <jdevito@pepperdash.com>
+Date:   Thu Jun 25 09:26:00 2020 -0500
+
+    Updated .gitignore file to include *.sou and *.projectinfo
+
+[33mcommit 372043888097a238eaf9b11418b7f93f54880cf5[m
+Author: Jason DeVito <jdevito@pepperdash.com>
+Date:   Fri Jun 19 18:10:20 2020 -0500
+
+    Added example configurationFile.json to solution and updated README.md
+
+[33mcommit 3eb5d0cbf07dbfda519f7de006355deec0831b80[m[33m ([m[1;33mtag: 0.0.1-beta-2[m[33m)[m
+Merge: e1ee102 3be6d39
+Author: Trevor Payne <44117050+TrevorPayne@users.noreply.github.com>
+Date:   Mon Jun 15 14:05:57 2020 -0500
+
+    Merge pull request #8 from PepperDash-Engineering/feature/AddRouterControl
+    
+    Adds the ability to control a router block using the switcher config …
+
+[33mcommit 3be6d39123846c0b57ff89f2926de1c5b527809d[m
+Author: Jason Alborough <jalborough@pepperdash.com>
+Date:   Mon Jun 15 12:45:36 2020 -0400
+
+    Adds the ability to control a router block using the switcher config object. Adds a type = router, which is optional and can be omitted, to specify router control. Note router block does not support a subscription and is manually polled after each sent command. There is no regular poll of the router block currently supported.
+
+[33mcommit e1ee102a24fd64f445b34976977d2e08213cd664[m
+Author: Jason T Alborough <jtalborough@gmail.com>
+Date:   Wed Jun 10 16:28:44 2020 -0400
+
+    Update README.md
+
+[33mcommit c7f96989ea623b332419003aa331214bead94ecb[m
+Author: Trevor Payne <tpayne@pepperdash.com>
+Date:   Mon May 4 16:03:56 2020 -0500
+
+    Added RoomCombiner logic
+
+[33mcommit f6d3196fcaca11f04490bf6348a93675e8e6374c[m
+Merge: 2c6cff1 6360de2
+Author: Trevor Payne <44117050+TrevorPayne@users.noreply.github.com>
+Date:   Thu Apr 30 09:32:40 2020 -0500
+
+    Merge pull request #6 from PepperDash-Engineering/hotfix/SubscriptionThread
+    
+    Hotfix/subscription thread
+
+[33mcommit 6360de233237343bd935a42bc5ad8d9b754a90cf[m[33m ([m[1;31morigin/hotfix/SubscriptionThread[m[33m)[m
+Author: Jason T Alborough <jtalborough@gmail.com>
+Date:   Thu Apr 23 14:59:28 2020 -0400
+
+    Fixes Metering subscriptions
+    Changes the default meter time from 200 - 500ms
+
+[33mcommit 41c03c05e95466a9c54077f9dff26a36f0fbe6cf[m
+Author: Jason T Alborough <jtalborough@gmail.com>
+Date:   Wed Apr 22 17:50:37 2020 -0400
+
+    Puts the subscription on a separate thread because it was taking too long in the CommunicationMonitor_StatusChange event handler.
+    Some other minor sequencing changes.
+
+[33mcommit 2c6cff11647171a678eb51189f6777a81a77e024[m
+Author: Trevor Payne <tpayne@pepperdash.com>
+Date:   Fri Apr 3 11:44:49 2020 -0500
+
+    Fixed error related to Dialers, States, and Levels getting added to DeviceManager multiple times [sorry JTA]
+
+[33mcommit a2bc2f110b35b346e0573464084f1982d2d31278[m
+Author: Trevor Payne <tpayne@pepperdash.com>
+Date:   Thu Apr 2 22:02:46 2020 -0500
+
+    Added back the DeviceManager Registration specifically for levels - this is required to make these levels accessible within Essentials rooms
+
+[33mcommit 9f65a167ce05673da631708ef60ba877a159f78b[m
+Merge: 8b19520 7e7c76a
+Author: Trevor Payne <44117050+TrevorPayne@users.noreply.github.com>
+Date:   Thu Apr 2 21:50:39 2020 -0500
+
+    Merge pull request #5 from PepperDash-Engineering/feature/add-crosspoint-merge
+    
+    Feature/add crosspoint merge
+
+[33mcommit 7e7c76a09552cf009364c5d21c23e6c9eaa843f8[m[33m ([m[1;31morigin/feature/add-crosspoint-merge[m[33m)[m
+Author: Jason T Alborough <jtalborough@gmail.com>
+Date:   Fri Mar 27 15:51:08 2020 -0400
+
+    Recompile after merge
+
+[33mcommit 9fcc634e0049a7f2d99fcfa38410dccf93edbebc[m
+Merge: 3b650e6 d7d833c
+Author: Jason T Alborough <jtalborough@gmail.com>
+Date:   Fri Mar 27 10:44:42 2020 -0400
+
+    Merge branch 'feature/remove-duplicate-dm-registraiton' into feature/add-crosspoint-merge
+    
+    # Conflicts:
+    #       Tesira-DSP-EPI/Tesira-DSP-EPI.projectinfo
+    #       Tesira-DSP-EPI/bin/Debug/Tesira-DSP-EPI.config
+    #       Tesira-DSP-EPI/bin/Debug/Tesira-DSP-EPI.cplz
+    #       Tesira-DSP-EPI/bin/Debug/Tesira-DSP-EPI.dll
+    #       Tesira-DSP-EPI/bin/Debug/Tesira-DSP-EPI.pdb
+    #       Tesira-DSP-EPI/bin/Debug/manifest.info
+    #       Tesira-DSP-EPI/bin/Debug/manifest.ser
+    #       Tesira-DSP-EPI/obj/Debug/Tesira-DSP-EPI.dll
+    #       Tesira-DSP-EPI/obj/Debug/Tesira-DSP-EPI.pdb
+
+[33mcommit 3b650e635e619d23520f6ee3a1606a5e95cb705a[m[33m ([m[1;31morigin/feature/continue-subscriptions-past-bad-tag[m[33m)[m
+Author: Jason T Alborough <jtalborough@gmail.com>
+Date:   Fri Mar 27 09:28:17 2020 -0400
+
+    Fixes an issue where the subscription process would break if it encountered a tag that was not present
+    Adds the subscription and un-subscription process to the queue and deques on their responses.
+
+[33mcommit d7d833ca9aba508c128baf0ca53109424a9192d9[m[33m ([m[1;31morigin/feature/remove-duplicate-dm-registraiton[m[33m)[m
+Author: Jason T Alborough <jtalborough@gmail.com>
+Date:   Wed Mar 25 16:18:48 2020 -0400
+
+    Removes duplicate registration with device manager
+    Removes extra hyphen in level control point key
+
+[33mcommit 668374fb57652b0e7704cf4fafdf914c4562fde8[m
+Author: Jason T Alborough <jtalborough@gmail.com>
+Date:   Wed Mar 25 15:56:19 2020 -0400
+
+    Recompile post merge
+
+[33mcommit 2f35e8629168776eda7cd84ef3fd1d81401785d5[m
+Merge: 27b3906 d664db7
+Author: Jason T Alborough <jtalborough@gmail.com>
+Date:   Wed Mar 25 15:55:07 2020 -0400
+
+    Merge branch 'feature/add-crosspoint-control' into Local
+    
+    # Conflicts:
+    #       Tesira-DSP-EPI.suo
+    #       Tesira-DSP-EPI/Tesira-DSP-EPI.csproj
+    #       Tesira-DSP-EPI/Tesira-DSP-EPI.projectinfo
+    #       Tesira-DSP-EPI/TesiraDsp.cs
+    #       Tesira-DSP-EPI/TesiraDspControlPoint.cs
+    #       Tesira-DSP-EPI/bin/Debug/Tesira-DSP-EPI.config
+    #       Tesira-DSP-EPI/bin/Debug/Tesira-DSP-EPI.cplz
+    #       Tesira-DSP-EPI/bin/Debug/Tesira-DSP-EPI.dll
+    #       Tesira-DSP-EPI/bin/Debug/Tesira-DSP-EPI.pdb
+    #       Tesira-DSP-EPI/bin/Debug/manifest.info
+    #       Tesira-DSP-EPI/bin/Debug/manifest.ser
+    #       Tesira-DSP-EPI/obj/Debug/ResolveAssemblyReference.cache
+    #       Tesira-DSP-EPI/obj/Debug/Tesira-DSP-EPI.csproj.FileListAbsolute.txt
+    #       Tesira-DSP-EPI/obj/Debug/Tesira-DSP-EPI.dll
+    #       Tesira-DSP-EPI/obj/Debug/Tesira-DSP-EPI.pdb
+
+[33mcommit 27b3906d7b352f0885eef12348b9ce2c92b846aa[m
+Author: Trevor Payne <tpayne@pepperdash.com>
+Date:   Wed Mar 25 14:04:34 2020 -0500
+
+    Watchdog Changes - Known Issues with Serial
+
+[33mcommit 7e4e12226b3ba247f326242f5bb0e615ed428320[m
+Author: Trevor Payne <tpayne@pepperdash.com>
+Date:   Tue Mar 24 17:03:34 2020 -0500
+
+    Fixes related to Serial Connection and Watchdog
+
+[33mcommit 8e016a3c0b51a4d92310288e40865d3efc3c4d4d[m
+Author: Trevor Payne <tpayne@pepperdash.com>
+Date:   Tue Mar 24 10:33:02 2020 -0500
+
+    cleanup
+
+[33mcommit 8b19520a1c89b6ca75cd80696f1d23561caefed9[m
+Author: Trevor Payne <tpayne@pepperdash.com>
+Date:   Tue Mar 24 10:19:56 2020 -0500
+
+    Adding Gitignore
+
+[33mcommit 5617d5dbb71d8cbec859286388cf77417d5973cf[m
+Author: Trevor Payne <tpayne@pepperdash.com>
+Date:   Tue Mar 24 10:11:21 2020 -0500
+
+    Updated .clpz post merge
+
+[33mcommit 69eaa172a237848842d137c531f666d7b324ddfd[m
+Author: Trevor Payne <tpayne@pepperdash.com>
+Date:   Tue Mar 24 10:04:28 2020 -0500
+
+    Updates to make the dialer essentials compatible
+
+[33mcommit 99ce903dc8211276cb40fded19bdd4d50fb5d75a[m
+Merge: c839c3b a43d69e
+Author: Trevor Payne <44117050+TrevorPayne@users.noreply.github.com>
+Date:   Thu Mar 19 13:39:23 2020 -0500
+
+    Merge pull request #4 from PepperDash-Engineering/hotfix/fix-source-selector-lambda-closure
+    
+    Fixed issue with lambda closure for source selectors
+
+[33mcommit a43d69e9b3dee14f44c0edb860db3105b563d7b6[m[33m ([m[1;31morigin/hotfix/fix-source-selector-lambda-closure[m[33m)[m
+Author: Andrew Welker <andrew.welker@gmail.com>
+Date:   Thu Mar 19 12:29:49 2020 -0600
+
+    Fixed issue with lambda closure for source selectors
+
+[33mcommit d664db7f7ae04b56b7bc2a18f8d2ec31cfb132a1[m[33m ([m[1;31morigin/feature/add-crosspoint-control[m[33m)[m
+Author: Nick Genovese <ngenovese@pepperdash.com>
+Date:   Thu Feb 20 09:26:47 2020 -0500
+
+    updated readme for matrix mixer control point
+
+[33mcommit a2243b97810d670d3f977e0122c69fea8c06be4a[m
+Author: Nick Genovese <ngenovese@pepperdash.com>
+Date:   Thu Feb 20 09:08:48 2020 -0500
+
+    updated readme to add Meter Info
+
+[33mcommit 0359784e26842bfc7643b418ddbe61efaa042d0b[m
+Author: Nick Genovese <ngenovese@pepperdash.com>
+Date:   Wed Feb 19 17:15:56 2020 -0500
+
+    added a matrix mixer block to control individual crosspoint mutes
+
+[33mcommit 288c6557d42e1b96ea9f55682a9ec5d05f2851e5[m[33m ([m[1;31morigin/feature/add-metering[m[33m)[m
+Author: Nick Genovese <ngenovese@pepperdash.com>
+Date:   Wed Feb 19 13:51:15 2020 -0500
+
+    -fixed joinmap for meters so it actually works
+
+[33mcommit 436f7155b557dde6fae6e0c886567f604995848a[m
+Author: Nick Genovese <ngenovese@pepperdash.com>
+Date:   Wed Feb 19 12:05:30 2020 -0500
+
+    -added a metering object
+    -updated the join map to include the meters
+
+[33mcommit c839c3b65bdc46234e79295d5f56b78e1319174e[m
+Author: Trevor Payne <tpayne@pepperdash.com>
+Date:   Mon Feb 17 13:31:22 2020 -0600
+
+    Cleanup Commit
+
+[33mcommit f648a433c24da7a559ed3d655c7874257dd5c820[m
+Author: Trevor Payne <tpayne@pepperdash.com>
+Date:   Mon Feb 17 13:12:24 2020 -0600
+
+    Cleanup Commit before Migration
+
+[33mcommit 93f1e709078fdb26b396ca3072a4431974288e0a[m[33m ([m[1;31morigin/bugfix/TE-7[m[33m)[m
+Author: Trevor Payne <tpayne@pepperdash.com>
+Date:   Fri Jan 31 08:08:36 2020 -0600
+
+    Fixed several issues with presets
+
+[33mcommit cfeb8971e456de5359eca61492302995dfbb8afd[m[33m ([m[1;31morigin/feature/TE-6[m[33m)[m
+Author: Trevor Payne <tpayne@pepperdash.com>
+Date:   Wed Jan 29 13:11:39 2020 -0600
+
+    TE-6 added name property and exposed to simpl
+
+[33mcommit a7c9faf83f071ef08638454c8eca1ee9ba337f4d[m
+Author: Trevor Payne <tpayne@pepperdash.com>
+Date:   Mon Jan 27 08:28:17 2020 -0600
+
+    Fixed an issue with incoming data rarely being processed out of order
+
+[33mcommit 5fe50f41d71984f4b920b448ff4a4fffa286c397[m
+Merge: 4233642 04c4ef3
+Author: Jason DeVito <jdevito@pepperdash.com>
+Date:   Fri Jan 24 20:55:13 2020 +0000
+
+    Merged in bugfix/TE-1-tesira-plugin-bugs (pull request #1)
+    
+    TE-1-tesira-plugin-bugs updates
+
+[33mcommit 04c4ef34537b5ee03be3b8eb68b4397b94aacd1b[m
+Author: Jason DeVito <jdevito@pepperdash.com>
+Date:   Fri Jan 24 14:49:28 2020 -0600
+
+    TE-1-tesira-plugin-bugs updates
+
+[33mcommit 4233642003e716a651aa14103a8c774af7678b08[m
+Author: Trevor Payne <tpayne@pepperdash.com>
+Date:   Tue Jan 21 14:01:37 2020 -0600
+
+    Added LastNumberDialed to plugin - updated documentation
+
+[33mcommit 78a279b1a37cef1ba0113b1e3f15db10acf2de93[m
+Author: Trevor Payne <tpayne@pepperdash.com>
+Date:   Tue Jan 21 13:08:17 2020 -0600
+
+    Updated documentation to clarify some join map properties
+
+[33mcommit b864179c5ba138ecda297743bcd7d8e9d2f0919f[m
+Author: Trevor Payne <tpayne@pepperdash.com>
+Date:   Tue Jan 21 12:46:31 2020 -0600
+
+    Added CallState analog feedback to the dialer control - Details in readme.md
+
+[33mcommit 921fae964aedf77fcd33a5a8d5215a55f1e0d4ff[m
+Author: Trevor Payne <tpayne@pepperdash.com>
+Date:   Mon Jan 20 17:49:16 2020 -0600
+
+    Fixed issue with communication feedback being overwritten by a join in the Dialer Join Map
+
+[33mcommit a4a8ccf36c4e2122d05ea442c0fee0b6cbbe59e7[m
+Author: Trevor Payne <tpayne@pepperdash.com>
+Date:   Mon Jan 20 16:44:31 2020 -0600
+
+    Fixed issue where communicatonMonitor would sometimes not start
+
+[33mcommit b9e5237b1d655a1b2c69ff8ccebdd1cc819b5682[m
+Author: Trevor Payne <tpayne@pepperdash.com>
+Date:   Mon Jan 20 11:29:28 2020 -0600
+
+    Updated readme.md and joinmap for Presets
+
+[33mcommit 3a0f07fc64a8751dd1e2fa6de2defa713c9a91fd[m
+Author: Trevor Payne <tpayne@pepperdash.com>
+Date:   Mon Jan 20 09:39:52 2020 -0600
+
+    Some minor style changes to Bridge and Joinmap classes meant to make them more easily extensible - Addition of Command Passthru
+
+[33mcommit 905964a54d19d5b45668325517b8f77dde84f4e0[m
+Author: Trevor Payne <tpayne@pepperdash.com>
+Date:   Thu Jan 16 20:57:34 2020 -0600
+
+    Clean Up Structure of Code - Refine Watchdog - Add State Control - Add SourceSelector control - add Pots Control (untested) - rejigger join map
+
+[33mcommit f52e892ebf7f99e909838d012095208ac956b04e[m
+Author: Trevor Payne <tpayne@pepperdash.com>
+Date:   Mon Jan 13 17:05:55 2020 -0600
+
+    Fixed bug related to removing old properties from config
+
+[33mcommit 8b179b0934dc1a00a98d873980f76b9ec520a25f[m
+Author: Trevor Payne <tpayne@pepperdash.com>
+Date:   Mon Jan 13 11:33:57 2020 -0600
+
+    Added ability to call preset by name directly
+
+[33mcommit 13fe526ded487648450c391f28ee1843fc1cfacf[m
+Author: Trevor Payne <tpayne@pepperdash.com>
+Date:   Mon Jan 13 08:50:45 2020 -0600
+
+    Added feature list and roadmap for plugin
+
+[33mcommit 17fda4290b3c2b08a991e80fc47f268a6b987a6a[m
+Author: Trevor Payne <tpayne@pepperdash.com>
+Date:   Mon Jan 13 08:44:32 2020 -0600
+
+    Updated Readme
+
+[33mcommit 25afe25d0580e817917ab56720a99a53167e26cb[m
+Author: Trevor Payne <tpayne@pepperdash.com>
+Date:   Mon Jan 13 08:43:10 2020 -0600
+
+    Added README
+
+[33mcommit 066660a6f1b11b9b2ef4ee88a61e4bc0a20366e1[m
+Author: Trevor Payne <tpayne@pepperdash.com>
+Date:   Mon Jan 13 08:36:21 2020 -0600
+
+    Initial Commit
+
+[33mcommit e8b44a3772209b4cc8ba1582007af55c5fd9a803[m
+Author: Trevor Payne <tpayne@pepperdash.com>
+Date:   Mon Jan 13 14:26:28 2020 +0000
+
+    Initial commit
