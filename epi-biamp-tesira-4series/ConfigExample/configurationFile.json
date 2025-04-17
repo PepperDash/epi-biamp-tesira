@@ -1,0 +1,166 @@
+{
+    "system": {},
+    "system_url": "http://portal-QA.devcloud.pepperdash.com/templates/0f50640b-bc89-42d5-998f-81d137d3fc98#/template_summary",
+    "template": {
+        "devices": [
+            {
+                "key": "processor",
+                "uid": 0,
+                "type": "cp3n",
+                "name": "CP3N",
+                "group": "processor",
+                "supportedConfigModes": [
+                    "compliance",
+                    "essentials"
+                ],
+                "supportedSystemTypes": [
+                    "hudType",
+                    "presType",
+                    "vtcType",
+                    "custom"
+                ],
+                "supportsCompliance": true,
+                "properties": {}
+            },
+            {
+                "key" : "dsp-1",
+                "type" : "tesira",
+                "name" : "DSP-1",
+                "properties" : {
+                    "control": {
+                        "method": "SSH",
+                        "tcpSshProperties": {
+                            "address": "10.11.50.191",
+                            "port": "22",
+                            "username": "default",
+                            "password": "default",
+                            "autoReconnect": true,
+                            "autoReconnectIntervalMs": 5000
+                        }
+                    },
+                    "presets" : {
+                        "SomeUniqueKey01" : {
+                            "label" : "System On",
+                            "presetName" : "systemOn",
+                            "presetIndex" : 1,
+                            "presetId" : 1001
+                        },
+                        "SomeUniqueKey02" : {
+                            "label" : "System Off",
+                            "presetName" : "systemOff",
+                            "presetIndex" : 2,
+                            "presetId" : 1002
+                        },
+                        "SomeUniqueKey03" : {
+                            "label" : "System Default",
+                            "presetName" : "default",
+                            "presetIndex" : 3,
+                            "presetId" : 1003
+                        }
+                    },
+                    "faderControlBlocks": {
+                        "Program": {
+                            "enabled": true,
+                            "isMic": false,
+                            "hasLevel": true,
+                            "hasMute": true,
+                            "index1": 1,
+                            "index2": 0,
+                            "label": "Room A Program",
+                            "levelInstanceTag": "ROOMA_ROOM",
+                            "muteInstanceTag": "ROOMA_ROOM",
+                            "unmuteOnVolChange": true,
+                            "incrementAmount": "2.0",
+                            "permissions" : 0,
+                            "bridgeIndex" : 1
+                        },
+                        "Speech": {
+                            "enabled": true,
+                            "isMic": true,
+                            "hasLevel": true,
+                            "hasMute": true,
+                            "index1": 1,
+                            "index2": 0,
+                            "label": "Room A Speech",
+                            "levelInstanceTag": "ROOMA_SPEECH",
+                            "muteInstanceTag": "ROOMA_SPEECH",
+                            "unmuteOnVolChange": true,
+                            "incrementAmount": "2.0",
+                            "permissions" : 0,
+                            "bridgeIndex" : 2
+                        }
+                    }
+                }
+            },
+            {
+                "key": "dspBridge-1",
+                "uid": 5,
+                "name": "Essentials DSP Bridge 1",
+                "group": "api",
+                "type": "eiscApiAdvanced",
+                "properties": {
+                    "control": {
+                        "tcpSshProperties": {
+                            "address": "127.0.0.2",
+                            "port": 0
+                        },
+                        "ipid": "B0",
+                        "method": "ipidTcp"
+                    },
+                    "devices": [
+                        {
+                            "deviceKey": "dsp-1--Mic",
+                            "joinStart": 1
+                        },
+                        {
+                            "deviceKey": "dsp-1--Program",
+                            "joinStart": 21
+                        },
+                        {
+                            "deviceKey": "dsp-1--Source",
+                            "joinStart": 41
+                        },
+                        {
+                            "deviceKey": "dsp-1--DeviceInfo",
+                            "joinStart" : 101
+                        }
+
+                    ]
+                }
+            },
+            {
+                "key": "dspBridge-2",
+                "uid": 5,
+                "name": "Essentials DSP Bridge 2",
+                "group": "api",
+                "type": "eiscApiAdvanced",
+                "properties": {
+                    "control": {
+                        "tcpSshProperties": {
+                            "address": "127.0.0.2",
+                            "port": 0
+                        },
+                        "ipid": "B1",
+                        "method": "ipidTcp"
+                    },
+                    "devices": [
+                        {
+                            "deviceKey": "dsp-1",
+                            "joinStart": 1
+                        }
+                    ]
+                }
+            }
+        ],
+        "info": {
+            "comment": "",
+            "lastModifiedDate": "2017-03-06T23:14:40.290Z",
+            "lastUid": 5,
+            "processorType": "cp3",
+            "requiredControlSofwareVersion": "",
+            "systemType": "custom"
+        },
+        "rooms": [],
+        "tieLines": []
+    }
+}
