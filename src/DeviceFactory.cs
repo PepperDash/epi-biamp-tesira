@@ -3,6 +3,10 @@ using PepperDash.Essentials.Core.Config;
 using PepperDash.Core;
 using System.Collections.Generic;
 
+#if SERIES4
+using PepperDash.Core.Logging;
+#endif
+
 namespace Tesira_DSP_EPI
 {
     public class TesiraFactory : EssentialsPluginDeviceFactory<TesiraDsp>
@@ -12,7 +16,7 @@ namespace Tesira_DSP_EPI
         /// </summary>
         public TesiraFactory()
         {
-            MinimumEssentialsFrameworkVersion = "1.8.1";
+            MinimumEssentialsFrameworkVersion = "2.4.7";
 
             TypeNames = new List<string> { "tesira", "tesiraforte", "tesiraserver", "tesira-dsp", "tesiradsp" };
         }
@@ -24,7 +28,12 @@ namespace Tesira_DSP_EPI
         /// <returns></returns>
         public override EssentialsDevice BuildDevice(DeviceConfig dc)
         {
+
+#if SERIES4
+            Debug.LogDebug("Factory Attempting to create new Biamp Tesira Device");
+#else
             Debug.Console(1, "Factory Attempting to create new Biamp Tesira Device");
+#endif
 
             var comm = CommFactory.CreateCommForDevice(dc);
 

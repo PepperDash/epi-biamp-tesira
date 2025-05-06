@@ -11,6 +11,10 @@ using Tesira_DSP_EPI.Bridge.JoinMaps;
 using Tesira_DSP_EPI.Extensions;
 using IRoutingWithFeedback = Tesira_DSP_EPI.Interfaces.IRoutingWithFeedback;
 
+#if SERIES4
+using PepperDash.Core.Logging;
+#endif
+
 namespace Tesira_DSP_EPI
 {
     public class TesiraDspSourceSelector : TesiraDspControlPoint, IRoutingWithFeedback
@@ -116,12 +120,15 @@ namespace Tesira_DSP_EPI
         {
             //DeviceManager.AddDevice(this);
 
+#if SERIES4
+            this.LogVerbose(string.Format("Adding SourceSelector '{0}'", Key));
+#else
             Debug.Console(2, this, "Adding SourceSelector '{0}'", Key);
+#endif
 
             IsSubscribed = false;
 
             Label = config.Label;
-
 
             Enabled = config.Enabled;
 
@@ -140,8 +147,8 @@ namespace Tesira_DSP_EPI
             }
             if (config.SourceSelectorOutput == null) return;
             var output = config.SourceSelectorOutput;
-                OutputPorts.Add(new RoutingOutputPort(output.Label, eRoutingSignalType.Audio,
-                    eRoutingPortConnectionType.BackplaneOnly, 1, this));
+            OutputPorts.Add(new RoutingOutputPort(output.Label, eRoutingSignalType.Audio,
+                eRoutingPortConnectionType.BackplaneOnly, 1, this));
         }
 
         /// <summary>
@@ -195,7 +202,11 @@ namespace Tesira_DSP_EPI
         {
             try
             {
+#if SERIES4
+                this.LogVerbose(string.Format("Parsing Message - '{0}' : Message has an attributeCode of {1}", message, attributeCode));
+#else
                 Debug.Console(2, this, "Parsing Message - '{0}' : Message has an attributeCode of {1}", message, attributeCode);
+#endif
                 // Parse an "+OK" message
 
                 var match = ParseRegex.Match(message);
@@ -203,11 +214,19 @@ namespace Tesira_DSP_EPI
                 if (!match.Success) return;
                 var value = match.Groups[1].Value;
 
+#if SERIES4
+                this.LogDebug(string.Format("Response: '{0}' Value: '{1}'", attributeCode, value));
+#else
                 Debug.Console(1, this, "Response: '{0}' Value: '{1}'", attributeCode, value);
+#endif
 
                 if (message.Contains("-ERR address not found"))
                 {
+#if SERIES4
+                    this.LogVerbose(string.Format("Biamp Error Address not found: '{0}'\n", InstanceTag1));
+#else
                     Debug.ConsoleWithLog(2, this, "Baimp Error Address not found: '{0}'\n", InstanceTag1);
+#endif
                     return;
                 }
 
@@ -217,7 +236,11 @@ namespace Tesira_DSP_EPI
             }
             catch (Exception e)
             {
+#if SERIES4
+                this.LogVerbose(string.Format("Unable to parse message: '{0}'\n{1}", message, e));
+#else
                 Debug.Console(2, this, "Unable to parse message: '{0}'\n{1}", message, e);
+#endif
             }
 
         }
@@ -249,11 +272,22 @@ namespace Tesira_DSP_EPI
 
             foreach (var port in InputPorts)
             {
-
                 var input = port;
                 var index = Convert.ToUInt16(input.Selector);
                 SourceNamesXsig += XSigHelper.CreateByteString(index, input.Key);
 
+#if SERIES4
+                this.LogVerbose(string.Format("{0} {1}", input.Key, new String('-', 50)));
+                this.LogVerbose(string.Format(@"
+                  input.ParentDevice: {0}
+                  input.Selector: {1}
+                  input.Selector(Convert.ToUnit16): {2}
+                  input.Port: {3}
+                  input.ConnectionType: {4}
+                  input.Type: {5}",
+                  input.ParentDevice, input.Selector, index, input.Port, input.ConnectionType, input.Type));
+                this.LogVerbose(string.Format("{0}", new String('-', 50)));
+#else
                 Debug.Console(2, this, "{0} {1}", input.Key, new String('-', 50));
                 Debug.Console(2, this, @"    
                   input.ParentDevice: {0}
@@ -264,7 +298,7 @@ namespace Tesira_DSP_EPI
                   input.Type: {5}",
                   input.ParentDevice, input.Selector, index, input.Port, input.ConnectionType, input.Type);
                 Debug.Console(2, this, "{0}", new String('-', 50));
-
+#endif
             }
             SourceNamesFeedback.FireUpdate();
         }
@@ -322,7 +356,11 @@ namespace Tesira_DSP_EPI
 
             if (!Enabled) return;
 
+#if SERIES4
+            this.LogVerbose(string.Format("Tesira Switcher {0} is Enabled", Key));
+#else
             Debug.Console(2, this, "Tesira Switcher {0} is Enabled", Key);
+#endif
 
             var s = this as IRoutingWithFeedback;
             s.SourceIndexFeedback.LinkInputSig(trilist.UShortInput[joinMap.Index.JoinNumber]);

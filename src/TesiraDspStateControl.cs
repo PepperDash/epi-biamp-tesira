@@ -7,6 +7,10 @@ using System.Text.RegularExpressions;
 using PepperDash.Essentials.Core.Bridges;
 using Tesira_DSP_EPI.Bridge.JoinMaps;
 
+#if SERIES4
+using PepperDash.Core.Logging;
+#endif
+
 namespace Tesira_DSP_EPI {
     public class TesiraDspStateControl : TesiraDspControlPoint, IPrivacy {
         bool _state;
@@ -33,8 +37,13 @@ namespace Tesira_DSP_EPI {
 		public TesiraDspStateControl(string key, TesiraStateControlBlockConfig config, TesiraDsp parent)
             : base(config.StateInstanceTag, config.SubscriptionInstanceTag, config.Index, 0, parent, string.Format(KeyFormatter, parent.Key, key), config.Label, config.BridgeIndex)
         {
+#if SERIES4
+            this.LogVerbose(string.Format("New State Instance Tag = {0}", config.StateInstanceTag));
+            this.LogVerbose(string.Format("Starting State {0} Initialize", key));
+#else
             Debug.Console(2, this, "New State Instance Tag = {0}", config.StateInstanceTag);
             Debug.Console(2, this, "Starting State {0} Initialize", key);
+#endif
 
             StateFeedback = new BoolFeedback(Key + "-StateFeedback", () => _state);
             PrivacyModeIsOnFeedback = new BoolFeedback(Key + "-PrivacyFeedback", () => _state);
@@ -52,8 +61,12 @@ namespace Tesira_DSP_EPI {
         }
 
 		private void Initialize(TesiraStateControlBlockConfig config)
-		{
+		 {
+#if SERIES4
+            this.LogVerbose(string.Format("Adding StateControl '{0}'", Key));
+#else
             Debug.Console(2, this, "Adding StateControl '{0}'", Key);
+#endif
             IsSubscribed = false;
             Enabled = config.Enabled;
         }
@@ -62,7 +75,11 @@ namespace Tesira_DSP_EPI {
         /// Subscribe to component
         /// </summary>
         public override void Subscribe() {
+#if SERIES4
+            this.LogVerbose(string.Format("StateCustomName = {0}", StateCustomName));
+#else
             Debug.Console(2, this, "StateCustomName = {0}", StateCustomName);
+#endif
             AddCustomName(StateCustomName);
             SendSubscriptionCommand(StateCustomName, "state", 250, _tagForSubscription);
 
@@ -75,7 +92,11 @@ namespace Tesira_DSP_EPI {
         public override void Unsubscribe()
         {
             IsSubscribed = false;
+#if SERIES4
+            this.LogVerbose(string.Format("StateCustomName = {0}", StateCustomName));
+#else
             Debug.Console(2, this, "StateCustomName = {0}", StateCustomName);
+#endif
             SendUnSubscriptionCommand(StateCustomName, "state", _tagForSubscription);
         }
 
@@ -112,7 +133,11 @@ namespace Tesira_DSP_EPI {
         /// <param name="message">The message to parse</param>
         public override void ParseGetMessage(string attributeCode, string message) {
             try {
+#if SERIES4
+                this.LogVerbose(string.Format("Parsing Message - '{0}' : Message has an attributeCode of {1}", message, attributeCode));
+#else
                 Debug.Console(2, this, "Parsing Message - '{0}' : Message has an attributeCode of {1}", message, attributeCode);
+#endif
                 // Parse an "+OK" message
 
                 var match = ParseRegex.Match(message);
@@ -121,7 +146,11 @@ namespace Tesira_DSP_EPI {
 
                 var value = match.Groups[1].Value;
 
+#if SERIES4
+                this.LogDebug(string.Format("Response: '{0}' Value: '{1}'", attributeCode, value));
+#else
                 Debug.Console(1, this, "Response: '{0}' Value: '{1}'", attributeCode, value);
+#endif
 
                 if (message.IndexOf("+OK", StringComparison.OrdinalIgnoreCase) <= -1) return;
 
@@ -132,7 +161,11 @@ namespace Tesira_DSP_EPI {
                 IsSubscribed = true;
             }
             catch (Exception e) {
+#if SERIES4
+                this.LogVerbose(string.Format("Unable to parse message: '{0}'\n{1}", message, e));
+#else
                 Debug.Console(2, "Unable to parse message: '{0}'\n{1}", message, e);
+#endif
             }
         }
 
@@ -140,7 +173,11 @@ namespace Tesira_DSP_EPI {
         /// Poll state status
         /// </summary>
         public void GetState() {
+#if SERIES4
+            this.LogVerbose(string.Format("GetState sent to {0}", Key));
+#else
             Debug.Console(2, this, "GetState sent to {0}", Key);
+#endif
             SendFullCommand("get", "state", String.Empty, 1);
         }
 
@@ -148,7 +185,11 @@ namespace Tesira_DSP_EPI {
         /// Set State On
         /// </summary>
         public void StateOn() {
+#if SERIES4
+            this.LogVerbose(string.Format("StateOn sent to {0}", Key));
+#else
             Debug.Console(2, this, "StateOn sent to {0}", Key);
+#endif
             SendFullCommand("set", "state", "true", 1);
             GetState();
         }
@@ -157,7 +198,11 @@ namespace Tesira_DSP_EPI {
         /// Set State off
         /// </summary>
         public void StateOff() {
+#if SERIES4
+            this.LogVerbose(string.Format("StateOff sent to {0}", Key));
+#else
             Debug.Console(2, this, "StateOff sent to {0}", Key);
+#endif
             SendFullCommand("set", "state", "false", 1);
             GetState();
         }
@@ -166,7 +211,11 @@ namespace Tesira_DSP_EPI {
         /// Toggle State value
         /// </summary>
         public void StateToggle() {
+#if SERIES4
+            this.LogVerbose(string.Format("StateToggle sent to {0}", Key));
+#else
             Debug.Console(2, this, "StateToggle sent to {0}", Key);
+#endif
             if (_state) {
                 SendFullCommand("set", "state", "false", 1);
             }
@@ -192,7 +241,11 @@ namespace Tesira_DSP_EPI {
 
             if (!Enabled) return;
 
+#if SERIES4
+            this.LogVerbose(string.Format("Tesira State {0} is Enabled", Key));
+#else
             Debug.Console(2, this, "Tesira State {0} is Enabled", Key);
+#endif
 
             StateFeedback.LinkInputSig(trilist.BooleanInput[joinMap.Toggle.JoinNumber]);
             StateFeedback.LinkInputSig(trilist.BooleanInput[joinMap.On.JoinNumber]);

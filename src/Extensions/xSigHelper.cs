@@ -134,7 +134,11 @@ namespace Tesira_DSP_EPI.Extensions
                 Debug.Console(2, "Incoming xSig Byte {1} is '{0:X2}'", dataArray[i], i);
             }*/
 
+#if SERIES4
+            Debug.LogVerbose("Incoming xSig value is {0}", Convert.ToString(dataArray));
+#else
             Debug.Console(2, "Incoming xSig value is {0}", Convert.ToString(dataArray));
+#endif
 
             var headerByte = (int)dataArray[0];
 
