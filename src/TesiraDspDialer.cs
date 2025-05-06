@@ -11,6 +11,10 @@ using System.Text.RegularExpressions;
 using Tesira_DSP_EPI.Bridge.JoinMaps;
 using Feedback = PepperDash.Essentials.Core.Feedback;
 
+#if SERIES4
+using PepperDash.Core.Logging;
+#endif
+
 namespace Tesira_DSP_EPI {
     public class TesiraDspDialer : TesiraDspDialerControlPoint, IBridgeAdvanced
     {
@@ -44,7 +48,11 @@ namespace Tesira_DSP_EPI {
             }
             protected set {
                 _offHookStatus = value;
+#if SERIES4
+                this.LogVerbose(string.Format("_OffHookStatus = {0}", value));
+#else
                 Debug.Console(2, this, "_OffHookStatus = {0}", value.ToString());
+#endif
                 OffHookFeedback.FireUpdate();
             }
         }
@@ -442,7 +450,11 @@ namespace Tesira_DSP_EPI {
                 DeviceManager.AddDevice(this);
             }
 
+#if SERIES4
+            this.LogVerbose(string.Format("Adding Dialer '{0}'", Key));
+#else
             Debug.Console(2, this, "Adding Dialer '{0}'", Key);
+#endif
 
             IsSubscribed = false;
             PotsIsSubscribed = false;
@@ -583,19 +595,32 @@ namespace Tesira_DSP_EPI {
         {
             try
             {
+#if SERIES4
+                this.LogVerbose("New Subscription Message to Dialer");
+#else
                 Debug.Console(2, this, "New Subscription Message to Dialer");
+#endif
+
                 if (customName == ControlStatusCustomName || customName == PotsDialerCustomName)
                 {
 
                     var myMatches = AppearanceRegex.Matches(value);
 
+#if SERIES4
+                    this.LogVerbose(string.Format("This is the list of Call States - {0}", myMatches.ToString()));
+#else
                     Debug.Console(2, this, "This is the list of Call States - {0}", myMatches.ToString());
+#endif
 
                     var match = myMatches[CallAppearance - 1 + (IsVoip ? ((Index1 - 1) * 6) : 0)];
                     var match2 = ParseAppearanceRegex.Match(match.Value);
                     if (match2.Success)
                     {
+#if SERIES4
+                        this.LogVerbose(string.Format("VoIPControlStatus Subscribed Response = {0}", match.Value));
+#else
                         Debug.Console(2, this, "VoIPControlStatus Subscribed Response = {0}", match.Value);
+#endif
                         var lineNumber = ushort.Parse(match2.Groups["line"].Value) + 1;
                         var callStatusInt = int.Parse(match2.Groups["state"].Value);
 
@@ -625,8 +650,13 @@ namespace Tesira_DSP_EPI {
 							}
 						}
                         
+#if SERIES4
+                        this.LogVerbose(string.Format("Callstate for Line {0} is {1}", lineNumber, int.Parse(match2.Groups["state"].Value)));
+                        this.LogVerbose(string.Format("Callstate Enum for Line {0} is {1}", lineNumber, (int)CallStatusEnum));
+#else
                         Debug.Console(2, this, "Callstate for Line {0} is {1}", lineNumber, int.Parse(match2.Groups["state"].Value));
                         Debug.Console(2, this, "Callstate Enum for Line {0} is {1}", lineNumber, (int)CallStatusEnum);
+#endif
 
                         IncomingCallFeedback.FireUpdate();
 
@@ -641,7 +671,11 @@ namespace Tesira_DSP_EPI {
                             ActiveCalls.First().Number = CallerIdNumber;
                             if (lineNumber == LineNumber)
                             {
+#if SERIES4
+                                this.LogVerbose("CallState Complete - Firing Updates");
+#else
                                 Debug.Console(2, this, "CallState Complete - Firing Updates");
+#endif
                                 CallerIdNumberFeedback.FireUpdate();
                                 OffHookFeedback.FireUpdate();
                                 if (IsVoip)
@@ -660,8 +694,13 @@ namespace Tesira_DSP_EPI {
             }
             catch (Exception e)
             {
+#if SERIES4
+                this.LogInformation(string.Format("Error in ParseSubscriptionMessage - {0}", e.Message));
+#else
                 Debug.Console(0, this, "Error in ParseSubscriptioMessage - {0}", e.Message);
+#endif
             }
+
             if (customName == AutoAnswerCustomName)
             {
                 AutoAnswerState = bool.Parse(value);
@@ -697,7 +736,11 @@ namespace Tesira_DSP_EPI {
         /// <param name="message">Data to be parsed</param>
         public override void ParseGetMessage(string attributeCode, string message) {
             try {
+#if SERIES4
+                this.LogVerbose(string.Format("Parsing Message - '{0}' : Message has an attributeCode of {1}", message, attributeCode));
+#else
                 Debug.Console(2, this, "Parsing Message - '{0}' : Message has an attributeCode of {1}", message, attributeCode);
+#endif
                 // Parse an "+OK" message
 
                 var match = MessageRegex.Match(message);
@@ -705,14 +748,22 @@ namespace Tesira_DSP_EPI {
                 if (!match.Success) return;
                 var value = match.Groups[1].Value;
 
+#if SERIES4
+                this.LogDebug(string.Format("Response: '{0}' Value: '{1}'", attributeCode, value));
+#else
                 Debug.Console(1, this, "Response: '{0}' Value: '{1}'", attributeCode, value);
+#endif
 
                 if (message.IndexOf("+OK", StringComparison.Ordinal) <= -1) return;
                 switch (attributeCode) {
                     case "autoAnswer": {
                         AutoAnswerState = bool.Parse(value);
 
+#if SERIES4
+                        this.LogDebug(string.Format("AutoAnswerState is '{0}'", AutoAnswerState));
+#else
                         Debug.Console(1, this, "AutoAnswerState is '{0}'", AutoAnswerState);
+#endif
 
                         AutoAnswerFeedback.FireUpdate();
 
@@ -721,21 +772,33 @@ namespace Tesira_DSP_EPI {
                     case "dndEnable": {
                         DoNotDisturbState = bool.Parse(value);
 
+#if SERIES4
+                        this.LogDebug(string.Format("DoNotDisturbState is '{0}'", DoNotDisturbState));
+#else
                         Debug.Console(1, this, "DoNotDisturbState is '{0}'", DoNotDisturbState);
+#endif
 
                         DoNotDisturbFeedback.FireUpdate();
 
                         break;
                     }
                     default: {
+#if SERIES4
+                        this.LogVerbose(string.Format("Response does not match expected attribute codes: '{0}'", message));
+#else
                         Debug.Console(2, "Response does not match expected attribute codes: '{0}'", message);
+#endif
 
                         break;
                     }
                 }
             }
             catch (Exception e) {
+#if SERIES4
+                this.LogVerbose(string.Format("Unable to parse message: '{0}'\n{1}", message, e));
+#else
                 Debug.Console(2, "Unable to parse message: '{0}'\n{1}", message, e);
+#endif
             }
         }
 
@@ -1151,7 +1214,11 @@ namespace Tesira_DSP_EPI {
                 bridge.AddJoinMap(Key, joinMap);
             }
 
+#if SERIES4
+            this.LogVerbose(string.Format("Adding Dialer {0}", Key));
+#else
             Debug.Console(2, "Adding Dialer {0}", Key);
+#endif
 
             for (var i = 0; i < joinMap.KeyPadNumeric.JoinSpan; i++)
             {

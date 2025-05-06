@@ -9,6 +9,10 @@ using PepperDash.Essentials.Core.DeviceInfo;
 using Tesira_DSP_EPI.Bridge.JoinMaps;
 using PepperDash.Essentials.Core.Bridges;
 
+#if SERIES4
+using PepperDash.Core.Logging;
+#endif
+
 namespace Tesira_DSP_EPI
 {
     public class TesiraDspDeviceInfo : TesiraDspControlPoint, IDeviceInfoProvider
@@ -132,8 +136,25 @@ namespace Tesira_DSP_EPI
         }
         public void GetDeviceInfo()
         {
+#if SERIES4
+            this.LogVerbose("Getting Firmware");
+#else
+            Debug.Console(2, this, "Getting Firmware");
+#endif
             GetFirmware();
+
+#if SERIES4
+            this.LogVerbose("Getting IP Config");
+#else
+            Debug.Console(2, this, "Getting IP Config");
+#endif
             GetIpConfig();
+
+#if SERIES4
+            this.LogVerbose("Getting Serial Number");
+#else
+            Debug.Console(2, this, "Getting Serial");
+#endif
             GetSerial();
             GetServers();
         }
@@ -141,27 +162,42 @@ namespace Tesira_DSP_EPI
 
         private void GetIpConfig()
         {
-            Debug.Console(2, this, "Getting IPConfig");
+#if SERIES4
+            this.LogVerbose("Getting IP Config");
+#else
+            Debug.Console(2, this, "Getting IP Config");
+#endif
             SendFullCommand("get", "networkStatus", null, 999);
         }
 
         private void GetSerial()
         {
+#if SERIES4
+            this.LogVerbose("Getting Serial");
+#else
             Debug.Console(2, this, "Getting Serial");
-
+#endif
             SendFullCommand("get", "serialNumber", null, 999);            
         }
 
         private void GetFirmware()
         {
+#if SERIES4
+            this.LogVerbose("Getting Firmware");
+#else
             Debug.Console(2, this, "Getting Firmware");
-
+#endif
             SendFullCommand("get", "version", null, 999);            
         }
 
         private void GetServers()
         {
+#if SERIES4
+            Debug.LogDebug("Getting Servers");
+#else
             Debug.Console(2, this, "Getting Servers");
+#endif
+
             SendFullCommand("get", "discoveredServers", null, 999);
         }
         private const string Pattern = "([\"\'])(?:(?=(\\\\?))\\2.)*?\\1";
@@ -170,7 +206,11 @@ namespace Tesira_DSP_EPI
 
         public override void ParseGetMessage(string attributeCode, string message)
         {
+#if SERIES4
+            this.LogVerbose(string.Format("Parsing Message - '{0}' : Message has an attributeCode of {1}", message, attributeCode));
+#else
             Debug.Console(2, this, "Parsing Message - '{0}' : Message has an attributeCode of {1}", message, attributeCode);
+#endif
             // Parse an "+OK" message
 
             if (message.IndexOf("+OK", StringComparison.OrdinalIgnoreCase) <= -1) return;
@@ -230,6 +270,12 @@ namespace Tesira_DSP_EPI
 
         public override void LinkToApi(BasicTriList trilist, uint joinStart, string joinMapKey, EiscApiAdvanced bridge)
         {
+#if SERIES4
+            this.LogDebug(string.Format("Linking to Trilist '{0}'", trilist.ID.ToString("X")));
+#else
+            Debug.Console(1, this, "Linking to Trilist '{0}'", trilist.ID.ToString("X"));
+#endif
+
             var joinMap = new TesiraDspDeviceJoinMapAdvancedStandalone(joinStart);
 
             var joinMapSerialized = JoinMapHelper.GetSerializedJoinMapForDevice(joinMapKey);
@@ -243,8 +289,6 @@ namespace Tesira_DSP_EPI
             {
                 bridge.AddJoinMap(Key, joinMap);
             }
-
-            Debug.Console(1, this, "Linking to Trilist '{0}'", trilist.ID.ToString("X"));
 
             //var comm = DspDevice as IBasicCommunication;
             trilist.SetSigTrueAction(joinMap.Resubscribe.JoinNumber, Parent.Resubscribe);

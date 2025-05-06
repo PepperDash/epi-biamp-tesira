@@ -10,6 +10,9 @@ using Tesira_DSP_EPI.Bridge.JoinMaps;
 using Tesira_DSP_EPI.Extensions;
 using Tesira_DSP_EPI.Interfaces;
 
+#if SERIES4
+using PepperDash.Core.Logging;
+#endif
 
 namespace Tesira_DSP_EPI
 {
@@ -157,8 +160,11 @@ namespace Tesira_DSP_EPI
         /// <param name="config">Configuration Object</param>
 		private void Initialize(TesiraRoomCombinerBlockConfig config)
         {
-
+#if SERIES4
+            this.LogVerbose(string.Format("Adding RoomCombiner '{0}'", Key));
+#else
             Debug.Console(2, this, "Adding RoomCombiner '{0}'", Key);
+#endif
 
             IsSubscribed = false;
 
@@ -175,8 +181,6 @@ namespace Tesira_DSP_EPI
             _volumeDownRepeatDelayTimer = new CTimer(o => VolumeDownRepeatDelay(), Timeout.Infinite);
 
             _pollTimer = new CTimer(o => DoPoll(), Timeout.Infinite);
-
-
 
             MuteFeedback = new BoolFeedback(Key + "-MuteFeedback", () => OutIsMuted);
             VisibleFeedback = new BoolFeedback(Key + "-VisibleFeedback", () => Enabled);
@@ -272,7 +276,11 @@ namespace Tesira_DSP_EPI
         {
             try
             {
+#if SERIES4
+                this.LogVerbose(string.Format("Parsing Message - '{0}' : Message has an attributeCode of {1}", message, attributeCode));
+#else
                 Debug.Console(2, this, "Parsing Message - '{0}' : Message has an attributeCode of {1}", message, attributeCode);
+#endif
                 // Parse an "+OK" message
 
                 var match = ParseRegex.Match(message);
@@ -280,7 +288,11 @@ namespace Tesira_DSP_EPI
                 if (!match.Success) return;
                 var value = match.Groups[1].Value;
 
+#if SERIES4
+                this.LogDebug(string.Format("Response: '{0}' Value: '{1}'", attributeCode, value));
+#else
                 Debug.Console(1, this, "Response: '{0}' Value: '{1}'", attributeCode, value);
+#endif
 
                 if (message.IndexOf("+OK", StringComparison.Ordinal) <= -1) return;
                 switch (attributeCode)
@@ -288,19 +300,31 @@ namespace Tesira_DSP_EPI
                     case "levelOutMin" :
                     {
                         MinLevel = Double.Parse(value);
+#if SERIES4
+                        this.LogDebug(string.Format("MinLevel is '{0}'", MinLevel));
+#else
                         Debug.Console(1, this, "MinLevel is '{0}'", MinLevel);
+#endif
                         break;
                     }
                     case "levelOutMax" :
                     {
                         MaxLevel = Double.Parse(value);
+#if SERIES4
+                        this.LogDebug(string.Format("MaxLevel is '{0}'", MaxLevel));
+#else
                         Debug.Console(1, this, "MaxLevel is '{0}'", MaxLevel);
+#endif
                         break;
                     }
                     case "muteOut" :
                     {
                         OutIsMuted = bool.Parse(value);
+#if SERIES4
+                        this.LogDebug(string.Format("MuteState is '{0}'", value));
+#else
                         Debug.Console(1, this, "MuteState is '{0}'", value);
+#endif
                         _pollTimer.Reset(30000);
                         break;
                     }
@@ -308,20 +332,32 @@ namespace Tesira_DSP_EPI
                     case "group":
                     {
                         RoomGroup = int.Parse(value);
+#if SERIES4
+                        this.LogDebug(string.Format("Room Group is '{0}'", value));
+#else
                         Debug.Console(1, this, "Room Group is '{0}'", value);
+#endif
                         _pollTimer.Reset(30000);
                         break;
                     }
                     default:
                     {
+#if SERIES4
+                        this.LogVerbose(string.Format("Response does not match expected attribute codes: '{0}'", message));
+#else
                         Debug.Console(2, "Response does not match expected attribute codes: '{0}'", message);
+#endif
                         break;
                     }
                 }
             }
             catch (Exception e)
             {
+#if SERIES4
+                this.LogVerbose(string.Format("Unable to parse message: '{0}'\n{1}", message, e));
+#else
                 Debug.Console(2, "Unable to parse message: '{0}'\n{1}", message, e);
+#endif
             }
 
         }
@@ -348,7 +384,11 @@ namespace Tesira_DSP_EPI
         /// <param name="level"></param>
         public void SetVolume(ushort level)
         {
+#if SERIES4
+            this.LogDebug(string.Format("volume: {0}", level));
+#else
             Debug.Console(1, this, "volume: {0}", level);
+#endif
             // Unmute volume if new level is higher than existing
             if (level > _outVolumeLevel && AutomaticUnmuteOnVolumeUp)
                 if (_outIsMuted)
@@ -366,7 +406,11 @@ namespace Tesira_DSP_EPI
         /// <param name="group"></param>
         public void SetRoomGroup(ushort group)
         {
+#if SERIES4
+            this.LogDebug(string.Format("group: {0}", group));
+#else
             Debug.Console(1, this, "group: {0}", group);
+#endif
             SendFullCommand("set", "group", Convert.ToString(group), 1);
         }
 
@@ -435,7 +479,11 @@ namespace Tesira_DSP_EPI
         /// <param name="press"></param>
         public void VolumeDown(bool press)
         {
+#if SERIES4
+            this.LogVerbose(string.Format("VolumeDown Sent for {0}", LevelControlPointTag));
+#else
             Debug.Console(2, "VolumeDown Sent for {0}", LevelControlPointTag);
+#endif
             if (press)
             {
                 if (_volDownPressTracker)
@@ -464,7 +512,11 @@ namespace Tesira_DSP_EPI
         /// <param name="press"></param>
         public void VolumeUp(bool press)
         {
+#if SERIES4
+            this.LogVerbose(string.Format("VolumeUp Sent for {0}", LevelControlPointTag));
+#else
             Debug.Console(2, "VolumeUp Sent for {0}", LevelControlPointTag);
+#endif
 
             if (press)
             {
@@ -518,12 +570,20 @@ namespace Tesira_DSP_EPI
                 bridge.AddJoinMap(Key, joinMap);
             }
 
+#if SERIES4
+            this.LogVerbose(string.Format("Tesira Room Combiner {0} connect", Key));
+#else
             Debug.Console(2, "Tesira Room Combiner {0} connect", Key);
+#endif
 
             var genericChannel = this as IBasicVolumeWithFeedback;
             if (!Enabled) return;
 
+#if SERIES4
+            this.LogVerbose(string.Format("TesiraChannel {0} Is Enabled", Key));
+#else
             Debug.Console(2, this, "TesiraChannel {0} Is Enabled", Key);
+#endif
 
             NameFeedback.LinkInputSig(trilist.StringInput[joinMap.Label.JoinNumber]);
             VisibleFeedback.LinkInputSig(trilist.BooleanInput[joinMap.Visible.JoinNumber]);

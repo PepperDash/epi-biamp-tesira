@@ -11,6 +11,10 @@ using Tesira_DSP_EPI.Bridge.JoinMaps;
 using PepperDash.Essentials.Core.Bridges;
 using System.Text.RegularExpressions;
 
+#if SERIES4
+using PepperDash.Core.Logging;
+#endif
+
 namespace Tesira_DSP_EPI
 {
     public class TesiraExpanderTracker : TesiraDspControlPoint, ICommunicationMonitor
@@ -60,8 +64,11 @@ namespace Tesira_DSP_EPI
                 DeviceManager.AddDevice(expander);
 
             }
+#if SERIES4
+            this.LogVerbose(string.Format("There are {0} configured expanders", Expanders.Count));
+#else
             Debug.Console(2, this, "There are {0} configured expanders", Expanders.Count);
-
+#endif
 
             foreach (var f in Hostnames.Select(feedback => feedback.Value))
             {
@@ -91,7 +98,11 @@ namespace Tesira_DSP_EPI
             if (Debug.Level != 2) return;
             foreach (var item in Expanders)
             {
+#if SERIES4
+                this.LogVerbose(string.Format("Expander Index = {0} ; Expander Hostname = {1}", item.Index, item.Hostname));
+#else
                 Debug.Console(2, this, "Expander Index = {0} ; Expander Hostname = {1}", item.Index, item.Hostname);
+#endif
             }
         }
 
@@ -103,7 +114,11 @@ namespace Tesira_DSP_EPI
 
         private void CheckTracker()
         {
+#if SERIES4
+            this.LogVerbose("Getting DiscoveredExpanders");
+#else
             Debug.Console(2, this, "Getting DiscoveredExpanders");
+#endif
 
             SendFullCommand("get", "discoveredExpanders", null, 999);            
 
@@ -118,27 +133,47 @@ namespace Tesira_DSP_EPI
 
         public override void ParseGetMessage(string attributeCode, string message)
         {
+#if SERIES4
+            this.LogVerbose("!!!!!!!!EXPANDER DATA!!!!!!!!!!!");
+#else
             Debug.Console(2, this, "!!!!!!!!EXPANDER DATA!!!!!!!!!!!");
+#endif
 
             var matches = Regex1.Matches(message);
 
+#if SERIES4
+            this.LogVerbose(string.Format("There are {0} Matches", matches.Count));
+#else
             Debug.Console(2, this, "There are {0} Matches", matches.Count);
+#endif
             for (var v = 0; v < matches.Count; v++)
             {
                 if (!matches[v].ToString().Contains('"')) continue;
+#if SERIES4
+                this.LogVerbose(string.Format("Match {0} is a device", v));
+#else
                 Debug.Console(2, this, "Match {0} is a device", v);
+#endif
 
                 var matchesEnclosed = Regex2.Matches(matches[v].ToString());
                 var data2 = Regex2.Replace(matches[v].ToString(),  "").Trim('"').Trim('[').Trim().Replace("  ", " ");
                 Console.WriteLine("Data2 = {0}", data2);
                 var hostname = matchesEnclosed[0].ToString().Trim('"');
 
+#if SERIES4
+                this.LogVerbose(string.Format("Match {0} Hostname : {1}", v, hostname));
+#else
                 Debug.Console(2, this, "Match {0} Hostname : {1}", v, hostname);
+#endif
 
                 var newData = Expanders.FirstOrDefault(o => String.Equals(o.Hostname, hostname, StringComparison.CurrentCultureIgnoreCase));
 
 				if (newData == null) continue;
+#if SERIES4
+                this.LogVerbose(string.Format("Found a device Index {0} with Hostname {1}", newData.Index, newData.Hostname));
+#else
                 Debug.Console(2, this, "Found a device Index {0} with Hostname {1}", newData.Index, newData.Hostname);
+#endif
                 var macData = matches[v + 1].ToString();
                 var otherData = matches[v].ToString();
                 newData.SetData(otherData, macData);
@@ -156,14 +191,21 @@ namespace Tesira_DSP_EPI
             foreach (var device in Expanders)
             {
                 var i = device;
-
+#if SERIES4
+                this.LogVerbose(string.Format("Index = {0}", i.Index));
+                this.LogVerbose(string.Format("Hostname = {0}", i.Hostname));
+                this.LogVerbose(string.Format("MacAddress = {0}", i.MacAddress));
+                this.LogVerbose(string.Format("SerialNumber = {0}", i.SerialNumber));
+                this.LogVerbose(string.Format("Firmware = {0}", i.Firmware));
+                this.LogVerbose(string.Format("Online = {0}", i.Online));
+#else
                 Debug.Console(2, this, "Index = {0}", i.Index);
                 Debug.Console(2, this, "Hostname = {0}", i.Hostname);
                 Debug.Console(2, this, "MacAddress = {0}", i.MacAddress);
                 Debug.Console(2, this, "SerialNumber = {0}", i.SerialNumber);
                 Debug.Console(2, this, "Firmware = {0}", i.Firmware);
                 Debug.Console(2, this, "Online = {0}", i.Online);
-
+#endif
             }
         }
 
@@ -191,7 +233,11 @@ namespace Tesira_DSP_EPI
                 bridge.AddJoinMap(Key, expanderJoinMap);
             }
 
+#if SERIES4
+            this.LogDebug(string.Format("Linking to Trilist '{0}'", trilist.ID.ToString("X")));
+#else
             Debug.Console(1, this, "Linking to Trilist '{0}'", trilist.ID.ToString("X"));
+#endif
 
             foreach (var item in Expanders)
             {

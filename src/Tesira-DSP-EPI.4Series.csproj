@@ -36,11 +36,7 @@
 	</ItemGroup>
 
 	<ItemGroup>
-		<None Remove="SonyBraviaEpi.projectinfo" />
-	</ItemGroup>
-
-	<ItemGroup>
-		<PackageReference Include="PepperDashEssentials" Version="2.1.0" >
+		<PackageReference Include="PepperDashEssentials" Version="2.4.8">
 			<ExcludeAssets>runtime</ExcludeAssets>
 		</PackageReference>	</ItemGroup>
 </Project>

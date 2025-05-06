@@ -10,6 +10,7 @@ using Tesira_DSP_EPI.Bridge.JoinMaps;
 using System.Collections.Generic;
 using Tesira_DSP_EPI.Extensions;
 using Tesira_DSP_EPI.Interfaces;
+using PepperDash.Core.Logging;
 
 namespace Tesira_DSP_EPI
 {
@@ -95,13 +96,23 @@ namespace Tesira_DSP_EPI
                 var trackingBool = true;
                 foreach (var item in SubscriptionTracker)
                 {
+
+#if SERIES4
+                    this.LogVerbose(string.Format("{0} is {1} and {2}", item.Key, item.Value.Enabled ? "Enabled" : "Disabled", item.Value.Subscribed ? "Subscribed" : "Not Subscribed"));
+#else
                     Debug.Console(2, this, "{0} is {1} and {2}", item.Key, item.Value.Enabled ? "Enabled" : "Disabled", item.Value.Subscribed ? "Subscribed" : "Not Subscribed");
+#endif
+
                     if (item.Value.Enabled && !item.Value.Subscribed)
                     {
                         trackingBool = false;
                     }
                 }
+#if SERIES4
+                this.LogDebug(string.Format("Item is {0}.", trackingBool ? "subscribed" : "not subscribed"));
+#else
                 Debug.Console(1, this, "Item is {0}.", trackingBool ? "subscribed" : "not subscribed");
+#endif
                 return trackingBool;
 
             }
@@ -155,7 +166,12 @@ namespace Tesira_DSP_EPI
         {
             _type = config.IsMic ? EPdtLevelTypes.Microphone : EPdtLevelTypes.Speaker;
 
+#if SERIES4
+            this.LogVerbose(string.Format("Adding LevelControl '{0}'", Key));
+#else
             Debug.Console(2, this, "Adding LevelControl '{0}'", Key);
+#endif
+
             AddCustomName(LevelCustomName);
             AddCustomName(MuteCustomName);
 
@@ -185,19 +201,30 @@ namespace Tesira_DSP_EPI
             if (HasMute && HasLevel)
             {
                 ControlType = 0;
+#if SERIES4
+                this.LogVerbose(string.Format("{0} has BOTH Mute and Level", Key));
+#else
                 Debug.Console(2, this, "{0} has BOTH Mute and Level", Key);
+#endif
             }
             else if (!HasMute && HasLevel)
             {
                 ControlType = 1;
+#if SERIES4
+            this.LogVerbose(string.Format("{0} has Level ONLY", Key));
+#else
                 Debug.Console(2, this, "{0} has Level ONLY", Key);
-
+#endif
             }
 
             else if (HasMute && !HasLevel)
             {
-                Debug.Console(2, this, "{0} has MUTE ONLY", Key);
                 ControlType = 2;
+#if SERIES4
+            this.LogVerbose(string.Format("{0} has MUTE ONLY", Key));
+#else
+                Debug.Console(2, this, "{0} has MUTE ONLY", Key);
+#endif
             }
 
             MuteFeedback = new BoolFeedback(Key + "-MuteFeedback", () => IsMuted);
@@ -291,7 +318,13 @@ namespace Tesira_DSP_EPI
                 //Unsubscribe to Mute
                 if (HasMute)
                 {
+
+#if SERIES4
+                    this.LogDebug(string.Format("Unsubscribe from Mute"));
+#else
                     Debug.Console(1, this, "Unsubscribe from Mute");
+#endif
+
                     SendUnSubscriptionCommand(MuteCustomName, "mute", 2);
                     SubscriptionTracker["mute"].Subscribed = false;
 
@@ -306,7 +339,13 @@ namespace Tesira_DSP_EPI
             }
             catch (Exception e)
             {
+
+#if SERIES4
+            this.LogInformation(string.Format("Exception : {0}", e.Message));
+#else
                 Debug.Console(0, this, "Exception : {0}", e.Message);
+#endif
+
             }
         }
 
@@ -317,7 +356,13 @@ namespace Tesira_DSP_EPI
         /// <param name="value">Component data to be parsed</param>
         public override void ParseSubscriptionMessage(string customName, string value)
         {
+
+#if SERIES4
+            this.LogDebug(string.Format("Parsing Data - Name: {0} - Value {1}", customName, value));
+#else
             Debug.Console(1, this, "Parsing Data - Name: {0} - Value {1}", customName, value);
+#endif
+
             if (HasMute && customName == MuteCustomName)
             {
                 IsMuted = bool.Parse(value);
@@ -349,7 +394,13 @@ namespace Tesira_DSP_EPI
         {
             try
             {
+
+#if SERIES4
+                this.LogVerbose(string.Format("Parsing Message - '{0}' : Message has an attributeCode of {1}", message, attributeCode));
+#else
                 Debug.Console(2, this, "Parsing Message - '{0}' : Message has an attributeCode of {1}", message, attributeCode);
+#endif
+
                 // Parse an "+OK" message
 
                 var match = ParseRegex.Match(message);
@@ -357,7 +408,11 @@ namespace Tesira_DSP_EPI
                 if (!match.Success) return;
                 var value = match.Groups[1].Value;
 
+#if SERIES4
+                this.LogDebug(string.Format("Response: '{0}' Value: '{1}'", attributeCode, value));
+#else
                 Debug.Console(1, this, "Response: '{0}' Value: '{1}'", attributeCode, value);
+#endif
 
                 if (message.IndexOf("+OK", StringComparison.Ordinal) <= -1) return;
                 switch (attributeCode)
@@ -366,7 +421,11 @@ namespace Tesira_DSP_EPI
                     {
                         MinLevel = Double.Parse(value);
 
+#if SERIES4
+                        this.LogDebug(string.Format("MinLevel is '{0}'", MinLevel));
+#else
                         Debug.Console(1, this, "MinLevel is '{0}'", MinLevel);
+#endif
 
                         break;
                     }
@@ -374,7 +433,11 @@ namespace Tesira_DSP_EPI
                     {
                         MaxLevel = Double.Parse(value);
 
+#if SERIES4
+                        this.LogDebug(string.Format("MaxLevel is '{0}'", MaxLevel));
+#else
                         Debug.Console(1, this, "MaxLevel is '{0}'", MaxLevel);
+#endif
 
                         break;
                     }
@@ -386,13 +449,22 @@ namespace Tesira_DSP_EPI
 
                         VolumeLevel = UseAbsoluteValue ? (ushort) localValue : (ushort)localValue.Scale(MinLevel, MaxLevel, 0, 65535, this);
 
+#if SERIES4
+                        this.LogDebug(string.Format("VolumeLevel is '{0}'", VolumeLevel));
+#else
                         Debug.Console(1, this, "VolumeLevel is '{0}'", VolumeLevel);
+#endif
 
-                        break;
+                            break;
                     }
                     default:
                     {
+
+#if SERIES4
+                        this.LogInformation(string.Format("Response does not match expected attribute codes: '{0}'", message));
+#else
                         Debug.Console(0, "Response does not match expected attribute codes: '{0}'", message);
+#endif
 
                         break;
                     }
@@ -400,7 +472,11 @@ namespace Tesira_DSP_EPI
             }
             catch (Exception e)
             {
+#if SERIES4
+                this.LogVerbose(string.Format("Unable to parse message: '{0}'\n{1}", message, e));
+#else
                 Debug.Console(2, "Unable to parse message: '{0}'\n{1}", message, e);
+#endif
             }
 
         }
@@ -427,7 +503,13 @@ namespace Tesira_DSP_EPI
         /// <param name="level">Level from 0 - 100, as a percentage of the total range</param>
         public void SetVolume(ushort level)
         {
+
+#if SERIES4
+            this.LogDebug(string.Format("volume: {0}", level));
+#else
             Debug.Console(1, this, "volume: {0}", level);
+#endif
+
             // Unmute volume if new level is higher than existing
             if (level > _volumeLevel && AutomaticUnmuteOnVolumeUp)
                 if (_isMuted)
@@ -527,7 +609,13 @@ namespace Tesira_DSP_EPI
         public void VolumeDown(bool press)
         {
             if (!HasLevel) return;
+
+#if SERIES4
+            this.LogVerbose(string.Format("VolumeDown Sent for {0}", LevelControlPointTag));
+#else
             Debug.Console(2, "VolumeDown Sent for {0}", LevelControlPointTag);
+#endif
+
             if (press)
             {
                 if (_volDownPressTracker)
@@ -555,7 +643,12 @@ namespace Tesira_DSP_EPI
         public void VolumeUp(bool press)
         {
             if (!HasLevel) return;
+
+#if SERIES4
+            this.LogVerbose(string.Format("VolumeUp Sent for {0}", LevelControlPointTag));
+#else
             Debug.Console(2, "VolumeUp Sent for {0}", LevelControlPointTag);
+#endif
 
             if (press)
             {
@@ -607,15 +700,23 @@ namespace Tesira_DSP_EPI
                 bridge.AddJoinMap(Key, joinMap);
             }
 
+#if SERIES4
+            this.LogDebug(string.Format("Linking to Trilist '{0}'", trilist.ID.ToString("X")));
+            this.LogVerbose(string.Format("TesiraChannel {0} connect", Key));
+#else
             Debug.Console(1, this, "Linking to Trilist '{0}'", trilist.ID.ToString("X"));
-
             Debug.Console(2, "TesiraChannel {0} connect", Key);
-            
+#endif
+
             if (!Enabled) return;
 
             var genericChannel = this as IBasicVolumeWithFeedback;
 
+#if SERIES4
+            this.LogVerbose(string.Format("TesiraChannel {0} Is Enabled", Key));
+#else
             Debug.Console(2, this, "TesiraChannel {0} Is Enabled", Key);
+#endif
 
             NameFeedback.LinkInputSig(trilist.StringInput[joinMap.Label.JoinNumber]);
             TypeFeedback.LinkInputSig(trilist.UShortInput[joinMap.Type.JoinNumber]);
