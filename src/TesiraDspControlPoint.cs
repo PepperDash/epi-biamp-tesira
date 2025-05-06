@@ -8,6 +8,10 @@ using PepperDash.Essentials.Core.Bridges;
 using Tesira_DSP_EPI.Interfaces;
 using Feedback = PepperDash.Essentials.Core.Feedback;
 
+#if SERIES4
+using PepperDash.Core.Logging;
+#endif
+
 namespace Tesira_DSP_EPI
 {
     public abstract class TesiraDspControlPoint : EssentialsBridgeableDevice, ISubscribedComponent
@@ -79,8 +83,13 @@ namespace Tesira_DSP_EPI
 		{
 			if (string.IsNullOrEmpty(attributeCode))
 			{
+#if SERIES4
+                Debug.LogVerbose("SendFullCommand({0}, {1}, {2}, {3}) Error: AttributeCode is null or empty", command, attributeCode, value, instanceTag);
+#else
 				Debug.Console(2, this, Debug.ErrorLogLevel.Error, "SendFullCommand({0}, {1}, {2}, {3}) Error: AttributeCode is null or empty", command, attributeCode, value, instanceTag);
-				return;
+#endif
+
+                return;
 			}
 
 			// Command Format: InstanceTag get/set/toggle/increment/decrement/subscribe/unsubscribe attributeCode [index] [value]
@@ -185,10 +194,14 @@ namespace Tesira_DSP_EPI
 			// Subscription string format: InstanceTag subscribe attributeCode Index1 customName responseRate
 			// Ex: "RoomLevel subscribe level 1 MyRoomLevel 500"
 			if (string.IsNullOrEmpty(customName) || string.IsNullOrEmpty(attributeCode))
-			{
-                Debug.Console(2, this, "SendSubscriptionCommand({0}, {1}, {2}, {3}) Error: CustomName or AttributeCode are null or empty", customName, attributeCode, responseRate, instanceTag);
-				return;
-			}
+				{
+#if SERIES4
+					this.LogVerbose(string.Format("SendSubscriptionCommand({0}, {1}, {2}, {3}) Error: CustomName or AttributeCode are null or empty", customName, attributeCode, responseRate, instanceTag));
+#else
+					Debug.Console(2, this, "SendSubscriptionCommand({0}, {1}, {2}, {3}) Error: CustomName or AttributeCode are null or empty", customName, attributeCode, responseRate, instanceTag);
+#endif
+					return;
+				}
 
 			string cmd;
 			string instanceTagLocal;
@@ -235,10 +248,14 @@ namespace Tesira_DSP_EPI
 			// Subscription string format: InstanceTag subscribe attributeCode Index1 customName responseRate
 			// Ex: "RoomLevel subscribe level 1 MyRoomLevel 500"
 			if (string.IsNullOrEmpty(customName) || string.IsNullOrEmpty(attributeCode))
-			{
-                Debug.Console(2, this, "SendUnSubscriptionCommand({0}, {1}, {2}) Error: CustomName or AttributeCode are null or empty", customName, attributeCode, instanceTag);
-				return;
-			}
+				{
+#if SERIES4
+					this.LogVerbose(string.Format("SendUnSubscriptionCommand({0}, {1}, {2}) Error: CustomName or AttributeCode are null or empty", customName, attributeCode, instanceTag));
+#else
+					Debug.Console(2, this, "SendUnSubscriptionCommand({0}, {1}, {2}) Error: CustomName or AttributeCode are null or empty", customName, attributeCode, instanceTag);
+#endif
+					return;
+				}
 
 			string cmd;
 			string localInstanceTag;
@@ -264,9 +281,13 @@ namespace Tesira_DSP_EPI
 			{
                 cmd = string.Format("\"{0}\" unsubscribe {1} {2} {3}", localInstanceTag, attributeCode, Index1, customName);
 			}
+#if SERIES4
+            Debug.LogDebug("SendingUnsub - {0}", cmd);
+#else
             Debug.Console(1, this, "SendingUnsub - {0}", cmd);
-			//Parent.WatchDogList.Add(customName,cmd);
-			Parent.SendLine(cmd);
+#endif
+            //Parent.WatchDogList.Add(customName,cmd);
+            Parent.SendLine(cmd);
             //Parent.CommandQueue.EnqueueCommand(new QueuedCommand(cmd, attributeCode, this));
         }
 

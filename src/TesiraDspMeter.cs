@@ -7,6 +7,10 @@ using PepperDash.Essentials.Core.Bridges;
 using Tesira_DSP_EPI.Bridge.JoinMaps;
 using Tesira_DSP_EPI.Extensions;
 
+#if SERIES4
+using PepperDash.Core.Logging;
+#endif
+
 namespace Tesira_DSP_EPI
 {
     //AudioMeter1 unsubscribe level 1 SomethingCool
@@ -88,7 +92,11 @@ namespace Tesira_DSP_EPI
 
         public override void ParseGetMessage(string attributeCode, string message)
         {
-            Debug.Console(2, this, "Parsing Message - '{0}' : Message has an attributeCode of {1}", message, attributeCode);  
+#if SERIES4
+            this.LogVerbose(string.Format("Parsing Message - '{0}' : Message has an attributeCode of {1}", message, attributeCode));
+#else
+            Debug.Console(2, this, "Parsing Message - '{0}' : Message has an attributeCode of {1}", message, attributeCode);
+#endif
         }
 
         public override void ParseSubscriptionMessage(string customName, string message)
@@ -96,11 +104,21 @@ namespace Tesira_DSP_EPI
             IsSubscribed = true;
             SubscribedFeedback.FireUpdate();
 
+#if SERIES4
+            this.LogVerbose(string.Format("Parsing Message - '{0}'", message));
+#else
             Debug.Console(2, this, "Parsing Message - '{0}'", message);
+#endif
+
             var value = Double.Parse(message).Scale(_meterMinimum, _meterMaximum, ushort.MinValue, ushort.MaxValue, this);
             _currentMeter = (ushort)value;
 
+#if SERIES4
+            this.LogVerbose(string.Format("Scaled Meter Value - '{0}'", _currentMeter));
+#else
             Debug.Console(2, this, "Scaled Meter Value - '{0}'", _currentMeter);
+#endif
+
             MeterFeedback.FireUpdate();
         }
 
@@ -118,7 +136,11 @@ namespace Tesira_DSP_EPI
                 bridge.AddJoinMap(Key, joinMap);
             }
 
+#if SERIES4
+            this.LogVerbose(string.Format("AddingMeterBridge {0} | Join:{1}", Key, joinMap.Label.JoinNumber));
+#else
             Debug.Console(2, this, "AddingMeterBridge {0} | Join:{1}", Key, joinMap.Label.JoinNumber);
+#endif
 
             MeterFeedback.LinkInputSig(trilist.UShortInput[joinMap.Meter.JoinNumber]);
             NameFeedback.LinkInputSig(trilist.StringInput[joinMap.Label.JoinNumber]);

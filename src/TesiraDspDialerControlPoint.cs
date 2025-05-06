@@ -7,6 +7,10 @@ using PepperDash.Essentials.Devices.Common.AudioCodec;
 using PepperDash.Essentials.Devices.Common.Codec;
 using Tesira_DSP_EPI.Interfaces;
 
+#if SERIES4
+using PepperDash.Core.Logging;
+#endif
+
 namespace Tesira_DSP_EPI
 {
     public class TesiraDspDialerControlPoint : AudioCodecBase, ISubscribedComponent
@@ -53,7 +57,11 @@ namespace Tesira_DSP_EPI
         {
             if (string.IsNullOrEmpty(attributeCode))
             {
+#if SERIES4
+                this.LogError(string.Format("SendFullCommand({0}, {1}, {2}, {3}) Error: AttributeCode is null or empty", command, attributeCode, value, instanceTag));
+#else
                 Debug.Console(2, this, Debug.ErrorLogLevel.Error, "SendFullCommand({0}, {1}, {2}, {3}) Error: AttributeCode is null or empty", command, attributeCode, value, instanceTag);
+#endif
                 return;
             }
 
@@ -150,7 +158,11 @@ namespace Tesira_DSP_EPI
             // Ex: "RoomLevel subscribe level 1 MyRoomLevel 500"
             if (string.IsNullOrEmpty(customName) || string.IsNullOrEmpty(attributeCode))
             {
+#if SERIES4
+                this.LogVerbose(string.Format("SendSubscriptionCommand({0}, {1}, {2}, {3}) Error: CustomName or AttributeCode are null or empty", customName, attributeCode, responseRate, instanceTag));
+#else
                 Debug.Console(2, this, "SendSubscriptionCommand({0}, {1}, {2}, {3}) Error: CustomName or AttributeCode are null or empty", customName, attributeCode, responseRate, instanceTag);
+#endif
                 return;
             }
 
@@ -194,7 +206,11 @@ namespace Tesira_DSP_EPI
             // Ex: "RoomLevel subscribe level 1 MyRoomLevel 500"
             if (string.IsNullOrEmpty(customName) || string.IsNullOrEmpty(attributeCode))
             {
+#if SERIES4
+                this.LogVerbose(string.Format("SendUnSubscriptionCommand({0}, {1}, {2}) Error: CustomName or AttributeCode are null or empty", customName, attributeCode, instanceTag));
+#else
                 Debug.Console(2, this, "SendUnSubscriptionCommand({0}, {1}, {2}) Error: CustomName or AttributeCode are null or empty", customName, attributeCode, instanceTag);
+#endif
                 return;
             }
 
