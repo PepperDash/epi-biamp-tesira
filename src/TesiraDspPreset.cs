@@ -13,7 +13,10 @@ using PepperDash.Core.Logging;
 
 namespace Tesira_DSP_EPI
 {
-    public class TesiraDspPresetDevice : TesiraDspControlPoint, IDspPresets       
+    public class TesiraDspPresetDevice : TesiraDspControlPoint
+#if SERIES4
+        ,IDspPresets
+#endif
 
     {
         private const string KeyFormatter = "{0}--{1}";

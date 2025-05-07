@@ -23,7 +23,9 @@ using PepperDash.Core.Logging;
 namespace Tesira_DSP_EPI
 {
     public class TesiraDsp : EssentialsBridgeableDevice,
+#if SERIES4
         IDspPresets,
+#endif
         ICommunicationMonitor,
         IDeviceInfoProvider
     {

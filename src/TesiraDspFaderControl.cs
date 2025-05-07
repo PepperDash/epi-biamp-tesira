@@ -18,7 +18,9 @@ using PepperDash.Core.Logging;
 namespace Tesira_DSP_EPI
 {
     public class TesiraDspFaderControl : TesiraDspControlPoint,
+#if SERIES4
         IBasicVolumeWithFeedbackAdvanced,
+#endif
         IVolumeComponent
     {
         private bool _isMuted;
@@ -139,6 +141,7 @@ namespace Tesira_DSP_EPI
 
         public int RawVolumeLevel { get; private set; }
 
+#if SERIES4
         public eVolumeLevelUnits Units
         {
             get
@@ -146,7 +149,8 @@ namespace Tesira_DSP_EPI
                 return eVolumeLevelUnits.Decibels;
             }
         }
-     
+#endif
+
 
         /// <summary>
         /// Constructor for Component
