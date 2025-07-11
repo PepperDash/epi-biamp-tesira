@@ -10,7 +10,9 @@ using Tesira_DSP_EPI.Extensions;
 
 namespace Tesira_DSP_EPI
 {
-    //AudioMeter1 unsubscribe level 1 SomethingCool
+    /// <summary>
+    /// Represents a meter for the Tesira DSP.
+    /// </summary>
     public class TesiraDspMeter : TesiraDspControlPoint, IMeterFeedback
     {
         private readonly double _meterMinimum;
@@ -35,8 +37,17 @@ namespace Tesira_DSP_EPI
         public IntFeedback MeterFeedback { get; set; }
         int _currentMeter;
 
+        /// <summary>
+        /// Represents the subscription status of the meter.
+        /// </summary>
         public BoolFeedback SubscribedFeedback { get; set; }
 
+        /// <summary>
+        /// Creates a new instance of the TesiraDspMeter class.
+        /// </summary>
+        /// <param name="key"></param>
+        /// <param name="config"></param>
+        /// <param name="parent"></param>
         public TesiraDspMeter(string key, TesiraMeterBlockConfig config, TesiraDsp parent)
             : base(config.MeterInstanceTag, string.Empty, config.Index, 0, parent, string.Format(KeyFormatter, parent.Key, key), config.Label, config.BridgeIndex)
         {
