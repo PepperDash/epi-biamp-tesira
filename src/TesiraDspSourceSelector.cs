@@ -1,11 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.RegularExpressions;
 using Crestron.SimplSharpPro.DeviceSupport;
 using Newtonsoft.Json;
-using PepperDash.Core;
+using PepperDash.Core.Logging;
 using PepperDash.Essentials.Core;
-using System.Text.RegularExpressions;
 using PepperDash.Essentials.Core.Bridges;
 using Tesira_DSP_EPI.Bridge.JoinMaps;
 using Tesira_DSP_EPI.Extensions;
@@ -50,7 +50,6 @@ namespace Tesira_DSP_EPI
         /// </summary>
         public string SelectorCustomName { get; private set; }
 
-        private int Destination { get; set; }
         private int SourceIndex
         {
             get
@@ -114,34 +113,25 @@ namespace Tesira_DSP_EPI
 
         private void Initialize(TesiraSourceSelectorControlBlockConfig config)
         {
-            //DeviceManager.AddDevice(this);
-
-            Debug.Console(2, this, "Adding SourceSelector '{0}'", Key);
-
+            this.LogVerbose("Adding SourceSelector {key}", Key);
             IsSubscribed = false;
 
             Label = config.Label;
 
-
             Enabled = config.Enabled;
 
-            if (config.SourceSelectorInputs != null)
+            if (SourceSelectorInputs != null)
             {
-                foreach (
-                    var input in
-                        from input in config.SourceSelectorInputs
-                        let inputPort = input.Value
-                        let inputPortKey = input.Key
-                        select input)
+                foreach (var input in SourceSelectorInputs)
                 {
-                    InputPorts.Add(new RoutingInputPort(input.Value.Label, eRoutingSignalType.Audio,
+                    this.LogVerbose("Adding Input Port {key} with Selector {value}", input.Value, input.Key);
+                    InputPorts.Add(new RoutingInputPort(input.Value, eRoutingSignalType.Audio,
                         eRoutingPortConnectionType.BackplaneOnly, input.Key, this));
                 }
             }
-            if (config.SourceSelectorOutput == null) return;
-            var output = config.SourceSelectorOutput;
-                OutputPorts.Add(new RoutingOutputPort(output.Label, eRoutingSignalType.Audio,
-                    eRoutingPortConnectionType.BackplaneOnly, 1, this));
+
+            OutputPorts.Add(new RoutingOutputPort("output", eRoutingSignalType.Audio,
+                eRoutingPortConnectionType.BackplaneOnly, 1, this));
         }
 
         /// <summary>
@@ -149,7 +139,7 @@ namespace Tesira_DSP_EPI
         /// </summary>
         public override void Subscribe()
         {
-            SelectorCustomName = (string.Format("{0}__Selector{1}", InstanceTag1, Index1)).Replace(" ", string.Empty);
+            SelectorCustomName = string.Format("{0}__Selector{1}", InstanceTag1, Index1).Replace(" ", string.Empty);
             AddCustomName(SelectorCustomName);
             SendSubscriptionCommand(SelectorCustomName, "sourceSelection", 250, 1);
         }
@@ -161,7 +151,7 @@ namespace Tesira_DSP_EPI
         {
             IsSubscribed = false;
 
-            SelectorCustomName = (string.Format("{0}__Selector{1}", InstanceTag1, Index1)).Replace(" ", string.Empty);
+            SelectorCustomName = string.Format("{0}__Selector{1}", InstanceTag1, Index1).Replace(" ", string.Empty);
 
             SendUnSubscriptionCommand(SelectorCustomName, "sourceSelection", 1);
         }
@@ -195,7 +185,7 @@ namespace Tesira_DSP_EPI
         {
             try
             {
-                Debug.Console(2, this, "Parsing Message - '{0}' : Message has an attributeCode of {1}", message, attributeCode);
+                this.LogVerbose("Parsing Message - '{message}' : Message has an attributeCode of {attributeCode}", message, attributeCode);
                 // Parse an "+OK" message
 
                 var match = ParseRegex.Match(message);
@@ -203,11 +193,11 @@ namespace Tesira_DSP_EPI
                 if (!match.Success) return;
                 var value = match.Groups[1].Value;
 
-                Debug.Console(1, this, "Response: '{0}' Value: '{1}'", attributeCode, value);
+                this.LogDebug("Response: '{attributeCode}' Value: '{value}'", attributeCode, value);
 
                 if (message.Contains("-ERR address not found"))
                 {
-                    Debug.ConsoleWithLog(2, this, "Baimp Error Address not found: '{0}'\n", InstanceTag1);
+                    this.LogError("Biamp Error Address not found: '{instanceTag}'", InstanceTag1);
                     return;
                 }
 
@@ -217,7 +207,8 @@ namespace Tesira_DSP_EPI
             }
             catch (Exception e)
             {
-                Debug.Console(2, this, "Unable to parse message: '{0}'\n{1}", message, e);
+                this.LogError("Error parsing message: '{message}': {exception}", message, e.Message);
+                this.LogVerbose(e, "Exception", e);
             }
 
         }
@@ -228,16 +219,7 @@ namespace Tesira_DSP_EPI
         /// <param name="data">Source to route</param>
         public void SetSource(int data)
         {
-            ExecuteSwitch(data, 0, eRoutingSignalType.Audio);
-        }
-
-        /// <summary>
-        /// Future use - to set Destination
-        /// </summary>
-        /// <param name="data"></param>
-        public void SetDestination(int data)
-        {
-            Destination = data;
+            ExecuteSwitch(data, 1, eRoutingSignalType.Audio);
         }
 
         public void GetSourceNames()
@@ -254,16 +236,16 @@ namespace Tesira_DSP_EPI
                 var index = Convert.ToUInt16(input.Selector);
                 SourceNamesXsig += XSigHelper.CreateByteString(index, input.Key);
 
-                Debug.Console(2, this, "{0} {1}", input.Key, new String('-', 50));
-                Debug.Console(2, this, @"    
-                  input.ParentDevice: {0}
-                  input.Selector: {1}
-                  input.Selector(Convert.ToUnit16): {2}
-                  input.Port: {3}
-                  input.ConnectionType: {4}
-                  input.Type: {5}",
+                this.LogVerbose("{inputPortKey} {1}", input.Key, new string('-', 50));
+                this.LogVerbose(@"    
+                  input.ParentDevice: {parent}
+                  input.Selector: {selector}
+                  input.Selector(Convert.ToUnit16): {selector}
+                  input.Port: {port}
+                  input.ConnectionType: {connectionType}
+                  input.Type: {type}",
                   input.ParentDevice, input.Selector, index, input.Port, input.ConnectionType, input.Type);
-                Debug.Console(2, this, "{0}", new String('-', 50));
+                this.LogVerbose("{0}", new string('-', 50));
 
             }
             SourceNamesFeedback.FireUpdate();
@@ -271,7 +253,6 @@ namespace Tesira_DSP_EPI
 
         public override void DoPoll()
         {
-            // Debug.Console(2, this, "SourceSelector DoPoll() {0}",Label);
             SendFullCommand("get", "sourceSelection", String.Empty, 1);
         }
 
@@ -285,8 +266,8 @@ namespace Tesira_DSP_EPI
         /// <param name="signalType">Signal Type to Route</param>
         public void ExecuteSwitch(object inputSelector, object outputSelector, eRoutingSignalType signalType)
         {
-            if (signalType != eRoutingSignalType.Audio) return;
-            if (Destination != 0) return;
+            if (!signalType.HasFlag(eRoutingSignalType.Audio) && !signalType.HasFlag(eRoutingSignalType.SecondaryAudio)) return;
+
             SendFullCommand("set", "sourceSelection", Convert.ToString(inputSelector), 1);
         }
 
@@ -298,8 +279,8 @@ namespace Tesira_DSP_EPI
         /// <param name="signalType">Signal Type to Route</param>
         public void ExecuteNumericSwitch(ushort inputSelector, ushort outputSelector, eRoutingSignalType signalType)
         {
-            if (signalType != eRoutingSignalType.Audio) return;
-            if (Destination != 0) return;
+            if (!signalType.HasFlag(eRoutingSignalType.Audio)) return;
+
             SendFullCommand("set", "sourceSelection", Convert.ToString(inputSelector), 1);
         }
 
@@ -315,14 +296,11 @@ namespace Tesira_DSP_EPI
             if (!string.IsNullOrEmpty(joinMapSerialized))
                 joinMap = JsonConvert.DeserializeObject<TesiraSwitcherJoinMapAdvancedStandalone>(joinMapSerialized);
 
-            if (bridge != null)
-            {
-                bridge.AddJoinMap(Key, joinMap);
-            }
+            bridge?.AddJoinMap(Key, joinMap);
 
             if (!Enabled) return;
 
-            Debug.Console(2, this, "Tesira Switcher {0} is Enabled", Key);
+            this.LogVerbose("Tesira Switcher Enabled");
 
             var s = this as IRoutingWithFeedback;
             s.SourceIndexFeedback.LinkInputSig(trilist.UShortInput[joinMap.Index.JoinNumber]);
