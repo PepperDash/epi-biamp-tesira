@@ -4,13 +4,16 @@ using Newtonsoft.Json;
 using PepperDash.Core;
 using PepperDash.Essentials.Core;
 using PepperDash.Essentials.Core.Bridges;
+using PepperDash.Essentials.Core.DeviceTypeInterfaces;
 using Tesira_DSP_EPI.Bridge.JoinMaps;
 using Tesira_DSP_EPI.Extensions;
 
 namespace Tesira_DSP_EPI
 {
-    //AudioMeter1 unsubscribe level 1 SomethingCool
-    public class TesiraDspMeter : TesiraDspControlPoint
+    /// <summary>
+    /// Represents a meter for the Tesira DSP.
+    /// </summary>
+    public class TesiraDspMeter : TesiraDspControlPoint, IMeterFeedback
     {
         private readonly double _meterMinimum;
         private readonly double _meterMaximum;
@@ -34,9 +37,18 @@ namespace Tesira_DSP_EPI
         public IntFeedback MeterFeedback { get; set; }
         int _currentMeter;
 
+        /// <summary>
+        /// Represents the subscription status of the meter.
+        /// </summary>
         public BoolFeedback SubscribedFeedback { get; set; }
 
-		public TesiraDspMeter(string key, TesiraMeterBlockConfig config, TesiraDsp parent)
+        /// <summary>
+        /// Creates a new instance of the TesiraDspMeter class.
+        /// </summary>
+        /// <param name="key"></param>
+        /// <param name="config"></param>
+        /// <param name="parent"></param>
+        public TesiraDspMeter(string key, TesiraMeterBlockConfig config, TesiraDsp parent)
             : base(config.MeterInstanceTag, string.Empty, config.Index, 0, parent, string.Format(KeyFormatter, parent.Key, key), config.Label, config.BridgeIndex)
         {
             DeviceManager.AddDevice(this);
@@ -44,8 +56,8 @@ namespace Tesira_DSP_EPI
             Label = config.Label;
             Enabled = config.Enabled;
 
-            MeterFeedback = new IntFeedback(Key + "-MeterFeedback",() => _currentMeter);
-            SubscribedFeedback = new BoolFeedback(Key + "-SubscribedFeedback",() => IsSubscribed);
+            MeterFeedback = new IntFeedback(Key + "-MeterFeedback", () => _currentMeter);
+            SubscribedFeedback = new BoolFeedback(Key + "-SubscribedFeedback", () => IsSubscribed);
 
             Feedbacks.Add(MeterFeedback);
             Feedbacks.Add(SubscribedFeedback);
@@ -53,19 +65,19 @@ namespace Tesira_DSP_EPI
 
             parent.Feedbacks.AddRange(Feedbacks);
 
-		    if (config.MeterData != null)
-		    {
-		        var data = config.MeterData;
-		        _meterMinimum = data.MeterMimimum;
-		        _meterMaximum = data.MeterMaxiumum;
-		        _defaultPollTime = data.DefaultPollTime;
-		    }
-		    else
-		    {
+            if (config.MeterData != null)
+            {
+                var data = config.MeterData;
+                _meterMinimum = data.MeterMimimum;
+                _meterMaximum = data.MeterMaxiumum;
+                _defaultPollTime = data.DefaultPollTime;
+            }
+            else
+            {
                 _meterMinimum = MeterMinimumDefault;
                 _meterMaximum = MeterMaximumDefault;
                 _defaultPollTime = DefaultPollTimeDefault;
-		    }
+            }
 
             /*CrestronConsole.AddNewConsoleCommand(s => Subscribe(), "enablemeters", "", ConsoleAccessLevelEnum.AccessOperator);
             CrestronConsole.AddNewConsoleCommand(s => UnSubscribe(), "disablemeters", "", ConsoleAccessLevelEnum.AccessOperator);*/
@@ -88,7 +100,7 @@ namespace Tesira_DSP_EPI
 
         public override void ParseGetMessage(string attributeCode, string message)
         {
-            Debug.Console(2, this, "Parsing Message - '{0}' : Message has an attributeCode of {1}", message, attributeCode);  
+            Debug.Console(2, this, "Parsing Message - '{0}' : Message has an attributeCode of {1}", message, attributeCode);
         }
 
         public override void ParseSubscriptionMessage(string customName, string message)

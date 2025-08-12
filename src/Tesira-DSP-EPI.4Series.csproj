@@ -40,7 +40,7 @@
 	</ItemGroup>
 
 	<ItemGroup>
-		<PackageReference Include="PepperDashEssentials" Version="2.1.0" >
+		<PackageReference Include="PepperDashEssentials" Version="2.8.1-meter-feedback-interface.2">
 			<ExcludeAssets>runtime</ExcludeAssets>
 		</PackageReference>	</ItemGroup>
 </Project>
