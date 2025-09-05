@@ -2,7 +2,8 @@
 using Newtonsoft.Json;
 using PepperDash.Essentials.Core;
 
-namespace Tesira_DSP_EPI {
+namespace Tesira_DSP_EPI
+{
     public class TesiraDspPropertiesConfig
     {
         public CommunicationMonitorConfig CommunicationMonitorProperties { get; set; }
@@ -39,6 +40,9 @@ namespace Tesira_DSP_EPI {
         [JsonProperty("meterControlBlocks")]
         public Dictionary<string, TesiraMeterBlockConfig> MeterControlBlocks { get; set; }
 
+        [JsonProperty("logicMeterControlBlocks")]
+        public Dictionary<string, TesiraLogicMeterBlockConfig> LogicMeterControlBlocks { get; set; }
+
         [JsonProperty("crosspointStateControlBlocks")]
         public Dictionary<string, TesiraCrosspointStateBlockConfig> CrosspointStateControlBlocks { get; set; }
 
@@ -47,7 +51,7 @@ namespace Tesira_DSP_EPI {
 
         [JsonProperty("tesiraExpanderBlocks")]
         public Dictionary<string, TesiraExpanderBlockConfig> ExpanderBlocks { get; set; }
-        
+
         [JsonProperty("resubscribeString")]
         public string ResubscribeString { get; set; }
     }
@@ -309,6 +313,24 @@ namespace Tesira_DSP_EPI {
         public uint? BridgeIndex { get; set; }
     }
 
+    public class TesiraLogicMeterBlockConfig
+    {
+        [JsonProperty("enabled")]
+        public bool Enabled { get; set; }
+
+        [JsonProperty("label")]
+        public string Label { get; set; }
+
+        [JsonProperty("meterInstanceTag")]
+        public string MeterInstanceTag { get; set; }
+
+        [JsonProperty("index")]
+        public int Index { get; set; }
+
+        [JsonProperty("bridgeIndex")]
+        public uint? BridgeIndex { get; set; }
+    }
+
 
 
     public class MeterMetadata
@@ -347,7 +369,7 @@ namespace Tesira_DSP_EPI {
         public bool PollEnable { get; set; }
 
         [JsonProperty("pollTimeMs")]
-        public long  PollTimeMs { get; set; }
+        public long PollTimeMs { get; set; }
 
 
     }
