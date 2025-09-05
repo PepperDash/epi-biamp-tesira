@@ -1,0 +1,91 @@
+using System;
+using PepperDash.Core.Logging;
+using PepperDash.Essentials.Core;
+using PepperDash.Essentials.Core.DeviceTypeInterfaces;
+using Tesira_DSP_EPI;
+
+namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
+{
+  public class TesiraDspLogicMeter : TesiraDspControlPoint, IStateFeedback
+  {
+    public BoolFeedback StateFeedback { get; private set; }
+
+    private bool state;
+    public bool State
+    {
+      get => state;
+      private set
+      {
+        state = value;
+        StateFeedback.FireUpdate();
+      }
+    }
+
+    private readonly int _defaultPollTime;
+
+    private const string MeterAttributeCode = "state";
+    private const int DefaultPollTimeDefault = 500;
+
+    private const string KeyFormatter = "{0}--{1}";
+
+    /// <summary>
+    /// Subscription Identifer for Meter Data
+    /// </summary>
+    public string MeterCustomName { get; set; }
+
+    /// <summary>
+    /// Integer Feedback for Meter
+    /// </summary>
+    public IntFeedback MeterFeedback { get; set; }
+    int _currentMeter;
+
+    /// <summary>
+    /// Represents the subscription status of the meter.
+    /// </summary>
+    public BoolFeedback SubscribedFeedback { get; set; }
+
+    public TesiraDspLogicMeter(string key, TesiraLogicMeterBlockConfig config, TesiraDsp parent)
+      : base(config.MeterInstanceTag, string.Empty, config.Index, 0, parent, key, config.Label, config.BridgeIndex)
+    {
+      DeviceManager.AddDevice(this);
+      Label = config.Label;
+      Enabled = true;
+
+      StateFeedback = new BoolFeedback(Key + "-StateFeedback", () => State);
+      SubscribedFeedback = new BoolFeedback(Key + "-SubscribedFeedback", () => IsSubscribed);
+
+      Feedbacks.Add(StateFeedback);
+    }
+
+    public override void Subscribe()
+    {
+      MeterCustomName = $"{InstanceTag1}__meter{Index1}";
+      AddCustomName(MeterCustomName);
+      SendSubscriptionCommand(MeterCustomName, MeterAttributeCode, _defaultPollTime, 0);
+    }
+
+    public override void ParseGetMessage(string attributeCode, string message)
+    {
+      this.LogVerbose("Parsing Message - {message}: message has an attributeCode of {attributeCode}", message, attributeCode);
+    }
+
+    public override void ParseSubscriptionMessage(string attributeCode, string message)
+    {
+      this.LogVerbose("Parsing Subscription Message - {message}: message has an attributeCode of {attributeCode}", message, attributeCode);
+      IsSubscribed = true;
+      SubscribedFeedback.FireUpdate();
+
+      if (attributeCode == MeterAttributeCode)
+      {
+        if (bool.TryParse(message, out var newState))
+        {
+          State = newState;
+        }
+        else
+        {
+          this.LogError("Failed to parse logic meter state from message: {message}", message);
+        }
+      }
+    }
+  }
+}
