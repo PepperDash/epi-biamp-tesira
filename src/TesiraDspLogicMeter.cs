@@ -45,13 +45,12 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
     public BoolFeedback SubscribedFeedback { get; set; }
 
     public TesiraDspLogicMeter(string key, TesiraLogicMeterBlockConfig config, TesiraDsp parent)
-      : base(config.MeterInstanceTag, string.Empty, config.Index, 0, parent, key, config.Label, config.BridgeIndex)
+      : base(config.MeterInstanceTag, string.Empty, config.Index, 0, parent, $"{parent.Key}--{key}", config.Label, config.BridgeIndex)
     {
-      DeviceManager.AddDevice(this);
       Label = config.Label;
       Enabled = true;
 
-      StateFeedback = new BoolFeedback(Key + "-StateFeedback", () => State);
+      StateFeedback = new BoolFeedback(Key + "-StateFeedback", () => state);
       SubscribedFeedback = new BoolFeedback(Key + "-SubscribedFeedback", () => IsSubscribed);
 
       Feedbacks.Add(StateFeedback);
@@ -69,23 +68,19 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
       this.LogVerbose("Parsing Message - {message}: message has an attributeCode of {attributeCode}", message, attributeCode);
     }
 
-    public override void ParseSubscriptionMessage(string attributeCode, string message)
+    public override void ParseSubscriptionMessage(string customName, string message)
     {
-      this.LogVerbose("Parsing Subscription Message - {message}: message has an attributeCode of {attributeCode}", message, attributeCode);
+      this.LogVerbose("Parsing Subscription Message - {message}: message has an attributeCode of {attributeCode}", message, customName);
       IsSubscribed = true;
       SubscribedFeedback.FireUpdate();
 
-      if (attributeCode == MeterAttributeCode)
+      if (!bool.TryParse(message, out var newState))
       {
-        if (bool.TryParse(message, out var newState))
-        {
-          State = newState;
-        }
-        else
-        {
-          this.LogError("Failed to parse logic meter state from message: {message}", message);
-        }
+        this.LogError("Failed to parse logic meter state from message: {message}", message);
       }
+
+      State = newState;
+
     }
   }
 }
