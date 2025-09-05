@@ -221,14 +221,14 @@ namespace Tesira_DSP_EPI
             Feedbacks.Add(CommandPassthruFeedback);
 
             //Start CommnicationMonitor in PostActivation phase
-            AddPostActivationAction(() =>
-            {
-                Communication.Connect();
-                if (!_isSerialComm) return;
-                CommunicationMonitor.Start();
-                OkayToSend = true;
-                CheckSerialSendStatus();
-            });
+            // AddPostActivationAction(() =>
+            // {
+            //     Communication.Connect();
+            //     if (!_isSerialComm) return;
+            //     CommunicationMonitor.Start();
+            //     OkayToSend = true;
+            //     CheckSerialSendStatus();
+            // });
 
             CreateDspObjects();
         }
@@ -247,6 +247,15 @@ namespace Tesira_DSP_EPI
             }
             if (_isSerialComm) this.LogVerbose("CheckSerialSendStatus NOT READY");
 
+        }
+
+        public override void Initialize()
+        {
+            Communication.Connect();
+            if (!_isSerialComm) return;
+            CommunicationMonitor.Start();
+            OkayToSend = true;
+            CheckSerialSendStatus();
         }
 
 
@@ -321,6 +330,7 @@ namespace Tesira_DSP_EPI
             Switchers.Clear();
             ControlPointList.Clear();
             Meters.Clear();
+            LogicMeters.Clear();
             RoomCombiners.Clear();
 
             CreateFaders(props);
@@ -465,20 +475,36 @@ namespace Tesira_DSP_EPI
 
         private void CreateLogicMeters(TesiraDspPropertiesConfig props)
         {
-            if (props.LogicMeterControlBlocks == null) return;
-
-            foreach (var meter in props.LogicMeterControlBlocks)
+            try
             {
-                var key = meter.Key;
-                var value = meter.Value;
-                LogicMeters.Add(key, new TesiraDspLogicMeter(key, value, this));
-                this.LogVerbose("Adding Logic Meter {0} InstanceTag: {1}", key, value.MeterInstanceTag);
+                if (props.LogicMeterControlBlocks == null) return;
 
-                if (value.Enabled)
+                foreach (var meter in props.LogicMeterControlBlocks)
                 {
-                    ControlPointList.Add(Meters[key]);
+                    try
+                    {
+                        var key = meter.Key;
+                        var value = meter.Value;
+                        LogicMeters.Add(key, new TesiraDspLogicMeter(key, value, this));
+                        this.LogVerbose("Adding Logic Meter {0} InstanceTag: {1}", key, value.MeterInstanceTag);
+
+                        if (value.Enabled)
+                        {
+                            ControlPointList.Add(LogicMeters[key]);
+                        }
+                        DeviceManager.AddDevice(LogicMeters[key]);
+                    }
+                    catch (Exception ex)
+                    {
+                        this.LogError("Exception adding Logic meter {key}: {message}", meter.Key, ex.Message);
+                        this.LogVerbose(ex, "Stack trace:");
+                    }
                 }
-                DeviceManager.AddDevice(Meters[key]);
+            }
+            catch (Exception ex)
+            {
+                this.LogError("Exception adding Logic meters: {message}", ex.Message);
+                this.LogVerbose(ex, "Stack trace:");
             }
         }
 
