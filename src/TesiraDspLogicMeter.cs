@@ -77,6 +77,7 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
       if (!bool.TryParse(message, out var newState))
       {
         this.LogError("Failed to parse logic meter state from message: {message}", message);
+        return;
       }
 
       State = newState;
