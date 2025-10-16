@@ -104,6 +104,13 @@ namespace Tesira_DSP_EPI
         {
 
             DeviceInfo = new DeviceInfo();
+            
+            // Initialize IP address from parent device if available
+            if (!string.IsNullOrEmpty(parent.DeviceInfo.IpAddress))
+            {
+                IpAddress = parent.DeviceInfo.IpAddress;
+            }
+            
             Init();
         }
 

@@ -1189,7 +1189,7 @@ namespace Tesira_DSP_EPI
         public override void LinkToApi(BasicTriList trilist, uint joinStart, string joinMapKey, EiscApiAdvanced bridge)
         {
 
-            var deviceJoinMap = new TesiraDspDeviceJoinMapAdvanced(joinStart);
+            var deviceJoinMap = new TesiraDspDeviceJoinMapAdvancedStandalone(joinStart);
             var dialerJoinMap = new TesiraDialerJoinMapAdvanced(joinStart);
             var faderJoinMap = new TesiraFaderJoinMapAdvanced(joinStart);
             var stateJoinMap = new TesiraStateJoinMapAdvanced(joinStart);
@@ -1219,6 +1219,18 @@ namespace Tesira_DSP_EPI
 
             CommunicationMonitor.IsOnlineFeedback.LinkInputSig(trilist.BooleanInput[deviceJoinMap.IsOnline.JoinNumber]);
             CommandPassthruFeedback.LinkInputSig(trilist.StringInput[deviceJoinMap.CommandPassThru.JoinNumber]);
+            
+            // Device Info feedback links
+            if (DevInfo != null)
+            {
+                DevInfo.NameFeedback.LinkInputSig(trilist.StringInput[deviceJoinMap.Name.JoinNumber]);
+                DevInfo.SerialNumberFeedback.LinkInputSig(trilist.StringInput[deviceJoinMap.SerialNumber.JoinNumber]);
+                DevInfo.FirmwareFeedback.LinkInputSig(trilist.StringInput[deviceJoinMap.Firmware.JoinNumber]);
+                DevInfo.HostnameFeedback.LinkInputSig(trilist.StringInput[deviceJoinMap.Hostname.JoinNumber]);
+                DevInfo.IpAddressFeedback.LinkInputSig(trilist.StringInput[deviceJoinMap.IpAddress.JoinNumber]);
+                DevInfo.MacAddressFeedback.LinkInputSig(trilist.StringInput[deviceJoinMap.MacAddress.JoinNumber]);
+            }
+            
             trilist.SetStringSigAction(presetJoinMap.PresetName.JoinNumber, RunPreset);
 
             trilist.SetStringSigAction(deviceJoinMap.CommandPassThru.JoinNumber, SendLineRaw);
