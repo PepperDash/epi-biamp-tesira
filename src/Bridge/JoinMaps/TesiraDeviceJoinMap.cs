@@ -35,11 +35,21 @@ namespace Tesira_DSP_EPI.Bridge.JoinMaps
                     JoinType = eJoinType.Serial
                 });
 
+        [Obsolete("Use CommandPassThru_New instead.")]
         [JoinName("CommandPassThru")] public JoinDataComplete CommandPassThru =
+            new JoinDataComplete(new JoinData {JoinNumber = 1, JoinSpan = 1},
+                new JoinMetadata
+                {
+                    Description = "Pass discrete commands directly to/from the device (Obsolete, use CommandPassThru_New)",
+                    JoinCapabilities = eJoinCapabilities.ToFromSIMPL,
+                    JoinType = eJoinType.Serial
+                });
+
+        [JoinName("CommandPassThru_New")] public JoinDataComplete CommandPassThru_New =
             new JoinDataComplete(new JoinData {JoinNumber = 2, JoinSpan = 1},
                 new JoinMetadata
                 {
-                    Description = "Pass discrete commands directly to/from the device",
+                    Description = "Pass discrete commands directly to/from the device (New mapping)",
                     JoinCapabilities = eJoinCapabilities.ToFromSIMPL,
                     JoinType = eJoinType.Serial
                 });
