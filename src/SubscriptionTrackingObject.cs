@@ -1,4 +1,4 @@
-﻿namespace Tesira_DSP_EPI
+﻿namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
 {
     /// <summary>
     /// Track a subscription in a multi-subscription control

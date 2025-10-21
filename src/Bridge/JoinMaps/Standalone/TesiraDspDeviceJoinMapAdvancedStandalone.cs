@@ -1,45 +1,7 @@
 ﻿using PepperDash.Essentials.Core;
 
-namespace Tesira_DSP_EPI.Bridge.JoinMaps
+namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Bridge.JoinMaps.Standalone
 {
-    /// <summary>
-    /// Device Joinmap for Advanced Bridge - Meant for holistic DSP Object
-    /// </summary>
-    public class TesiraDspDeviceJoinMapAdvanced : JoinMapBaseAdvanced
-    {
-
-        [JoinName("IsOnline")] public JoinDataComplete IsOnline =
-            new JoinDataComplete(new JoinData {JoinNumber = 1, JoinSpan = 1},
-                new JoinMetadata
-                {
-                    Description = "Device Online",
-                    JoinCapabilities = eJoinCapabilities.ToSIMPL,
-                    JoinType = eJoinType.Digital
-                });
-
-        [JoinName("Resubscribe")] public JoinDataComplete Resubscribe =
-            new JoinDataComplete(new JoinData {JoinNumber = 1, JoinSpan = 1},
-                new JoinMetadata
-                {
-                    Description = "Trigger control resubscription",
-                    JoinCapabilities = eJoinCapabilities.FromSIMPL,
-                    JoinType = eJoinType.Digital
-                });
-
-        [JoinName("CommandPassThru")] public JoinDataComplete CommandPassThru =
-            new JoinDataComplete(new JoinData {JoinNumber = 1, JoinSpan = 1},
-                new JoinMetadata
-                {
-                    Description = "Pass discrete commands directly to/from the device",
-                    JoinCapabilities = eJoinCapabilities.ToFromSIMPL,
-                    JoinType = eJoinType.Serial
-                });
-
-        public TesiraDspDeviceJoinMapAdvanced(uint joinStart)
-            : base(joinStart, typeof (TesiraDspDeviceJoinMapAdvanced))
-        {
-        }
-    }
 
     /// <summary>
     /// Device Joinmap for Advanced Bridge - Meant for bridging the device information as a standalone device
@@ -47,8 +9,9 @@ namespace Tesira_DSP_EPI.Bridge.JoinMaps
     public class TesiraDspDeviceJoinMapAdvancedStandalone : JoinMapBaseAdvanced
     {
 
-        [JoinName("IsOnline")] public JoinDataComplete IsOnline =
-            new JoinDataComplete(new JoinData {JoinNumber = 1, JoinSpan = 1},
+        [JoinName("IsOnline")]
+        public JoinDataComplete IsOnline =
+            new JoinDataComplete(new JoinData { JoinNumber = 1, JoinSpan = 1 },
                 new JoinMetadata
                 {
                     Description = "Device Online",
@@ -56,8 +19,9 @@ namespace Tesira_DSP_EPI.Bridge.JoinMaps
                     JoinType = eJoinType.Digital
                 });
 
-        [JoinName("Resubscribe")] public JoinDataComplete Resubscribe =
-            new JoinDataComplete(new JoinData {JoinNumber = 1, JoinSpan = 1},
+        [JoinName("Resubscribe")]
+        public JoinDataComplete Resubscribe =
+            new JoinDataComplete(new JoinData { JoinNumber = 1, JoinSpan = 1 },
                 new JoinMetadata
                 {
                     Description = "Trigger control resubscription",
@@ -65,8 +29,9 @@ namespace Tesira_DSP_EPI.Bridge.JoinMaps
                     JoinType = eJoinType.Digital
                 });
 
-        [JoinName("Name")] public JoinDataComplete Name =
-            new JoinDataComplete(new JoinData {JoinNumber = 1, JoinSpan = 1},
+        [JoinName("Name")]
+        public JoinDataComplete Name =
+            new JoinDataComplete(new JoinData { JoinNumber = 1, JoinSpan = 1 },
                 new JoinMetadata
                 {
                     Description = "Device Name",
@@ -74,8 +39,9 @@ namespace Tesira_DSP_EPI.Bridge.JoinMaps
                     JoinType = eJoinType.Serial
                 });
 
-        [JoinName("CommandPassThru")] public JoinDataComplete CommandPassThru =
-            new JoinDataComplete(new JoinData {JoinNumber = 2, JoinSpan = 1},
+        [JoinName("CommandPassThru")]
+        public JoinDataComplete CommandPassThru =
+            new JoinDataComplete(new JoinData { JoinNumber = 2, JoinSpan = 1 },
                 new JoinMetadata
                 {
                     Description = "Pass discrete commands directly to/from the device",
@@ -136,7 +102,7 @@ namespace Tesira_DSP_EPI.Bridge.JoinMaps
 
 
         public TesiraDspDeviceJoinMapAdvancedStandalone(uint joinStart)
-            : base(joinStart, typeof (TesiraDspDeviceJoinMapAdvancedStandalone))
+            : base(joinStart, typeof(TesiraDspDeviceJoinMapAdvancedStandalone))
         {
         }
     }

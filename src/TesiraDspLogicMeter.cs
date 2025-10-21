@@ -1,8 +1,6 @@
-using System;
 using PepperDash.Core.Logging;
 using PepperDash.Essentials.Core;
 using PepperDash.Essentials.Core.DeviceTypeInterfaces;
-using Tesira_DSP_EPI;
 
 namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
 {
@@ -21,12 +19,8 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
       }
     }
 
-    private readonly int _defaultPollTime;
-
-    private const string MeterAttributeCode = "state";
-    private const int DefaultPollTimeDefault = 500;
-
-    private const string KeyFormatter = "{0}--{1}";
+    private const string meterAttributeCode = "state";
+    private const int defaultPollTime = 500;
 
     /// <summary>
     /// Subscription Identifer for Meter Data
@@ -37,7 +31,6 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
     /// Integer Feedback for Meter
     /// </summary>
     public IntFeedback MeterFeedback { get; set; }
-    int _currentMeter;
 
     /// <summary>
     /// Represents the subscription status of the meter.
@@ -45,7 +38,7 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
     public BoolFeedback SubscribedFeedback { get; set; }
 
     public TesiraDspLogicMeter(string key, TesiraLogicMeterBlockConfig config, TesiraDsp parent)
-      : base(config.MeterInstanceTag, string.Empty, config.Index, 0, parent, $"{parent.Key}--{key}", config.Label, config.BridgeIndex)
+      : base(config.MeterInstanceTag, string.Empty, config.Index, 0, parent, string.Format(TesiraDsp.KeyFormatter, parent.Key, key), config.Label, config.BridgeIndex)
     {
       Label = config.Label;
       Enabled = true;
@@ -60,7 +53,7 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
     {
       MeterCustomName = $"{InstanceTag1}__meter{Index1}";
       AddCustomName(MeterCustomName);
-      SendSubscriptionCommand(MeterCustomName, MeterAttributeCode, _defaultPollTime, 0);
+      SendSubscriptionCommand(MeterCustomName, meterAttributeCode, defaultPollTime, 0);
     }
 
     public override void ParseGetMessage(string attributeCode, string message)

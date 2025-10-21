@@ -1,14 +1,15 @@
 ﻿using System;
+using System.Text.RegularExpressions;
 using Crestron.SimplSharp;
 using Crestron.SimplSharpPro.DeviceSupport;
 using Newtonsoft.Json;
+using Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Bridge.JoinMaps.Standalone;
 using PepperDash.Core;
+using PepperDash.Core.Logging;
 using PepperDash.Essentials.Core;
-using System.Text.RegularExpressions;
 using PepperDash.Essentials.Core.Bridges;
-using Tesira_DSP_EPI.Bridge.JoinMaps;
 
-namespace Tesira_DSP_EPI
+namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
 {
     //Mixer1 get crosspointLevelState 1 1
     //Mixer1 set crosspointLevelState 1 1 true
@@ -18,16 +19,13 @@ namespace Tesira_DSP_EPI
     {
         public string AttributeCode = "crosspointLevelState";
 
-        private const string KeyFormatter = "{0}--{1}";
+        private bool state;
 
+        private CTimer pollTimer;
 
-        bool _state;
+        private readonly bool pollEnable;
 
-        private CTimer _pollTimer;
-
-        private readonly bool _pollEnable;
-
-        private readonly long _pollTime;
+        private readonly long pollTime;
 
         /// <summary>
         /// Boolean Feedback for Component State
@@ -43,12 +41,12 @@ namespace Tesira_DSP_EPI
         public TesiraDspCrosspointState(string key, TesiraCrosspointStateBlockConfig config, TesiraDsp parent)
             : base(
                 config.MatrixInstanceTag, string.Empty, config.Index1, config.Index2, parent,
-                string.Format(KeyFormatter, parent.Key, key), config.Label, config.BridgeIndex)
+                string.Format(TesiraDsp.KeyFormatter, parent.Key, key), config.Label, config.BridgeIndex)
         {
             Label = config.Label;
             Enabled = config.Enabled;
 
-            CrosspointStateFeedback = new BoolFeedback(Key + "-CrosspointStateFeedback", () => _state);
+            CrosspointStateFeedback = new BoolFeedback(Key + "-CrosspointStateFeedback", () => state);
 
             Feedbacks.Add(CrosspointStateFeedback);
             Feedbacks.Add(NameFeedback);
@@ -56,10 +54,10 @@ namespace Tesira_DSP_EPI
 
             if (!config.Enabled) return;
             DeviceManager.AddDevice(this);
-            _pollEnable = config.PollEnable;
-            if (_pollEnable)
+            pollEnable = config.PollEnable;
+            if (pollEnable)
             {
-                _pollTime = config.PollTimeMs < 10000 ? 10000 : config.PollTimeMs;
+                pollTime = config.PollTimeMs < 10000 ? 10000 : config.PollTimeMs;
             }
 
         }
@@ -71,14 +69,14 @@ namespace Tesira_DSP_EPI
         {
             GetState();
 
-            if (!_pollEnable) return;
-            if(_pollTimer == null)
-                _pollTimer = new CTimer(o => GetState(), null, _pollTime, _pollTime);
+            if (!pollEnable) return;
+            if (pollTimer == null)
+                pollTimer = new CTimer(o => GetState(), null, pollTime, pollTime);
         }
 
         public override void Unsubscribe()
         {
-            _pollTimer = null;
+            pollTimer = null;
         }
 
         /// <summary>
@@ -86,8 +84,8 @@ namespace Tesira_DSP_EPI
         /// </summary>
         public void GetState()
         {
-            Debug.Console(2, this, "GetState sent to {0}", Key);
-            SendFullCommand("get", AttributeCode, String.Empty, 1);
+            this.LogVerbose("GetState sent to {key}", Key);
+            SendFullCommand("get", AttributeCode, string.Empty, 1);
         }
 
         /// <summary>
@@ -95,7 +93,7 @@ namespace Tesira_DSP_EPI
         /// </summary>
         public void StateOn()
         {
-            Debug.Console(2, this, "StateOn sent to {0}", Key);
+            this.LogVerbose("StateOn sent to {key}", Key);
             SendFullCommand("set", AttributeCode, "true", 1);
             GetState();
         }
@@ -105,7 +103,7 @@ namespace Tesira_DSP_EPI
         /// </summary>
         public void StateOff()
         {
-            Debug.Console(2, this, "StateOff sent to {0}", Key);
+            this.LogVerbose("StateOff sent to {key}", Key);
             SendFullCommand("set", AttributeCode, "false", 1);
             GetState();
         }
@@ -115,13 +113,13 @@ namespace Tesira_DSP_EPI
         /// </summary>
         public void StateToggle()
         {
-            Debug.Console(2, this, "StateToggle sent to {0}", Key);
+            this.LogVerbose("StateToggle sent to {key}", Key);
             SendFullCommand("toggle", AttributeCode, String.Empty, 1);
             GetState();
         }
 
-        const string ParsePattern = "[^ ]* (.*)";
-        private readonly static Regex ParseRegex = new Regex(ParsePattern);
+        private const string parsePattern = "[^ ]* (.*)";
+        private readonly static Regex parseRegex = new Regex(parsePattern);
 
 
         /// <summary>
@@ -133,40 +131,40 @@ namespace Tesira_DSP_EPI
         {
             try
             {
-                Debug.Console(2, this, "Parsing Message - '{0}' : Message has an attributeCode of {1}", message,
-                    attributeCode);
+                this.LogVerbose("Parsing Message: {message}. AttributeCode: {attributeCode}", message, attributeCode);
                 // Parse an "+OK" message
 
-                var match = ParseRegex.Match(message);
+                var match = parseRegex.Match(message);
 
                 if (!match.Success) return;
                 var value = match.Groups[1].Value;
 
-                Debug.Console(1, this, "xPoint Response: '{0}' Value: '{1}'", attributeCode, value);
+                this.LogVerbose("xPoint Response: {attributeCode} Value: {value}", attributeCode, value);
 
-				if (message.Contains("StandardMixerInterface"))
-				{
+                if (message.Contains("StandardMixerInterface"))
+                {
 
-					AttributeCode = string.Format("crosspoint {0} {1}", Index1, Index2);
-					Debug.Console(2, this, "StandardMixerInterface: {0}", AttributeCode);
-					GetState();
-					return;
-				}
-				
-				if (message.Equals("+OK", StringComparison.OrdinalIgnoreCase)){ return;}
+                    AttributeCode = string.Format("crosspoint {0} {1}", Index1, Index2);
+                    this.LogVerbose("StandardMixerInterface: {attributeCode}", AttributeCode);
+                    GetState();
+                    return;
+                }
+
+                if (message.Equals("+OK", StringComparison.OrdinalIgnoreCase)) { return; }
 
                 if (!attributeCode.Equals(AttributeCode, StringComparison.InvariantCultureIgnoreCase)) return;
-                _state = bool.Parse(value);
-                Debug.Console(2, this, "New Value: {0}", _state);
+                state = bool.Parse(value);
+                this.LogVerbose("New Value: {state}", state);
                 CrosspointStateFeedback.FireUpdate();
             }
 
             catch (Exception e)
             {
-                Debug.Console(2, "Unable to parse message: '{0}'\n{1}", message, e);
+                this.LogError("Unable to parse {message}: {exception}", message, e.Message);
+                this.LogDebug(e, "Stack Trace: ");
             }
         }
-		
+
         public override void LinkToApi(BasicTriList trilist, uint joinStart, string joinMapKey, EiscApiAdvanced bridge)
         {
             var joinMap = new TesiraCrosspointStateJoinMapAdvancedStandalone(joinStart);
@@ -181,13 +179,13 @@ namespace Tesira_DSP_EPI
                 bridge.AddJoinMap(Key, joinMap);
             }
 
-            Debug.Console(1, this, "Linking to Trilist '{0}'", trilist.ID.ToString("X"));
+            this.LogDebug("Linking to Trilist {trilistId:X}", trilist.ID);
 
-            Debug.Console(2, "Tesira Crosspoint State {0} connect", Key);
+            this.LogDebug("Tesira Crosspoint State {key} connect", Key);
 
             if (!Enabled) return;
 
-            Debug.Console(2, this, "Adding Crosspoint State ControlPoint {0} | JoinStart:{1}", Key, joinMap.Label.JoinNumber);
+            this.LogDebug("Adding Crosspoint State ControlPoint {key} | JoinStart:{joinStart}", Key, joinMap.Label.JoinNumber);
             CrosspointStateFeedback.LinkInputSig(trilist.BooleanInput[joinMap.Toggle.JoinNumber]);
             CrosspointStateFeedback.LinkInputSig(trilist.BooleanInput[joinMap.On.JoinNumber]);
 

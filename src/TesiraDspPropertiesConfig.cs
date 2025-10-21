@@ -2,7 +2,7 @@
 using Newtonsoft.Json;
 using PepperDash.Essentials.Core;
 
-namespace Tesira_DSP_EPI
+namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
 {
     public class TesiraDspPropertiesConfig
     {
@@ -288,7 +288,7 @@ namespace Tesira_DSP_EPI
 
         public TesiraDspPresets()
         {
-            LabelFeedback = new StringFeedback(() => Label);
+            LabelFeedback = new StringFeedback("label", () => Label);
         }
     }
 

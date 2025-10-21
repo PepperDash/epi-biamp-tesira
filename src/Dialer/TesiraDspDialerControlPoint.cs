@@ -1,15 +1,14 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using Crestron.SimplSharpPro.DeviceSupport;
-using PepperDash.Core;
+using Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Interfaces;
+using PepperDash.Core.Logging;
 using PepperDash.Essentials.Core.Bridges;
 using PepperDash.Essentials.Devices.Common.AudioCodec;
 using PepperDash.Essentials.Devices.Common.Codec;
-using Tesira_DSP_EPI.Interfaces;
 
-namespace Tesira_DSP_EPI
+namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Dialer
 {
-    public class TesiraDspDialerControlPoint : AudioCodecBase, ISubscribedComponent
+    public abstract class TesiraDspDialerControlPoint : AudioCodecBase, ISubscribedComponent, IBridgeAdvanced
     {
         public string InstanceTag1 { get; set; }
         public string InstanceTag2 { get; set; }
@@ -19,16 +18,16 @@ namespace Tesira_DSP_EPI
         public string Label { get; set; }
         public readonly uint? BridgeIndex;
 
-        public List<string> CustomNames { get; set; } 
+        public List<string> CustomNames { get; set; }
 
         private const string KeyFormatter = "{0}--{1}";
 
         public virtual bool IsSubscribed { get; protected set; }
 
-		protected TesiraDspDialerControlPoint(string key, string instanceTag1, string instanceTag2, int index1, int index2, TesiraDsp parent, uint? bridgeIndex)
+        protected TesiraDspDialerControlPoint(string key, string instanceTag1, string instanceTag2, int index1, int index2, TesiraDsp parent, uint? bridgeIndex)
             : base(string.Format(KeyFormatter, parent.Key, key), key)
-		{
-		    BridgeIndex = bridgeIndex;
+        {
+            BridgeIndex = bridgeIndex;
             InstanceTag1 = string.IsNullOrEmpty(instanceTag1) ? "" : instanceTag1;
             InstanceTag2 = string.IsNullOrEmpty(instanceTag2) ? "" : instanceTag2;
             Index1 = index1;
@@ -38,10 +37,10 @@ namespace Tesira_DSP_EPI
         }
 
 
-        virtual public void Subscribe() {}
+        virtual public void Subscribe() { }
 
-        virtual public void Unsubscribe() {}
-   
+        virtual public void Unsubscribe() { }
+
         /// <summary>
         /// Sends a command to the DSP for a specific control component
         /// </summary>
@@ -53,7 +52,7 @@ namespace Tesira_DSP_EPI
         {
             if (string.IsNullOrEmpty(attributeCode))
             {
-                Debug.Console(2, this, Debug.ErrorLogLevel.Error, "SendFullCommand({0}, {1}, {2}, {3}) Error: AttributeCode is null or empty", command, attributeCode, value, instanceTag);
+                this.LogError("Error: AttributeCode is null or empty. Parameters: {command} {attributeCode} {value} {instanceTag}", command, attributeCode, value, instanceTag);
                 return;
             }
 
@@ -83,10 +82,10 @@ namespace Tesira_DSP_EPI
                 attributeCode == "dtmf" || attributeCode == "state")
             {
                 //Command requires Index
-                if (String.IsNullOrEmpty(value))
+                if (string.IsNullOrEmpty(value))
                 {
-                    cmd = String.IsNullOrEmpty(command) ? 
-                        string.Format("{0} {1} {2} ", localInstanceTag, attributeCode, Index1) : 
+                    cmd = string.IsNullOrEmpty(command) ?
+                        string.Format("{0} {1} {2} ", localInstanceTag, attributeCode, Index1) :
                         string.Format("{0} {1} {2} {3}", localInstanceTag, command, attributeCode, Index1);
                 }
                 else
@@ -97,20 +96,20 @@ namespace Tesira_DSP_EPI
             }
 
 
-            else if ( attributeCode == "dial" || attributeCode == "end" || attributeCode == "onHook" ||
-                attributeCode == "offHook" || attributeCode == "answer" || attributeCode == "hold" || 
+            else if (attributeCode == "dial" || attributeCode == "end" || attributeCode == "onHook" ||
+                attributeCode == "offHook" || attributeCode == "answer" || attributeCode == "hold" ||
                 attributeCode == "resume")
             {
                 //requires index, but does not require command
-                cmd = String.IsNullOrEmpty(value) ? 
-                    string.Format("{0} {1} {2} {3}", localInstanceTag, attributeCode, Index1, Index2) : 
+                cmd = string.IsNullOrEmpty(value) ?
+                    string.Format("{0} {1} {2} {3}", localInstanceTag, attributeCode, Index1, Index2) :
                     string.Format("{0} {1} {2} {3} {4}", localInstanceTag, attributeCode, Index1, Index2, value);
             }
 
             else
             {
                 //Command does not require Index
-                cmd = String.IsNullOrEmpty(value) ? string.Format("{0} {1} {2}", localInstanceTag, command, attributeCode) : string.Format("{0} {1} {2} {3}", localInstanceTag, command, attributeCode, value);
+                cmd = string.IsNullOrEmpty(value) ? string.Format("{0} {1} {2}", localInstanceTag, command, attributeCode) : string.Format("{0} {1} {2} {3}", localInstanceTag, command, attributeCode, value);
             }
 
             if (command == "get")
@@ -150,7 +149,7 @@ namespace Tesira_DSP_EPI
             // Ex: "RoomLevel subscribe level 1 MyRoomLevel 500"
             if (string.IsNullOrEmpty(customName) || string.IsNullOrEmpty(attributeCode))
             {
-                Debug.Console(2, this, "SendSubscriptionCommand({0}, {1}, {2}, {3}) Error: CustomName or AttributeCode are null or empty", customName, attributeCode, responseRate, instanceTag);
+                this.LogError("Error: CustomName or AttributeCode is null or empty. Parameters: {customName} {attributeCode} {responseRate} {instanceTag}", customName, attributeCode, responseRate, instanceTag);
                 return;
             }
 
@@ -169,7 +168,7 @@ namespace Tesira_DSP_EPI
                     localInstanceTag = InstanceTag1;
                     break;
             }
-			if (attributeCode == "callState" || attributeCode == "sourceSelection" || attributeCode == "hookState")
+            if (attributeCode == "callState" || attributeCode == "sourceSelection" || attributeCode == "hookState")
             {
                 cmd = string.Format("\"{0}\" subscribe {1} {2} {3}", localInstanceTag, attributeCode, customName, responseRate);
             }
@@ -183,8 +182,6 @@ namespace Tesira_DSP_EPI
                 cmd = string.Format("\"{0}\" subscribe {1} {2} {3}", localInstanceTag, attributeCode, Index1, customName);
             }
 
-            //Parent.WatchDogList.Add(customName,cmd);
-            //Parent.SendLine(cmd);
             Parent.SendLine(cmd);
         }
 
@@ -194,7 +191,7 @@ namespace Tesira_DSP_EPI
             // Ex: "RoomLevel subscribe level 1 MyRoomLevel 500"
             if (string.IsNullOrEmpty(customName) || string.IsNullOrEmpty(attributeCode))
             {
-                Debug.Console(2, this, "SendUnSubscriptionCommand({0}, {1}, {2}) Error: CustomName or AttributeCode are null or empty", customName, attributeCode, instanceTag);
+                this.LogError("Error: CustomName or AttributeCode is null or empty. Parameters: {customName} {attributeCode} {instanceTag}", customName, attributeCode, instanceTag);
                 return;
             }
 
@@ -223,11 +220,9 @@ namespace Tesira_DSP_EPI
                 cmd = string.Format("\"{0}\" unsubscribe {1} {2} {3}", localInstanceTag, attributeCode, Index1, customName);
             }
 
-            //Parent.WatchDogList.Add(customName,cmd);
-            //Parent.SendLine(cmd);
             Parent.SendLine(cmd);
         }
-        
+
         public virtual void DoPoll()
         {
 
@@ -250,18 +245,8 @@ namespace Tesira_DSP_EPI
 
         #region IBridgeAdvanced Members
 
-        public void LinkToApi(BasicTriList trilist, uint joinStart, string joinMapKey, EiscApiAdvanced bridge)
-        {
-            throw new NotImplementedException();
-        }
+        public abstract void LinkToApi(BasicTriList trilist, uint joinStart, string joinMapKey, EiscApiAdvanced bridge);
 
-        #endregion
-
-        #region ISubscribedComponent Members
-
-
-        
-
-        #endregion
+        #endregion        
     }
 }

@@ -1,0 +1,20 @@
+root=true
+
+[*.cs]
+indent_style=space
+indent_size=2
+
+# .editorconfig
+
+# Define a naming style for camelCase without an underscore prefix
+dotnet_naming_style.private_field_camel_case.capitalization = camel_case
+dotnet_naming_style.private_field_camel_case.required_prefix = 
+
+# Define a naming rule for private fields to use the defined style
+dotnet_naming_rule.private_field_no_underscore.symbols = private_fields
+dotnet_naming_rule.private_field_no_underscore.style = private_field_camel_case
+dotnet_naming_rule.private_field_no_underscore.severity = warning
+
+# Define the symbol kind for private fields
+dotnet_naming_symbols.private_fields.applicable_kinds = field
+dotnet_naming_symbols.private_fields.applicable_accessibilities = private

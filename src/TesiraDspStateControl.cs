@@ -2,20 +2,21 @@
 using System.Text.RegularExpressions;
 using Crestron.SimplSharpPro.DeviceSupport;
 using Newtonsoft.Json;
+using Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Bridge.JoinMaps.Standalone;
 using PepperDash.Core;
+using PepperDash.Core.Logging;
 using PepperDash.Essentials.Core;
 using PepperDash.Essentials.Core.Bridges;
 using PepperDash.Essentials.Core.DeviceTypeInterfaces;
-using Tesira_DSP_EPI.Bridge.JoinMaps;
 
-namespace Tesira_DSP_EPI
+namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
 {
     public class TesiraDspStateControl : TesiraDspControlPoint, IPrivacy, IStateFeedback
     {
-        bool _state;
-        int _tagForSubscription;
+        private bool state;
+        private readonly int tagForSubscription;
 
-        private const string KeyFormatter = "{0}--{1}";
+        private const string keyFormatter = "{0}--{1}";
 
         /// <summary>
         /// Boolean Feedback for State Value
@@ -34,16 +35,13 @@ namespace Tesira_DSP_EPI
         /// <param name="config">Config Object for Component</param>
         /// <param name="parent">Component Parent Object</param>
 		public TesiraDspStateControl(string key, TesiraStateControlBlockConfig config, TesiraDsp parent)
-            : base(config.StateInstanceTag, config.SubscriptionInstanceTag, config.Index, 0, parent, string.Format(KeyFormatter, parent.Key, key), config.Label, config.BridgeIndex)
+            : base(config.StateInstanceTag, config.SubscriptionInstanceTag, config.Index, 0, parent, string.Format(keyFormatter, parent.Key, key), config.Label, config.BridgeIndex)
         {
-            Debug.Console(2, this, "New State Instance Tag = {0}", config.StateInstanceTag);
-            Debug.Console(2, this, "Starting State {0} Initialize", key);
-
-            StateFeedback = new BoolFeedback(Key + "-StateFeedback", () => _state);
-            PrivacyModeIsOnFeedback = new BoolFeedback(Key + "-PrivacyFeedback", () => _state);
+            StateFeedback = new BoolFeedback(Key + "-StateFeedback", () => state);
+            PrivacyModeIsOnFeedback = new BoolFeedback(Key + "-PrivacyFeedback", () => state);
 
             //Look for second instance tag for subscription on state, if not defined just try to subscribe to the state object (instance tag 1)
-            _tagForSubscription = string.IsNullOrEmpty(config.SubscriptionInstanceTag) ? 1 : 2;
+            tagForSubscription = string.IsNullOrEmpty(config.SubscriptionInstanceTag) ? 1 : 2;
             StateCustomName = string.Format("{0}__state{1}", config.StateInstanceTag, Index1);
 
             Feedbacks.Add(StateFeedback);
@@ -56,7 +54,7 @@ namespace Tesira_DSP_EPI
 
         private void Initialize(TesiraStateControlBlockConfig config)
         {
-            Debug.Console(2, this, "Adding StateControl '{0}'", Key);
+            this.LogVerbose("Adding StateControl {key}", Key);
             IsSubscribed = false;
             Enabled = config.Enabled;
         }
@@ -66,9 +64,10 @@ namespace Tesira_DSP_EPI
         /// </summary>
         public override void Subscribe()
         {
-            Debug.Console(2, this, "StateCustomName = {0}", StateCustomName);
+            this.LogVerbose("StateCustomName = {customName}", StateCustomName);
+
             AddCustomName(StateCustomName);
-            SendSubscriptionCommand(StateCustomName, "state", 250, _tagForSubscription);
+            SendSubscriptionCommand(StateCustomName, "state", 250, tagForSubscription);
 
             GetState();
         }
@@ -79,8 +78,8 @@ namespace Tesira_DSP_EPI
         public override void Unsubscribe()
         {
             IsSubscribed = false;
-            Debug.Console(2, this, "StateCustomName = {0}", StateCustomName);
-            SendUnSubscriptionCommand(StateCustomName, "state", _tagForSubscription);
+            this.LogVerbose("StateCustomName = {customName}", StateCustomName);
+            SendUnSubscriptionCommand(StateCustomName, "state", tagForSubscription);
         }
 
         /// <summary>
@@ -94,7 +93,7 @@ namespace Tesira_DSP_EPI
             // Check for valid subscription response
 
             if (customName != StateCustomName) return;
-            _state = bool.Parse(value);
+            state = bool.Parse(value);
             FireFeedbacks();
             IsSubscribed = true;
         }
@@ -107,8 +106,8 @@ namespace Tesira_DSP_EPI
             }
         }
 
-        const string ParsePattern = "[^ ]* (.*)";
-        private readonly static Regex ParseRegex = new Regex(ParsePattern);
+        private const string parsePattern = "[^ ]* (.*)";
+        private readonly static Regex parseRegex = new Regex(parsePattern);
 
         /// <summary>
         /// Parses a non subscription response
@@ -119,28 +118,29 @@ namespace Tesira_DSP_EPI
         {
             try
             {
-                Debug.Console(2, this, "Parsing Message - '{0}' : Message has an attributeCode of {1}", message, attributeCode);
+                this.LogVerbose("Parsing Message: {message}. attributeCode: {attributeCode}", message, attributeCode);
                 // Parse an "+OK" message
 
-                var match = ParseRegex.Match(message);
+                var match = parseRegex.Match(message);
 
                 if (!match.Success) return;
 
                 var value = match.Groups[1].Value;
 
-                Debug.Console(1, this, "Response: '{0}' Value: '{1}'", attributeCode, value);
+                this.LogDebug("Response: {attributeCode} Value: {value}", attributeCode, value);
 
                 if (message.IndexOf("+OK", StringComparison.OrdinalIgnoreCase) <= -1) return;
 
                 if (attributeCode != "state") return;
 
-                _state = bool.Parse(value);
+                state = bool.Parse(value);
                 FireFeedbacks();
                 IsSubscribed = true;
             }
             catch (Exception e)
             {
-                Debug.Console(2, "Unable to parse message: '{0}'\n{1}", message, e);
+                this.LogError("Unable to parse {message}: {exception}", message, e.Message);
+                this.LogDebug(e, "Stack Trace: ");
             }
         }
 
@@ -149,8 +149,7 @@ namespace Tesira_DSP_EPI
         /// </summary>
         public void GetState()
         {
-            Debug.Console(2, this, "GetState sent to {0}", Key);
-            SendFullCommand("get", "state", String.Empty, 1);
+            SendFullCommand("get", "state", string.Empty, 1);
         }
 
         /// <summary>
@@ -158,7 +157,7 @@ namespace Tesira_DSP_EPI
         /// </summary>
         public void StateOn()
         {
-            Debug.Console(2, this, "StateOn sent to {0}", Key);
+            this.LogVerbose("StateOn sent to {key}", Key);
             SendFullCommand("set", "state", "true", 1);
             GetState();
         }
@@ -168,7 +167,6 @@ namespace Tesira_DSP_EPI
         /// </summary>
         public void StateOff()
         {
-            Debug.Console(2, this, "StateOff sent to {0}", Key);
             SendFullCommand("set", "state", "false", 1);
             GetState();
         }
@@ -178,12 +176,11 @@ namespace Tesira_DSP_EPI
         /// </summary>
         public void StateToggle()
         {
-            Debug.Console(2, this, "StateToggle sent to {0}", Key);
-            if (_state)
+            if (state)
             {
                 SendFullCommand("set", "state", "false", 1);
             }
-            else if (!_state)
+            else if (!state)
             {
                 SendFullCommand("set", "state", "true", 1);
             }
@@ -199,14 +196,11 @@ namespace Tesira_DSP_EPI
             if (!string.IsNullOrEmpty(joinMapSerialized))
                 joinMap = JsonConvert.DeserializeObject<TesiraStateJoinMapAdvancedStandalone>(joinMapSerialized);
 
-            if (bridge != null)
-            {
-                bridge.AddJoinMap(Key, joinMap);
-            }
+            bridge?.AddJoinMap(Key, joinMap);
 
             if (!Enabled) return;
 
-            Debug.Console(2, this, "Tesira State {0} is Enabled", Key);
+            this.LogVerbose("Tesira State {key} is Enabled", Key);
 
             StateFeedback.LinkInputSig(trilist.BooleanInput[joinMap.Toggle.JoinNumber]);
             StateFeedback.LinkInputSig(trilist.BooleanInput[joinMap.On.JoinNumber]);

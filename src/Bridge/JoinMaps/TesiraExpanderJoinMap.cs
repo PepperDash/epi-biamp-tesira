@@ -1,7 +1,7 @@
 ﻿using PepperDash.Essentials.Core;
 
 
-namespace Tesira_DSP_EPI.Bridge.JoinMaps
+namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Bridge.JoinMaps
 {
     public class TesiraExpanderJoinMap : JoinMapBaseAdvanced
     {
@@ -45,8 +45,9 @@ namespace Tesira_DSP_EPI.Bridge.JoinMaps
                 JoinType = eJoinType.Serial
             });
 
-        [JoinName("MacAddress")] public JoinDataComplete MacAddress =
-            new JoinDataComplete(new JoinData {JoinNumber = 4, JoinSpan = 1},
+        [JoinName("MacAddress")]
+        public JoinDataComplete MacAddress =
+            new JoinDataComplete(new JoinData { JoinNumber = 4, JoinSpan = 1 },
                 new JoinMetadata
                 {
                     Description = "Device Mac Address",

@@ -2,23 +2,25 @@
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
+using System.Text.RegularExpressions;
 using Crestron.SimplSharp;
 using Crestron.SimplSharpPro.DeviceSupport;
 using Newtonsoft.Json;
+using Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Bridge.JoinMaps.Standalone;
+using Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Extensions;
 using PepperDash.Core;
+using PepperDash.Core.Logging;
 using PepperDash.Essentials.Core;
-using System.Text.RegularExpressions;
 using PepperDash.Essentials.Core.Bridges;
-using Tesira_DSP_EPI.Bridge.JoinMaps;
-using Tesira_DSP_EPI.Extensions;
-using IRoutingWithFeedback = Tesira_DSP_EPI.Interfaces.IRoutingWithFeedback;
+using IRoutingWithFeedback = Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Interfaces.IRoutingWithFeedback;
 
-namespace Tesira_DSP_EPI {
+namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
+{
     public class TesiraDspSwitcher : TesiraDspControlPoint, IRoutingWithFeedback
     {
-        private int _sourceIndex;
+        private int sourceIndex;
 
-        private const string KeyFormatter = "{0}--{1}";
+        private const string keyFormatter = "{0}--{1}";
 
         /// <summary>
         /// Collection of IRouting Input Ports
@@ -39,8 +41,8 @@ namespace Tesira_DSP_EPI {
 
         public Dictionary<uint, string> SwitcherInputs { get; private set; }
 
-        private readonly CTimer _pollTimer;
-        
+        private readonly CTimer pollTimer;
+
         private string SourceNamesXsig { get; set; }
 
         private string RoutedSourceName { get; set; }
@@ -55,14 +57,17 @@ namespace Tesira_DSP_EPI {
         /// </summary>
         public string SelectorCustomName { get; private set; }
 
-        private string Type { get; set; } 
+        private string Type { get; set; }
         private int Destination { get; set; }
-        private int SourceIndex {
-            get {
-                return _sourceIndex;
+        private int SourceIndex
+        {
+            get
+            {
+                return sourceIndex;
             }
-            set {
-                _sourceIndex = value;
+            set
+            {
+                sourceIndex = value;
                 RoutedSourceName = SwitcherInputs[(uint)value] ?? "None";
                 RoutedSourceNameFeedback.FireUpdate();
                 SourceIndexFeedback.FireUpdate();
@@ -81,7 +86,7 @@ namespace Tesira_DSP_EPI {
         /// <param name="config">Sqitcher Config Object</param>
         /// <param name="parent">Parent Object</param>
         public TesiraDspSwitcher(string key, TesiraSwitcherControlBlockConfig config, TesiraDsp parent)
-            : base(config.SwitcherInstanceTag, String.Empty, config.Index1, 0, parent, string.Format(KeyFormatter, parent.Key, key), config.Label, config.BridgeIndex)
+            : base(config.SwitcherInstanceTag, string.Empty, config.Index1, 0, parent, string.Format(keyFormatter, parent.Key, key), config.Label, config.BridgeIndex)
         {
             SwitcherInputs = new Dictionary<uint, string>();
 
@@ -96,7 +101,7 @@ namespace Tesira_DSP_EPI {
 
             //if (Type == "router")
             //{
-            _pollTimer = new CTimer(o => DoPoll(), Timeout.Infinite);   //can only be assigned in constructor
+            pollTimer = new CTimer(o => DoPoll(), Timeout.Infinite);   //can only be assigned in constructor
             //}
 
             RoutedSourceNameFeedback = new StringFeedback(Key + "-RoutedSourceNameFeedback", () => RoutedSourceName);
@@ -117,20 +122,20 @@ namespace Tesira_DSP_EPI {
 
         }
 
-        private void Initialize(TesiraSwitcherControlBlockConfig config) {
-			Type = "";
-            //DeviceManager.AddDevice(this);
+        private void Initialize(TesiraSwitcherControlBlockConfig config)
+        {
+            Type = "";
 
-            Debug.Console(2, this, "Adding SourceSelector '{0}'", Key);
+            this.LogVerbose("Adding SourceSelector {key}", Key);
 
             IsSubscribed = false;
 
             Label = config.Label;
 
-			if (config.Type != null)
-			{
-			    Type = config.Type;
-			}
+            if (config.Type != null)
+            {
+                Type = config.Type;
+            }
 
             Enabled = config.Enabled;
 
@@ -168,13 +173,13 @@ namespace Tesira_DSP_EPI {
             if (Type == "router")
             {
                 IsSubscribed = true;
-                if (_pollTimer != null)
+                if (pollTimer != null)
                 {
-                    _pollTimer.Reset(PollIntervalMs);
+                    pollTimer.Reset(PollIntervalMs);
                 }
                 return;
             }
-            SelectorCustomName = (string.Format("{0}__Selector{1}", InstanceTag1, Index1)).Replace(" ", string.Empty);
+            SelectorCustomName = string.Format("{0}__Selector{1}", InstanceTag1, Index1).Replace(" ", string.Empty);
             AddCustomName(SelectorCustomName);
             SendSubscriptionCommand(SelectorCustomName, "sourceSelection", 250, 1);
         }
@@ -186,7 +191,7 @@ namespace Tesira_DSP_EPI {
         {
             IsSubscribed = false;
 
-			SelectorCustomName = (string.Format("{0}__Selector{1}", InstanceTag1, Index1)).Replace(" ", string.Empty);
+            SelectorCustomName = string.Format("{0}__Selector{1}", InstanceTag1, Index1).Replace(" ", string.Empty);
 
             SendUnSubscriptionCommand(SelectorCustomName, "sourceSelection", 1);
         }
@@ -196,7 +201,8 @@ namespace Tesira_DSP_EPI {
         /// </summary>
         /// <param name="customName">Subscription Identifier</param>
         /// <param name="value">Response to parse</param>
-        public override void ParseSubscriptionMessage(string customName, string value) {
+        public override void ParseSubscriptionMessage(string customName, string value)
+        {
 
             // Check for valid subscription response
 
@@ -206,8 +212,8 @@ namespace Tesira_DSP_EPI {
             IsSubscribed = true;
         }
 
-        const string ParsePattern = "[^ ]* (.*)";
-        private readonly static Regex ParseRegex = new Regex(ParsePattern);
+        const string parsePattern = "[^ ]* (.*)";
+        private readonly static Regex parseRegex = new Regex(parsePattern);
 
 
         /// <summary>
@@ -215,21 +221,23 @@ namespace Tesira_DSP_EPI {
         /// </summary>
         /// <param name="attributeCode">Attribute Code Identifier</param>
         /// <param name="message">Response to parse</param>
-        public override void ParseGetMessage(string attributeCode, string message) {
-            try {
-                Debug.Console(2, this, "Parsing Message - '{0}' : Message has an attributeCode of {1}", message, attributeCode);
+        public override void ParseGetMessage(string attributeCode, string message)
+        {
+            try
+            {
+                this.LogVerbose("Parsing Message: {message}. AttributeCode: {attributeCode}", message, attributeCode);
                 // Parse an "+OK" message
 
-                var match = ParseRegex.Match(message);
+                var match = parseRegex.Match(message);
 
                 if (!match.Success) return;
                 var value = match.Groups[1].Value;
 
-                Debug.Console(1, this, "Response: '{0}' Value: '{1}'", attributeCode, value);
+                this.LogDebug("Response: {attributeCode} Value: {value}", attributeCode, value);
 
                 if (message.Contains("-ERR address not found"))
                 {
-                    Debug.ConsoleWithLog(2, this, "Baimp Error Address not found: '{0}'\n", InstanceTag1);
+                    this.LogError("Biamp Error Address not found: {instanceTag}", InstanceTag1);
                     return;
                 }
 
@@ -244,8 +252,10 @@ namespace Tesira_DSP_EPI {
                         break;
                 }
             }
-            catch (Exception e) {
-                Debug.Console(2, this, "Unable to parse message: '{0}'\n{1}", message, e);
+            catch (Exception e)
+            {
+                this.LogError("Unable to parse {message}: {exception}", message, e.Message);
+                this.LogDebug(e, "Stack Trace: ");
             }
 
         }
@@ -254,7 +264,8 @@ namespace Tesira_DSP_EPI {
         /// Set Source to route
         /// </summary>
         /// <param name="data">Source to route</param>
-        public void SetSource(int data) {
+        public void SetSource(int data)
+        {
             ExecuteSwitch(data, 0, eRoutingSignalType.Audio);
         }
 
@@ -262,7 +273,8 @@ namespace Tesira_DSP_EPI {
         /// Future use - to set Destination
         /// </summary>
         /// <param name="data"></param>
-        public void SetDestination(int data) {
+        public void SetDestination(int data)
+        {
             Destination = data;
         }
 
@@ -271,25 +283,24 @@ namespace Tesira_DSP_EPI {
             if (ShowRoutedString) return;
             SourceNamesXsig = XSigHelper.ClearData();
             SourceNamesFeedback.FireUpdate();
-            SourceNamesXsig = String.Empty;
+            SourceNamesXsig = string.Empty;
 
             foreach (var port in InputPorts)
             {
 
-                var input = port;                                
+                var input = port;
                 var index = Convert.ToUInt16(input.Selector);
                 SourceNamesXsig += XSigHelper.CreateByteString(index, input.Key);
 
-                Debug.Console(2, this, "{0} {1}", input.Key, new String('-', 50));
-                Debug.Console(2, this, @"    
-                  input.ParentDevice: {0}
-                  input.Selector: {1}
-                  input.Selector(Convert.ToUnit16): {2}
-                  input.Port: {3}
-                  input.ConnectionType: {4}
-                  input.Type: {5}", 
+                this.LogDebug("{key} {separator}", input.Key, new string('-', 50));
+                this.LogDebug(@"
+                  input.ParentDevice: {parentDevice}
+                  input.Selector: {selector}
+                  input.Port: {port}
+                  input.ConnectionType: {connectionType}
+                  input.Type: {type}",
                   input.ParentDevice, input.Selector, index, input.Port, input.ConnectionType, input.Type);
-                              Debug.Console(2, this, "{0}", new String('-', 50));
+                this.LogDebug("{separator}", new string('-', 50));
 
             }
             SourceNamesFeedback.FireUpdate();
@@ -297,12 +308,13 @@ namespace Tesira_DSP_EPI {
 
         public override void DoPoll()
         {
-            if(Type == "router"){
-                SendFullCommand("get", "input", String.Empty, 1);
-                _pollTimer.Reset(PollIntervalMs);
+            if (Type == "router")
+            {
+                SendFullCommand("get", "input", string.Empty, 1);
+                pollTimer.Reset(PollIntervalMs);
                 return;
             }
-            SendFullCommand("get", "sourceSelection", String.Empty, 1);
+            SendFullCommand("get", "sourceSelection", string.Empty, 1);
         }
 
         #region IRouting Members
@@ -370,7 +382,7 @@ namespace Tesira_DSP_EPI {
 
             if (!Enabled) return;
 
-            Debug.Console(2, this, "Tesira Switcher {0} is Enabled", Key);
+            this.LogVerbose("Tesira Switcher {key} is Enabled", Key);
 
             var s = this as IRoutingWithFeedback;
             s.SourceIndexFeedback.LinkInputSig(trilist.UShortInput[joinMap.Index.JoinNumber]);
