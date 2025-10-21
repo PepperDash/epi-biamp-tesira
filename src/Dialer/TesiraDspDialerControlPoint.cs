@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using Crestron.SimplSharpPro.DeviceSupport;
 using Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Interfaces;
+using Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Queue;
 using PepperDash.Core.Logging;
 using PepperDash.Essentials.Core.Bridges;
 using PepperDash.Essentials.Devices.Common.AudioCodec;

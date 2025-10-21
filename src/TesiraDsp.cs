@@ -10,6 +10,7 @@ using Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Bridge.JoinMaps;
 using Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Dialer;
 using Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Expander;
 using Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Interfaces;
+using Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Queue;
 using PepperDash.Core;
 using PepperDash.Core.Logging;
 using PepperDash.Essentials.Core;
@@ -763,20 +764,15 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
 
             try
             {
-
-                //this.LogDebug("RX: '{0}'", ShowHexResponse ? ComTextHelper.GetEscapedText(args.Text) : args.Text);
-
                 DeviceRx = args.Text;
 
                 CommandPassthruFeedback.FireUpdate();
 
                 if (args.Text.Length == 0) return;
 
-                //if (args.Text.IndexOf("Welcome", StringComparison.Ordinal) > -1)
                 if (args.Text.Contains("Welcome"))
                 {
-                    // Indicates a new TTP session
-                    // moved to CustomActivate() method
+                    // Indicates a new TTP session                    
                     if (!isSerialComm)
                     {
                         CommunicationMonitor.Start();
@@ -784,15 +780,12 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
                     CrestronInvoke.BeginInvoke(o => StartSubsciptionThread());
 
                 }
-
-                //else if (args.Text.IndexOf(ResubsriptionString, StringComparison.Ordinal) > -1)
                 else if (args.Text.Equals(ResubscriptionString, StringComparison.OrdinalIgnoreCase))
                 {
                     if (!string.IsNullOrEmpty(ResubscriptionString))
                         CommandQueue.Clear();
                     Resubscribe();
                 }
-
                 else if (args.Text.IndexOf("! ", StringComparison.Ordinal) >= 0)
                 {
 
@@ -803,7 +796,6 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
                     var customName = match.Groups[1].Value;
                     var value = match.Groups[2].Value;
                     this.LogVerbose("Subscription Message: 'Name: {0} Value:{1}'", customName, value);
-                    //CommandQueue.AdvanceQueue(args.Text);
 
                     foreach (var component in from component in ControlPointList let item = component from n in item.CustomNames.Where(n => n == customName) select component)
                     {
@@ -819,12 +811,6 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
                 else if (args.Text.IndexOf("+OK", StringComparison.Ordinal) == 0)
                 {
                     if (InitialStart) CheckSerialSendStatus();
-                    // if (args.Text == "+OK")       // Check for a simple "+OK" only 'ack' repsonse or a list response and ignore
-                    // return;
-
-                    // response is not from a subscribed attribute.  From a get/set/toggle/increment/decrement command
-                    //string pattern = "(?<=\" )(.*?)(?=\\+)";
-                    //string data = Regex.Replace(args.Text, pattern, "");
 
                     CommandQueue.AdvanceQueue(args.Text);
                 }
@@ -836,14 +822,12 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
                 else if (args.Text.IndexOf("-ERR", StringComparison.Ordinal) >= 0)
                 {
                     // Error response
-
                     if (args.Text.IndexOf("ALREADY_SUBSCRIBED", StringComparison.Ordinal) >= 0)
                     {
                         if (WatchDogSniffer)
                             this.LogDebug("The Watchdog didn't find anything.  Good Boy!");
 
                         WatchDogSniffer = false;
-                        //CommandQueue.AdvanceQueue(args.Text);
                     }
 
                     else
@@ -856,8 +840,8 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
             }
             catch (Exception e)
             {
-                if (args.Text.Length > 0)
-                    this.LogError(e, "Error parsing response {response}", args.Text);
+                this.LogError("Exception handling response: {response}: {exception}", args.Text, e.Message);
+                this.LogDebug(e, "Stack trace: ");
             }
 
         }
