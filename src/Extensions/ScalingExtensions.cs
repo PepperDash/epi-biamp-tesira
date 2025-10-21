@@ -1,7 +1,7 @@
 ﻿using PepperDash.Core;
 
 
-namespace Tesira_DSP_EPI.Extensions
+namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Extensions
 {
     public static class ScalingExtensions
     {
@@ -12,14 +12,14 @@ namespace Tesira_DSP_EPI.Extensions
             if (inputRange <= 0)
             {
                 //throw new ArithmeticException(string.Format("Invalid Input Range '{0}' for Scaling.  Min '{1}' Max '{2}'.", inputRange, inMin, inMax));
-                Debug.Console(0, parent, Debug.ErrorLogLevel.Notice, "Invalid Input Range '{0}' for Scaling.  Min '{1}' Max '{2}'.", inputRange, inMin, inMax);
+                Debug.LogError("Invalid Input Range {range} for Scaling.  Min '{min}' Max '{max}'", inputRange, inMin, inMax);
                 return input;
 
             }
 
             var outputRange = outMax - outMin;
 
-            var output = (((input - inMin) * outputRange) / inputRange) + outMin;
+            var output = ((input - inMin) * outputRange / inputRange) + outMin;
 
             return output;
         }

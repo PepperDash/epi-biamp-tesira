@@ -1,23 +1,22 @@
-﻿using System.Collections.Generic;
-using System;
-using Newtonsoft.Json;
-using PepperDash.Core;
-using PepperDash.Essentials.Core;
+﻿using System;
+using System.Collections.Generic;
 using Crestron.SimplSharpPro.DeviceSupport;
-using Tesira_DSP_EPI.Bridge.JoinMaps;
+using Newtonsoft.Json;
+using Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Bridge.JoinMaps.Standalone;
+using PepperDash.Core;
+using PepperDash.Core.Logging;
+using PepperDash.Essentials.Core;
 using PepperDash.Essentials.Core.Bridges;
 
-namespace Tesira_DSP_EPI
+namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
 {
-    public class TesiraDspPresetDevice : TesiraDspControlPoint, IDspPresets       
+    public class TesiraDspPresetDevice : TesiraDspControlPoint, IDspPresets
 
     {
-        private const string KeyFormatter = "{0}--{1}";
-
-
+        private const string keyFormatter = "{0}--{1}";
 
         public TesiraDspPresetDevice(TesiraDsp parent)
-            : base("", "", 0, 0, parent, String.Format(KeyFormatter, parent.Key, "Presets"), "Presets", 0)
+            : base("", "", 0, 0, parent, string.Format(keyFormatter, parent.Key, "Presets"), "Presets", 0)
         {
             Presets = parent.Presets;
         }
@@ -33,9 +32,9 @@ namespace Tesira_DSP_EPI
         {
             var presetJoinMap = new TesiraPresetJoinMapAdvancedStandalone(joinStart);
 
-            
+
             var joinMapSerialized = JoinMapHelper.GetSerializedJoinMapForDevice(joinMapKey);
-            
+
             if (!string.IsNullOrEmpty(joinMapSerialized))
                 presetJoinMap = JsonConvert.DeserializeObject<TesiraPresetJoinMapAdvancedStandalone>(joinMapSerialized);
 
@@ -53,7 +52,7 @@ namespace Tesira_DSP_EPI
                 bridge.AddJoinMap(Key, presetJoinMap);
             }
 
-            Debug.Console(1, this, "Linking to Trilist '{0}'", trilist.ID.ToString("X"));
+            this.LogDebug("Linking to Trilist {trilistId:X}", trilist.ID);
 
 
             trilist.SetStringSigAction(presetJoinMap.PresetName.JoinNumber, Parent.RunPreset);
@@ -99,9 +98,8 @@ namespace Tesira_DSP_EPI
         /// <param name="name">Preset Name</param>
         public void RunPreset(string name)
         {
-            Debug.Console(2, this, "Running Preset By Name - {0}", name);
+            this.LogVerbose("Running Preset By Name: {presetName}", name);
             Parent.RunPreset(name);
-            //CommandQueue.EnqueueCommand(string.Format("DEVICE recallPresetByName \"{0}\"", name));
         }
 
         /// <summary>
@@ -110,9 +108,8 @@ namespace Tesira_DSP_EPI
         /// <param name="id">Preset Id</param>
         public void RunPreset(int id)
         {
-            Debug.Console(2, this, "Running Preset By ID - {0}", id);
+            this.LogVerbose("Running Preset By ID: {presetId}", id);
             Parent.RunPreset(id);
-            //CommandQueue.EnqueueCommand(string.Format("DEVICE recallPreset {0}", id));
         }
 
         public void RecallPreset(string key)
@@ -130,11 +127,9 @@ namespace Tesira_DSP_EPI
         public string Name => Label;
         public int Index => PresetIndex;
 
-        public TesiraPreset(string key):base()
+        public TesiraPreset(string key) : base()
         {
             Key = key;
         }
     }
-
-    
 }

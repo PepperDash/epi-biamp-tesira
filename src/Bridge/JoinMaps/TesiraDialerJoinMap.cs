@@ -1,15 +1,16 @@
 ﻿using PepperDash.Essentials.Core;
 
 
-namespace Tesira_DSP_EPI.Bridge.JoinMaps
+namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Bridge.JoinMaps
 {
     /// <summary>
     /// Dialer Joinmap for Advanced Bridge - Meant for holistic DSP Object
     /// </summary>
     public class TesiraDialerJoinMapAdvanced : JoinMapBaseAdvanced
     {
-        [JoinName("IncomingCall")] public JoinDataComplete IncomingCall =
-            new JoinDataComplete(new JoinData {JoinNumber = 3100, JoinSpan = 1},
+        [JoinName("IncomingCall")]
+        public JoinDataComplete IncomingCall =
+            new JoinDataComplete(new JoinData { JoinNumber = 3100, JoinSpan = 1 },
                 new JoinMetadata
                 {
                     Description = "Call Incoming",
@@ -17,8 +18,9 @@ namespace Tesira_DSP_EPI.Bridge.JoinMaps
                     JoinType = eJoinType.Digital
                 });
 
-        [JoinName("Answer")] public JoinDataComplete Answer =
-            new JoinDataComplete(new JoinData {JoinNumber = 3106, JoinSpan = 1},
+        [JoinName("Answer")]
+        public JoinDataComplete Answer =
+            new JoinDataComplete(new JoinData { JoinNumber = 3106, JoinSpan = 1 },
                 new JoinMetadata
                 {
                     Description = "Answer Incoming Call",
@@ -26,8 +28,9 @@ namespace Tesira_DSP_EPI.Bridge.JoinMaps
                     JoinType = eJoinType.Digital
                 });
 
-        [JoinName("EndCall")] public JoinDataComplete EndCall =
-            new JoinDataComplete(new JoinData {JoinNumber = 3107, JoinSpan = 1},
+        [JoinName("EndCall")]
+        public JoinDataComplete EndCall =
+            new JoinDataComplete(new JoinData { JoinNumber = 3107, JoinSpan = 1 },
                 new JoinMetadata
                 {
                     Description = "End Call",
@@ -35,8 +38,9 @@ namespace Tesira_DSP_EPI.Bridge.JoinMaps
                     JoinType = eJoinType.Digital
                 });
 
-        [JoinName("KeyPadNumeric")] public JoinDataComplete KeyPadNumeric =
-            new JoinDataComplete(new JoinData {JoinNumber = 3110, JoinSpan = 10},
+        [JoinName("KeyPadNumeric")]
+        public JoinDataComplete KeyPadNumeric =
+            new JoinDataComplete(new JoinData { JoinNumber = 3110, JoinSpan = 10 },
                 new JoinMetadata
                 {
                     Description = "Keypad Digits 0-9",
@@ -44,8 +48,9 @@ namespace Tesira_DSP_EPI.Bridge.JoinMaps
                     JoinType = eJoinType.Digital
                 });
 
-        [JoinName("KeyPadStar")] public JoinDataComplete KeyPadStar =
-            new JoinDataComplete(new JoinData {JoinNumber = 3120, JoinSpan = 1},
+        [JoinName("KeyPadStar")]
+        public JoinDataComplete KeyPadStar =
+            new JoinDataComplete(new JoinData { JoinNumber = 3120, JoinSpan = 1 },
                 new JoinMetadata
                 {
                     Description = "Keypad *",
@@ -53,8 +58,9 @@ namespace Tesira_DSP_EPI.Bridge.JoinMaps
                     JoinType = eJoinType.Digital
                 });
 
-        [JoinName("KeyPadPound")] public JoinDataComplete KeyPadPound =
-            new JoinDataComplete(new JoinData {JoinNumber = 3121, JoinSpan = 1},
+        [JoinName("KeyPadPound")]
+        public JoinDataComplete KeyPadPound =
+            new JoinDataComplete(new JoinData { JoinNumber = 3121, JoinSpan = 1 },
                 new JoinMetadata
                 {
                     Description = "Keypad #",
@@ -62,8 +68,9 @@ namespace Tesira_DSP_EPI.Bridge.JoinMaps
                     JoinType = eJoinType.Digital
                 });
 
-        [JoinName("KeyPadClear")] public JoinDataComplete KeyPadClear =
-            new JoinDataComplete(new JoinData {JoinNumber = 3122, JoinSpan = 1},
+        [JoinName("KeyPadClear")]
+        public JoinDataComplete KeyPadClear =
+            new JoinDataComplete(new JoinData { JoinNumber = 3122, JoinSpan = 1 },
                 new JoinMetadata
                 {
                     Description = "Keypad Clear",
@@ -71,8 +78,9 @@ namespace Tesira_DSP_EPI.Bridge.JoinMaps
                     JoinType = eJoinType.Digital
                 });
 
-        [JoinName("KeyPadBackspace")] public JoinDataComplete KeyPadBackspace =
-            new JoinDataComplete(new JoinData {JoinNumber = 3123, JoinSpan = 1},
+        [JoinName("KeyPadBackspace")]
+        public JoinDataComplete KeyPadBackspace =
+            new JoinDataComplete(new JoinData { JoinNumber = 3123, JoinSpan = 1 },
                 new JoinMetadata
                 {
                     Description = "Keypad Backspace",
@@ -80,8 +88,9 @@ namespace Tesira_DSP_EPI.Bridge.JoinMaps
                     JoinType = eJoinType.Digital
                 });
 
-        [JoinName("KeyPadDial")] public JoinDataComplete KeyPadDial =
-            new JoinDataComplete(new JoinData {JoinNumber = 3124, JoinSpan = 1},
+        [JoinName("KeyPadDial")]
+        public JoinDataComplete KeyPadDial =
+            new JoinDataComplete(new JoinData { JoinNumber = 3124, JoinSpan = 1 },
                 new JoinMetadata
                 {
                     Description = "Keypad Dial and Feedback",
@@ -89,8 +98,9 @@ namespace Tesira_DSP_EPI.Bridge.JoinMaps
                     JoinType = eJoinType.Digital
                 });
 
-        [JoinName("AutoAnswerOn")] public JoinDataComplete AutoAnswerOn =
-            new JoinDataComplete(new JoinData {JoinNumber = 3125, JoinSpan = 1},
+        [JoinName("AutoAnswerOn")]
+        public JoinDataComplete AutoAnswerOn =
+            new JoinDataComplete(new JoinData { JoinNumber = 3125, JoinSpan = 1 },
                 new JoinMetadata
                 {
                     Description = "Auto Answer On and Feedback",
@@ -98,8 +108,9 @@ namespace Tesira_DSP_EPI.Bridge.JoinMaps
                     JoinType = eJoinType.Digital
                 });
 
-        [JoinName("AutoAnswerOff")] public JoinDataComplete AutoAnswerOff =
-            new JoinDataComplete(new JoinData {JoinNumber = 3126, JoinSpan = 1},
+        [JoinName("AutoAnswerOff")]
+        public JoinDataComplete AutoAnswerOff =
+            new JoinDataComplete(new JoinData { JoinNumber = 3126, JoinSpan = 1 },
                 new JoinMetadata
                 {
                     Description = "Auto Answer Off and Feedback",
@@ -107,8 +118,9 @@ namespace Tesira_DSP_EPI.Bridge.JoinMaps
                     JoinType = eJoinType.Digital
                 });
 
-        [JoinName("AutoAnswerToggle")] public JoinDataComplete AutoAnswerToggle =
-            new JoinDataComplete(new JoinData {JoinNumber = 3127, JoinSpan = 1},
+        [JoinName("AutoAnswerToggle")]
+        public JoinDataComplete AutoAnswerToggle =
+            new JoinDataComplete(new JoinData { JoinNumber = 3127, JoinSpan = 1 },
                 new JoinMetadata
                 {
                     Description = "Auto Answer Toggle and On Feedback",
@@ -116,8 +128,9 @@ namespace Tesira_DSP_EPI.Bridge.JoinMaps
                     JoinType = eJoinType.Digital
                 });
 
-        [JoinName("OnHook")] public JoinDataComplete OnHook =
-            new JoinDataComplete(new JoinData {JoinNumber = 3129, JoinSpan = 1},
+        [JoinName("OnHook")]
+        public JoinDataComplete OnHook =
+            new JoinDataComplete(new JoinData { JoinNumber = 3129, JoinSpan = 1 },
                 new JoinMetadata
                 {
                     Description = "On Hook Set and Feedback",
@@ -125,8 +138,9 @@ namespace Tesira_DSP_EPI.Bridge.JoinMaps
                     JoinType = eJoinType.Digital
                 });
 
-        [JoinName("OffHook")] public JoinDataComplete OffHook =
-            new JoinDataComplete(new JoinData {JoinNumber = 3130, JoinSpan = 1},
+        [JoinName("OffHook")]
+        public JoinDataComplete OffHook =
+            new JoinDataComplete(new JoinData { JoinNumber = 3130, JoinSpan = 1 },
                 new JoinMetadata
                 {
                     Description = "Off Hook Set and Feedback",
@@ -134,8 +148,9 @@ namespace Tesira_DSP_EPI.Bridge.JoinMaps
                     JoinType = eJoinType.Digital
                 });
 
-        [JoinName("DoNotDisturbToggle")] public JoinDataComplete DoNotDisturbToggle =
-            new JoinDataComplete(new JoinData {JoinNumber = 3132, JoinSpan = 1},
+        [JoinName("DoNotDisturbToggle")]
+        public JoinDataComplete DoNotDisturbToggle =
+            new JoinDataComplete(new JoinData { JoinNumber = 3132, JoinSpan = 1 },
                 new JoinMetadata
                 {
                     Description = "Do Not Disturb Toggle and Feedback",
@@ -143,8 +158,9 @@ namespace Tesira_DSP_EPI.Bridge.JoinMaps
                     JoinType = eJoinType.Digital
                 });
 
-        [JoinName("DoNotDisturbOn")] public JoinDataComplete DoNotDisturbOn =
-            new JoinDataComplete(new JoinData {JoinNumber = 3133, JoinSpan = 1},
+        [JoinName("DoNotDisturbOn")]
+        public JoinDataComplete DoNotDisturbOn =
+            new JoinDataComplete(new JoinData { JoinNumber = 3133, JoinSpan = 1 },
                 new JoinMetadata
                 {
                     Description = "Do Not Disturb On Set and Feedback",
@@ -152,8 +168,9 @@ namespace Tesira_DSP_EPI.Bridge.JoinMaps
                     JoinType = eJoinType.Digital
                 });
 
-        [JoinName("DoNotDisturbOff")] public JoinDataComplete DoNotDisturbOff =
-            new JoinDataComplete(new JoinData {JoinNumber = 3134, JoinSpan = 1},
+        [JoinName("DoNotDisturbOff")]
+        public JoinDataComplete DoNotDisturbOff =
+            new JoinDataComplete(new JoinData { JoinNumber = 3134, JoinSpan = 1 },
                 new JoinMetadata
                 {
                     Description = "Do Not Disturb Of Set and Feedback",
@@ -192,8 +209,9 @@ namespace Tesira_DSP_EPI.Bridge.JoinMaps
 
 
 
-        [JoinName("CallState")] public JoinDataComplete CallState =
-            new JoinDataComplete(new JoinData {JoinNumber = 3100, JoinSpan = 1},
+        [JoinName("CallState")]
+        public JoinDataComplete CallState =
+            new JoinDataComplete(new JoinData { JoinNumber = 3100, JoinSpan = 1 },
                 new JoinMetadata
                 {
                     Description = "Call State Feedback",
@@ -201,8 +219,9 @@ namespace Tesira_DSP_EPI.Bridge.JoinMaps
                     JoinType = eJoinType.Analog
                 });
 
-        [JoinName("DialString")] public JoinDataComplete DialString =
-            new JoinDataComplete(new JoinData {JoinNumber = 3100, JoinSpan = 1},
+        [JoinName("DialString")]
+        public JoinDataComplete DialString =
+            new JoinDataComplete(new JoinData { JoinNumber = 3100, JoinSpan = 1 },
                 new JoinMetadata
                 {
                     Description = "Dial String Send and Feedback",
@@ -210,8 +229,9 @@ namespace Tesira_DSP_EPI.Bridge.JoinMaps
                     JoinType = eJoinType.Serial
                 });
 
-        [JoinName("Label")] public JoinDataComplete Label =
-            new JoinDataComplete(new JoinData {JoinNumber = 3101, JoinSpan = 1},
+        [JoinName("Label")]
+        public JoinDataComplete Label =
+            new JoinDataComplete(new JoinData { JoinNumber = 3101, JoinSpan = 1 },
                 new JoinMetadata
                 {
                     Description = "Dialer Label",
@@ -219,8 +239,9 @@ namespace Tesira_DSP_EPI.Bridge.JoinMaps
                     JoinType = eJoinType.Serial
                 });
 
-        [JoinName("LastNumberDialerFb")] public JoinDataComplete LastNumberDialerFb =
-            new JoinDataComplete(new JoinData {JoinNumber = 3102, JoinSpan = 1},
+        [JoinName("LastNumberDialerFb")]
+        public JoinDataComplete LastNumberDialerFb =
+            new JoinDataComplete(new JoinData { JoinNumber = 3102, JoinSpan = 1 },
                 new JoinMetadata
                 {
                     Description = "Last Number Dialed Feedback",
@@ -228,8 +249,9 @@ namespace Tesira_DSP_EPI.Bridge.JoinMaps
                     JoinType = eJoinType.Serial
                 });
 
-        [JoinName("CallerIdNumberFb")] public JoinDataComplete CallerIdNumberFb =
-            new JoinDataComplete(new JoinData {JoinNumber = 3104, JoinSpan = 1},
+        [JoinName("CallerIdNumberFb")]
+        public JoinDataComplete CallerIdNumberFb =
+            new JoinDataComplete(new JoinData { JoinNumber = 3104, JoinSpan = 1 },
                 new JoinMetadata
                 {
                     Description = "Caller ID Number",
@@ -237,8 +259,9 @@ namespace Tesira_DSP_EPI.Bridge.JoinMaps
                     JoinType = eJoinType.Serial
                 });
 
-        [JoinName("CallerIdNameFb")] public JoinDataComplete CallerIdNameFb =
-            new JoinDataComplete(new JoinData {JoinNumber = 3105, JoinSpan = 1},
+        [JoinName("CallerIdNameFb")]
+        public JoinDataComplete CallerIdNameFb =
+            new JoinDataComplete(new JoinData { JoinNumber = 3105, JoinSpan = 1 },
                 new JoinMetadata
                 {
                     Description = "Caller ID Name",
@@ -246,8 +269,9 @@ namespace Tesira_DSP_EPI.Bridge.JoinMaps
                     JoinType = eJoinType.Serial
                 });
 
-        [JoinName("DisplayNumber")] public JoinDataComplete DisplayNumber =
-            new JoinDataComplete(new JoinData {JoinNumber = 3106, JoinSpan = 1},
+        [JoinName("DisplayNumber")]
+        public JoinDataComplete DisplayNumber =
+            new JoinDataComplete(new JoinData { JoinNumber = 3106, JoinSpan = 1 },
                 new JoinMetadata
                 {
                     Description = "This Line's Number",
@@ -257,7 +281,7 @@ namespace Tesira_DSP_EPI.Bridge.JoinMaps
 
 
         public TesiraDialerJoinMapAdvanced(uint joinStart)
-            : base(joinStart, typeof (TesiraDialerJoinMapAdvanced))
+            : base(joinStart, typeof(TesiraDialerJoinMapAdvanced))
         {
         }
     }
@@ -267,8 +291,9 @@ namespace Tesira_DSP_EPI.Bridge.JoinMaps
     /// </summary>
     public class TesiraDialerJoinMapAdvancedStandalone : JoinMapBaseAdvanced
     {
-        [JoinName("IncomingCall")] public JoinDataComplete IncomingCall =
-            new JoinDataComplete(new JoinData {JoinNumber = 1, JoinSpan = 1},
+        [JoinName("IncomingCall")]
+        public JoinDataComplete IncomingCall =
+            new JoinDataComplete(new JoinData { JoinNumber = 1, JoinSpan = 1 },
                 new JoinMetadata
                 {
                     Description = "Call Incoming",
@@ -276,8 +301,9 @@ namespace Tesira_DSP_EPI.Bridge.JoinMaps
                     JoinType = eJoinType.Digital
                 });
 
-        [JoinName("Answer")] public JoinDataComplete Answer =
-            new JoinDataComplete(new JoinData {JoinNumber = 2, JoinSpan = 1},
+        [JoinName("Answer")]
+        public JoinDataComplete Answer =
+            new JoinDataComplete(new JoinData { JoinNumber = 2, JoinSpan = 1 },
                 new JoinMetadata
                 {
                     Description = "Answer Incoming Call",
@@ -285,8 +311,9 @@ namespace Tesira_DSP_EPI.Bridge.JoinMaps
                     JoinType = eJoinType.Digital
                 });
 
-        [JoinName("EndCall")] public JoinDataComplete EndCall =
-            new JoinDataComplete(new JoinData {JoinNumber = 3, JoinSpan = 1},
+        [JoinName("EndCall")]
+        public JoinDataComplete EndCall =
+            new JoinDataComplete(new JoinData { JoinNumber = 3, JoinSpan = 1 },
                 new JoinMetadata
                 {
                     Description = "End Call",
@@ -294,8 +321,9 @@ namespace Tesira_DSP_EPI.Bridge.JoinMaps
                     JoinType = eJoinType.Digital
                 });
 
-        [JoinName("KeyPadNumeric")] public JoinDataComplete KeyPadNumeric =
-            new JoinDataComplete(new JoinData {JoinNumber = 4, JoinSpan = 10},
+        [JoinName("KeyPadNumeric")]
+        public JoinDataComplete KeyPadNumeric =
+            new JoinDataComplete(new JoinData { JoinNumber = 4, JoinSpan = 10 },
                 new JoinMetadata
                 {
                     Description = "Keypad Digits 0-9",
@@ -303,8 +331,9 @@ namespace Tesira_DSP_EPI.Bridge.JoinMaps
                     JoinType = eJoinType.Digital
                 });
 
-        [JoinName("KeyPadStar")] public JoinDataComplete KeyPadStar =
-            new JoinDataComplete(new JoinData {JoinNumber = 14, JoinSpan = 1},
+        [JoinName("KeyPadStar")]
+        public JoinDataComplete KeyPadStar =
+            new JoinDataComplete(new JoinData { JoinNumber = 14, JoinSpan = 1 },
                 new JoinMetadata
                 {
                     Description = "Keypad *",
@@ -312,8 +341,9 @@ namespace Tesira_DSP_EPI.Bridge.JoinMaps
                     JoinType = eJoinType.Digital
                 });
 
-        [JoinName("KeyPadPound")] public JoinDataComplete KeyPadPound =
-            new JoinDataComplete(new JoinData {JoinNumber = 15, JoinSpan = 1},
+        [JoinName("KeyPadPound")]
+        public JoinDataComplete KeyPadPound =
+            new JoinDataComplete(new JoinData { JoinNumber = 15, JoinSpan = 1 },
                 new JoinMetadata
                 {
                     Description = "Keypad #",
@@ -321,8 +351,9 @@ namespace Tesira_DSP_EPI.Bridge.JoinMaps
                     JoinType = eJoinType.Digital
                 });
 
-        [JoinName("KeyPadClear")] public JoinDataComplete KeyPadClear =
-            new JoinDataComplete(new JoinData {JoinNumber = 16, JoinSpan = 1},
+        [JoinName("KeyPadClear")]
+        public JoinDataComplete KeyPadClear =
+            new JoinDataComplete(new JoinData { JoinNumber = 16, JoinSpan = 1 },
                 new JoinMetadata
                 {
                     Description = "Keypad Clear",
@@ -330,8 +361,9 @@ namespace Tesira_DSP_EPI.Bridge.JoinMaps
                     JoinType = eJoinType.Digital
                 });
 
-        [JoinName("KeyPadBackspace")] public JoinDataComplete KeyPadBackspace =
-            new JoinDataComplete(new JoinData {JoinNumber = 17, JoinSpan = 1},
+        [JoinName("KeyPadBackspace")]
+        public JoinDataComplete KeyPadBackspace =
+            new JoinDataComplete(new JoinData { JoinNumber = 17, JoinSpan = 1 },
                 new JoinMetadata
                 {
                     Description = "Keypad Backspace",
@@ -339,8 +371,9 @@ namespace Tesira_DSP_EPI.Bridge.JoinMaps
                     JoinType = eJoinType.Digital
                 });
 
-        [JoinName("KeyPadDial")] public JoinDataComplete KeyPadDial =
-            new JoinDataComplete(new JoinData {JoinNumber = 18, JoinSpan = 1},
+        [JoinName("KeyPadDial")]
+        public JoinDataComplete KeyPadDial =
+            new JoinDataComplete(new JoinData { JoinNumber = 18, JoinSpan = 1 },
                 new JoinMetadata
                 {
                     Description = "Keypad Dial and Feedback",
@@ -348,8 +381,9 @@ namespace Tesira_DSP_EPI.Bridge.JoinMaps
                     JoinType = eJoinType.Digital
                 });
 
-        [JoinName("AutoAnswerOn")] public JoinDataComplete AutoAnswerOn =
-            new JoinDataComplete(new JoinData {JoinNumber = 19, JoinSpan = 1},
+        [JoinName("AutoAnswerOn")]
+        public JoinDataComplete AutoAnswerOn =
+            new JoinDataComplete(new JoinData { JoinNumber = 19, JoinSpan = 1 },
                 new JoinMetadata
                 {
                     Description = "Auto Answer On and Feedback",
@@ -357,8 +391,9 @@ namespace Tesira_DSP_EPI.Bridge.JoinMaps
                     JoinType = eJoinType.Digital
                 });
 
-        [JoinName("AutoAnswerOff")] public JoinDataComplete AutoAnswerOff =
-            new JoinDataComplete(new JoinData {JoinNumber = 20, JoinSpan = 1},
+        [JoinName("AutoAnswerOff")]
+        public JoinDataComplete AutoAnswerOff =
+            new JoinDataComplete(new JoinData { JoinNumber = 20, JoinSpan = 1 },
                 new JoinMetadata
                 {
                     Description = "Auto Answer Off and Feedback",
@@ -366,8 +401,9 @@ namespace Tesira_DSP_EPI.Bridge.JoinMaps
                     JoinType = eJoinType.Digital
                 });
 
-        [JoinName("AutoAnswerToggle")] public JoinDataComplete AutoAnswerToggle =
-            new JoinDataComplete(new JoinData {JoinNumber = 21, JoinSpan = 1},
+        [JoinName("AutoAnswerToggle")]
+        public JoinDataComplete AutoAnswerToggle =
+            new JoinDataComplete(new JoinData { JoinNumber = 21, JoinSpan = 1 },
                 new JoinMetadata
                 {
                     Description = "Auto Answer Toggle and On Feedback",
@@ -375,8 +411,9 @@ namespace Tesira_DSP_EPI.Bridge.JoinMaps
                     JoinType = eJoinType.Digital
                 });
 
-        [JoinName("OnHook")] public JoinDataComplete OnHook =
-            new JoinDataComplete(new JoinData {JoinNumber = 22, JoinSpan = 1},
+        [JoinName("OnHook")]
+        public JoinDataComplete OnHook =
+            new JoinDataComplete(new JoinData { JoinNumber = 22, JoinSpan = 1 },
                 new JoinMetadata
                 {
                     Description = "On Hook Set and Feedback",
@@ -384,8 +421,9 @@ namespace Tesira_DSP_EPI.Bridge.JoinMaps
                     JoinType = eJoinType.Digital
                 });
 
-        [JoinName("OffHook")] public JoinDataComplete OffHook =
-            new JoinDataComplete(new JoinData {JoinNumber = 23, JoinSpan = 1},
+        [JoinName("OffHook")]
+        public JoinDataComplete OffHook =
+            new JoinDataComplete(new JoinData { JoinNumber = 23, JoinSpan = 1 },
                 new JoinMetadata
                 {
                     Description = "Off Hook Set and Feedback",
@@ -452,8 +490,9 @@ namespace Tesira_DSP_EPI.Bridge.JoinMaps
                 JoinType = eJoinType.Digital
             });
 
-        [JoinName("CallState")] public JoinDataComplete CallState =
-            new JoinDataComplete(new JoinData {JoinNumber = 1, JoinSpan = 1},
+        [JoinName("CallState")]
+        public JoinDataComplete CallState =
+            new JoinDataComplete(new JoinData { JoinNumber = 1, JoinSpan = 1 },
                 new JoinMetadata
                 {
                     Description = "Call State Feedback",
@@ -461,8 +500,9 @@ namespace Tesira_DSP_EPI.Bridge.JoinMaps
                     JoinType = eJoinType.Analog
                 });
 
-        [JoinName("DialString")] public JoinDataComplete DialString =
-            new JoinDataComplete(new JoinData {JoinNumber = 1, JoinSpan = 1},
+        [JoinName("DialString")]
+        public JoinDataComplete DialString =
+            new JoinDataComplete(new JoinData { JoinNumber = 1, JoinSpan = 1 },
                 new JoinMetadata
                 {
                     Description = "Dial String Send and Feedback",
@@ -470,8 +510,9 @@ namespace Tesira_DSP_EPI.Bridge.JoinMaps
                     JoinType = eJoinType.Serial
                 });
 
-        [JoinName("Label")] public JoinDataComplete Label =
-            new JoinDataComplete(new JoinData {JoinNumber = 2, JoinSpan = 1},
+        [JoinName("Label")]
+        public JoinDataComplete Label =
+            new JoinDataComplete(new JoinData { JoinNumber = 2, JoinSpan = 1 },
                 new JoinMetadata
                 {
                     Description = "Dialer Label",
@@ -479,8 +520,9 @@ namespace Tesira_DSP_EPI.Bridge.JoinMaps
                     JoinType = eJoinType.Serial
                 });
 
-        [JoinName("LastNumberDialerFb")] public JoinDataComplete LastNumberDialerFb =
-            new JoinDataComplete(new JoinData {JoinNumber = 3, JoinSpan = 1},
+        [JoinName("LastNumberDialerFb")]
+        public JoinDataComplete LastNumberDialerFb =
+            new JoinDataComplete(new JoinData { JoinNumber = 3, JoinSpan = 1 },
                 new JoinMetadata
                 {
                     Description = "Last Number Dialed Feedback",
@@ -488,8 +530,9 @@ namespace Tesira_DSP_EPI.Bridge.JoinMaps
                     JoinType = eJoinType.Serial
                 });
 
-        [JoinName("CallerIdNumberFb")] public JoinDataComplete CallerIdNumberFb =
-            new JoinDataComplete(new JoinData {JoinNumber = 4, JoinSpan = 1},
+        [JoinName("CallerIdNumberFb")]
+        public JoinDataComplete CallerIdNumberFb =
+            new JoinDataComplete(new JoinData { JoinNumber = 4, JoinSpan = 1 },
                 new JoinMetadata
                 {
                     Description = "Caller ID Number",
@@ -497,8 +540,9 @@ namespace Tesira_DSP_EPI.Bridge.JoinMaps
                     JoinType = eJoinType.Serial
                 });
 
-        [JoinName("CallerIdNameFb")] public JoinDataComplete CallerIdNameFb =
-            new JoinDataComplete(new JoinData {JoinNumber = 5, JoinSpan = 1},
+        [JoinName("CallerIdNameFb")]
+        public JoinDataComplete CallerIdNameFb =
+            new JoinDataComplete(new JoinData { JoinNumber = 5, JoinSpan = 1 },
                 new JoinMetadata
                 {
                     Description = "Caller ID Name",
@@ -506,8 +550,9 @@ namespace Tesira_DSP_EPI.Bridge.JoinMaps
                     JoinType = eJoinType.Serial
                 });
 
-        [JoinName("DisplayNumber")] public JoinDataComplete DisplayNumber =
-            new JoinDataComplete(new JoinData {JoinNumber = 6, JoinSpan = 1},
+        [JoinName("DisplayNumber")]
+        public JoinDataComplete DisplayNumber =
+            new JoinDataComplete(new JoinData { JoinNumber = 6, JoinSpan = 1 },
                 new JoinMetadata
                 {
                     Description = "This Line's Number",
@@ -517,7 +562,7 @@ namespace Tesira_DSP_EPI.Bridge.JoinMaps
 
 
         public TesiraDialerJoinMapAdvancedStandalone(uint joinStart)
-            : base(joinStart, typeof (TesiraDialerJoinMapAdvancedStandalone))
+            : base(joinStart, typeof(TesiraDialerJoinMapAdvancedStandalone))
         {
         }
     }

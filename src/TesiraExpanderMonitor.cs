@@ -1,7 +1,7 @@
 ﻿using PepperDash.Core;
 using PepperDash.Essentials.Core;
 
-namespace Tesira_DSP_EPI
+namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
 {
     public class TesiraExpanderMonitor : StatusMonitorBase
     {

@@ -4,14 +4,14 @@ using System.Linq;
 using System.Text.RegularExpressions;
 using Crestron.SimplSharpPro.DeviceSupport;
 using Newtonsoft.Json;
+using Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Bridge.JoinMaps.Standalone;
+using Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Extensions;
 using PepperDash.Core.Logging;
 using PepperDash.Essentials.Core;
 using PepperDash.Essentials.Core.Bridges;
-using Tesira_DSP_EPI.Bridge.JoinMaps;
-using Tesira_DSP_EPI.Extensions;
-using IRoutingWithFeedback = Tesira_DSP_EPI.Interfaces.IRoutingWithFeedback;
+using IRoutingWithFeedback = Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Interfaces.IRoutingWithFeedback;
 
-namespace Tesira_DSP_EPI
+namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
 {
     public class TesiraDspSourceSelector : TesiraDspControlPoint, IRoutingWithFeedback
     {

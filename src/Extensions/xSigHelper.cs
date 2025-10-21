@@ -1,21 +1,9 @@
-﻿/*PepperDash Technology Corp.
-TRP
-Copyright:		2021
-------------------------------------
-***Notice of Ownership and Copyright***
-The material in which this notice appears is the property of PepperDash Technology Corporation, 
-which claims copyright under the laws of the United States of America in the entire body of material 
-and in all parts thereof, regardless of the use to which it is being put.  Any use, in whole or in part, 
-of this material by another party without the express written permission of PepperDash Technology Corporation is prohibited.  
-PepperDash Technology Corporation reserves all rights under applicable laws.
------------------------------------- */
-
-using System;
+﻿using System;
 using System.Linq;
 using System.Text;
 using PepperDash.Core;
 
-namespace Tesira_DSP_EPI.Extensions
+namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Extensions
 {
     public static class XSigHelper
     {
@@ -50,7 +38,7 @@ namespace Tesira_DSP_EPI.Extensions
             if (index >= maxIndex) return xSigStr;
             var indexBinary = (indexHeader + Convert.ToString(index, toBase).PadLeft(10, '0')).Insert(8, "0");
 
-            var array01 = (BitConverter.GetBytes(Convert.ToInt16(indexBinary, 2))).Reverse().ToArray();
+            var array01 = BitConverter.GetBytes(Convert.ToInt16(indexBinary, 2)).Reverse().ToArray();
             var array02 = Encoding.GetEncoding(28591).GetBytes(value);
             byte[] array03 = { delimiter };
 
@@ -74,12 +62,12 @@ namespace Tesira_DSP_EPI.Extensions
             const int maxIndex = 4096;
 
             if (index >= maxIndex) return xSigStr;
-            var indexBinary = (Convert.ToString(index, toBase).PadLeft(12, '0')).Insert(5, "0");
+            var indexBinary = Convert.ToString(index, toBase).PadLeft(12, '0').Insert(5, "0");
 
             var myData = value ? 0 : 32;  //Sets the bit for digital - 0 == high and 1 == low
             myData += 128;
-            myData = myData << 8;
-            myData += (Convert.ToInt16(indexBinary, 2));
+            myData <<= 8;
+            myData += Convert.ToInt16(indexBinary, 2);
 
             byte[] dataArray = { (byte)((myData & 0xFF00) >> 8), (byte)(myData & 0x00FF) };
 
@@ -101,10 +89,10 @@ namespace Tesira_DSP_EPI.Extensions
             const int maxIndex = 1024;
 
             if (index >= maxIndex) return xSigStr;
-            var binaryValue = ((Convert.ToString(value, toBase).PadLeft(16, '0')).Insert(2, "00")).Insert(11, "0");
-            var binaryIndex = (Convert.ToString(index, toBase).PadLeft(10, '0')).Insert(3, "0");
+            var binaryValue = Convert.ToString(value, toBase).PadLeft(16, '0').Insert(2, "00").Insert(11, "0");
+            var binaryIndex = Convert.ToString(index, toBase).PadLeft(10, '0').Insert(3, "0");
 
-            var dataPacket = ("11" + binaryValue.Insert(3, binaryIndex));
+            var dataPacket = "11" + binaryValue.Insert(3, binaryIndex);
 
             var dataArray = BitConverter.GetBytes(Convert.ToInt32(dataPacket, 2));
 
@@ -134,7 +122,7 @@ namespace Tesira_DSP_EPI.Extensions
                 Debug.Console(2, "Incoming xSig Byte {1} is '{0:X2}'", dataArray[i], i);
             }*/
 
-            Debug.Console(2, "Incoming xSig value is {0}", Convert.ToString(dataArray));
+            Debug.LogVerbose("Incoming xSig value is {value}", Convert.ToString(dataArray));
 
             var headerByte = (int)dataArray[0];
 
@@ -205,33 +193,5 @@ namespace Tesira_DSP_EPI.Extensions
 
         }
     }
-
-    public class XSigData
-    {
-
-        public int Index;
-        public string XString;
-        public int XInt;
-        public bool XBool;
-        public SigType SigType;
-
-        public XSigData()
-        {
-            SigType = SigType.SigNone;
-        }
-
-
-        #region Overrides of Object
-
-        public override string ToString()
-        {
-            return String.Format("index: {0} type: {1} xString: {2} xInt: {3}, xBool:{4}", Index, SigType, XString, XInt,
-                XBool);
-        }
-
-        #endregion
-    }
-
-    public enum SigType { SigString, SigInt, SigBool, SigNone };
 
 }

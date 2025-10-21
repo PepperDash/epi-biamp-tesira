@@ -1,15 +1,16 @@
 ﻿using System;
 using System.Linq;
 using System.Text.RegularExpressions;
-using Newtonsoft.Json;
-using PepperDash.Core;
-using PepperDash.Essentials.Core;
 using Crestron.SimplSharpPro.DeviceSupport;
-using PepperDash.Essentials.Core.DeviceInfo;
-using Tesira_DSP_EPI.Bridge.JoinMaps;
+using Newtonsoft.Json;
+using Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Bridge.JoinMaps.Standalone;
+using PepperDash.Core;
+using PepperDash.Core.Logging;
+using PepperDash.Essentials.Core;
 using PepperDash.Essentials.Core.Bridges;
+using PepperDash.Essentials.Core.DeviceInfo;
 
-namespace Tesira_DSP_EPI
+namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
 {
     public class TesiraDspDeviceInfo : TesiraDspControlPoint, IDeviceInfoProvider
     {
@@ -24,64 +25,64 @@ namespace Tesira_DSP_EPI
 
         public event DeviceInfoChangeHandler DeviceInfoChanged;
 
-        private const string KeyFormatter = "{0}--{1}";
+        private const string keyFormatter = "{0}--{1}";
 
-        private string _ipAddress;
+        private string ipAddress;
 
         public string IpAddress
         {
-            get { return _ipAddress; }
+            get { return ipAddress; }
             private set
             {
-                _ipAddress = value;
+                ipAddress = value;
                 IpAddressFeedback.FireUpdate();
             }
         }
 
-        private string _macAddress;
+        private string macAddress;
 
         public string MacAddress
         {
-            get { return _macAddress; }
+            get { return macAddress; }
             private set
             {
-                _macAddress = value;
+                macAddress = value;
                 MacAddressFeedback.FireUpdate();
             }
         }
 
-        private string _hostname;
+        private string hostname;
 
         public string Hostname
         {
-            get { return _hostname; }
+            get { return hostname; }
             private set
             {
-                _hostname = value;
+                hostname = value;
                 HostnameFeedback.FireUpdate();
             }
         }
 
-        private string _serialNumber;
+        private string serialNumber;
 
         public string SerialNumber
         {
-            get { return _serialNumber; }
+            get { return serialNumber; }
             private set
             {
-                _serialNumber = value;
+                serialNumber = value;
                 SerialNumberFeedback.FireUpdate();
             }
         }
 
-        private string _firmware;
+        private string firmware;
 
         public string Firmware
         {
-            get { return _firmware; }
+            get { return firmware; }
             private set
             {
-                _firmware = value;
+                firmware = value;
                 FirmwareFeedback.FireUpdate();
             }
         }
@@ -100,7 +101,7 @@ namespace Tesira_DSP_EPI
         /// </summary>
         /// <param name="parent">Parent Device</param>
         public TesiraDspDeviceInfo(TesiraDsp parent)
-            : base("DEVICE", "DEVICE", 0, 0, parent, String.Format(KeyFormatter, parent.Key, "DeviceInfo"), "DeviceInfo", 0)
+            : base("DEVICE", "DEVICE", 0, 0, parent, string.Format(keyFormatter, parent.Key, "DeviceInfo"), "DeviceInfo", 0)
         {
 
             DeviceInfo = new DeviceInfo();
@@ -109,14 +110,14 @@ namespace Tesira_DSP_EPI
 
         private void Init()
         {
-            NameFeedback = new StringFeedback(() => Parent.Name);
-            IpAddressFeedback = new StringFeedback(() => IpAddress);
-            HostnameFeedback = new StringFeedback(() => Hostname);
-            SerialNumberFeedback = new StringFeedback(() => SerialNumber);
-            FirmwareFeedback = new StringFeedback(() => Firmware);
-            MacAddressFeedback = new StringFeedback(() => MacAddress);
-            MakeFeedback = new StringFeedback(() => Make);
-            ModelFeedback = new StringFeedback(() => Model);
+            NameFeedback = new StringFeedback("name", () => Parent.Name);
+            IpAddressFeedback = new StringFeedback("ipAddress", () => IpAddress);
+            HostnameFeedback = new StringFeedback("hostname", () => Hostname);
+            SerialNumberFeedback = new StringFeedback("serialNumber", () => SerialNumber);
+            FirmwareFeedback = new StringFeedback("firmware", () => Firmware);
+            MacAddressFeedback = new StringFeedback("macAddress", () => MacAddress);
+            MakeFeedback = new StringFeedback("make", () => Make);
+            ModelFeedback = new StringFeedback("model", () => Model);
 
 
 
@@ -141,83 +142,83 @@ namespace Tesira_DSP_EPI
 
         private void GetIpConfig()
         {
-            Debug.Console(2, this, "Getting IPConfig");
+            this.LogVerbose("Getting IPConfig");
             SendFullCommand("get", "networkStatus", null, 999);
         }
 
         private void GetSerial()
         {
-            Debug.Console(2, this, "Getting Serial");
+            this.LogVerbose("Getting Serial");
 
-            SendFullCommand("get", "serialNumber", null, 999);            
+            SendFullCommand("get", "serialNumber", null, 999);
         }
 
         private void GetFirmware()
         {
-            Debug.Console(2, this, "Getting Firmware");
+            this.LogVerbose("Getting Firmware");
 
-            SendFullCommand("get", "version", null, 999);            
+            SendFullCommand("get", "version", null, 999);
         }
 
         private void GetServers()
         {
-            Debug.Console(2, this, "Getting Servers");
+            this.LogVerbose("Getting Servers");
             SendFullCommand("get", "discoveredServers", null, 999);
         }
-        private const string Pattern = "([\"\'])(?:(?=(\\\\?))\\2.)*?\\1";
+        private const string pattern = "([\"\'])(?:(?=(\\\\?))\\2.)*?\\1";
 
-        private static readonly Regex ParseRegex = new Regex(Pattern);
+        private static readonly Regex parseRegex = new Regex(pattern);
 
         public override void ParseGetMessage(string attributeCode, string message)
         {
-            Debug.Console(2, this, "Parsing Message - '{0}' : Message has an attributeCode of {1}", message, attributeCode);
+            this.LogVerbose("Parsing Message: {message}. AttributeCode: {attributeCode}", message, attributeCode);
             // Parse an "+OK" message
 
             if (message.IndexOf("+OK", StringComparison.OrdinalIgnoreCase) <= -1) return;
 
-            var matches = ParseRegex.Matches(message);
+            var matches = parseRegex.Matches(message);
 
             if (matches == null) return;
 
             switch (attributeCode)
             {
-                case ("networkStatus"):
-                {
-                    Hostname = matches[0].Value.Trim('"');
-                    MacAddress = matches[3].Value.Trim('"');
-                    IpAddress = matches[4].Value.Trim('"');
+                case "networkStatus":
+                    {
+                        Hostname = matches[0].Value.Trim('"');
+                        MacAddress = matches[3].Value.Trim('"');
+                        IpAddress = matches[4].Value.Trim('"');
 
-                    DeviceInfo.HostName = String.IsNullOrEmpty(DeviceInfo.HostName) ? Hostname : DeviceInfo.HostName;
-                    DeviceInfo.MacAddress = String.IsNullOrEmpty(DeviceInfo.MacAddress) ? MacAddress : DeviceInfo.MacAddress;
-                    DeviceInfo.IpAddress = String.IsNullOrEmpty(DeviceInfo.IpAddress) ? IpAddress : DeviceInfo.IpAddress;
+                        DeviceInfo.HostName = string.IsNullOrEmpty(DeviceInfo.HostName) ? Hostname : DeviceInfo.HostName;
+                        DeviceInfo.MacAddress = string.IsNullOrEmpty(DeviceInfo.MacAddress) ? MacAddress : DeviceInfo.MacAddress;
+                        DeviceInfo.IpAddress = string.IsNullOrEmpty(DeviceInfo.IpAddress) ? IpAddress : DeviceInfo.IpAddress;
 
-                    OnDeviceInfoChanged();
-                    break;
-                }
-                case("serialNumber") :
-                {
-                    SerialNumber = matches[0].Value.Trim('"');
+                        OnDeviceInfoChanged();
+                        break;
+                    }
+                case "serialNumber":
+                    {
+                        SerialNumber = matches[0].Value.Trim('"');
 
-                    DeviceInfo.SerialNumber = String.IsNullOrEmpty(DeviceInfo.SerialNumber) ? SerialNumber : DeviceInfo.SerialNumber;
+                        DeviceInfo.SerialNumber = string.IsNullOrEmpty(DeviceInfo.SerialNumber) ? SerialNumber : DeviceInfo.SerialNumber;
 
-                    OnDeviceInfoChanged();
-                    break;
-                }
-                case ("version"):
+                        OnDeviceInfoChanged();
+                        break;
+                    }
+                case "version":
                     Firmware = matches[0].Value.Trim('"');
 
-                    DeviceInfo.FirmwareVersion = String.IsNullOrEmpty(DeviceInfo.FirmwareVersion) ? Firmware : DeviceInfo.FirmwareVersion;
+                    DeviceInfo.FirmwareVersion = string.IsNullOrEmpty(DeviceInfo.FirmwareVersion) ? Firmware : DeviceInfo.FirmwareVersion;
 
                     OnDeviceInfoChanged();
                     break;
 
-                case ("discoveredServers"):
+                case "discoveredServers":
                     for (var i = 0; i <= matches.Count; i = i + 2)
                     {
                         if (!matches[i].Value.Trim('"').Equals(IpAddress)) continue;
                         var substring = message.Substring(4, message.Length - 4).Replace("]]", string.Empty).Replace("[[", string.Empty).Replace("][", "|");
                         var chunks = substring.Split('|');
-                        var chunkSelector = i == 0 ? 0 : i/2;
+                        var chunkSelector = i == 0 ? 0 : i / 2;
                         Model = chunks[chunkSelector].Split(' ').Last();
                     }
                     ModelFeedback.FireUpdate();
@@ -237,14 +238,9 @@ namespace Tesira_DSP_EPI
             if (!string.IsNullOrEmpty(joinMapSerialized))
                 joinMap = JsonConvert.DeserializeObject<TesiraDspDeviceJoinMapAdvancedStandalone>(joinMapSerialized);
 
+            bridge?.AddJoinMap(Key, joinMap);
 
-
-            if (bridge != null)
-            {
-                bridge.AddJoinMap(Key, joinMap);
-            }
-
-            Debug.Console(1, this, "Linking to Trilist '{0}'", trilist.ID.ToString("X"));
+            this.LogDebug("Linking to Trilist {trilistId:X}'", trilist.ID.ToString("X"));
 
             //var comm = DspDevice as IBasicCommunication;
             trilist.SetSigTrueAction(joinMap.Resubscribe.JoinNumber, Parent.Resubscribe);
@@ -277,18 +273,11 @@ namespace Tesira_DSP_EPI
         public void OnDeviceInfoChanged()
         {
             var args = new DeviceInfoEventArgs(DeviceInfo);
-
-            var raiseEvent = DeviceInfoChanged;
-
-            if (raiseEvent != null)
-            {
-                raiseEvent(Parent, args);
-            }
+            DeviceInfoChanged?.Invoke(Parent, args);
         }
 
 
         #region IDeviceInfoProvider Members
-
 
         public void UpdateDeviceInfo()
         {

@@ -1,30 +1,31 @@
 ﻿using System;
 using Crestron.SimplSharpPro.DeviceSupport;
 using Newtonsoft.Json;
+using Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Bridge.JoinMaps.Standalone;
+using Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Extensions;
 using PepperDash.Core;
+using PepperDash.Core.Logging;
 using PepperDash.Essentials.Core;
 using PepperDash.Essentials.Core.Bridges;
 using PepperDash.Essentials.Core.DeviceTypeInterfaces;
-using Tesira_DSP_EPI.Bridge.JoinMaps;
-using Tesira_DSP_EPI.Extensions;
 
-namespace Tesira_DSP_EPI
+namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
 {
     /// <summary>
     /// Represents a meter for the Tesira DSP.
     /// </summary>
     public class TesiraDspMeter : TesiraDspControlPoint, IMeterFeedback
     {
-        private readonly double _meterMinimum;
-        private readonly double _meterMaximum;
-        private readonly int _defaultPollTime;
+        private readonly double meterMinimum;
+        private readonly double meterMaximum;
+        private readonly int defaultPollTime;
 
-        private const string MeterAttributeCode = "level";
-        private const double MeterMinimumDefault = -100;
-        private const double MeterMaximumDefault = 49;
-        private const int DefaultPollTimeDefault = 500;
+        private const string meterAttributeCode = "level";
+        private const double meterMinimumDefault = -100;
+        private const double meterMaximumDefault = 49;
+        private const int defaultPollTimeDefault = 500;
 
-        private const string KeyFormatter = "{0}--{1}";
+        private const string keyFormatter = "{0}--{1}";
 
         /// <summary>
         /// Subscription Identifer for Meter Data
@@ -35,7 +36,7 @@ namespace Tesira_DSP_EPI
         /// Integer Feedback for Meter
         /// </summary>
         public IntFeedback MeterFeedback { get; set; }
-        int _currentMeter;
+        int currentMeter;
 
         /// <summary>
         /// Represents the subscription status of the meter.
@@ -49,14 +50,14 @@ namespace Tesira_DSP_EPI
         /// <param name="config"></param>
         /// <param name="parent"></param>
         public TesiraDspMeter(string key, TesiraMeterBlockConfig config, TesiraDsp parent)
-            : base(config.MeterInstanceTag, string.Empty, config.Index, 0, parent, string.Format(KeyFormatter, parent.Key, key), config.Label, config.BridgeIndex)
+            : base(config.MeterInstanceTag, string.Empty, config.Index, 0, parent, string.Format(keyFormatter, parent.Key, key), config.Label, config.BridgeIndex)
         {
             DeviceManager.AddDevice(this);
 
             Label = config.Label;
             Enabled = config.Enabled;
 
-            MeterFeedback = new IntFeedback(Key + "-MeterFeedback", () => _currentMeter);
+            MeterFeedback = new IntFeedback(Key + "-MeterFeedback", () => currentMeter);
             SubscribedFeedback = new BoolFeedback(Key + "-SubscribedFeedback", () => IsSubscribed);
 
             Feedbacks.Add(MeterFeedback);
@@ -68,39 +69,36 @@ namespace Tesira_DSP_EPI
             if (config.MeterData != null)
             {
                 var data = config.MeterData;
-                _meterMinimum = data.MeterMimimum;
-                _meterMaximum = data.MeterMaxiumum;
-                _defaultPollTime = data.DefaultPollTime;
+                meterMinimum = data.MeterMimimum;
+                meterMaximum = data.MeterMaxiumum;
+                defaultPollTime = data.DefaultPollTime;
             }
             else
             {
-                _meterMinimum = MeterMinimumDefault;
-                _meterMaximum = MeterMaximumDefault;
-                _defaultPollTime = DefaultPollTimeDefault;
+                meterMinimum = meterMinimumDefault;
+                meterMaximum = meterMaximumDefault;
+                defaultPollTime = defaultPollTimeDefault;
             }
-
-            /*CrestronConsole.AddNewConsoleCommand(s => Subscribe(), "enablemeters", "", ConsoleAccessLevelEnum.AccessOperator);
-            CrestronConsole.AddNewConsoleCommand(s => UnSubscribe(), "disablemeters", "", ConsoleAccessLevelEnum.AccessOperator);*/
         }
 
         public override void Subscribe()
         {
             MeterCustomName = string.Format("{0}__meter{1}", InstanceTag1, Index1);
             AddCustomName(MeterCustomName);
-            SendSubscriptionCommand(MeterCustomName, MeterAttributeCode, _defaultPollTime, 0);
+            SendSubscriptionCommand(MeterCustomName, meterAttributeCode, defaultPollTime, 0);
         }
 
         public void UnSubscribe()
         {
             IsSubscribed = false;
 
-            SendUnSubscriptionCommand(MeterCustomName, MeterAttributeCode, 0);
+            SendUnSubscriptionCommand(MeterCustomName, meterAttributeCode, 0);
             SubscribedFeedback.FireUpdate();
         }
 
         public override void ParseGetMessage(string attributeCode, string message)
         {
-            Debug.Console(2, this, "Parsing Message - '{0}' : Message has an attributeCode of {1}", message, attributeCode);
+            this.LogVerbose("Parsing Message: {message}. AttributeCode: {attributeCode}", message, attributeCode);
         }
 
         public override void ParseSubscriptionMessage(string customName, string message)
@@ -108,11 +106,11 @@ namespace Tesira_DSP_EPI
             IsSubscribed = true;
             SubscribedFeedback.FireUpdate();
 
-            Debug.Console(2, this, "Parsing Message - '{0}'", message);
-            var value = Double.Parse(message).Scale(_meterMinimum, _meterMaximum, ushort.MinValue, ushort.MaxValue, this);
-            _currentMeter = (ushort)value;
+            this.LogVerbose("Parsing Message: {message}", message);
+            var value = double.Parse(message).Scale(meterMinimum, meterMaximum, ushort.MinValue, ushort.MaxValue, this);
+            currentMeter = (ushort)value;
 
-            Debug.Console(2, this, "Scaled Meter Value - '{0}'", _currentMeter);
+            this.LogVerbose("Scaled Meter Value: {currentMeter}", currentMeter);
             MeterFeedback.FireUpdate();
         }
 
@@ -130,7 +128,7 @@ namespace Tesira_DSP_EPI
                 bridge.AddJoinMap(Key, joinMap);
             }
 
-            Debug.Console(2, this, "AddingMeterBridge {0} | Join:{1}", Key, joinMap.Label.JoinNumber);
+            this.LogVerbose("AddingMeterBridge {key} | Join:{joinNumber}", Key, joinMap.Label.JoinNumber);
 
             MeterFeedback.LinkInputSig(trilist.UShortInput[joinMap.Meter.JoinNumber]);
             NameFeedback.LinkInputSig(trilist.StringInput[joinMap.Label.JoinNumber]);
