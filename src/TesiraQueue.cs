@@ -255,7 +255,7 @@ namespace Tesira_DSP_EPI
                     {
                         Debug.Console(2, Parent, "[SendNextQueuedCommand(String)] - Command is null or empty, skipping");
                         CommandQueueInProgress = false;
-                        return; // Add missing return statement
+                        return;
                     }
                 }
                 else
