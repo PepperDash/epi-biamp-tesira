@@ -177,53 +177,97 @@ namespace Tesira_DSP_EPI
 
             var matches = ParseRegex.Matches(message);
 
-            if (matches == null) return;
+            if (matches == null || matches.Count == 0) 
+            {
+                Debug.Console(2, this, "ParseGetMessage: No regex matches found for message: '{0}'", message);
+                return;
+            }
 
             switch (attributeCode)
             {
                 case ("networkStatus"):
                 {
-                    Hostname = matches[0].Value.Trim('"');
-                    MacAddress = matches[3].Value.Trim('"');
-                    IpAddress = matches[4].Value.Trim('"');
+                    if (matches.Count >= 5)
+                    {
+                        Hostname = matches[0].Value.Trim('"');
+                        MacAddress = matches[3].Value.Trim('"');
+                        IpAddress = matches[4].Value.Trim('"');
 
-                    DeviceInfo.HostName = String.IsNullOrEmpty(DeviceInfo.HostName) ? Hostname : DeviceInfo.HostName;
-                    DeviceInfo.MacAddress = String.IsNullOrEmpty(DeviceInfo.MacAddress) ? MacAddress : DeviceInfo.MacAddress;
-                    DeviceInfo.IpAddress = String.IsNullOrEmpty(DeviceInfo.IpAddress) ? IpAddress : DeviceInfo.IpAddress;
+                        DeviceInfo.HostName = String.IsNullOrEmpty(DeviceInfo.HostName) ? Hostname : DeviceInfo.HostName;
+                        DeviceInfo.MacAddress = String.IsNullOrEmpty(DeviceInfo.MacAddress) ? MacAddress : DeviceInfo.MacAddress;
+                        DeviceInfo.IpAddress = String.IsNullOrEmpty(DeviceInfo.IpAddress) ? IpAddress : DeviceInfo.IpAddress;
 
-                    OnDeviceInfoChanged();
+                        OnDeviceInfoChanged();
+                    }
+                    else
+                    {
+                        Debug.Console(2, this, "ParseGetMessage: Insufficient matches ({0}) for networkStatus parsing", matches.Count);
+                    }
                     break;
                 }
                 case("serialNumber") :
                 {
-                    SerialNumber = matches[0].Value.Trim('"');
+                    if (matches.Count >= 1)
+                    {
+                        SerialNumber = matches[0].Value.Trim('"');
 
-                    DeviceInfo.SerialNumber = String.IsNullOrEmpty(DeviceInfo.SerialNumber) ? SerialNumber : DeviceInfo.SerialNumber;
+                        DeviceInfo.SerialNumber = String.IsNullOrEmpty(DeviceInfo.SerialNumber) ? SerialNumber : DeviceInfo.SerialNumber;
 
-                    OnDeviceInfoChanged();
+                        OnDeviceInfoChanged();
+                    }
+                    else
+                    {
+                        Debug.Console(2, this, "ParseGetMessage: Insufficient matches ({0}) for serialNumber parsing", matches.Count);
+                    }
                     break;
                 }
                 case ("version"):
-                    Firmware = matches[0].Value.Trim('"');
-
-                    DeviceInfo.FirmwareVersion = String.IsNullOrEmpty(DeviceInfo.FirmwareVersion) ? Firmware : DeviceInfo.FirmwareVersion;
-
-                    OnDeviceInfoChanged();
-                    break;
-
-                case ("discoveredServers"):
-                    for (var i = 0; i <= matches.Count; i = i + 2)
+                {
+                    if (matches.Count >= 1)
                     {
-                        if (!matches[i].Value.Trim('"').Equals(IpAddress)) continue;
-                        var substring = message.Substring(4, message.Length - 4).Replace("]]", string.Empty).Replace("[[", string.Empty).Replace("][", "|");
-                        var chunks = substring.Split('|');
-                        var chunkSelector = i == 0 ? 0 : i/2;
-                        Model = chunks[chunkSelector].Split(' ').Last();
+                        Firmware = matches[0].Value.Trim('"');
+
+                        DeviceInfo.FirmwareVersion = String.IsNullOrEmpty(DeviceInfo.FirmwareVersion) ? Firmware : DeviceInfo.FirmwareVersion;
+
+                        OnDeviceInfoChanged();
                     }
-                    ModelFeedback.FireUpdate();
-                    MakeFeedback.FireUpdate();
-                    OnDeviceInfoChanged();
+                    else
+                    {
+                        Debug.Console(2, this, "ParseGetMessage: Insufficient matches ({0}) for version parsing", matches.Count);
+                    }
                     break;
+                }
+                case ("discoveredServers"):
+                {
+                    if (matches.Count > 0)
+                    {
+                        for (var i = 0; i < matches.Count; i = i + 2)
+                        {
+                            if (i >= matches.Count) break; // Safety check
+                            
+                            if (!matches[i].Value.Trim('"').Equals(IpAddress)) continue;
+                            var substring = message.Substring(4, message.Length - 4).Replace("]]", string.Empty).Replace("[[", string.Empty).Replace("][", "|");
+                            var chunks = substring.Split('|');
+                            var chunkSelector = i == 0 ? 0 : i/2;
+                            if (chunkSelector < chunks.Length)
+                            {
+                                var parts = chunks[chunkSelector].Split(' ');
+                                if (parts.Length > 0)
+                                {
+                                    Model = parts.Last();
+                                }
+                            }
+                        }
+                        ModelFeedback.FireUpdate();
+                        MakeFeedback.FireUpdate();
+                        OnDeviceInfoChanged();
+                    }
+                    else
+                    {
+                        Debug.Console(2, this, "ParseGetMessage: No matches found for discoveredServers parsing");
+                    }
+                    break;
+                }
             }
 
         }

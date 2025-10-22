@@ -1007,7 +1007,7 @@ namespace Tesira_DSP_EPI
 
             if (newList.Any())
             {
-                _paceTimer = new CTimer(o => GetMinLevel(newList, 0), null, 250);
+                _paceTimer = new CTimer(o => GetMinLevel(newList, 0), null, 350);
             }
         }
 
@@ -1020,7 +1020,7 @@ namespace Tesira_DSP_EPI
 
             if (newList.Any())
             {
-                _paceTimer = new CTimer(o => GetMaxLevel(newList, 0), null, 250);
+                _paceTimer = new CTimer(o => GetMaxLevel(newList, 0), null, 350);
             }
         }
 
@@ -1032,11 +1032,11 @@ namespace Tesira_DSP_EPI
             this.LogVerbose("Indexer = {0} : Count = {1} : MaxLevel", indexerOutput, faders.Count());
             if (indexerOutput < faders.Count)
             {
-                _getMaxTimer = new CTimer(o => GetMaxLevel(faders, indexerOutput), null, 250);
+                _getMaxTimer = new CTimer(o => GetMaxLevel(faders, indexerOutput), null, 350);
                 return;
             }
             _getMaxTimer?.Dispose();
-            _pacer = new CTimer(o => QueueCheckDelayed(), null, 250);
+            _pacer = new CTimer(o => QueueCheckDelayed(), null, 350);
         }
         private void GetMinLevel(IList<IVolumeComponent> faders, int index)
         {
@@ -1046,11 +1046,11 @@ namespace Tesira_DSP_EPI
             this.LogVerbose("Indexer = {0} : Count = {1} : MinLevel", indexerOutput, faders.Count());
             if (indexerOutput < faders.Count)
             {
-                _getMinTimer = new CTimer(o => GetMinLevel(faders, indexerOutput), null, 250);
+                _getMinTimer = new CTimer(o => GetMinLevel(faders, indexerOutput), null, 350);
                 return;
             }
             _getMinTimer?.Dispose();
-            _pacer = new CTimer(o => GetMaxLevels(), null, 250);
+            _pacer = new CTimer(o => GetMaxLevels(), null, 350);
         }
 
 

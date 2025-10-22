@@ -352,9 +352,26 @@ namespace Tesira_DSP_EPI
                 Debug.Console(2, this, "Parsing Message - '{0}' : Message has an attributeCode of {1}", message, attributeCode);
                 // Parse an "+OK" message
 
+                if (string.IsNullOrEmpty(message) || string.IsNullOrEmpty(attributeCode))
+                {
+                    Debug.Console(1, this, "ParseGetMessage: Empty message or attributeCode. Message: '{0}', AttributeCode: '{1}'", message, attributeCode);
+                    return;
+                }
+
                 var match = ParseRegex.Match(message);
 
-                if (!match.Success) return;
+                if (!match.Success) 
+                {
+                    Debug.Console(1, this, "ParseGetMessage: Regex match failed for message: '{0}'", message);
+                    return;
+                }
+                
+                if (match.Groups.Count < 2)
+                {
+                    Debug.Console(1, this, "ParseGetMessage: Insufficient regex groups in message: '{0}'", message);
+                    return;
+                }
+                
                 var value = match.Groups[1].Value;
 
                 Debug.Console(1, this, "Response: '{0}' Value: '{1}'", attributeCode, value);
@@ -364,36 +381,49 @@ namespace Tesira_DSP_EPI
                 {
                     case "minLevel":
                     {
-                        MinLevel = Double.Parse(value);
-
-                        Debug.Console(1, this, "MinLevel is '{0}'", MinLevel);
-
+                        if (double.TryParse(value, out double minLevelValue))
+                        {
+                            MinLevel = minLevelValue;
+                            Debug.Console(1, this, "MinLevel is '{0}'", MinLevel);
+                        }
+                        else
+                        {
+                            Debug.Console(1, this, "ParseGetMessage: Failed to parse minLevel value: '{0}'", value);
+                        }
                         break;
                     }
                     case "maxLevel":
                     {
-                        MaxLevel = Double.Parse(value);
-
-                        Debug.Console(1, this, "MaxLevel is '{0}'", MaxLevel);
-
+                        if (double.TryParse(value, out double maxLevelValue))
+                        {
+                            MaxLevel = maxLevelValue;
+                            Debug.Console(1, this, "MaxLevel is '{0}'", MaxLevel);
+                        }
+                        else
+                        {
+                            Debug.Console(1, this, "ParseGetMessage: Failed to parse maxLevel value: '{0}'", value);
+                        }
                         break;
                     }
                     case "level":
                     {
-                        var localValue = Double.Parse(value);
+                        if (double.TryParse(value, out double levelValue))
+                        {
+                            RawVolumeLevel = (int) levelValue; 
 
-                        RawVolumeLevel = (int) localValue; 
+                            VolumeLevel = UseAbsoluteValue ? (ushort) levelValue : (ushort)levelValue.Scale(MinLevel, MaxLevel, 0, 65535, this);
 
-                        VolumeLevel = UseAbsoluteValue ? (ushort) localValue : (ushort)localValue.Scale(MinLevel, MaxLevel, 0, 65535, this);
-
-                        Debug.Console(1, this, "VolumeLevel is '{0}'", VolumeLevel);
-
+                            Debug.Console(1, this, "VolumeLevel is '{0}'", VolumeLevel);
+                        }
+                        else
+                        {
+                            Debug.Console(1, this, "ParseGetMessage: Failed to parse level value: '{0}'", value);
+                        }
                         break;
                     }
                     default:
                     {
                         Debug.Console(0, "Response does not match expected attribute codes: '{0}'", message);
-
                         break;
                     }
                 }
