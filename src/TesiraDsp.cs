@@ -1218,16 +1218,14 @@ namespace Tesira_DSP_EPI
 
 
             CommunicationMonitor.IsOnlineFeedback.LinkInputSig(trilist.BooleanInput[deviceJoinMap.IsOnline.JoinNumber]);
-            CommandPassthruFeedback.LinkInputSig(trilist.StringInput[deviceJoinMap.CommandPassThru.JoinNumber]);
+            CommandPassthruFeedback.LinkInputSig(trilist.StringInput[deviceJoinMap.CommandPassThru_New.JoinNumber]);
             trilist.SetStringSigAction(presetJoinMap.PresetName.JoinNumber, RunPreset);
 
-            trilist.SetStringSigAction(deviceJoinMap.CommandPassThru.JoinNumber, SendLineRaw);
+            trilist.SetStringSigAction(deviceJoinMap.CommandPassThru_New.JoinNumber, SendLineRaw);
 
             trilist.SetSigTrueAction(deviceJoinMap.Resubscribe.JoinNumber, Resubscribe);
 
-            // Link device info component for feedbacks like IP address, serial number, etc.
             DevInfo.LinkToApi(trilist, joinStart, string.Format("{0}--DeviceInfoJoinMap", Key), bridge);
-
 
             //Level and Mute Control
             this.LogVerbose("There are {0} Level Control Points", Faders.Count());
