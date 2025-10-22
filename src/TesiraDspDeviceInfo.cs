@@ -34,6 +34,7 @@ namespace Tesira_DSP_EPI
             private set
             {
                 _ipAddress = value;
+                Debug.Console(1, this, "IpAddress property set to: '{0}' - Firing feedback update", value);
                 IpAddressFeedback.FireUpdate();
             }
         }
@@ -187,11 +188,12 @@ namespace Tesira_DSP_EPI
             {
                 case ("networkStatus"):
                 {
-                    if (matches.Count >= 5)
+                    if (matches.Count >= 6) // Need at least 6 matches to get IP address safely
                     {
+                        Debug.Console(1, this, "networkStatus parsing - Found {0} matches. matches[4] = '{1}'", matches.Count, matches[4].Value.Trim('"'));
                         Hostname = matches[0].Value.Trim('"');
                         MacAddress = matches[3].Value.Trim('"');
-                        IpAddress = matches[4].Value.Trim('"');
+                        IpAddress = matches[4].Value.Trim('"'); // This should be the actual IP address
 
                         DeviceInfo.HostName = String.IsNullOrEmpty(DeviceInfo.HostName) ? Hostname : DeviceInfo.HostName;
                         DeviceInfo.MacAddress = String.IsNullOrEmpty(DeviceInfo.MacAddress) ? MacAddress : DeviceInfo.MacAddress;
@@ -274,19 +276,15 @@ namespace Tesira_DSP_EPI
 
         public override void LinkToApi(BasicTriList trilist, uint joinStart, string joinMapKey, EiscApiAdvanced bridge)
         {
-            var joinMap = new TesiraDspDeviceJoinMapAdvancedStandalone(joinStart);
+            // Use the same join map that was created and registered by the main DSP LinkToApi method
+            var joinMap = new TesiraDspDeviceJoinMapAdvanced(joinStart);
 
-            var joinMapSerialized = JoinMapHelper.GetSerializedJoinMapForDevice(joinMapKey);
+            // Note: We don't try to deserialize from the bridge's join map dictionary here
+            // because the join map was already created and registered by the main DSP LinkToApi method
+            // and we just need to use the same structure for linking the signals
 
-            if (!string.IsNullOrEmpty(joinMapSerialized))
-                joinMap = JsonConvert.DeserializeObject<TesiraDspDeviceJoinMapAdvancedStandalone>(joinMapSerialized);
-
-
-
-            if (bridge != null)
-            {
-                bridge.AddJoinMap(Key, joinMap);
-            }
+            // Note: The join map is already added to the bridge by the main DSP LinkToApi method
+            // using the key "{Key}--DeviceInfoJoinMap", so we don't add it again here
 
             Debug.Console(1, this, "Linking to Trilist '{0}'", trilist.ID.ToString("X"));
 

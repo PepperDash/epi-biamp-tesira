@@ -1225,6 +1225,9 @@ namespace Tesira_DSP_EPI
 
             trilist.SetSigTrueAction(deviceJoinMap.Resubscribe.JoinNumber, Resubscribe);
 
+            // Link device info component for feedbacks like IP address, serial number, etc.
+            DevInfo.LinkToApi(trilist, joinStart, string.Format("{0}--DeviceInfoJoinMap", Key), bridge);
+
 
             //Level and Mute Control
             this.LogVerbose("There are {0} Level Control Points", Faders.Count());
