@@ -243,7 +243,6 @@ namespace Tesira_DSP_EPI
                     {
                         for (var i = 0; i < matches.Count; i = i + 2)
                         {
-                            if (i >= matches.Count) break; // Safety check
                             
                             if (!matches[i].Value.Trim('"').Equals(IpAddress)) continue;
                             var substring = message.Substring(4, message.Length - 4).Replace("]]", string.Empty).Replace("[[", string.Empty).Replace("][", "|");
