@@ -191,7 +191,7 @@ namespace Tesira_DSP_EPI
                     {
                         Hostname = matches[0].Value.Trim('"');
                         MacAddress = matches[3].Value.Trim('"');
-                        IpAddress = matches[4].Value.Trim('"'); // This should be the actual IP address
+                        IpAddress = matches[4].Value.Trim('"'); // IP address extracted from regex match (matches[4])
 
                         DeviceInfo.HostName = String.IsNullOrEmpty(DeviceInfo.HostName) ? Hostname : DeviceInfo.HostName;
                         DeviceInfo.MacAddress = String.IsNullOrEmpty(DeviceInfo.MacAddress) ? MacAddress : DeviceInfo.MacAddress;
