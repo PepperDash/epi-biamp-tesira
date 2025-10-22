@@ -161,7 +161,7 @@ namespace Tesira_DSP_EPI
            // DequeueEvent.Wait();
             try
             {
-                Debug.Console(2, Parent, "[SendNextQueuedCommand] - Attempting to send a queued commend");
+                Debug.Console(2, Parent, "[SendNextQueuedCommand] - Attempting to send a queued command");
 
                 if (Parent == null)
                 {
