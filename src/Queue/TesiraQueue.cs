@@ -5,14 +5,13 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Queue
 {
     public class TesiraQueue
     {
-
         public CrestronQueue<QueuedCommand> LocalQueue { get; private set; }
 
         private TesiraDsp Parent { get; set; }
 
         public bool CommandQueueInProgress { get; set; }
 
-        private QueuedCommand LastDequeued { get; set; }
+        private QueuedCommand lastDequeued;
 
         private readonly object lockObject = new object();
 
@@ -38,15 +37,17 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Queue
             {
                 Parent.LogVerbose("[AdvanceQueue] Command Queue {state} in progress.", CommandQueueInProgress ? "is" : "is not");
 
-                Parent.LogVerbose("[AdvanceQueue] Incoming Response: {response}", response);
-
-                if (LastDequeued != null && LastDequeued.ControlPoint != null)
+                if (lastDequeued?.ControlPoint != null)
                 {
-                    Parent.LogVerbose("[AdvanceQueue] Command Sent. CommandQueue Size: {size} | Outgoing Command: {outgoingCommand}", LocalQueue.Count, LastDequeued.Command);
+                    Parent.LogVerbose("[AdvanceQueue] Response Receieved for parsing: '{response}'. Command: '{outgoingCommand}'", response, lastDequeued.Command);
 
-                    LastDequeued.ControlPoint.ParseGetMessage(LastDequeued.AttributeCode, response);
+                    lastDequeued.ControlPoint.ParseGetMessage(lastDequeued.AttributeCode, response);
 
-                    LastDequeued = null;
+                    lastDequeued = null;
+                }
+                else
+                {
+                    Parent.LogVerbose("[AdvanceQueue] Incoming Response: '{response}'. No Controlpoint waiting for response", response);
                 }
 
                 if (LocalQueue.IsEmpty)
@@ -54,6 +55,7 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Queue
                     CommandQueueInProgress = false;
                     return;
                 }
+
                 SendNextQueuedCommand();
             }
         }
@@ -66,15 +68,16 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Queue
         {
             lock (lockObject)
             {
-                Parent.LogVerbose("[EqueueCommand] Command Queue {state} in progress.", CommandQueueInProgress ? "is" : "is not");
+                Parent.LogVerbose("[EnqueueCommand] Attempting to enqueue command for {controlPoint}", commandToEnqueue.ControlPoint?.Key ?? "no control point");
+                Parent.LogVerbose("[EnqueueCommand] Command Queue {state} in progress.", CommandQueueInProgress ? "is" : "is not");
 
                 LocalQueue.Enqueue(commandToEnqueue);
 
-                Parent.LogVerbose("[EqueueCommand] Command Enqueued: {command}.  CommandQueue has {count} items", commandToEnqueue.Command, LocalQueue.Count);
+                Parent.LogVerbose("[EnqueueCommand] Command Enqueued: '{command}'.  CommandQueue has {count} items", commandToEnqueue.Command, LocalQueue.Count);
 
                 if (CommandQueueInProgress) return;
 
-                if (LastDequeued == null)
+                if (lastDequeued == null)
                 {
                     Parent.LogVerbose("[EnqueueCommand] Sending Next Queued Command");
                     SendNextQueuedCommand();
@@ -88,20 +91,7 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Queue
         /// <param name="command">String to enqueue</param>
         public void EnqueueCommand(string command)
         {
-            lock (lockObject)
-            {
-                Parent.LogVerbose("[EnqueueCommand] Command Queue {state} in progress.", CommandQueueInProgress ? "is" : "is not");
-
-                LocalQueue.Enqueue(new QueuedCommand(command, null, null));
-                Parent.LogVerbose("[EnqueueCommand] Command Enqueued: {command}.  CommandQueue has {count} Elements.", command, LocalQueue.Count);
-                Parent.LogVerbose("[EnqueueCommand] Triggering 'SendNextQueuedCommand'");
-
-                if (LastDequeued == null)
-                {
-                    Parent.LogVerbose("[EnqueueCommand] Triggering 'SendNextQueuedCommand'");
-                    SendNextQueuedCommand();
-                }
-            }
+            EnqueueCommand(new QueuedCommand(command, null, null));
         }
 
         /// <summary>
@@ -128,9 +118,9 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Queue
 
                 CommandQueueInProgress = true;
 
-                LastDequeued = LocalQueue.Dequeue();
-                Parent.LogVerbose("[SendNextQueuedCommand] Sending Line {line}", LastDequeued.Command);
-                Parent.SendLine(LastDequeued.Command);
+                lastDequeued = LocalQueue.Dequeue();
+                Parent.LogVerbose("[SendNextQueuedCommand] Sending Line {line}. ControlPoint: {controlPoint}", lastDequeued.Command, lastDequeued.ControlPoint?.Key ?? "no control point");
+                Parent.SendLine(lastDequeued.Command);
             }
         }
 
@@ -143,7 +133,7 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Queue
             {
                 if (LocalQueue == null) return;
                 LocalQueue.Clear();
-                LastDequeued = null;
+                lastDequeued = null;
                 CommandQueueInProgress = false;
             }
         }
