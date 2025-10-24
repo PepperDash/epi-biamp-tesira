@@ -2,20 +2,22 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
+using System.Threading;
 using Crestron.SimplSharp;
-using Crestron.SimplSharpPro.CrestronThread;
 using Crestron.SimplSharpPro.DeviceSupport;
 using Newtonsoft.Json;
 using Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Bridge.JoinMaps;
 using Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Dialer;
 using Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Expander;
 using Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Interfaces;
+using Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Queue;
 using PepperDash.Core;
 using PepperDash.Core.Logging;
 using PepperDash.Essentials.Core;
 using PepperDash.Essentials.Core.Bridges;
 using PepperDash.Essentials.Core.Config;
 using PepperDash.Essentials.Core.DeviceInfo;
+using PepperDash.Essentials.Core.Queues;
 using Feedback = PepperDash.Essentials.Core.Feedback;
 using IRoutingWithFeedback = Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Interfaces.IRoutingWithFeedback;
 
@@ -24,13 +26,14 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
     public class TesiraDsp : EssentialsBridgeableDevice,
         IDspPresets,
         ICommunicationMonitor,
-        IDeviceInfoProvider
+        IDeviceInfoProvider,
+        IHasFeedback
     {
         public const string KeyFormatter = "{0}--{1}";
         /// <summary>
         /// Collection of all Device Feedbacks
         /// </summary>
-        public FeedbackCollection<Feedback> Feedbacks;
+        public FeedbackCollection<Feedback> Feedbacks { get; private set; }
 
         /// <summary>
         /// Data Returning from Device
@@ -64,27 +67,33 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
         {
             get
             {
-                var subscribeTracker = ControlPointList.All(subscribedComponent => subscribedComponent.IsSubscribed);
+                bool subscribeTracker;
+                lock (watchdogLock)
+                {
+                    subscribeTracker = ControlPointList.All(subscribedComponent => subscribedComponent.IsSubscribed);
+                }
                 if (subscribeThread == null) return subscribeTracker;
-                if (subscribeTracker && subscribeThread.ThreadState == Thread.eThreadStates.ThreadRunning)
+                if (subscribeTracker && subscribeThread.ThreadState == ThreadState.Running)
                     StopSubscriptionThread();
                 return subscribeTracker;
             }
         }
 
+        private GenericQueue transmitQueue;
 
-        private CTimer watchDogTimer;
+        private System.Timers.Timer watchDogTimer;
+        private System.Timers.Timer watchDogTimeoutTimer;
 
-        private CTimer queueCheckTimer;
+        private System.Timers.Timer queueCheckTimer;
 
-        private CTimer unsubscribeTimer;
-        private CTimer subscribeTimer;
-        private CTimer expanderCheckTimer;
-        private CTimer pacer;
-        private CTimer paceTimer;
-        private CTimer getMaxTimer;
-        private CTimer getMinTimer;
-        private CTimer componentSubscribeTimer;
+        private System.Timers.Timer unsubscribeTimer;
+        private System.Timers.Timer subscribeTimer;
+        private System.Timers.Timer expanderCheckTimer;
+        private System.Timers.Timer pacer;
+        private System.Timers.Timer paceTimer;
+        private System.Timers.Timer getMaxTimer;
+        private System.Timers.Timer getMinTimer;
+        private System.Timers.Timer componentSubscribeTimer;
 
         private Thread subscribeThread;
 
@@ -114,7 +123,27 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
 
         private bool initalSubscription = true;
 
-        private bool WatchDogSniffer { get; set; }
+        private readonly object watchdogLock = new object();
+        private bool watchDogSnifferValue;
+        private int watchDogExpectedResponses = 0;
+        private int watchDogReceivedResponses = 0;
+        private bool WatchDogSniffer
+        {
+            get
+            {
+                lock (watchdogLock)
+                {
+                    return watchDogSnifferValue;
+                }
+            }
+            set
+            {
+                lock (watchdogLock)
+                {
+                    watchDogSnifferValue = value;
+                }
+            }
+        }
         public bool WatchdogSuspend { get; private set; }
 
         private readonly DeviceConfig dc;
@@ -147,10 +176,11 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
 
             CommandQueue = new TesiraQueue(2000, this);
 
+            transmitQueue = new GenericQueue($"{Key}-tx-queue", 250, 500);
+
             CommandPassthruFeedback = new StringFeedback("commandPassthru", () => DeviceRx);
 
             Communication = comm;
-
 
             if (comm is ISocketStatus socket)
             {
@@ -181,10 +211,11 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
                 isSerialComm = true;
             }
 
-
-            PortGather = new CommunicationGather(Communication, "\x0D\x0A");
+            PortGather = new CommunicationGather(Communication, "\r\n")
+            {
+                IncludeDelimiter = false
+            };
             PortGather.LineReceived += Port_LineReceived;
-
 
             CommunicationMonitor = new GenericCommunicationMonitor(this, Communication, 20000, 120000, 300000, () => SendLine("SESSION set verbose false"));
 
@@ -230,7 +261,7 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
                 InitialStart = false;
                 this.LogVerbose("CheckSerialStatus Ready");
 
-                CrestronInvoke.BeginInvoke(o => StartSubsciptionThread());
+                StartSubscriptionThread();
                 return;
             }
             if (isSerialComm) this.LogVerbose("CheckSerialSendStatus NOT READY");
@@ -246,51 +277,86 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
             CheckSerialSendStatus();
         }
 
+        private CancellationTokenSource subscriptionCancellationSource;
 
-
-        private void StartSubsciptionThread()
+        private void StartSubscriptionThread()
         {
-            this.LogDebug("Start Subscription Thread");
-            if (subscribeThread != null)
+            StopSubscriptionThread();
+
+            subscriptionCancellationSource = new CancellationTokenSource();
+            var token = subscriptionCancellationSource.Token;
+
+            subscribeThread = new Thread(o => HandleAttributeSubscriptions(token))
             {
-                if (subscribeThread.ThreadState == Thread.eThreadStates.ThreadRunning)
-                {
-                    return;
-                }
-            }
-            subscribeThread = null;
-            subscribeThread = new Thread(o => HandleAttributeSubscriptions(), null,
-                Thread.eThreadStartOptions.CreateSuspended)
-            {
-                Name = string.Format("{0}-queue", Key),
-                Priority = CrestronEnvironment.ProgramCompatibility.Equals(eCrestronSeries.Series4)
-                    ? Thread.eThreadPriority.LowestPriority
-                    : Thread.eThreadPriority.LowestPriority
+                Name = string.Format("{0}-subscription", Key)
             };
-            /*{
-				Priority = Thread.eThreadPriority.LowestPriority
-			};*/
 
             subscribeThread.Start();
         }
 
         private void StopSubscriptionThread()
         {
-            if (subscribeThread.ThreadState == Thread.eThreadStates.ThreadRunning)
-            {
-                subscribeThread = null;
-            }
+            this.LogDebug("Stopping subscription thread");
+
+            // Cancel the subscription process
+            subscriptionCancellationSource?.Cancel();
+
+            // Dispose of timers to prevent them from continuing
+            unsubscribeTimer?.Stop();
+            unsubscribeTimer?.Dispose();
+            unsubscribeTimer = null;
+
+            subscribeTimer?.Stop();
+            subscribeTimer?.Dispose();
+            subscribeTimer = null;
+
+            expanderCheckTimer?.Stop();
+            expanderCheckTimer?.Dispose();
+            expanderCheckTimer = null;
+
+            componentSubscribeTimer?.Stop();
+            componentSubscribeTimer?.Dispose();
+            componentSubscribeTimer = null;
+
+            pacer?.Stop();
+            pacer?.Dispose();
+            pacer = null;
+
+            paceTimer?.Stop();
+            paceTimer?.Dispose();
+            paceTimer = null;
+
+            getMaxTimer?.Stop();
+            getMaxTimer?.Dispose();
+            getMaxTimer = null;
+
+            getMinTimer?.Stop();
+            getMinTimer?.Dispose();
+            getMinTimer = null;
+
+            queueCheckTimer?.Stop();
+            queueCheckTimer?.Dispose();
+            queueCheckTimer = null;
+
+            subscribeThread = null;
+
+            this.LogDebug("Subscription thread stopped and resources cleaned up");
         }
 
         private void CrestronEnvironment_ProgramStatusEventHandler(eProgramStatusEventType programEventType)
         {
             if (programEventType != eProgramStatusEventType.Stopping) return;
 
+            // Stop subscription thread
+            StopSubscriptionThread();
+
             if (watchDogTimer != null)
             {
                 watchDogTimer.Stop();
                 watchDogTimer.Dispose();
             }
+
+            watchDogTimeoutTimer?.Dispose();
             if (CommunicationMonitor != null)
             {
                 CommunicationMonitor.Stop();
@@ -308,37 +374,41 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
                 ? props.ResubscribeString
                 : "resubscribeAll";
 
-            Faders.Clear();
-            Presets.Clear();
-            Dialers.Clear();
-            States.Clear();
-            Switchers.Clear();
-            ControlPointList.Clear();
-            Meters.Clear();
-            LogicMeters.Clear();
-            RoomCombiners.Clear();
+            // Lock the entire control point list creation process
+            lock (watchdogLock)
+            {
+                Faders.Clear();
+                Presets.Clear();
+                Dialers.Clear();
+                States.Clear();
+                Switchers.Clear();
+                ControlPointList.Clear();
+                Meters.Clear();
+                LogicMeters.Clear();
+                RoomCombiners.Clear();
 
-            CreateFaders(props);
+                CreateFaders(props);
 
-            CreateSwitchers(props);
+                CreateSwitchers(props);
 
-            CreateRouters(props);
+                CreateRouters(props);
 
-            CreateSourceSelectors(props);
+                CreateSourceSelectors(props);
 
-            CreateDialers(props);
+                CreateDialers(props);
 
-            CreateStates(props);
+                CreateStates(props);
 
-            CreatePresets(props);
+                CreatePresets(props);
 
-            CreateMeters(props);
+                CreateMeters(props);
 
-            CreateLogicMeters(props);
+                CreateLogicMeters(props);
 
-            CreateCrosspoints(props);
+                CreateCrosspoints(props);
 
-            CreateRoomCombiners(props);
+                CreateRoomCombiners(props);
+            }
 
             CreateDevInfo();
 
@@ -656,13 +726,22 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
 
         private void StartWatchDog()
         {
+            // Use 5 minutes (300000ms) interval since we now check all subscriptions at once
+            // This is more efficient than checking one component every 90 seconds
+            const int watchDogIntervalMs = 300000; // 5 minutes
+
             if (watchDogTimer == null)
             {
-                watchDogTimer = new CTimer(o => CheckWatchDog(), null, 90000, 90000);
+                watchDogTimer = new System.Timers.Timer(watchDogIntervalMs);
+                watchDogTimer.Elapsed += (sender, e) => CheckWatchDog();
+                watchDogTimer.AutoReset = true;
+                watchDogTimer.Start();
             }
             else
             {
-                watchDogTimer.Reset(90000, 90000);
+                watchDogTimer.Stop();
+                watchDogTimer.Interval = watchDogIntervalMs;
+                watchDogTimer.Start();
             }
         }
 
@@ -672,50 +751,140 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
             watchDogTimer.Stop();
             watchDogTimer.Dispose();
             watchDogTimer = null;
+
+            // Also clean up timeout timer
+            watchDogTimeoutTimer?.Dispose();
+            watchDogTimeoutTimer = null;
+
+            // Reset watchdog state
+            lock (watchdogLock)
+            {
+                WatchDogSniffer = false;
+                watchDogExpectedResponses = 0;
+                watchDogReceivedResponses = 0;
+            }
         }
+
 
         private void CheckWatchDog()
         {
             try
             {
-                if (ControlPointList.Count == 0) return;
+                // Create a snapshot of the ControlPointList to avoid collection modification issues
+                List<ISubscribedComponent> controlPointSnapshot;
+                lock (watchdogLock)
+                {
+                    if (ControlPointList.Count == 0) return;
+                    controlPointSnapshot = new List<ISubscribedComponent>(ControlPointList);
+                }
+
                 if (WatchdogSuspend)
                 {
                     WatchDogSniffer = false;
                     return;
                 }
-                this.LogDebug("The Watchdog is on the hunt!");
-                if (!WatchDogSniffer)
+
+                if (WatchDogSniffer)
                 {
-                    this.LogDebug("The Watchdog is picking up a scent!");
-
-
-                    var random = new Random(DateTime.Now.Millisecond + DateTime.Now.Second + DateTime.Now.Minute
-                        + DateTime.Now.Hour + DateTime.Now.Day + DateTime.Now.Month + DateTime.Now.Year);
-
-                    var watchDogSubject = ControlPointList[random.Next(0, ControlPointList.Count)];
-                    if (!watchDogSubject.IsSubscribed)
-                    {
-                        this.LogDebug("The Watchdog was wrong - that's just an old shoe.  Nothing is subscribed.");
-                        return;
-                    }
-                    this.LogDebug("The Watchdog is sniffing \"{0}\".", watchDogSubject.Key);
-
-                    WatchDogSniffer = true;
-
-                    watchDogSubject.Subscribe();
-                }
-                else
-                {
-                    this.LogDebug("The WatchDog smells something foul....let's resubscribe!");
+                    this.LogDebug("Resubscribing all control points.");
                     Resubscribe();
+                    return;
+                }
+
+                // Check all subscriptions at once instead of just one
+                var subscribedComponents = controlPointSnapshot.Where(c => c.IsSubscribed).ToList();
+
+                if (subscribedComponents.Count == 0)
+                {
+                    this.LogDebug("No subscribed components to check.");
+                    return;
+                }
+
+                this.LogDebug("Watchdog checking all {count} subscribed components.", subscribedComponents.Count);
+
+                // Initialize watchdog tracking
+                lock (watchdogLock)
+                {
+                    WatchDogSniffer = true;
+                    watchDogExpectedResponses = subscribedComponents.Count;
+                    watchDogReceivedResponses = 0;
+                }
+
+                // Set up timeout timer (10 seconds should be plenty for all responses)
+                watchDogTimeoutTimer?.Dispose();
+                watchDogTimeoutTimer = CreateOneShotTimer(HandleWatchDogTimeout, 10000);
+
+                // Subscribe to all components to verify their subscription status
+                foreach (var component in subscribedComponents)
+                {
+                    component.Subscribe();
                 }
 
             }
             catch (Exception ex)
             {
-                this.LogError(ex, "Watchdog Error");
+                this.LogError("Watchdog Error: {message}", ex.Message);
+                this.LogDebug(ex, "Stack Trace: ");
             }
+        }
+
+        private void HandleWatchDogTimeout()
+        {
+            lock (watchdogLock)
+            {
+                if (WatchDogSniffer)
+                {
+                    this.LogWarning("Watchdog timeout - only received {received}/{expected} responses. Triggering resubscribe.",
+                        watchDogReceivedResponses, watchDogExpectedResponses);
+
+                    // Clear watchdog state and trigger resubscribe
+                    WatchDogSniffer = false;
+                    watchDogExpectedResponses = 0;
+                    watchDogReceivedResponses = 0;
+
+                    // Trigger resubscribe on next watchdog cycle
+                    this.LogDebug("Scheduling resubscribe due to watchdog timeout.");
+                    Resubscribe();
+                }
+            }
+        }
+
+        /// <summary>
+        /// Creates a one-shot timer that executes after the specified delay
+        /// </summary>
+        /// <param name="action">Action to execute</param>
+        /// <param name="delayMs">Delay in milliseconds</param>
+        /// <returns>Timer instance</returns>
+        private System.Timers.Timer CreateOneShotTimer(Action action, double delayMs)
+        {
+            var timer = new System.Timers.Timer(delayMs)
+            {
+                AutoReset = false
+            };
+            timer.Elapsed += (sender, e) =>
+                  {
+                      action();
+                      timer.Dispose();
+                  };
+            timer.Start();
+            return timer;
+        }
+
+        /// <summary>
+        /// Creates a repeating timer that executes at the specified interval
+        /// </summary>
+        /// <param name="action">Action to execute</param>
+        /// <param name="intervalMs">Interval in milliseconds</param>
+        /// <returns>Timer instance</returns>
+        private System.Timers.Timer CreateRepeatingTimer(Action action, double intervalMs)
+        {
+            var timer = new System.Timers.Timer(intervalMs)
+            {
+                AutoReset = true
+            };
+            timer.Elapsed += (sender, e) => action();
+            timer.Start();
+            return timer;
         }
 
         #endregion
@@ -723,17 +892,15 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
         #region String Handling
 
         /// <summary>
-		/// Sends a command to the DSP (with delimiter appended)
-		/// </summary>
-		/// <param name="s">Command to send</param>
-		public void SendLine(string s)
+        /// Sends a command to the DSP (with delimiter appended)
+        /// </summary>
+        /// <param name="s">Command to send</param>
+        public void SendLine(string s)
         {
             if (string.IsNullOrEmpty(s))
                 return;
 
-            //this.LogDebug("TX: '{0}'", s);
-
-            Communication.SendText(s + "\x0D");
+            SendLineRaw($"{s}\r\n");
         }
 
         /// <summary>
@@ -745,8 +912,9 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
             if (string.IsNullOrEmpty(s))
                 return;
 
-            //this.LogDebug("TX: '{0}'", s);
-            Communication.SendText(s);
+            var message = new ProcessStringMessage(s, Communication.SendText);
+
+            transmitQueue.Enqueue(message);
         }
 
         private const string subscriptionPattern = "! [\\\"](.*?[^\\\\])[\\\"] (.*)";
@@ -760,40 +928,36 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
 
             if (string.IsNullOrEmpty(args.Text)) return;
 
+            this.LogVerbose("RX: '{response}'", args.Text);
 
             try
             {
-
-                //this.LogDebug("RX: '{0}'", ShowHexResponse ? ComTextHelper.GetEscapedText(args.Text) : args.Text);
-
                 DeviceRx = args.Text;
 
                 CommandPassthruFeedback.FireUpdate();
 
                 if (args.Text.Length == 0) return;
 
-                //if (args.Text.IndexOf("Welcome", StringComparison.Ordinal) > -1)
                 if (args.Text.Contains("Welcome"))
                 {
                     // Indicates a new TTP session
-                    // moved to CustomActivate() method
                     if (!isSerialComm)
                     {
                         CommunicationMonitor.Start();
                     }
-                    CrestronInvoke.BeginInvoke(o => StartSubsciptionThread());
-
+                    StartSubscriptionThread();
+                    return;
                 }
-
-                //else if (args.Text.IndexOf(ResubsriptionString, StringComparison.Ordinal) > -1)
-                else if (args.Text.Equals(ResubscriptionString, StringComparison.OrdinalIgnoreCase))
+                if (args.Text.Equals(ResubscriptionString, StringComparison.OrdinalIgnoreCase))
                 {
-                    if (!string.IsNullOrEmpty(ResubscriptionString))
-                        CommandQueue.Clear();
+
+                    CommandQueue.Clear();
                     Resubscribe();
+                    return;
                 }
 
-                else if (args.Text.IndexOf("! ", StringComparison.Ordinal) >= 0)
+                // Subscription Message
+                if (args.Text.IndexOf("! ", StringComparison.Ordinal) >= 0)
                 {
 
                     var match = subscriptionRegex.Match(args.Text);
@@ -803,9 +967,15 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
                     var customName = match.Groups[1].Value;
                     var value = match.Groups[2].Value;
                     this.LogVerbose("Subscription Message: 'Name: {0} Value:{1}'", customName, value);
-                    //CommandQueue.AdvanceQueue(args.Text);
 
-                    foreach (var component in from component in ControlPointList let item = component from n in item.CustomNames.Where(n => n == customName) select component)
+                    // Create a snapshot to avoid collection modification issues
+                    List<ISubscribedComponent> controlPointSnapshot;
+                    lock (watchdogLock)
+                    {
+                        controlPointSnapshot = new List<ISubscribedComponent>(ControlPointList);
+                    }
+
+                    foreach (var component in from component in controlPointSnapshot let item = component from n in item.CustomNames.Where(n => n == customName) select component)
                     {
                         if (component == null)
                         {
@@ -814,52 +984,80 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
                         }
                         component.ParseSubscriptionMessage(customName, value);
                     }
+                    return;
                 }
 
-                else if (args.Text.IndexOf("+OK", StringComparison.Ordinal) == 0)
+                if (args.Text.IndexOf("+OK", StringComparison.Ordinal) == 0)
                 {
-                    if (InitialStart) CheckSerialSendStatus();
-                    // if (args.Text == "+OK")       // Check for a simple "+OK" only 'ack' repsonse or a list response and ignore
-                    // return;
-
-                    // response is not from a subscribed attribute.  From a get/set/toggle/increment/decrement command
-                    //string pattern = "(?<=\" )(.*?)(?=\\+)";
-                    //string data = Regex.Replace(args.Text, pattern, "");
+                    if (InitialStart)
+                    {
+                        CheckSerialSendStatus();
+                    }
 
                     CommandQueue.AdvanceQueue(args.Text);
+                    return;
                 }
 
-                else if (args.Text.IndexOf("DEVICE recallPresetByName", StringComparison.Ordinal) == 0)
+                if (args.Text.IndexOf("DEVICE recallPresetByName", StringComparison.Ordinal) == 0)
                 {
                     CommandQueue.AdvanceQueue(args.Text);
+                    return;
                 }
-                else if (args.Text.IndexOf("-ERR", StringComparison.Ordinal) >= 0)
+
+                if (args.Text.IndexOf("-ERR", StringComparison.Ordinal) >= 0)
                 {
                     // Error response
-
                     if (args.Text.IndexOf("ALREADY_SUBSCRIBED", StringComparison.Ordinal) >= 0)
                     {
                         if (WatchDogSniffer)
-                            this.LogDebug("The Watchdog didn't find anything.  Good Boy!");
+                        {
+                            lock (watchdogLock)
+                            {
+                                watchDogReceivedResponses++;
+                                this.LogVerbose("Watchdog response {received}/{expected} - Component already subscribed.",
+                                    watchDogReceivedResponses, watchDogExpectedResponses);
 
-                        WatchDogSniffer = false;
-                        //CommandQueue.AdvanceQueue(args.Text);
+                                // Clear sniffer flag when all responses received
+                                if (watchDogReceivedResponses >= watchDogExpectedResponses)
+                                {
+                                    this.LogDebug("All watchdog responses received. Subscriptions verified.");
+                                    WatchDogSniffer = false;
+                                    watchDogExpectedResponses = 0;
+                                    watchDogReceivedResponses = 0;
+
+                                    // Cancel timeout timer since we received all responses
+                                    watchDogTimeoutTimer?.Dispose();
+                                    watchDogTimeoutTimer = null;
+                                }
+                            }
+                        }
                     }
-
                     else
                     {
                         this.LogDebug("Error From DSP: '{0}'", args.Text);
-                        WatchDogSniffer = false;
+
+                        // Any other error during watchdog check means we need to resubscribe
+                        if (WatchDogSniffer)
+                        {
+                            lock (watchdogLock)
+                            {
+                                WatchDogSniffer = false;
+                                watchDogExpectedResponses = 0;
+                                watchDogReceivedResponses = 0;
+                            }
+                        }
+
                         CommandQueue.AdvanceQueue(args.Text);
                     }
+
+                    return;
                 }
             }
             catch (Exception e)
             {
-                if (args.Text.Length > 0)
-                    this.LogError(e, "Error parsing response {response}", args.Text);
+                this.LogError("Exception handling response: {response}: {exception}", args.Text, e.Message);
+                this.LogDebug(e, "Stack trace: ");
             }
-
         }
 
         #endregion
@@ -887,7 +1085,6 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
         {
             this.LogVerbose("Running Preset By Name - {0}", name);
             SendLine(string.Format("DEVICE recallPresetByName \"{0}\"", name));
-            //CommandQueue.EnqueueCommand(string.Format("DEVICE recallPresetByName \"{0}\"", name));
         }
 
         /// <summary>
@@ -898,7 +1095,6 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
         {
             this.LogVerbose("Running Preset By ID - {0}", id);
             SendLine(string.Format("DEVICE recallPreset {0}", id));
-            //CommandQueue.EnqueueCommand(string.Format("DEVICE recallPreset {0}", id));
         }
 
         public void RecallPreset(string key)
@@ -932,27 +1128,54 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
         #region Unsubscribe
 
 
-        private void UnsubscribeFromComponents()
+        private void UnsubscribeFromComponents(CancellationToken token = default)
         {
+            if (token.IsCancellationRequested)
+            {
+                this.LogDebug("UnsubscribeFromComponents cancelled");
+                return;
+            }
 
-            pacer = new CTimer(o => UnsubscribeFromComponent(0), null, 250);
+            pacer = CreateOneShotTimer(() => UnsubscribeFromComponent(0, token), 250);
         }
 
-        private void UnsubscribeFromComponent(int index)
+        private void UnsubscribeFromComponent(int index, CancellationToken token = default)
         {
-            var controlPoint = ControlPointList[index];
-            if (controlPoint != null) UnsubscribeFromComponent(controlPoint);
-            var newIndex = index + 1;
-            this.LogVerbose("NewIndex == {0} and ControlPointListCount == {1}", newIndex, ControlPointList.Count());
-            if (newIndex < ControlPointList.Count())
+            if (token.IsCancellationRequested)
             {
-                unsubscribeTimer = new CTimer(o => UnsubscribeFromComponent(newIndex), null, 250);
+                this.LogDebug("UnsubscribeFromComponent cancelled at index {0}", index);
+                return;
+            }
+
+            // Create a snapshot to avoid collection modification issues
+            ISubscribedComponent controlPoint;
+            int controlPointCount;
+            lock (watchdogLock)
+            {
+                if (index >= ControlPointList.Count)
+                {
+                    this.LogDebug("Index {0} is out of range for ControlPointList", index);
+                    return;
+                }
+                controlPoint = ControlPointList[index];
+                controlPointCount = ControlPointList.Count;
+            }
+
+            if (controlPoint != null) UnsubscribeFromComponent(controlPoint);
+
+            var newIndex = index + 1;
+
+            this.LogVerbose("NewIndex == {0} and ControlPointListCount == {1}", newIndex, controlPointCount);
+
+            if (newIndex < controlPointCount)
+            {
+                unsubscribeTimer = CreateOneShotTimer(() => UnsubscribeFromComponent(newIndex, token), 250);
             }
             else
             {
                 this.LogDebug("Subscribe To Components");
                 unsubscribeTimer?.Dispose();
-                subscribeTimer = new CTimer(o => SubscribeToComponents(), null, 250);
+                subscribeTimer = CreateOneShotTimer(() => SubscribeToComponents(token), 250);
             }
         }
 
@@ -967,61 +1190,81 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
 
         #region Subscribe
 
-        private void SubscribeToComponents()
+        private void SubscribeToComponents(CancellationToken token = default)
         {
+            if (token.IsCancellationRequested)
+            {
+                this.LogDebug("SubscribeToComponents cancelled");
+                return;
+            }
+
             this.LogDebug("Subscribing to Components");
 
             unsubscribeTimer?.Dispose();
             subscribeTimer?.Dispose();
             initalSubscription = false;
-            if (DevInfo != null)
+            if (DevInfo == null)
             {
-                this.LogVerbose("DevInfo Not Null");
-                DevInfo.GetDeviceInfo();
-
+                return;
             }
 
-            expanderCheckTimer = new CTimer(o => CheckExpanders(), null, 1000);
+            this.LogVerbose("DevInfo Not Null");
+            DevInfo.GetDeviceInfo();
+
+            expanderCheckTimer = CreateOneShotTimer(() => CheckExpanders(token), 1000);
         }
 
 
         private void GetMinLevels()
         {
             this.LogDebug("GetMinLevels Started");
-            var newList = ControlPointList.OfType<IVolumeComponent>().ToList();
-
-            if (newList.Any())
+            IEnumerable<IVolumeComponent> newList;
+            lock (watchdogLock)
             {
-                paceTimer = new CTimer(o => GetMinLevel(newList, 0), null, 250);
+                newList = ControlPointList.OfType<IVolumeComponent>().ToList();
             }
+
+            if (!newList.Any())
+            {
+                return;
+            }
+
+            paceTimer = CreateOneShotTimer(() => GetMinLevel(newList.ToList(), 0), 250);
         }
 
         private void GetMaxLevels()
         {
             this.LogDebug("GetMaxLevels Started");
-            var newList = ControlPointList.OfType<IVolumeComponent>().ToList();
-
-            if (newList.Any())
+            IEnumerable<IVolumeComponent> newList;
+            lock (watchdogLock)
             {
-                paceTimer = new CTimer(o => GetMaxLevel(newList, 0), null, 250);
+                newList = ControlPointList.OfType<IVolumeComponent>().ToList();
             }
+
+            if (!newList.Any())
+            {
+                return;
+            }
+            paceTimer = CreateOneShotTimer(() => GetMaxLevel(newList.ToList(), 0), 250);
         }
 
-        private void GetMaxLevel(IList<IVolumeComponent> faders, int index)
+        private void GetMaxLevel(List<IVolumeComponent> faders, int index)
         {
             var data = faders[index];
+
             data?.GetMaxLevel();
             var indexerOutput = index + 1;
-            this.LogVerbose("Indexer = {0} : Count = {1} : MaxLevel", indexerOutput, faders.Count());
+
             if (indexerOutput < faders.Count)
             {
-                getMaxTimer = new CTimer(o => GetMaxLevel(faders, indexerOutput), null, 250);
+                getMaxTimer = CreateOneShotTimer(() => GetMaxLevel(faders, indexerOutput), 250);
                 return;
             }
             getMaxTimer?.Dispose();
-            pacer = new CTimer(o => QueueCheckDelayed(), null, 250);
+            pacer = CreateOneShotTimer(() => QueueCheckDelayed(), 250);
         }
-        private void GetMinLevel(IList<IVolumeComponent> faders, int index)
+
+        private void GetMinLevel(List<IVolumeComponent> faders, int index)
         {
             var data = faders[index];
             data?.GetMinLevel();
@@ -1029,11 +1272,11 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
             this.LogVerbose("Indexer = {0} : Count = {1} : MinLevel", indexerOutput, faders.Count());
             if (indexerOutput < faders.Count)
             {
-                getMinTimer = new CTimer(o => GetMinLevel(faders, indexerOutput), null, 250);
+                getMinTimer = CreateOneShotTimer(() => GetMinLevel(faders, indexerOutput), 250);
                 return;
             }
             getMinTimer?.Dispose();
-            pacer = new CTimer(o => GetMaxLevels(), null, 250);
+            pacer = CreateOneShotTimer(() => GetMaxLevels(), 250);
         }
 
 
@@ -1043,23 +1286,39 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
 
             if (queueCheckTimer == null)
             {
-                queueCheckTimer = new CTimer(o => QueueCheckSubscribe(), null, 1000, 1000);
+                queueCheckTimer = CreateRepeatingTimer(() => QueueCheckSubscribe(), 1000);
             }
             else
             {
-                queueCheckTimer.Reset(250, 250);
+                queueCheckTimer.Stop();
+                queueCheckTimer.Interval = 250;
+                queueCheckTimer.Start();
             }
 
         }
 
 
-        private void CheckExpanders()
+        private void CheckExpanders(CancellationToken token = default)
         {
+            if (token.IsCancellationRequested)
+            {
+                this.LogDebug("CheckExpanders cancelled");
+                return;
+            }
+
             expanderCheckTimer.Dispose();
             this.LogDebug("CheckExpanders Started");
 
             ExpanderTracker?.Initialize();
-            pacer = new CTimer(o => GetMinLevels(), null, 250);
+
+            // Check cancellation before starting the next timer
+            if (token.IsCancellationRequested)
+            {
+                this.LogDebug("CheckExpanders cancelled before starting GetMinLevels");
+                return;
+            }
+
+            pacer = CreateOneShotTimer(() => GetMinLevels(), 250);
         }
 
         private void QueueCheckSubscribe()
@@ -1069,13 +1328,15 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
             {
                 queueCheckTimer.Stop();
                 queueCheckTimer = null;
-                pacer = new CTimer(o => SubscribeToComponentByIndex(0), null, 250);
+                pacer = CreateOneShotTimer(() => SubscribeToComponentByIndex(0), 250);
 
             }
             else
             {
                 CommandQueue.SendNextQueuedCommand();
-                queueCheckTimer.Reset(1000, 1000);
+                queueCheckTimer.Stop();
+                queueCheckTimer.Interval = 1000;
+                queueCheckTimer.Start();
             }
         }
 
@@ -1090,17 +1351,24 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
 
         private void SubscribeToComponentByIndex(int indexer)
         {
-            if (indexer >= ControlPointList.Count)
+            ISubscribedComponent data;
+            int controlPointCount;
+            lock (watchdogLock)
             {
-                EndSubscriptionProcess();
-                return;
+                if (indexer >= ControlPointList.Count)
+                {
+                    EndSubscriptionProcess();
+                    return;
+                }
+                data = ControlPointList[indexer];
+                controlPointCount = ControlPointList.Count;
             }
+
             this.LogDebug("Subscribing to Component {0}", indexer);
-            var data = ControlPointList[indexer];
             SubscribeToComponent(data);
             var indexerOutput = indexer + 1;
-            this.LogVerbose("Indexer = {0} : Count = {1} : ControlPointList", indexerOutput, ControlPointList.Count());
-            componentSubscribeTimer = new CTimer(o => SubscribeToComponentByIndex(indexerOutput), null, 250);
+            this.LogVerbose("Indexer = {0} : Count = {1} : ControlPointList", indexerOutput, controlPointCount);
+            componentSubscribeTimer = CreateOneShotTimer(() => SubscribeToComponentByIndex(indexerOutput), 250);
         }
 
         private void EndSubscriptionProcess()
@@ -1117,11 +1385,7 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
             {
                 control.DoPoll();
             }
-
         }
-
-
-
 
         #endregion
 
@@ -1132,38 +1396,61 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
         {
             this.LogInformation("Issue Detected with device subscriptions - resubscribing to all controls");
             StopWatchDog();
-            StartSubsciptionThread();
+            StartSubscriptionThread();
         }
 
-        private object HandleAttributeSubscriptions()
+        private object HandleAttributeSubscriptions(CancellationToken token)
         {
             this.LogDebug("HandleAttributeSubscriptions - LIVE");
-            //_subscriptionLock.Enter();
-            if (Communication.IsConnected)
+
+            try
             {
-                SendLine("SESSION set verbose false");
-                try
+                // Check for cancellation before starting
+                token.ThrowIfCancellationRequested();
+
+                if (Communication.IsConnected)
                 {
+                    // Check for cancellation before sending commands
+                    token.ThrowIfCancellationRequested();
+
+                    SendLine("SESSION set verbose false");
+
+                    // Add delay with cancellation support
+                    if (token.WaitHandle.WaitOne(250))
+                    {
+                        this.LogDebug("Subscription thread cancelled during initial delay");
+                        return null;
+                    }
+
                     if (isSerialComm && initalSubscription)
                     {
+                        token.ThrowIfCancellationRequested();
                         initalSubscription = false;
-                        UnsubscribeFromComponents();
+                        UnsubscribeFromComponents(token);
                     }
                     else
                     {
+                        token.ThrowIfCancellationRequested();
                         //Subscribe
-                        SubscribeToComponents();
+                        SubscribeToComponents(token);
                     }
+                }
 
-                }
-                catch (Exception ex)
-                {
-                    this.LogError(ex, "Error Subscribing");
-                    //_subscriptionLock.Leave();
-                    //_subscriptionLock.Leave();
-                }
+                // Check for cancellation before starting watchdog
+                token.ThrowIfCancellationRequested();
+
+                StartWatchDog();
             }
-            StartWatchDog();
+            catch (OperationCanceledException)
+            {
+                this.LogDebug("HandleAttributeSubscriptions cancelled");
+                return null;
+            }
+            catch (Exception ex)
+            {
+                this.LogError(ex, "Error in HandleAttributeSubscriptions");
+            }
+
             return null;
         }
 
@@ -1195,9 +1482,7 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
                 bridge.AddJoinMap(string.Format("{0}--RoomCombinerJoinMap", Key), roomCombinerJoinMap);
             }
 
-            this.LogDebug("Linking to Trilist '{ipId}'", trilist.ID.ToString("X"));
-
-            //var comm = DspDevice as IBasicCommunication;
+            this.LogDebug("Linking to Trilist '{ipId:X}'", trilist.ID);
 
 
             CommunicationMonitor.IsOnlineFeedback.LinkInputSig(trilist.BooleanInput[deviceJoinMap.IsOnline.JoinNumber]);
@@ -1208,185 +1493,134 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
 
             trilist.SetSigTrueAction(deviceJoinMap.Resubscribe.JoinNumber, Resubscribe);
 
+            LinkFadersToApi(trilist, faderJoinMap);
 
-            //Level and Mute Control
-            this.LogVerbose("There are {0} Level Control Points", Faders.Count());
-            foreach (var item in Faders)
+            LinkStatesToApi(trilist, stateJoinMap);
+
+            LinkLegacySwitchersToApi(trilist, switcherJoinMap);
+
+            LinkSwitchersToApi(trilist, switcherJoinMap);
+
+            LinkSourceSelectorsToApi(trilist, switcherJoinMap);
+
+            LinkPresetsToApi(trilist, presetJoinMap);
+
+            LinkDialersToApi(trilist, dialerJoinMap);
+
+            LinkMetersToApi(trilist, meterJoinMap);
+
+            LinkMatricesToApi(trilist, crosspointStateJoinMap);
+
+            LinkRoomCombinersToApi(trilist, roomCombinerJoinMap);
+
+            trilist.OnlineStatusChange += (d, args) =>
             {
-                var channel = item.Value;
-                var data = channel.BridgeIndex;
+                if (!args.DeviceOnLine) return;
+
+                foreach (var feedback in Feedbacks)
+                {
+                    feedback.FireUpdate();
+                }
+
+            };
+        }
+
+        private void LinkRoomCombinersToApi(BasicTriList trilist, TesiraRoomCombinerJoinMapAdvanced roomCombinerJoinMap)
+        {
+            this.LogVerbose("There are {0} Room Combiner Control Points", RoomCombiners.Count);
+            //x = 0;
+            foreach (var item in RoomCombiners)
+            {
+                var roomCombiner = item.Value;
+                var data = roomCombiner.BridgeIndex;
                 if (data == null) continue;
-                var x = (uint)data;
-                //var TesiraChannel = channel.Value as Tesira.DSP.EPI.TesiraDspLevelControl;
-                this.LogVerbose("TesiraChannel {0} connect", x);
+                var y = (uint)data;
 
-                var genericChannel = channel as IBasicVolumeWithFeedback;
+                var x = y > 1 ? ((y - 1) * 6) : 0;
 
-                if (!channel.Enabled) continue;
+                this.LogVerbose("Tesira Room Combiner {0} connect", x);
+
+                var genericChannel = roomCombiner as IBasicVolumeWithFeedback;
+                if (!roomCombiner.Enabled) continue;
 
                 this.LogVerbose("TesiraChannel {0} Is Enabled", x);
 
-                channel.NameFeedback.LinkInputSig(trilist.StringInput[faderJoinMap.Label.JoinNumber + x]);
-                channel.TypeFeedback.LinkInputSig(trilist.UShortInput[faderJoinMap.Type.JoinNumber + x]);
-                channel.ControlTypeFeedback.LinkInputSig(trilist.UShortInput[faderJoinMap.Status.JoinNumber + x]);
-                channel.PermissionsFeedback.LinkInputSig(trilist.UShortInput[faderJoinMap.Permissions.JoinNumber + x]);
-                channel.VisibleFeedback.LinkInputSig(trilist.BooleanInput[faderJoinMap.Visible.JoinNumber + x]);
+                roomCombiner.NameFeedback.LinkInputSig(trilist.StringInput[roomCombinerJoinMap.Label.JoinNumber + x]);
+                roomCombiner.VisibleFeedback.LinkInputSig(trilist.BooleanInput[roomCombinerJoinMap.Visible.JoinNumber + x]);
+                roomCombiner.TypeFeedback.LinkInputSig(trilist.UShortInput[roomCombinerJoinMap.Type.JoinNumber + x]);
+                roomCombiner.PermissionsFeedback.LinkInputSig(trilist.UShortInput[roomCombinerJoinMap.Permissions.JoinNumber + x]);
+                roomCombiner.RoomGroupFeedback.LinkInputSig(trilist.UShortInput[roomCombinerJoinMap.Group.JoinNumber + x]);
 
-                genericChannel.MuteFeedback.LinkInputSig(trilist.BooleanInput[faderJoinMap.MuteToggle.JoinNumber + x]);
-                genericChannel.MuteFeedback.LinkInputSig(trilist.BooleanInput[faderJoinMap.MuteOn.JoinNumber + x]);
-                genericChannel.MuteFeedback.LinkComplementInputSig(trilist.BooleanInput[faderJoinMap.MuteOff.JoinNumber + x]);
-                genericChannel.VolumeLevelFeedback.LinkInputSig(trilist.UShortInput[faderJoinMap.Volume.JoinNumber + x]);
+                genericChannel.MuteFeedback.LinkInputSig(trilist.BooleanInput[roomCombinerJoinMap.MuteToggle.JoinNumber + x]);
+                genericChannel.MuteFeedback.LinkInputSig(trilist.BooleanInput[roomCombinerJoinMap.MuteOn.JoinNumber + x]);
+                genericChannel.MuteFeedback.LinkComplementInputSig(trilist.BooleanInput[roomCombinerJoinMap.MuteOff.JoinNumber + x]);
+                genericChannel.VolumeLevelFeedback.LinkInputSig(trilist.UShortInput[roomCombinerJoinMap.Volume.JoinNumber + x]);
 
-                trilist.SetSigTrueAction(faderJoinMap.MuteToggle.JoinNumber + x, genericChannel.MuteToggle);
-                trilist.SetSigTrueAction(faderJoinMap.MuteOn.JoinNumber + x, genericChannel.MuteOn);
-                trilist.SetSigTrueAction(faderJoinMap.MuteOff.JoinNumber + x, genericChannel.MuteOff);
+                trilist.SetSigTrueAction(roomCombinerJoinMap.MuteToggle.JoinNumber + x, genericChannel.MuteToggle);
+                trilist.SetSigTrueAction(roomCombinerJoinMap.MuteOn.JoinNumber + x, genericChannel.MuteOn);
+                trilist.SetSigTrueAction(roomCombinerJoinMap.MuteOff.JoinNumber + x, genericChannel.MuteOff);
 
-                trilist.SetBoolSigAction(faderJoinMap.VolumeUp.JoinNumber + x, genericChannel.VolumeUp);
-                trilist.SetBoolSigAction(faderJoinMap.VolumeDown.JoinNumber + x, genericChannel.VolumeDown);
+                trilist.SetBoolSigAction(roomCombinerJoinMap.VolumeUp.JoinNumber + x, genericChannel.VolumeUp);
+                trilist.SetBoolSigAction(roomCombinerJoinMap.VolumeDown.JoinNumber + x, genericChannel.VolumeDown);
 
-                trilist.SetUShortSigAction(faderJoinMap.Volume.JoinNumber + x, u => { if (u > 0) { genericChannel.SetVolume(u); } });
-                //channel.Value.DoPoll();
+                trilist.SetUShortSigAction(roomCombinerJoinMap.Volume.JoinNumber + x, u => { if (u > 0) { genericChannel.SetVolume(u); } });
+
+                trilist.SetUShortSigAction(roomCombinerJoinMap.Group.JoinNumber + x, u => { if (u > 0) { roomCombiner.SetRoomGroup(u); } });
             }
+        }
 
-            //states
-            this.LogVerbose("There are {0} State Control Points", States.Count());
-            foreach (var item in States)
+        private void LinkMatricesToApi(BasicTriList trilist, TesiraCrosspointStateJoinMapAdvanced crosspointStateJoinMap)
+        {
+            this.LogVerbose("There are {0} Crosspoint State Control Points", CrosspointStates.Count);
+            foreach (var item in CrosspointStates)
             {
-                var state = item.Value;
-                var data = state.BridgeIndex;
+                var xpointState = item.Value;
+                var joinOffset = (xpointState.BridgeIndex - 1) * 3;
+                if (joinOffset == null) continue;
+
+
+                var channel = item.Value;
+                var data = channel.BridgeIndex;
                 if (data == null) continue;
 
-                var x = (uint)data - 1;
-                this.LogVerbose("Tesira State {0} connect to {1}", state.Key, x);
 
-                if (!state.Enabled) continue;
+                this.LogVerbose("Adding Crosspoint State ControlPoint {0} | JoinStart:{1}", xpointState.Key, crosspointStateJoinMap.Toggle.JoinNumber + joinOffset);
+                xpointState.CrosspointStateFeedback.LinkInputSig(trilist.BooleanInput[(uint)(crosspointStateJoinMap.Toggle.JoinNumber + joinOffset)]);
+                xpointState.CrosspointStateFeedback.LinkInputSig(trilist.BooleanInput[(uint)(crosspointStateJoinMap.On.JoinNumber + joinOffset)]);
 
-                this.LogVerbose("Tesira State {0} at {1} is Enabled", state.Key, x);
+                trilist.SetSigTrueAction((uint)(crosspointStateJoinMap.Toggle.JoinNumber + joinOffset), xpointState.StateToggle);
+                trilist.SetSigTrueAction((uint)(crosspointStateJoinMap.On.JoinNumber + joinOffset), xpointState.StateOn);
+                trilist.SetSigTrueAction((uint)(crosspointStateJoinMap.Off.JoinNumber + joinOffset), xpointState.StateOff);
 
-                state.StateFeedback.LinkInputSig(trilist.BooleanInput[stateJoinMap.Toggle.JoinNumber + x]);
-                state.StateFeedback.LinkInputSig(trilist.BooleanInput[stateJoinMap.On.JoinNumber + x]);
-                state.StateFeedback.LinkComplementInputSig(trilist.BooleanInput[stateJoinMap.Off.JoinNumber + x]);
-                state.NameFeedback.LinkInputSig(trilist.StringInput[stateJoinMap.Label.JoinNumber + x]);
 
-                trilist.SetSigTrueAction(stateJoinMap.Toggle.JoinNumber + x, state.StateToggle);
-                trilist.SetSigTrueAction(stateJoinMap.On.JoinNumber + x, state.StateOn);
-                trilist.SetSigTrueAction(stateJoinMap.Off.JoinNumber + x, state.StateOff);
             }
+        }
 
-
-            //Legacy Switchers
-            this.LogVerbose("There are {0} SourceSelector Control Points", Switchers.Count());
-            foreach (var item in Switchers)
+        private void LinkMetersToApi(BasicTriList trilist, TesiraMeterJoinMapAdvanced meterJoinMap)
+        {
+            this.LogVerbose("There are {0} Meter Control Points", Meters.Count);
+            foreach (var item in Meters)
             {
-                var switcher = item.Value;
-                var data = switcher.BridgeIndex;
+                var meter = item.Value;
+                var data = meter.BridgeIndex;
                 if (data == null) continue;
-                var y = (uint)data;
-                var x = (ushort)(((y - 1) * 2) + 1);
-                //3 switchers
-                //((1 - 1) * 2) + 1 = 1
-                //((2 - 1) * 2) + 1 = 3
-                //((3 - 1) * 2) + 1 = 5
-
-                this.LogVerbose("Tesira Switcher {0} connect to {1}", switcher.Key, y);
-
-                if (!switcher.Enabled) continue;
+                var x = (uint)(data - 1);
 
 
-                this.LogVerbose("Tesira Switcher {0} is Enabled", x);
+                this.LogVerbose("AddingMeterBridge {0} | Join:{1}", meter.Key, meterJoinMap.Label.JoinNumber);
 
-                var s = switcher as IRoutingWithFeedback;
-                s.SourceIndexFeedback.LinkInputSig(trilist.UShortInput[switcherJoinMap.Index.JoinNumber + x]);
+                meter.MeterFeedback.LinkInputSig(trilist.UShortInput[meterJoinMap.Meter.JoinNumber + x]);
+                meter.NameFeedback.LinkInputSig(trilist.StringInput[meterJoinMap.Label.JoinNumber + x]);
+                meter.SubscribedFeedback.LinkInputSig(trilist.BooleanInput[meterJoinMap.Subscribe.JoinNumber + x]);
 
-                trilist.SetUShortSigAction(switcherJoinMap.Index.JoinNumber + x, u => switcher.SetSource(u));
-                trilist.SetSigTrueAction(switcherJoinMap.Poll.JoinNumber + x, switcher.DoPoll);
+                trilist.SetSigTrueAction(meterJoinMap.Subscribe.JoinNumber, meter.Subscribe);
+                trilist.SetSigFalseAction(meterJoinMap.Subscribe.JoinNumber, meter.UnSubscribe);
 
-                switcher.NameFeedback.LinkInputSig(trilist.StringInput[switcherJoinMap.Label.JoinNumber + x]);
-
-                switcher.GetSourceNames();
             }
-            //Source Selectors
-            this.LogVerbose("There are {0} SourceSelector Control Points", Switchers.Count());
-            foreach (var item in Routers)
-            {
-                var switcher = item.Value;
-                var data = switcher.BridgeIndex;
-                if (data == null) continue;
-                var y = (uint)data;
-                var x = (ushort)(((y - 1) * 2) + 1);
-                //3 switchers
-                //((1 - 1) * 2) + 1 = 1
-                //((2 - 1) * 2) + 1 = 3
-                //((3 - 1) * 2) + 1 = 5
+        }
 
-                this.LogVerbose("Tesira Switcher {0} connect to {1}", switcher.Key, y);
-
-                if (!switcher.Enabled) continue;
-
-
-                this.LogVerbose("Tesira Switcher {0} is Enabled", x);
-
-                var s = switcher as IRoutingWithFeedback;
-                s.SourceIndexFeedback.LinkInputSig(trilist.UShortInput[switcherJoinMap.Index.JoinNumber + x]);
-
-                trilist.SetUShortSigAction(switcherJoinMap.Index.JoinNumber + x, u => switcher.SetSource(u));
-                trilist.SetSigTrueAction(switcherJoinMap.Poll.JoinNumber + x, switcher.DoPoll);
-
-                switcher.NameFeedback.LinkInputSig(trilist.StringInput[switcherJoinMap.Label.JoinNumber + x]);
-
-                switcher.GetSourceNames();
-            }
-            //Source Selectors
-            this.LogVerbose("There are {0} SourceSelector Control Points", Switchers.Count());
-            foreach (var item in SourceSelectors)
-            {
-                var switcher = item.Value;
-                var data = switcher.BridgeIndex;
-                if (data == null) continue;
-                var y = (uint)data;
-                var x = (ushort)(((y - 1) * 2) + 1);
-                //3 switchers
-                //((1 - 1) * 2) + 1 = 1
-                //((2 - 1) * 2) + 1 = 3
-                //((3 - 1) * 2) + 1 = 5
-
-                this.LogVerbose("Tesira Switcher {0} connect to {1}", switcher.Key, y);
-
-                if (!switcher.Enabled) continue;
-
-
-                this.LogVerbose("Tesira Switcher {0} is Enabled", x);
-
-                var s = switcher as IRoutingWithFeedback;
-                s.SourceIndexFeedback.LinkInputSig(trilist.UShortInput[switcherJoinMap.Index.JoinNumber + x]);
-
-                trilist.SetUShortSigAction(switcherJoinMap.Index.JoinNumber + x, u => switcher.SetSource(u));
-                trilist.SetSigTrueAction(switcherJoinMap.Poll.JoinNumber + x, switcher.DoPoll);
-
-                switcher.NameFeedback.LinkInputSig(trilist.StringInput[switcherJoinMap.Label.JoinNumber + x]);
-
-                switcher.GetSourceNames();
-            }
-
-
-
-            //Presets 
-            // string input executes preset recall using preset name
-            trilist.SetStringSigAction(presetJoinMap.PresetName.JoinNumber, RunPreset);
-            trilist.SetUShortSigAction(presetJoinMap.PresetName.JoinNumber, RunPresetNumber);
-            // digital input executes preset reall using preset id (RunPresetNumber))
-            foreach (var preset in Presets)
-            {
-                if (!(preset.Value is TesiraPreset p)) continue;
-                var runPresetIndex = p.PresetIndex;
-                var presetIndex = runPresetIndex;
-                trilist.StringInput[(uint)(presetJoinMap.PresetNameFeedback.JoinNumber + presetIndex)].StringValue = p.Label;
-                trilist.SetSigTrueAction((uint)(presetJoinMap.PresetSelection.JoinNumber + presetIndex),
-                    () => RecallPreset(p.Key));
-            }
-
-            // VoIP Dialer
-
+        private void LinkDialersToApi(BasicTriList trilist, TesiraDialerJoinMapAdvanced dialerJoinMap)
+        {
             uint lineOffset = 0;
             foreach (var line in Dialers)
             {
@@ -1403,13 +1637,13 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
                 for (var i = 0; i < dialerJoinMap.KeyPadNumeric.JoinSpan; i++)
                 {
                     var tempi = i;
-                    trilist.SetSigTrueAction((dialerJoinMap.KeyPadNumeric.JoinNumber + (uint)i + dialerLineOffset), () => dialer.SendKeypad((TesiraDspDialer.EKeypadKeys)(tempi)));
+                    trilist.SetSigTrueAction(dialerJoinMap.KeyPadNumeric.JoinNumber + (uint)i + dialerLineOffset, () => dialer.SendKeypad((TesiraDspDialer.EKeypadKeys)tempi));
                 }
 
-                trilist.SetSigTrueAction((dialerJoinMap.KeyPadStar.JoinNumber + dialerLineOffset), () => dialer.SendKeypad(TesiraDspDialer.EKeypadKeys.Star));
-                trilist.SetSigTrueAction((dialerJoinMap.KeyPadPound.JoinNumber + dialerLineOffset), () => dialer.SendKeypad(TesiraDspDialer.EKeypadKeys.Pound));
-                trilist.SetSigTrueAction((dialerJoinMap.KeyPadClear.JoinNumber + dialerLineOffset), () => dialer.SendKeypad(TesiraDspDialer.EKeypadKeys.Clear));
-                trilist.SetSigTrueAction((dialerJoinMap.KeyPadBackspace.JoinNumber + dialerLineOffset), () => dialer.SendKeypad(TesiraDspDialer.EKeypadKeys.Backspace));
+                trilist.SetSigTrueAction(dialerJoinMap.KeyPadStar.JoinNumber + dialerLineOffset, () => dialer.SendKeypad(TesiraDspDialer.EKeypadKeys.Star));
+                trilist.SetSigTrueAction(dialerJoinMap.KeyPadPound.JoinNumber + dialerLineOffset, () => dialer.SendKeypad(TesiraDspDialer.EKeypadKeys.Pound));
+                trilist.SetSigTrueAction(dialerJoinMap.KeyPadClear.JoinNumber + dialerLineOffset, () => dialer.SendKeypad(TesiraDspDialer.EKeypadKeys.Clear));
+                trilist.SetSigTrueAction(dialerJoinMap.KeyPadBackspace.JoinNumber + dialerLineOffset, () => dialer.SendKeypad(TesiraDspDialer.EKeypadKeys.Backspace));
 
                 trilist.SetSigTrueAction(dialerJoinMap.KeyPadDial.JoinNumber + dialerLineOffset, dialer.Dial);
                 trilist.SetSigTrueAction(dialerJoinMap.DoNotDisturbToggle.JoinNumber + dialerLineOffset, dialer.DoNotDisturbToggle);
@@ -1459,102 +1693,193 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
 
                 lineOffset += 50;
             }
+        }
 
-            this.LogVerbose("There are {0} Meter Control Points", Meters.Count);
-            foreach (var item in Meters)
+        private void LinkPresetsToApi(BasicTriList trilist, TesiraPresetJoinMapAdvanced presetJoinMap)
+        {
+            // string input executes preset recall using preset name
+            trilist.SetStringSigAction(presetJoinMap.PresetName.JoinNumber, RunPreset);
+            trilist.SetUShortSigAction(presetJoinMap.PresetName.JoinNumber, RunPresetNumber);
+            // digital input executes preset reall using preset id (RunPresetNumber))
+            foreach (var preset in Presets)
             {
-                var meter = item.Value;
-                var data = meter.BridgeIndex;
-                if (data == null) continue;
-                var x = (uint)(data - 1);
-
-
-                this.LogVerbose("AddingMeterBridge {0} | Join:{1}", meter.Key, meterJoinMap.Label.JoinNumber);
-
-                meter.MeterFeedback.LinkInputSig(trilist.UShortInput[meterJoinMap.Meter.JoinNumber + x]);
-                meter.NameFeedback.LinkInputSig(trilist.StringInput[meterJoinMap.Label.JoinNumber + x]);
-                meter.SubscribedFeedback.LinkInputSig(trilist.BooleanInput[meterJoinMap.Subscribe.JoinNumber + x]);
-
-                trilist.SetSigTrueAction(meterJoinMap.Subscribe.JoinNumber, meter.Subscribe);
-                trilist.SetSigFalseAction(meterJoinMap.Subscribe.JoinNumber, meter.UnSubscribe);
-
+                if (!(preset.Value is TesiraPreset p)) continue;
+                var runPresetIndex = p.PresetIndex;
+                var presetIndex = runPresetIndex;
+                trilist.StringInput[(uint)(presetJoinMap.PresetNameFeedback.JoinNumber + presetIndex)].StringValue = p.Label;
+                trilist.SetSigTrueAction((uint)(presetJoinMap.PresetSelection.JoinNumber + presetIndex),
+                    () => RecallPreset(p.Key));
             }
+        }
 
-            this.LogVerbose("There are {0} Crosspoint State Control Points", CrosspointStates.Count);
-            foreach (var item in CrosspointStates)
+        private void LinkSourceSelectorsToApi(BasicTriList trilist, TesiraSwitcherJoinMapAdvanced switcherJoinMap)
+        {
+            this.LogVerbose("There are {0} SourceSelector Control Points", Switchers.Count());
+            foreach (var item in SourceSelectors)
             {
-                var xpointState = item.Value;
-                var joinOffset = ((xpointState.BridgeIndex - 1) * 3);
-                if (joinOffset == null) continue;
+                var switcher = item.Value;
+                var data = switcher.BridgeIndex;
+                if (data == null) continue;
+                var y = (uint)data;
+                var x = (ushort)(((y - 1) * 2) + 1);
+                //3 switchers
+                //((1 - 1) * 2) + 1 = 1
+                //((2 - 1) * 2) + 1 = 3
+                //((3 - 1) * 2) + 1 = 5
+
+                this.LogVerbose("Tesira Switcher {0} connect to {1}", switcher.Key, y);
+
+                if (!switcher.Enabled) continue;
 
 
+                this.LogVerbose("Tesira Switcher {0} is Enabled", x);
+
+                var s = switcher as IRoutingWithFeedback;
+                s.SourceIndexFeedback.LinkInputSig(trilist.UShortInput[switcherJoinMap.Index.JoinNumber + x]);
+
+                trilist.SetUShortSigAction(switcherJoinMap.Index.JoinNumber + x, u => switcher.SetSource(u));
+                trilist.SetSigTrueAction(switcherJoinMap.Poll.JoinNumber + x, switcher.DoPoll);
+
+                switcher.NameFeedback.LinkInputSig(trilist.StringInput[switcherJoinMap.Label.JoinNumber + x]);
+
+                switcher.GetSourceNames();
+            }
+        }
+
+        private void LinkSwitchersToApi(BasicTriList trilist, TesiraSwitcherJoinMapAdvanced switcherJoinMap)
+        {
+            this.LogVerbose("There are {0} SourceSelector Control Points", Switchers.Count());
+            foreach (var item in Routers)
+            {
+                var switcher = item.Value;
+                var data = switcher.BridgeIndex;
+                if (data == null) continue;
+                var y = (uint)data;
+                var x = (ushort)(((y - 1) * 2) + 1);
+                //3 switchers
+                //((1 - 1) * 2) + 1 = 1
+                //((2 - 1) * 2) + 1 = 3
+                //((3 - 1) * 2) + 1 = 5
+
+                this.LogVerbose("Tesira Switcher {0} connect to {1}", switcher.Key, y);
+
+                if (!switcher.Enabled) continue;
+
+
+                this.LogVerbose("Tesira Switcher {0} is Enabled", x);
+
+                var s = switcher as IRoutingWithFeedback;
+                s.SourceIndexFeedback.LinkInputSig(trilist.UShortInput[switcherJoinMap.Index.JoinNumber + x]);
+
+                trilist.SetUShortSigAction(switcherJoinMap.Index.JoinNumber + x, u => switcher.SetSource(u));
+                trilist.SetSigTrueAction(switcherJoinMap.Poll.JoinNumber + x, switcher.DoPoll);
+
+                switcher.NameFeedback.LinkInputSig(trilist.StringInput[switcherJoinMap.Label.JoinNumber + x]);
+
+                switcher.GetSourceNames();
+            }
+        }
+
+        private void LinkLegacySwitchersToApi(BasicTriList trilist, TesiraSwitcherJoinMapAdvanced switcherJoinMap)
+        {
+            this.LogVerbose("There are {0} SourceSelector Control Points", Switchers.Count());
+            foreach (var item in Switchers)
+            {
+                var switcher = item.Value;
+                var data = switcher.BridgeIndex;
+                if (data == null) continue;
+                var y = (uint)data;
+                var x = (ushort)(((y - 1) * 2) + 1);
+                //3 switchers
+                //((1 - 1) * 2) + 1 = 1
+                //((2 - 1) * 2) + 1 = 3
+                //((3 - 1) * 2) + 1 = 5
+
+                this.LogVerbose("Tesira Switcher {0} connect to {1}", switcher.Key, y);
+
+                if (!switcher.Enabled) continue;
+
+
+                this.LogVerbose("Tesira Switcher {0} is Enabled", x);
+
+                var s = switcher as IRoutingWithFeedback;
+                s.SourceIndexFeedback.LinkInputSig(trilist.UShortInput[switcherJoinMap.Index.JoinNumber + x]);
+
+                trilist.SetUShortSigAction(switcherJoinMap.Index.JoinNumber + x, u => switcher.SetSource(u));
+                trilist.SetSigTrueAction(switcherJoinMap.Poll.JoinNumber + x, switcher.DoPoll);
+
+                switcher.NameFeedback.LinkInputSig(trilist.StringInput[switcherJoinMap.Label.JoinNumber + x]);
+
+                switcher.GetSourceNames();
+            }
+        }
+
+        private void LinkStatesToApi(BasicTriList trilist, TesiraStateJoinMapAdvanced stateJoinMap)
+        {
+            this.LogVerbose("There are {0} State Control Points", States.Count());
+            foreach (var item in States)
+            {
+                var state = item.Value;
+                var data = state.BridgeIndex;
+                if (data == null) continue;
+
+                var x = (uint)data - 1;
+                this.LogVerbose("Tesira State {0} connect to {1}", state.Key, x);
+
+                if (!state.Enabled) continue;
+
+                this.LogVerbose("Tesira State {0} at {1} is Enabled", state.Key, x);
+
+                state.StateFeedback.LinkInputSig(trilist.BooleanInput[stateJoinMap.Toggle.JoinNumber + x]);
+                state.StateFeedback.LinkInputSig(trilist.BooleanInput[stateJoinMap.On.JoinNumber + x]);
+                state.StateFeedback.LinkComplementInputSig(trilist.BooleanInput[stateJoinMap.Off.JoinNumber + x]);
+                state.NameFeedback.LinkInputSig(trilist.StringInput[stateJoinMap.Label.JoinNumber + x]);
+
+                trilist.SetSigTrueAction(stateJoinMap.Toggle.JoinNumber + x, state.StateToggle);
+                trilist.SetSigTrueAction(stateJoinMap.On.JoinNumber + x, state.StateOn);
+                trilist.SetSigTrueAction(stateJoinMap.Off.JoinNumber + x, state.StateOff);
+            }
+        }
+
+        private void LinkFadersToApi(BasicTriList trilist, TesiraFaderJoinMapAdvanced faderJoinMap)
+        {
+            this.LogVerbose("There are {0} Level Control Points", Faders.Count());
+            foreach (var item in Faders)
+            {
                 var channel = item.Value;
                 var data = channel.BridgeIndex;
                 if (data == null) continue;
+                var x = (uint)data;
+                //var TesiraChannel = channel.Value as Tesira.DSP.EPI.TesiraDspLevelControl;
+                this.LogVerbose("TesiraChannel {0} connect", x);
 
+                var genericChannel = channel as IBasicVolumeWithFeedback;
 
-                this.LogVerbose("Adding Crosspoint State ControlPoint {0} | JoinStart:{1}", xpointState.Key, (crosspointStateJoinMap.Toggle.JoinNumber + joinOffset));
-                xpointState.CrosspointStateFeedback.LinkInputSig(trilist.BooleanInput[(uint)(crosspointStateJoinMap.Toggle.JoinNumber + joinOffset)]);
-                xpointState.CrosspointStateFeedback.LinkInputSig(trilist.BooleanInput[(uint)(crosspointStateJoinMap.On.JoinNumber + joinOffset)]);
-
-                trilist.SetSigTrueAction((uint)(crosspointStateJoinMap.Toggle.JoinNumber + joinOffset), xpointState.StateToggle);
-                trilist.SetSigTrueAction((uint)(crosspointStateJoinMap.On.JoinNumber + joinOffset), xpointState.StateOn);
-                trilist.SetSigTrueAction((uint)(crosspointStateJoinMap.Off.JoinNumber + joinOffset), xpointState.StateOff);
-
-
-            }
-
-            this.LogVerbose("There are {0} Room Combiner Control Points", RoomCombiners.Count);
-            //x = 0;
-            foreach (var item in RoomCombiners)
-            {
-                var roomCombiner = item.Value;
-                var data = roomCombiner.BridgeIndex;
-                if (data == null) continue;
-                var y = (uint)data;
-
-                var x = y > 1 ? ((y - 1) * 6) : 0;
-
-                this.LogVerbose("Tesira Room Combiner {0} connect", x);
-
-                var genericChannel = roomCombiner as IBasicVolumeWithFeedback;
-                if (!roomCombiner.Enabled) continue;
+                if (!channel.Enabled) continue;
 
                 this.LogVerbose("TesiraChannel {0} Is Enabled", x);
 
-                roomCombiner.NameFeedback.LinkInputSig(trilist.StringInput[roomCombinerJoinMap.Label.JoinNumber + x]);
-                roomCombiner.VisibleFeedback.LinkInputSig(trilist.BooleanInput[roomCombinerJoinMap.Visible.JoinNumber + x]);
-                roomCombiner.TypeFeedback.LinkInputSig(trilist.UShortInput[roomCombinerJoinMap.Type.JoinNumber + x]);
-                roomCombiner.PermissionsFeedback.LinkInputSig(trilist.UShortInput[roomCombinerJoinMap.Permissions.JoinNumber + x]);
-                roomCombiner.RoomGroupFeedback.LinkInputSig(trilist.UShortInput[roomCombinerJoinMap.Group.JoinNumber + x]);
+                channel.NameFeedback.LinkInputSig(trilist.StringInput[faderJoinMap.Label.JoinNumber + x]);
+                channel.TypeFeedback.LinkInputSig(trilist.UShortInput[faderJoinMap.Type.JoinNumber + x]);
+                channel.ControlTypeFeedback.LinkInputSig(trilist.UShortInput[faderJoinMap.Status.JoinNumber + x]);
+                channel.PermissionsFeedback.LinkInputSig(trilist.UShortInput[faderJoinMap.Permissions.JoinNumber + x]);
+                channel.VisibleFeedback.LinkInputSig(trilist.BooleanInput[faderJoinMap.Visible.JoinNumber + x]);
 
-                genericChannel.MuteFeedback.LinkInputSig(trilist.BooleanInput[roomCombinerJoinMap.MuteToggle.JoinNumber + x]);
-                genericChannel.MuteFeedback.LinkInputSig(trilist.BooleanInput[roomCombinerJoinMap.MuteOn.JoinNumber + x]);
-                genericChannel.MuteFeedback.LinkComplementInputSig(trilist.BooleanInput[roomCombinerJoinMap.MuteOff.JoinNumber + x]);
-                genericChannel.VolumeLevelFeedback.LinkInputSig(trilist.UShortInput[roomCombinerJoinMap.Volume.JoinNumber + x]);
+                genericChannel.MuteFeedback.LinkInputSig(trilist.BooleanInput[faderJoinMap.MuteToggle.JoinNumber + x]);
+                genericChannel.MuteFeedback.LinkInputSig(trilist.BooleanInput[faderJoinMap.MuteOn.JoinNumber + x]);
+                genericChannel.MuteFeedback.LinkComplementInputSig(trilist.BooleanInput[faderJoinMap.MuteOff.JoinNumber + x]);
+                genericChannel.VolumeLevelFeedback.LinkInputSig(trilist.UShortInput[faderJoinMap.Volume.JoinNumber + x]);
 
-                trilist.SetSigTrueAction(roomCombinerJoinMap.MuteToggle.JoinNumber + x, genericChannel.MuteToggle);
-                trilist.SetSigTrueAction(roomCombinerJoinMap.MuteOn.JoinNumber + x, genericChannel.MuteOn);
-                trilist.SetSigTrueAction(roomCombinerJoinMap.MuteOff.JoinNumber + x, genericChannel.MuteOff);
+                trilist.SetSigTrueAction(faderJoinMap.MuteToggle.JoinNumber + x, genericChannel.MuteToggle);
+                trilist.SetSigTrueAction(faderJoinMap.MuteOn.JoinNumber + x, genericChannel.MuteOn);
+                trilist.SetSigTrueAction(faderJoinMap.MuteOff.JoinNumber + x, genericChannel.MuteOff);
 
-                trilist.SetBoolSigAction(roomCombinerJoinMap.VolumeUp.JoinNumber + x, genericChannel.VolumeUp);
-                trilist.SetBoolSigAction(roomCombinerJoinMap.VolumeDown.JoinNumber + x, genericChannel.VolumeDown);
+                trilist.SetBoolSigAction(faderJoinMap.VolumeUp.JoinNumber + x, genericChannel.VolumeUp);
+                trilist.SetBoolSigAction(faderJoinMap.VolumeDown.JoinNumber + x, genericChannel.VolumeDown);
 
-                trilist.SetUShortSigAction(roomCombinerJoinMap.Volume.JoinNumber + x, u => { if (u > 0) { genericChannel.SetVolume(u); } });
-
-                trilist.SetUShortSigAction(roomCombinerJoinMap.Group.JoinNumber + x, u => { if (u > 0) { roomCombiner.SetRoomGroup(u); } });
+                trilist.SetUShortSigAction(faderJoinMap.Volume.JoinNumber + x, u => { if (u > 0) { genericChannel.SetVolume(u); } });
+                //channel.Value.DoPoll();
             }
-
-            trilist.OnlineStatusChange += (d, args) =>
-            {
-                if (!args.DeviceOnLine) return;
-
-                foreach (var feedback in Feedbacks)
-                {
-                    feedback.FireUpdate();
-                }
-
-            };
         }
 
         public void UpdateDeviceInfo()

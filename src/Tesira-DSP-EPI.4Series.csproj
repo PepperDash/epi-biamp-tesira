@@ -18,7 +18,7 @@
 		<Authors>PepperDash Technologies</Authors>
 		<PackageId>Pepperdash.Essentials.Plugins.Dsp.Biamp.Tesira</PackageId>
 		<PackageProjectUrl>https://github.com/PepperDash/epi-biamp-tesira.git</PackageProjectUrl>
-		<PackageTags>crestron 4series biamp tesira</PackageTags>
+		<PackageTags>crestron 4series biamp tesira</PackageTags>		
 	</PropertyGroup>
 
 	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">

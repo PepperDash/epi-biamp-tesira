@@ -1,6 +1,7 @@
 using System;
 using System.Linq;
 using System.Text.RegularExpressions;
+using System.Timers;
 using Crestron.SimplSharp;
 using PepperDash.Core;
 using PepperDash.Essentials.Core;
@@ -10,7 +11,7 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Expander
 {
   public class TesiraExpanderData : IDeviceInfoProvider, IKeyName, IOnline
   {
-    private CTimer expanderTimer;
+    private System.Timers.Timer expanderTimer;
 
     public DeviceInfo DeviceInfo { get; private set; }
     public event DeviceInfoChangeHandler DeviceInfoChanged;
@@ -77,11 +78,16 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Expander
 
       if (expanderTimer == null)
       {
-        expanderTimer = new CTimer(o => SetOffline(), null, 120000, 120000);
+        expanderTimer = new System.Timers.Timer(120000);
+        expanderTimer.Elapsed += (sender, e) => SetOffline();
+        expanderTimer.AutoReset = true;
+        expanderTimer.Start();
         return;
       }
 
-      expanderTimer.Reset(120000, 120000);
+      expanderTimer.Stop();
+      expanderTimer.Interval = 120000;
+      expanderTimer.Start();
       DeviceInfo.HostName = Hostname;
       DeviceInfo.SerialNumber = SerialNumber;
       DeviceInfo.FirmwareVersion = Firmware;
