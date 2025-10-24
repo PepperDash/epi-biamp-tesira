@@ -67,7 +67,11 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
         {
             get
             {
-                var subscribeTracker = ControlPointList.All(subscribedComponent => subscribedComponent.IsSubscribed);
+                bool subscribeTracker;
+                lock (watchdogLock)
+                {
+                    subscribeTracker = ControlPointList.All(subscribedComponent => subscribedComponent.IsSubscribed);
+                }
                 if (subscribeThread == null) return subscribeTracker;
                 if (subscribeTracker && subscribeThread.ThreadState == ThreadState.Running)
                     StopSubscriptionThread();
@@ -78,6 +82,7 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
         private GenericQueue transmitQueue;
 
         private System.Timers.Timer watchDogTimer;
+        private System.Timers.Timer watchDogTimeoutTimer;
 
         private System.Timers.Timer queueCheckTimer;
 
@@ -118,7 +123,27 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
 
         private bool initalSubscription = true;
 
-        private bool WatchDogSniffer { get; set; }
+        private readonly object watchdogLock = new object();
+        private bool watchDogSnifferValue;
+        private int watchDogExpectedResponses = 0;
+        private int watchDogReceivedResponses = 0;
+        private bool WatchDogSniffer
+        {
+            get
+            {
+                lock (watchdogLock)
+                {
+                    return watchDogSnifferValue;
+                }
+            }
+            set
+            {
+                lock (watchdogLock)
+                {
+                    watchDogSnifferValue = value;
+                }
+            }
+        }
         public bool WatchdogSuspend { get; private set; }
 
         private readonly DeviceConfig dc;
@@ -186,7 +211,10 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
                 isSerialComm = true;
             }
 
-            PortGather = new CommunicationGather(Communication, "\x0D\x0A");
+            PortGather = new CommunicationGather(Communication, "\r\n")
+            {
+                IncludeDelimiter = false
+            };
             PortGather.LineReceived += Port_LineReceived;
 
             // TODO: REMOVE ME!!!!
@@ -330,6 +358,8 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
                 watchDogTimer.Stop();
                 watchDogTimer.Dispose();
             }
+
+            watchDogTimeoutTimer?.Dispose();
             if (CommunicationMonitor != null)
             {
                 CommunicationMonitor.Stop();
@@ -347,37 +377,41 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
                 ? props.ResubscribeString
                 : "resubscribeAll";
 
-            Faders.Clear();
-            Presets.Clear();
-            Dialers.Clear();
-            States.Clear();
-            Switchers.Clear();
-            ControlPointList.Clear();
-            Meters.Clear();
-            LogicMeters.Clear();
-            RoomCombiners.Clear();
+            // Lock the entire control point list creation process
+            lock (watchdogLock)
+            {
+                Faders.Clear();
+                Presets.Clear();
+                Dialers.Clear();
+                States.Clear();
+                Switchers.Clear();
+                ControlPointList.Clear();
+                Meters.Clear();
+                LogicMeters.Clear();
+                RoomCombiners.Clear();
 
-            CreateFaders(props);
+                CreateFaders(props);
 
-            CreateSwitchers(props);
+                CreateSwitchers(props);
 
-            CreateRouters(props);
+                CreateRouters(props);
 
-            CreateSourceSelectors(props);
+                CreateSourceSelectors(props);
 
-            CreateDialers(props);
+                CreateDialers(props);
 
-            CreateStates(props);
+                CreateStates(props);
 
-            CreatePresets(props);
+                CreatePresets(props);
 
-            CreateMeters(props);
+                CreateMeters(props);
 
-            CreateLogicMeters(props);
+                CreateLogicMeters(props);
 
-            CreateCrosspoints(props);
+                CreateCrosspoints(props);
 
-            CreateRoomCombiners(props);
+                CreateRoomCombiners(props);
+            }
 
             CreateDevInfo();
 
@@ -695,9 +729,13 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
 
         private void StartWatchDog()
         {
+            // Use 5 minutes (300000ms) interval since we now check all subscriptions at once
+            // This is more efficient than checking one component every 90 seconds
+            const int watchDogIntervalMs = 300000; // 5 minutes
+
             if (watchDogTimer == null)
             {
-                watchDogTimer = new System.Timers.Timer(90000);
+                watchDogTimer = new System.Timers.Timer(watchDogIntervalMs);
                 watchDogTimer.Elapsed += (sender, e) => CheckWatchDog();
                 watchDogTimer.AutoReset = true;
                 watchDogTimer.Start();
@@ -705,7 +743,7 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
             else
             {
                 watchDogTimer.Stop();
-                watchDogTimer.Interval = 90000;
+                watchDogTimer.Interval = watchDogIntervalMs;
                 watchDogTimer.Start();
             }
         }
@@ -716,49 +754,102 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
             watchDogTimer.Stop();
             watchDogTimer.Dispose();
             watchDogTimer = null;
+
+            // Also clean up timeout timer
+            watchDogTimeoutTimer?.Dispose();
+            watchDogTimeoutTimer = null;
+
+            // Reset watchdog state
+            lock (watchdogLock)
+            {
+                WatchDogSniffer = false;
+                watchDogExpectedResponses = 0;
+                watchDogReceivedResponses = 0;
+            }
         }
+
+        private static readonly Random staticRandom = new Random();
 
         private void CheckWatchDog()
         {
             try
             {
-                if (ControlPointList.Count == 0) return;
+                // Create a snapshot of the ControlPointList to avoid collection modification issues
+                List<ISubscribedComponent> controlPointSnapshot;
+                lock (watchdogLock)
+                {
+                    if (ControlPointList.Count == 0) return;
+                    controlPointSnapshot = new List<ISubscribedComponent>(ControlPointList);
+                }
+
                 if (WatchdogSuspend)
                 {
                     WatchDogSniffer = false;
                     return;
                 }
-                this.LogDebug("The Watchdog is on the hunt!");
-                if (!WatchDogSniffer)
+
+                if (WatchDogSniffer)
                 {
-                    this.LogDebug("The Watchdog is picking up a scent!");
-
-
-                    var random = new Random(DateTime.Now.Millisecond + DateTime.Now.Second + DateTime.Now.Minute
-                        + DateTime.Now.Hour + DateTime.Now.Day + DateTime.Now.Month + DateTime.Now.Year);
-
-                    var watchDogSubject = ControlPointList[random.Next(0, ControlPointList.Count)];
-                    if (!watchDogSubject.IsSubscribed)
-                    {
-                        this.LogDebug("The Watchdog was wrong - that's just an old shoe.  Nothing is subscribed.");
-                        return;
-                    }
-                    this.LogDebug("The Watchdog is sniffing \"{0}\".", watchDogSubject.Key);
-
-                    WatchDogSniffer = true;
-
-                    watchDogSubject.Subscribe();
-                }
-                else
-                {
-                    this.LogDebug("The WatchDog smells something foul....let's resubscribe!");
+                    this.LogDebug("Resubscribing all control points.");
                     Resubscribe();
+                    return;
+                }
+
+                // Check all subscriptions at once instead of just one
+                var subscribedComponents = controlPointSnapshot.Where(c => c.IsSubscribed).ToList();
+
+                if (subscribedComponents.Count == 0)
+                {
+                    this.LogDebug("No subscribed components to check.");
+                    return;
+                }
+
+                this.LogDebug("Watchdog checking all {count} subscribed components.", subscribedComponents.Count);
+
+                // Initialize watchdog tracking
+                lock (watchdogLock)
+                {
+                    WatchDogSniffer = true;
+                    watchDogExpectedResponses = subscribedComponents.Count;
+                    watchDogReceivedResponses = 0;
+                }
+
+                // Set up timeout timer (10 seconds should be plenty for all responses)
+                watchDogTimeoutTimer?.Dispose();
+                watchDogTimeoutTimer = CreateOneShotTimer(HandleWatchDogTimeout, 10000);
+
+                // Subscribe to all components to verify their subscription status
+                foreach (var component in subscribedComponents)
+                {
+                    component.Subscribe();
                 }
 
             }
             catch (Exception ex)
             {
-                this.LogError(ex, "Watchdog Error");
+                this.LogError("Watchdog Error: {message}", ex.Message);
+                this.LogDebug(ex, "Stack Trace: ");
+            }
+        }
+
+        private void HandleWatchDogTimeout()
+        {
+            lock (watchdogLock)
+            {
+                if (WatchDogSniffer)
+                {
+                    this.LogWarning("Watchdog timeout - only received {received}/{expected} responses. Triggering resubscribe.",
+                        watchDogReceivedResponses, watchDogExpectedResponses);
+
+                    // Clear watchdog state and trigger resubscribe
+                    WatchDogSniffer = false;
+                    watchDogExpectedResponses = 0;
+                    watchDogReceivedResponses = 0;
+
+                    // Trigger resubscribe on next watchdog cycle
+                    this.LogDebug("Scheduling resubscribe due to watchdog timeout.");
+                    Resubscribe();
+                }
             }
         }
 
@@ -805,15 +896,15 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
         #region String Handling
 
         /// <summary>
-		/// Sends a command to the DSP (with delimiter appended)
-		/// </summary>
-		/// <param name="s">Command to send</param>
-		public void SendLine(string s)
+        /// Sends a command to the DSP (with delimiter appended)
+        /// </summary>
+        /// <param name="s">Command to send</param>
+        public void SendLine(string s)
         {
             if (string.IsNullOrEmpty(s))
                 return;
 
-            SendLineRaw(s);
+            SendLineRaw($"{s}\r\n");
         }
 
         /// <summary>
@@ -881,7 +972,14 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
                     var value = match.Groups[2].Value;
                     this.LogVerbose("Subscription Message: 'Name: {0} Value:{1}'", customName, value);
 
-                    foreach (var component in from component in ControlPointList let item = component from n in item.CustomNames.Where(n => n == customName) select component)
+                    // Create a snapshot to avoid collection modification issues
+                    List<ISubscribedComponent> controlPointSnapshot;
+                    lock (watchdogLock)
+                    {
+                        controlPointSnapshot = new List<ISubscribedComponent>(ControlPointList);
+                    }
+
+                    foreach (var component in from component in controlPointSnapshot let item = component from n in item.CustomNames.Where(n => n == customName) select component)
                     {
                         if (component == null)
                         {
@@ -916,15 +1014,43 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
                     if (args.Text.IndexOf("ALREADY_SUBSCRIBED", StringComparison.Ordinal) >= 0)
                     {
                         if (WatchDogSniffer)
-                            this.LogDebug("The Watchdog didn't find anything.  Good Boy!");
+                        {
+                            lock (watchdogLock)
+                            {
+                                watchDogReceivedResponses++;
+                                this.LogVerbose("Watchdog response {received}/{expected} - Component already subscribed.",
+                                    watchDogReceivedResponses, watchDogExpectedResponses);
 
-                        WatchDogSniffer = false;
+                                // Clear sniffer flag when all responses received
+                                if (watchDogReceivedResponses >= watchDogExpectedResponses)
+                                {
+                                    this.LogDebug("All watchdog responses received. Subscriptions verified.");
+                                    WatchDogSniffer = false;
+                                    watchDogExpectedResponses = 0;
+                                    watchDogReceivedResponses = 0;
+
+                                    // Cancel timeout timer since we received all responses
+                                    watchDogTimeoutTimer?.Dispose();
+                                    watchDogTimeoutTimer = null;
+                                }
+                            }
+                        }
                     }
-
                     else
                     {
                         this.LogDebug("Error From DSP: '{0}'", args.Text);
-                        WatchDogSniffer = false;
+
+                        // Any other error during watchdog check means we need to resubscribe
+                        if (WatchDogSniffer)
+                        {
+                            lock (watchdogLock)
+                            {
+                                WatchDogSniffer = false;
+                                watchDogExpectedResponses = 0;
+                                watchDogReceivedResponses = 0;
+                            }
+                        }
+
                         CommandQueue.AdvanceQueue(args.Text);
                     }
 
@@ -1025,14 +1151,27 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
                 return;
             }
 
-            var controlPoint = ControlPointList[index];
+            // Create a snapshot to avoid collection modification issues
+            ISubscribedComponent controlPoint;
+            int controlPointCount;
+            lock (watchdogLock)
+            {
+                if (index >= ControlPointList.Count)
+                {
+                    this.LogDebug("Index {0} is out of range for ControlPointList", index);
+                    return;
+                }
+                controlPoint = ControlPointList[index];
+                controlPointCount = ControlPointList.Count;
+            }
+
             if (controlPoint != null) UnsubscribeFromComponent(controlPoint);
 
             var newIndex = index + 1;
 
-            this.LogVerbose("NewIndex == {0} and ControlPointListCount == {1}", newIndex, ControlPointList.Count());
+            this.LogVerbose("NewIndex == {0} and ControlPointListCount == {1}", newIndex, controlPointCount);
 
-            if (newIndex < ControlPointList.Count())
+            if (newIndex < controlPointCount)
             {
                 unsubscribeTimer = CreateOneShotTimer(() => UnsubscribeFromComponent(newIndex, token), 250);
             }
@@ -1083,7 +1222,11 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
         private void GetMinLevels()
         {
             this.LogDebug("GetMinLevels Started");
-            var newList = ControlPointList.OfType<IVolumeComponent>();
+            IEnumerable<IVolumeComponent> newList;
+            lock (watchdogLock)
+            {
+                newList = ControlPointList.OfType<IVolumeComponent>().ToList();
+            }
 
             if (!newList.Any())
             {
@@ -1096,7 +1239,11 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
         private void GetMaxLevels()
         {
             this.LogDebug("GetMaxLevels Started");
-            var newList = ControlPointList.OfType<IVolumeComponent>();
+            IEnumerable<IVolumeComponent> newList;
+            lock (watchdogLock)
+            {
+                newList = ControlPointList.OfType<IVolumeComponent>().ToList();
+            }
 
             if (!newList.Any())
             {
@@ -1208,16 +1355,23 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
 
         private void SubscribeToComponentByIndex(int indexer)
         {
-            if (indexer >= ControlPointList.Count)
+            ISubscribedComponent data;
+            int controlPointCount;
+            lock (watchdogLock)
             {
-                EndSubscriptionProcess();
-                return;
+                if (indexer >= ControlPointList.Count)
+                {
+                    EndSubscriptionProcess();
+                    return;
+                }
+                data = ControlPointList[indexer];
+                controlPointCount = ControlPointList.Count;
             }
+
             this.LogDebug("Subscribing to Component {0}", indexer);
-            var data = ControlPointList[indexer];
             SubscribeToComponent(data);
             var indexerOutput = indexer + 1;
-            this.LogVerbose("Indexer = {0} : Count = {1} : ControlPointList", indexerOutput, ControlPointList.Count());
+            this.LogVerbose("Indexer = {0} : Count = {1} : ControlPointList", indexerOutput, controlPointCount);
             componentSubscribeTimer = CreateOneShotTimer(() => SubscribeToComponentByIndex(indexerOutput), 250);
         }
 
