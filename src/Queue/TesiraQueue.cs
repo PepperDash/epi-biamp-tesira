@@ -39,7 +39,7 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Queue
 
                 if (lastDequeued?.ControlPoint != null)
                 {
-                    Parent.LogVerbose("[AdvanceQueue] Response Receieved for parsing: '{response}'. Command: '{outgoingCommand}'", response, lastDequeued.Command);
+                    Parent.LogVerbose("[AdvanceQueue] Response Received for parsing: '{response}'. Command: '{outgoingCommand}'", response, lastDequeued.Command);
 
                     lastDequeued.ControlPoint.ParseGetMessage(lastDequeued.AttributeCode, response);
 

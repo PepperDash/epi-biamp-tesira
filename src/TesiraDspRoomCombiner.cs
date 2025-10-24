@@ -332,7 +332,9 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
                         {
                             OutIsMuted = bool.Parse(value);
                             this.LogDebug("MuteState is {value}", value);
-                            pollTimer.Stop(); pollTimer.Interval = 30000; pollTimer.Start();
+                            pollTimer.Stop();
+                            pollTimer.Interval = 30000;
+                            pollTimer.Start();
                             break;
                         }
 
@@ -340,7 +342,9 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
                         {
                             RoomGroup = int.Parse(value);
                             this.LogDebug("Room Group: {RoomGroup}", RoomGroup);
-                            pollTimer.Stop(); pollTimer.Interval = 30000; pollTimer.Start();
+                            pollTimer.Stop();
+                            pollTimer.Interval = 30000;
+                            pollTimer.Start();
                             break;
                         }
                     default:

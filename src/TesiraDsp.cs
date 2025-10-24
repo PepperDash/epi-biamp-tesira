@@ -217,9 +217,6 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
             };
             PortGather.LineReceived += Port_LineReceived;
 
-            // TODO: REMOVE ME!!!!
-            (Communication as IStreamDebugging).StreamDebugging.SetDebuggingWithDefaultTimeout(eStreamDebuggingSetting.Tx);
-
             CommunicationMonitor = new GenericCommunicationMonitor(this, Communication, 20000, 120000, 300000, () => SendLine("SESSION set verbose false"));
 
             // Custom monitoring, will check the heartbeat tracker count every 20s and reset. Heartbeat sbould be coming in every 20s if subscriptions are valid
@@ -768,7 +765,6 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
             }
         }
 
-        private static readonly Random staticRandom = new Random();
 
         private void CheckWatchDog()
         {
