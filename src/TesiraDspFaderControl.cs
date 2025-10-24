@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
+using System.Timers;
 using Crestron.SimplSharp;
 using Crestron.SimplSharpPro.DeviceSupport;
 using Newtonsoft.Json;
@@ -65,10 +66,10 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
         private Dictionary<string, SubscriptionTrackingObject> SubscriptionTracker { get; set; }
 
 
-        CTimer volumeUpRepeatTimer;
-        CTimer volumeDownRepeatTimer;
-        CTimer volumeUpRepeatDelayTimer;
-        CTimer volumeDownRepeatDelayTimer;
+        System.Timers.Timer volumeUpRepeatTimer;
+        System.Timers.Timer volumeDownRepeatTimer;
+        System.Timers.Timer volumeUpRepeatDelayTimer;
+        System.Timers.Timer volumeDownRepeatDelayTimer;
 
         //private bool LevelSubscribed { get; set; }
 
@@ -169,10 +170,25 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
             Permissions = config.Permissions;
             IncrementAmount = config.IncrementAmount;
             AutomaticUnmuteOnVolumeUp = config.UnmuteOnVolChange;
-            volumeUpRepeatTimer = new CTimer(VolumeUpRepeat, Timeout.Infinite);
-            volumeDownRepeatTimer = new CTimer(VolumeDownRepeat, Timeout.Infinite);
-            volumeUpRepeatDelayTimer = new CTimer(VolumeUpRepeatDelay, Timeout.Infinite);
-            volumeDownRepeatDelayTimer = new CTimer(VolumeDownRepeatDelay, Timeout.Infinite);
+            volumeUpRepeatTimer = new System.Timers.Timer();
+            volumeUpRepeatTimer.Elapsed += (sender, e) => VolumeUpRepeat(null);
+            volumeUpRepeatTimer.AutoReset = false;
+            volumeUpRepeatTimer.Enabled = false;
+
+            volumeDownRepeatTimer = new System.Timers.Timer();
+            volumeDownRepeatTimer.Elapsed += (sender, e) => VolumeDownRepeat(null);
+            volumeDownRepeatTimer.AutoReset = false;
+            volumeDownRepeatTimer.Enabled = false;
+
+            volumeUpRepeatDelayTimer = new System.Timers.Timer();
+            volumeUpRepeatDelayTimer.Elapsed += (sender, e) => VolumeUpRepeatDelay(null);
+            volumeUpRepeatDelayTimer.AutoReset = false;
+            volumeUpRepeatDelayTimer.Enabled = false;
+
+            volumeDownRepeatDelayTimer = new System.Timers.Timer();
+            volumeDownRepeatDelayTimer.Elapsed += (sender, e) => VolumeDownRepeatDelay(null);
+            volumeDownRepeatDelayTimer.AutoReset = false;
+            volumeDownRepeatDelayTimer.Enabled = false;
 
             SubscriptionTracker = new Dictionary<string, SubscriptionTrackingObject>
             {
@@ -518,12 +534,12 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
             {
                 if (volDownPressTracker)
                 {
-                    volumeDownRepeatTimer.Reset(100);
+                    volumeDownRepeatTimer.Stop(); volumeDownRepeatTimer.Interval = 100; volumeDownRepeatTimer.Start();
                     SendFullCommand("decrement", "level", IncrementAmount, 1);
                 }
                 else if (!volDownPressTracker)
                 {
-                    volumeDownRepeatDelayTimer.Reset(750);
+                    volumeDownRepeatDelayTimer.Stop(); volumeDownRepeatDelayTimer.Interval = 750; volumeDownRepeatDelayTimer.Start();
                     SendFullCommand("decrement", "level", IncrementAmount, 1);
                 }
                 return;
@@ -547,12 +563,12 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
             {
                 if (volUpPressTracker)
                 {
-                    volumeUpRepeatTimer.Reset(100);
+                    volumeUpRepeatTimer.Stop(); volumeUpRepeatTimer.Interval = 100; volumeUpRepeatTimer.Start();
                     SendFullCommand("increment", "level", IncrementAmount, 1);
                 }
                 else if (!volUpPressTracker)
                 {
-                    volumeUpRepeatDelayTimer.Reset(750);
+                    volumeUpRepeatDelayTimer.Stop(); volumeUpRepeatDelayTimer.Interval = 750; volumeUpRepeatDelayTimer.Start();
                     SendFullCommand("increment", "level", IncrementAmount, 1);
                     if (!AutomaticUnmuteOnVolumeUp) return;
 

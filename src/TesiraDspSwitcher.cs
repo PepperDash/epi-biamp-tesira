@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Text.RegularExpressions;
+using System.Timers;
 using Crestron.SimplSharp;
 using Crestron.SimplSharpPro.DeviceSupport;
 using Newtonsoft.Json;
@@ -41,7 +42,7 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
 
         public Dictionary<uint, string> SwitcherInputs { get; private set; }
 
-        private readonly CTimer pollTimer;
+        private readonly System.Timers.Timer pollTimer;
 
         private string SourceNamesXsig { get; set; }
 
@@ -101,7 +102,10 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
 
             //if (Type == "router")
             //{
-            pollTimer = new CTimer(o => DoPoll(), Timeout.Infinite);   //can only be assigned in constructor
+            pollTimer = new System.Timers.Timer();
+            pollTimer.Elapsed += (sender, e) => DoPoll();
+            pollTimer.AutoReset = false; // Initially disabled
+            pollTimer.Enabled = false;
             //}
 
             RoutedSourceNameFeedback = new StringFeedback(Key + "-RoutedSourceNameFeedback", () => RoutedSourceName);
@@ -175,7 +179,9 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
                 IsSubscribed = true;
                 if (pollTimer != null)
                 {
-                    pollTimer.Reset(PollIntervalMs);
+                    pollTimer.Stop();
+                    pollTimer.Interval = PollIntervalMs;
+                    pollTimer.Start();
                 }
                 return;
             }
@@ -311,7 +317,9 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
             if (Type == "router")
             {
                 SendFullCommand("get", "input", string.Empty, 1);
-                pollTimer.Reset(PollIntervalMs);
+                pollTimer.Stop();
+                pollTimer.Interval = PollIntervalMs;
+                pollTimer.Start();
                 return;
             }
             SendFullCommand("get", "sourceSelection", string.Empty, 1);

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Text.RegularExpressions;
+using System.Timers;
 using Crestron.SimplSharp;
 using Crestron.SimplSharpPro.DeviceSupport;
 using Newtonsoft.Json;
@@ -21,7 +22,7 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
 
         private bool state;
 
-        private CTimer pollTimer;
+        private System.Timers.Timer pollTimer;
 
         private readonly bool pollEnable;
 
@@ -71,7 +72,12 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
 
             if (!pollEnable) return;
             if (pollTimer == null)
-                pollTimer = new CTimer(o => GetState(), null, pollTime, pollTime);
+            {
+                pollTimer = new System.Timers.Timer(pollTime);
+                pollTimer.Elapsed += (sender, e) => GetState();
+                pollTimer.AutoReset = true;
+                pollTimer.Start();
+            }
         }
 
         public override void Unsubscribe()
