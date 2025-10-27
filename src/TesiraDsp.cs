@@ -928,8 +928,6 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
 
             if (string.IsNullOrEmpty(args.Text)) return;
 
-            this.LogVerbose("RX: '{response}'", args.Text);
-
             try
             {
                 DeviceRx = args.Text;

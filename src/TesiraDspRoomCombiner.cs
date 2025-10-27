@@ -98,6 +98,7 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
         private EPdtLevelTypes type;
         private string IncrementAmount { get; set; }
         private bool UseAbsoluteValue { get; set; }
+        private int VolumeRepeatRateMs { get; set; }
         private string LevelControlPointTag { get { return InstanceTag1; } }
 
         System.Timers.Timer volumeUpRepeatTimer;
@@ -171,6 +172,7 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
             Permissions = config.Permissions;
             IncrementAmount = config.IncrementAmount;
             AutomaticUnmuteOnVolumeUp = config.UnmuteOnVolChange;
+            VolumeRepeatRateMs = config.VolumeRepeatRateMs;
             volumeUpRepeatTimer = new System.Timers.Timer();
             volumeUpRepeatTimer.Elapsed += (sender, e) => VolumeUpRepeat();
             volumeUpRepeatTimer.AutoReset = false;
@@ -476,7 +478,7 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
             {
                 if (volDownPressTracker)
                 {
-                    volumeDownRepeatTimer.Stop(); volumeDownRepeatTimer.Interval = 100; volumeDownRepeatTimer.Start();
+                    volumeDownRepeatTimer.Stop(); volumeDownRepeatTimer.Interval = VolumeRepeatRateMs; volumeDownRepeatTimer.Start();
                     SendFullCommand("decrement", "levelOut", IncrementAmount, 1);
                 }
                 else if (!volDownPressTracker)
@@ -506,7 +508,7 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
             {
                 if (volUpPressTracker)
                 {
-                    volumeUpRepeatTimer.Stop(); volumeUpRepeatTimer.Interval = 100; volumeUpRepeatTimer.Start();
+                    volumeUpRepeatTimer.Stop(); volumeUpRepeatTimer.Interval = VolumeRepeatRateMs; volumeUpRepeatTimer.Start();
                     SendFullCommand("increment", "levelOut", IncrementAmount, 1);
                 }
                 else if (!volUpPressTracker)
