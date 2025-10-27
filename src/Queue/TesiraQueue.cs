@@ -120,7 +120,7 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Queue
 
                 lastDequeued = LocalQueue.Dequeue();
                 Parent.LogVerbose("[SendNextQueuedCommand] Sending Line {line}. ControlPoint: {controlPoint}", lastDequeued.Command, lastDequeued.ControlPoint?.Key ?? "no control point");
-                Parent.SendLine(lastDequeued.Command);
+                Parent.SendLine(lastDequeued.Command, lastDequeued.BypassTxQueue);
             }
         }
 

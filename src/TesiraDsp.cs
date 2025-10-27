@@ -895,24 +895,30 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
         /// Sends a command to the DSP (with delimiter appended)
         /// </summary>
         /// <param name="s">Command to send</param>
-        public void SendLine(string s)
+        public void SendLine(string s, bool bypassTxQueue = false)
         {
             if (string.IsNullOrEmpty(s))
                 return;
 
-            SendLineRaw($"{s}\r\n");
+            SendLineRaw($"{s}\r\n", bypassTxQueue);
         }
 
         /// <summary>
         /// Sends a command to the DSP (without delimiter appended)
         /// </summary>
         /// <param name="s">Command to send</param>
-        public void SendLineRaw(string s)
+        public void SendLineRaw(string s, bool bypassTxQueue = false)
         {
             if (string.IsNullOrEmpty(s))
                 return;
 
             var message = new ProcessStringMessage(s, Communication.SendText);
+
+            if (bypassTxQueue)
+            {
+                Communication.SendText(s);
+                return;
+            }
 
             transmitQueue.Enqueue(message);
         }
@@ -1487,7 +1493,7 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
             CommandPassthruFeedback.LinkInputSig(trilist.StringInput[deviceJoinMap.CommandPassThru.JoinNumber]);
             trilist.SetStringSigAction(presetJoinMap.PresetName.JoinNumber, RunPreset);
 
-            trilist.SetStringSigAction(deviceJoinMap.CommandPassThru.JoinNumber, SendLineRaw);
+            trilist.SetStringSigAction(deviceJoinMap.CommandPassThru.JoinNumber, (s) => SendLineRaw(s));
 
             trilist.SetSigTrueAction(deviceJoinMap.Resubscribe.JoinNumber, Resubscribe);
 
