@@ -340,7 +340,7 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
             MacAddressFeedback.LinkInputSig(trilist.StringInput[joinMap.MacAddress.JoinNumber]);
 
 
-            trilist.SetStringSigAction(joinMap.CommandPassThru.JoinNumber, Parent.SendLineRaw);
+            trilist.SetStringSigAction(joinMap.CommandPassThru.JoinNumber, (s) => Parent.SendLineRaw(s));
 
             trilist.OnlineStatusChange += (d, args) =>
             {
