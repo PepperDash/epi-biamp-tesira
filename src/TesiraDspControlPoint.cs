@@ -75,7 +75,7 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
         /// <param name="attributeCode">attribute code</param>
         /// <param name="value">value (use "" if not applicable)</param>
         /// <param name="instanceTag">value (Instance Tag of the control</param>
-        public virtual void SendFullCommand(string command, string attributeCode, string value, int instanceTag)
+        public virtual void SendFullCommand(string command, string attributeCode, string value, int instanceTag, bool bypassTxQueue = false)
         {
             if (string.IsNullOrEmpty(attributeCode))
             {
@@ -152,7 +152,7 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
                     string.Format("\"{0}\" {1} {2} {3}", instanceTagLocal, command, attributeCode, value);
             }
 
-            Parent.CommandQueue.EnqueueCommand(new QueuedCommand(cmd, attributeCode, this));
+            Parent.CommandQueue.EnqueueCommand(new QueuedCommand(cmd, attributeCode, this, attributeCode == "level"));
         }
 
         virtual public void ParseGetMessage(string attributeCode, string message)

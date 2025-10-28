@@ -108,6 +108,9 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
 
         [JsonProperty("bridgeIndex")]
         public uint? BridgeIndex { get; set; }
+
+        [JsonProperty("volumeRepeatRateMs")]
+        public int VolumeRepeatRateMs { get; set; } = 100;
     }
 
 
@@ -261,15 +264,15 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
 
     public class TesiraDspPresets
     {
-        private string _label;
+        private string label;
 
         [JsonProperty("label")]
         public string Label
         {
-            get { return _label; }
+            get { return label; }
             set
             {
-                _label = value;
+                label = value;
                 LabelFeedback.FireUpdate();
             }
         }
@@ -405,6 +408,9 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
 
         [JsonProperty("bridgeIndex")]
         public uint? BridgeIndex { get; set; }
+
+        [JsonProperty("volumeRepeatRateMs")]
+        public int VolumeRepeatRateMs { get; set; } = 250;
     }
 
     public class RoutingPort
