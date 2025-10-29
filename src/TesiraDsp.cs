@@ -255,7 +255,6 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
                 return;
             }
             if (isSerialComm) this.LogVerbose("CheckSerialSendStatus NOT READY");
-
         }
 
         public override void Initialize()
@@ -954,7 +953,6 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
                 // Subscription Message
                 if (args.Text.IndexOf("! ", StringComparison.Ordinal) >= 0)
                 {
-
                     var match = subscriptionRegex.Match(args.Text);
 
                     if (!match.Success) return;
@@ -970,16 +968,13 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
                         controlPointSnapshot = new List<ISubscribedComponent>(ControlPointList);
                     }
 
-                    foreach (var component in from component in controlPointSnapshot let item = component from n in item.CustomNames.Where(n => n == customName) select component)
+                    var component = controlPointSnapshot.FirstOrDefault(c => c.CustomNames.Contains(customName));
+
+                    if (component != null)
                     {
-                        if (component == null)
-                        {
-                            this.LogDebug("Unable to find matching Custom Name {0}", customName);
-                            return;
-                        }
                         component.ParseSubscriptionMessage(customName, value);
+                        return;
                     }
-                    return;
                 }
 
                 if (args.Text.IndexOf("+OK", StringComparison.Ordinal) == 0)
@@ -1001,6 +996,7 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
 
                 if (args.Text.IndexOf("-ERR", StringComparison.Ordinal) >= 0)
                 {
+                    CommandQueue.HandleResponse(args.Text);
                     // Error response
                     if (args.Text.IndexOf("ALREADY_SUBSCRIBED", StringComparison.Ordinal) >= 0)
                     {
@@ -1011,8 +1007,6 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
                                 watchDogReceivedResponses++;
                                 this.LogVerbose("Watchdog response {received}/{expected} - Component already subscribed.",
                                     watchDogReceivedResponses, watchDogExpectedResponses);
-
-                                CommandQueue.HandleResponse(args.Text);
 
                                 // Clear sniffer flag when all responses received
                                 if (watchDogReceivedResponses >= watchDogExpectedResponses)
@@ -1043,8 +1037,6 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
                                 watchDogReceivedResponses = 0;
                             }
                         }
-
-                        CommandQueue.HandleResponse(args.Text);
                     }
 
                     return;

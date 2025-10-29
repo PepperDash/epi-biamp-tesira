@@ -95,7 +95,6 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
                 var trackingBool = true;
                 foreach (var item in SubscriptionTracker)
                 {
-                    this.LogVerbose("Enabled: {enabled} Subscribed: {subscribed}", item.Value.Enabled, item.Value.Subscribed);
                     if (item.Value.Enabled && !item.Value.Subscribed)
                     {
                         trackingBool = false;

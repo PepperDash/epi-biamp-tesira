@@ -52,6 +52,7 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Queue
 
                 if (LocalQueue.IsEmpty)
                 {
+                    Parent.LogVerbose("[HandleResponse] Command Queue is empty. Ending queue processing.");
                     CommandQueueInProgress = false;
                     return;
                 }
@@ -105,9 +106,11 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Queue
 
                 if (LocalQueue.IsEmpty)
                 {
+                    Parent.LogVerbose("[SendNextQueuedCommand] Command Queue is empty. No command to send.");
                     CommandQueueInProgress = false;
                     return;
                 }
+
                 Parent.LogVerbose("[SendNextQueuedCommand] Command Queue {state} in progress.", CommandQueueInProgress ? "is" : "is not");
 
                 if (!Parent.Communication.IsConnected)
