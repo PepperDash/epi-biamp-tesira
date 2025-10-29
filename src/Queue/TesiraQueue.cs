@@ -31,24 +31,24 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Queue
         /// Dequeue from TesiraQueue and process queue responses
         /// </summary>
         /// <param name="response">Command String comparator for QueuedCommand</param>
-        public void AdvanceQueue(string response)
+        public void HandleResponse(string response)
         {
             lock (lockObject)
             {
-                Parent.LogVerbose("[AdvanceQueue] Command Queue {state} in progress.", CommandQueueInProgress ? "is" : "is not");
+                Parent.LogVerbose("[HandleResponse] Command Queue {state} in progress.", CommandQueueInProgress ? "is" : "is not");
 
                 if (lastDequeued?.ControlPoint != null)
                 {
-                    Parent.LogVerbose("[AdvanceQueue] Response Received for parsing: '{response}'. Command: '{outgoingCommand}'", response, lastDequeued.Command);
+                    Parent.LogVerbose("[HandleResponse] Response Received for parsing: '{response}'. Command: '{outgoingCommand}'", response, lastDequeued.Command);
 
                     lastDequeued.ControlPoint.ParseGetMessage(lastDequeued.AttributeCode, response);
-
-                    lastDequeued = null;
                 }
                 else
                 {
-                    Parent.LogVerbose("[AdvanceQueue] Incoming Response: '{response}'. No Controlpoint waiting for response", response);
+                    Parent.LogVerbose("[HandleResponse] Incoming Response: '{response}'. No Controlpoint waiting for response", response);
                 }
+
+                lastDequeued = null;
 
                 if (LocalQueue.IsEmpty)
                 {
