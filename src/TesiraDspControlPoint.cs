@@ -204,7 +204,7 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
                 cmd = string.Format("\"{0}\" subscribe {1} {2} {3}", instanceTagLocal, attributeCode, Index1, customName);
             }
 
-            Parent.SendLine(cmd);
+            Parent.CommandQueue.EnqueueCommand(cmd);
         }
 
         public virtual void ParseSubscriptionMessage(string customName, string value)
@@ -248,8 +248,7 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
             }
             this.LogDebug("SendingUnsub - {command}", cmd);
 
-            Parent.SendLine(cmd);
-
+            Parent.CommandQueue.EnqueueCommand(cmd);
         }
 
         public virtual void DoPoll()
