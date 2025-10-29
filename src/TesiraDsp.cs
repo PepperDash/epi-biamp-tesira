@@ -218,10 +218,7 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
             };
             PortGather.LineReceived += Port_LineReceived;
 
-            CommunicationMonitor = new GenericCommunicationMonitor(this, Communication, 20000, 120000, 300000, () => SendLine("SESSION set verbose false"));
-
-            // Custom monitoring, will check the heartbeat tracker count every 20s and reset. Heartbeat sbould be coming in every 20s if subscriptions are valid
-            DeviceManager.AddDevice(CommunicationMonitor);
+            CommunicationMonitor = new GenericCommunicationMonitor(this, Communication, 20000, 120000, 300000, () => CommandQueue.EnqueueCommand("SESSION set verbose false"));
 
             ControlPointList = new List<ISubscribedComponent>();
 
@@ -272,6 +269,7 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
         public override void Initialize()
         {
             Communication.Connect();
+
             if (!isSerialComm) return;
             CommunicationMonitor.Start();
             OkayToSend = true;
@@ -988,7 +986,6 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
                 }
                 if (args.Text.Equals(ResubscriptionString, StringComparison.OrdinalIgnoreCase))
                 {
-
                     CommandQueue.Clear();
                     Resubscribe();
                     return;
