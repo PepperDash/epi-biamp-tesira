@@ -780,6 +780,14 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
                     controlPointSnapshot = new List<ISubscribedComponent>(ControlPointList);
                 }
 
+                // Safety check - make sure subscription process is actually complete
+                var subscribedCount = controlPointSnapshot.Count(c => c.IsSubscribed);
+                if (subscribedCount == 0)
+                {
+                    this.LogDebug("Watchdog postponed - no components are subscribed yet.");
+                    return;
+                }
+
                 if (WatchdogSuspend)
                 {
                     WatchDogSniffer = false;
@@ -1371,18 +1379,20 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
         }
 
 
-        private void SubscribeToComponent(ISubscribedComponent data)
+        private void SubscribeToComponent(ISubscribedComponent component)
         {
-            if (data == null) return;
-            if (!data.Enabled) return;
-            this.LogDebug("Subscribing To Object - {0}", data.InstanceTag1);
-            data.Subscribe();
+            if (component == null) return;
+            if (!component.Enabled) return;
+            this.LogDebug("Subscribing To Object - {0}", component.InstanceTag1);
+            component.Subscribe();
         }
 
         private void SubscribeToComponentByIndex(int indexer)
         {
-            ISubscribedComponent data;
+            ISubscribedComponent component;
+
             int controlPointCount;
+
             lock (watchdogLock)
             {
                 if (indexer >= ControlPointList.Count)
@@ -1390,14 +1400,20 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
                     EndSubscriptionProcess();
                     return;
                 }
-                data = ControlPointList[indexer];
+
+                component = ControlPointList[indexer];
+
                 controlPointCount = ControlPointList.Count;
             }
 
-            this.LogDebug("Subscribing to Component {0}", indexer);
-            SubscribeToComponent(data);
+            this.LogDebug("Subscribing to Component {instanceTag} at {indexer}", component.InstanceTag1, indexer);
+
+            SubscribeToComponent(component);
+
             var indexerOutput = indexer + 1;
+
             this.LogVerbose("Indexer = {0} : Count = {1} : ControlPointList", indexerOutput, controlPointCount);
+
             componentSubscribeTimer = CreateOneShotTimer(() => SubscribeToComponentByIndex(indexerOutput), 250);
         }
 
@@ -1415,6 +1431,10 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
             {
                 control.DoPoll();
             }
+
+            // Start watchdog only after all subscriptions are complete
+            this.LogDebug("All subscriptions complete. Starting watchdog.");
+            StartWatchDog();
         }
 
         #endregion
@@ -1468,8 +1488,6 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
 
                 // Check for cancellation before starting watchdog
                 token.ThrowIfCancellationRequested();
-
-                StartWatchDog();
             }
             catch (OperationCanceledException)
             {
