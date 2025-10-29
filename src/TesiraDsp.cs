@@ -233,8 +233,6 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
 
 
             CommunicationMonitor.StatusChange += CommunicationMonitor_StatusChange;
-            CrestronConsole.AddNewConsoleCommand(CommandQueue.EnqueueCommand, "send" + Key, "", ConsoleAccessLevelEnum.AccessOperator);
-            CrestronConsole.AddNewConsoleCommand(s => Communication.Connect(), "con" + Key, "", ConsoleAccessLevelEnum.AccessOperator);
 
             Feedbacks.Add(CommunicationMonitor.IsOnlineFeedback);
             Feedbacks.Add(CommandPassthruFeedback);
@@ -1381,7 +1379,7 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
             CommandPassthruFeedback.LinkInputSig(trilist.StringInput[deviceJoinMap.CommandPassThru.JoinNumber]);
             trilist.SetStringSigAction(presetJoinMap.PresetName.JoinNumber, RunPreset);
 
-            trilist.SetStringSigAction(deviceJoinMap.CommandPassThru.JoinNumber, (s) => SendLineRaw(s));
+            trilist.SetStringSigAction(deviceJoinMap.CommandPassThru.JoinNumber, (s) => CommandQueue.EnqueueCommand(s, sendLineRaw: true));
 
             trilist.SetSigTrueAction(deviceJoinMap.Resubscribe.JoinNumber, Resubscribe);
 

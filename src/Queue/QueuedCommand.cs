@@ -14,12 +14,13 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Queue
     /// <param name="attributeCode">tesira attribute code for this command</param>
     /// <param name="controlPoint">control point object</param>
     /// <param name="bypassTxQueue">bypass TX Queue for this command</param>
-    public QueuedCommand(string command, string attributeCode, ISubscribedComponent controlPoint, bool bypassTxQueue = false)
+    public QueuedCommand(string command, string attributeCode, ISubscribedComponent controlPoint, bool bypassTxQueue = false, bool sendLineRaw = false)
     {
       Command = command;
       AttributeCode = attributeCode;
       ControlPoint = controlPoint;
       BypassTxQueue = bypassTxQueue;
+      SendLineRaw = sendLineRaw;
     }
 
     /// <summary>
@@ -41,6 +42,8 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Queue
     /// Bypass tx queue to handling pacing independently
     /// </summary>
     public readonly bool BypassTxQueue;
+
+    public readonly bool SendLineRaw;
   }
 
 }

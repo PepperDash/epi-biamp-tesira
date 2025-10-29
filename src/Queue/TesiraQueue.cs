@@ -90,9 +90,9 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Queue
         /// Adds a raw string command to the queue
         /// </summary>
         /// <param name="command">String to enqueue</param>
-        public void EnqueueCommand(string command)
+        public void EnqueueCommand(string command, bool sendLineRaw = false)
         {
-            EnqueueCommand(new QueuedCommand(command, null, null));
+            EnqueueCommand(new QueuedCommand(command, null, null, sendLineRaw: sendLineRaw));
         }
 
         /// <summary>
@@ -123,7 +123,11 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Queue
 
                 lastDequeued = LocalQueue.Dequeue();
                 Parent.LogVerbose("[SendNextQueuedCommand] Sending Line {line}. ControlPoint: {controlPoint}", lastDequeued.Command, lastDequeued.ControlPoint?.Key ?? "no control point");
-                Parent.SendLine(lastDequeued.Command, lastDequeued.BypassTxQueue);
+
+                if (lastDequeued.SendLineRaw)
+                    Parent.SendLineRaw(lastDequeued.Command, lastDequeued.BypassTxQueue);
+                else
+                    Parent.SendLine(lastDequeued.Command, lastDequeued.BypassTxQueue);
             }
         }
 
