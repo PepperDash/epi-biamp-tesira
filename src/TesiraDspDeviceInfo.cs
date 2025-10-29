@@ -184,18 +184,65 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
                     return;
                 }
 
+                // Add detailed logging for debugging
+                this.LogDebug("Raw response for {attributeCode}: {message}", attributeCode, message);
+                this.LogDebug("Regex matches for {attributeCode}: [{matches}]",
+                    attributeCode,
+                    string.Join(", ", matches.Cast<Match>().Select((m, i) => $"[{i}]='{m.Value}'")));
+
                 switch (attributeCode)
                 {
                     case "networkStatus":
                         {
                             this.LogVerbose("Network Status match count: {count}", matches.Count);
-                            Hostname = matches[0].Value.Trim('"');
-                            MacAddress = matches[3].Value.Trim('"');
-                            IpAddress = matches[4].Value.Trim('"');
 
-                            DeviceInfo.HostName = string.IsNullOrEmpty(DeviceInfo.HostName) ? Hostname : DeviceInfo.HostName;
-                            DeviceInfo.MacAddress = string.IsNullOrEmpty(DeviceInfo.MacAddress) ? MacAddress : DeviceInfo.MacAddress;
-                            DeviceInfo.IpAddress = string.IsNullOrEmpty(DeviceInfo.IpAddress) ? IpAddress : DeviceInfo.IpAddress;
+                            // More defensive parsing - check bounds before accessing
+                            if (matches.Count >= 1 && !string.IsNullOrEmpty(matches[0].Value))
+                            {
+                                try
+                                {
+                                    Hostname = matches[0].Value.Trim('"');
+                                    this.LogDebug("Parsed Hostname: {hostname}", Hostname);
+                                }
+                                catch (Exception ex)
+                                {
+                                    this.LogWarning("Error parsing hostname from match[0]: {value}. Error: {error}", matches[0].Value, ex.Message);
+                                }
+                            }
+
+                            if (matches.Count >= 4 && !string.IsNullOrEmpty(matches[3].Value))
+                            {
+                                try
+                                {
+                                    MacAddress = matches[3].Value.Trim('"');
+                                    this.LogDebug("Parsed MacAddress: {macAddress}", MacAddress);
+                                }
+                                catch (Exception ex)
+                                {
+                                    this.LogWarning("Error parsing MAC address from match[3]: {value}. Error: {error}", matches[3].Value, ex.Message);
+                                }
+                            }
+
+                            if (matches.Count >= 5 && !string.IsNullOrEmpty(matches[4].Value))
+                            {
+                                try
+                                {
+                                    IpAddress = matches[4].Value.Trim('"');
+                                    this.LogDebug("Parsed IpAddress: {ipAddress}", IpAddress);
+                                }
+                                catch (Exception ex)
+                                {
+                                    this.LogWarning("Error parsing IP address from match[4]: {value}. Error: {error}", matches[4].Value, ex.Message);
+                                }
+                            }
+
+                            // Only update DeviceInfo if we got valid values
+                            if (!string.IsNullOrEmpty(Hostname))
+                                DeviceInfo.HostName = string.IsNullOrEmpty(DeviceInfo.HostName) ? Hostname : DeviceInfo.HostName;
+                            if (!string.IsNullOrEmpty(MacAddress))
+                                DeviceInfo.MacAddress = string.IsNullOrEmpty(DeviceInfo.MacAddress) ? MacAddress : DeviceInfo.MacAddress;
+                            if (!string.IsNullOrEmpty(IpAddress))
+                                DeviceInfo.IpAddress = string.IsNullOrEmpty(DeviceInfo.IpAddress) ? IpAddress : DeviceInfo.IpAddress;
 
                             OnDeviceInfoChanged();
                             break;
@@ -203,21 +250,47 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
                     case "serialNumber":
                         {
                             this.LogVerbose("Serial Number match count: {count}", matches.Count);
-                            SerialNumber = matches[0].Value.Trim('"');
-
-                            DeviceInfo.SerialNumber = string.IsNullOrEmpty(DeviceInfo.SerialNumber) ? SerialNumber : DeviceInfo.SerialNumber;
-
-                            OnDeviceInfoChanged();
+                            if (matches.Count >= 1 && !string.IsNullOrEmpty(matches[0].Value))
+                            {
+                                try
+                                {
+                                    SerialNumber = matches[0].Value.Trim('"');
+                                    this.LogDebug("Parsed SerialNumber: {serialNumber}", SerialNumber);
+                                    DeviceInfo.SerialNumber = string.IsNullOrEmpty(DeviceInfo.SerialNumber) ? SerialNumber : DeviceInfo.SerialNumber;
+                                    OnDeviceInfoChanged();
+                                }
+                                catch (Exception ex)
+                                {
+                                    this.LogWarning("Error parsing serial number from match[0]: {value}. Error: {error}", matches[0].Value, ex.Message);
+                                }
+                            }
+                            else
+                            {
+                                this.LogWarning("No serial number found in response: {message}", message);
+                            }
                             break;
                         }
                     case "version":
                         {
                             this.LogVerbose("Firmware match count: {count}", matches.Count);
-                            Firmware = matches[0].Value.Trim('"');
-
-                            DeviceInfo.FirmwareVersion = string.IsNullOrEmpty(DeviceInfo.FirmwareVersion) ? Firmware : DeviceInfo.FirmwareVersion;
-
-                            OnDeviceInfoChanged();
+                            if (matches.Count >= 1 && !string.IsNullOrEmpty(matches[0].Value))
+                            {
+                                try
+                                {
+                                    Firmware = matches[0].Value.Trim('"');
+                                    this.LogDebug("Parsed Firmware: {firmware}", Firmware);
+                                    DeviceInfo.FirmwareVersion = string.IsNullOrEmpty(DeviceInfo.FirmwareVersion) ? Firmware : DeviceInfo.FirmwareVersion;
+                                    OnDeviceInfoChanged();
+                                }
+                                catch (Exception ex)
+                                {
+                                    this.LogWarning("Error parsing firmware version from match[0]: {value}. Error: {error}", matches[0].Value, ex.Message);
+                                }
+                            }
+                            else
+                            {
+                                this.LogWarning("No firmware version found in response: {message}", message);
+                            }
                             break;
                         }
 
