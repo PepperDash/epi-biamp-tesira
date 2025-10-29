@@ -206,7 +206,7 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
                                 }
                                 catch (Exception ex)
                                 {
-                                    this.LogWarning("Error parsing hostname from match[0]: {value}. Error: {error}", matches[0].Value, ex.Message);
+                                    this.LogError("Error parsing hostname from match[0]: {value}. Error: {error}", matches[0].Value, ex.Message);
                                 }
                             }
 
@@ -219,7 +219,7 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
                                 }
                                 catch (Exception ex)
                                 {
-                                    this.LogWarning("Error parsing MAC address from match[3]: {value}. Error: {error}", matches[3].Value, ex.Message);
+                                    this.LogError("Error parsing MAC address from match[3]: {value}. Error: {error}", matches[3].Value, ex.Message);
                                 }
                             }
 
@@ -232,7 +232,7 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
                                 }
                                 catch (Exception ex)
                                 {
-                                    this.LogWarning("Error parsing IP address from match[4]: {value}. Error: {error}", matches[4].Value, ex.Message);
+                                    this.LogError("Error parsing IP address from match[4]: {value}. Error: {error}", matches[4].Value, ex.Message);
                                 }
                             }
 
@@ -261,7 +261,7 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
                                 }
                                 catch (Exception ex)
                                 {
-                                    this.LogWarning("Error parsing serial number from match[0]: {value}. Error: {error}", matches[0].Value, ex.Message);
+                                    this.LogError("Error parsing serial number from match[0]: {value}. Error: {error}", matches[0].Value, ex.Message);
                                 }
                             }
                             else
@@ -284,7 +284,7 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
                                 }
                                 catch (Exception ex)
                                 {
-                                    this.LogWarning("Error parsing firmware version from match[0]: {value}. Error: {error}", matches[0].Value, ex.Message);
+                                    this.LogError("Error parsing firmware version from match[0]: {value}. Error: {error}", matches[0].Value, ex.Message);
                                 }
                             }
                             else
