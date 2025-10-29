@@ -127,6 +127,7 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
         private bool watchDogSnifferValue;
         private int watchDogExpectedResponses = 0;
         private int watchDogReceivedResponses = 0;
+        private HashSet<ISubscribedComponent> recentlyCheckedComponents = new HashSet<ISubscribedComponent>();
         private bool WatchDogSniffer
         {
             get
@@ -726,9 +727,9 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
 
         private void StartWatchDog()
         {
-            // Use 5 minutes (300000ms) interval since we now check all subscriptions at once
-            // This is more efficient than checking one component every 90 seconds
-            const int watchDogIntervalMs = 300000; // 5 minutes
+            // Use 2 minutes (120000ms) interval for random sampling approach
+            // Check 5-10 random components each interval to reduce network traffic
+            const int watchDogIntervalMs = 120000; // 2 minutes
 
             if (watchDogTimer == null)
             {
@@ -762,6 +763,7 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
                 WatchDogSniffer = false;
                 watchDogExpectedResponses = 0;
                 watchDogReceivedResponses = 0;
+                recentlyCheckedComponents.Clear();
             }
         }
 
@@ -791,31 +793,55 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
                     return;
                 }
 
-                // Check all subscriptions at once instead of just one
+                // Get subscribed components that haven't been checked recently
                 var subscribedComponents = controlPointSnapshot.Where(c => c.IsSubscribed).ToList();
+                var availableToCheck = subscribedComponents.Where(c => !recentlyCheckedComponents.Contains(c)).ToList();
 
-                if (subscribedComponents.Count == 0)
+                // If no unchecked components available, clear the recently checked list and use all subscribed
+                if (availableToCheck.Count == 0 && subscribedComponents.Count > 0)
+                {
+                    this.LogDebug("All components recently checked, clearing recent check history.");
+                    lock (watchdogLock)
+                    {
+                        recentlyCheckedComponents.Clear();
+                    }
+                    availableToCheck = subscribedComponents;
+                }
+
+                if (availableToCheck.Count == 0)
                 {
                     this.LogDebug("No subscribed components to check.");
                     return;
                 }
 
-                this.LogDebug("Watchdog checking all {count} subscribed components.", subscribedComponents.Count);
+                // Select 5-10 random components to check (scale with total component count)
+                int componentsToCheck = Math.Min(Math.Max(5, subscribedComponents.Count / 20), Math.Min(10, availableToCheck.Count));
+                var random = new Random();
+                var componentsToCheckList = availableToCheck.OrderBy(x => random.Next()).Take(componentsToCheck).ToList();
+
+                this.LogDebug("Watchdog checking {count} random components out of {total} subscribed.",
+                    componentsToCheckList.Count, subscribedComponents.Count);
 
                 // Initialize watchdog tracking
                 lock (watchdogLock)
                 {
                     WatchDogSniffer = true;
-                    watchDogExpectedResponses = subscribedComponents.Count;
+                    watchDogExpectedResponses = componentsToCheckList.Count;
                     watchDogReceivedResponses = 0;
+
+                    // Add checked components to recently checked list
+                    foreach (var component in componentsToCheckList)
+                    {
+                        recentlyCheckedComponents.Add(component);
+                    }
                 }
 
-                // Set up timeout timer (10 seconds should be plenty for all responses)
+                // Set up timeout timer (5 seconds should be plenty for random sample)
                 watchDogTimeoutTimer?.Dispose();
-                watchDogTimeoutTimer = CreateOneShotTimer(HandleWatchDogTimeout, 10000);
+                watchDogTimeoutTimer = CreateOneShotTimer(HandleWatchDogTimeout, 5000);
 
-                // Subscribe to all components to verify their subscription status
-                foreach (var component in subscribedComponents)
+                // Subscribe to selected components to verify their subscription status
+                foreach (var component in componentsToCheckList)
                 {
                     component.Subscribe();
                 }
