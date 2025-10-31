@@ -77,6 +77,13 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Dialer
                     break;
             }
 
+            // Validate instance tag is not empty
+            if (string.IsNullOrEmpty(localInstanceTag))
+            {
+                this.LogError("Error: LocalInstanceTag is null or empty for instanceTag {instanceTag}. InstanceTag1='{tag1}' InstanceTag2='{tag2}'", instanceTag, InstanceTag1, InstanceTag2);
+                return;
+            }
+
             if (attributeCode == "level" || attributeCode == "mute" || attributeCode == "minLevel" ||
                 attributeCode == "maxLevel" || attributeCode == "label" || attributeCode == "rampInterval" ||
                 attributeCode == "rampStep" || attributeCode == "autoAnswer" || attributeCode == "dndEnable" ||
@@ -113,18 +120,15 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Dialer
                 cmd = string.IsNullOrEmpty(value) ? string.Format("{0} {1} {2}", localInstanceTag, command, attributeCode) : string.Format("{0} {1} {2} {3}", localInstanceTag, command, attributeCode, value);
             }
 
-            if (command == "get")
+            if (!string.IsNullOrEmpty(cmd) && !string.IsNullOrWhiteSpace(cmd))
             {
-                // This command will generate a return value response so it needs to be queued
-                if (!string.IsNullOrEmpty(cmd))
-                    Parent.CommandQueue.EnqueueCommand(new QueuedCommand(cmd, attributeCode, this));
+                Parent.CommandQueue.EnqueueCommand(new QueuedCommand(cmd, attributeCode, this, priority: (int)CommandPriority.Critical));
             }
             else
             {
-                // This command will generate a simple "+OK" response and doesn't need to be queued
-                if (!string.IsNullOrEmpty(cmd))
-                    Parent.SendLine(cmd);
+                this.LogError("Error: Generated command is null or empty. Parameters: command='{command}' attributeCode='{attributeCode}' value='{value}' instanceTag={instanceTag}", command, attributeCode, value, instanceTag);
             }
+
         }
 
         virtual public void ParseGetMessage(string attributeCode, string message)
@@ -183,7 +187,7 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Dialer
                 cmd = string.Format("\"{0}\" subscribe {1} {2} {3}", localInstanceTag, attributeCode, Index1, customName);
             }
 
-            Parent.SendLine(cmd);
+            Parent.CommandQueue.EnqueueCommand(cmd, priority: (int)CommandPriority.Critical);
         }
 
         public virtual void SendUnSubscriptionCommand(string customName, string attributeCode, int instanceTag)
@@ -221,7 +225,7 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Dialer
                 cmd = string.Format("\"{0}\" unsubscribe {1} {2} {3}", localInstanceTag, attributeCode, Index1, customName);
             }
 
-            Parent.SendLine(cmd);
+            Parent.CommandQueue.EnqueueCommand(cmd, priority: (int)CommandPriority.Critical);
         }
 
         public virtual void DoPoll()

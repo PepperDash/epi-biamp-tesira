@@ -79,7 +79,7 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
             }
         }
 
-        private GenericQueue transmitQueue;
+        private readonly GenericQueue transmitQueue;
 
         private System.Timers.Timer watchDogTimer;
         private System.Timers.Timer watchDogTimeoutTimer;
@@ -119,7 +119,7 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
         private bool watchDogSnifferValue;
         private int watchDogExpectedResponses = 0;
         private int watchDogReceivedResponses = 0;
-        private HashSet<ISubscribedComponent> recentlyCheckedComponents = new HashSet<ISubscribedComponent>();
+        private readonly HashSet<ISubscribedComponent> recentlyCheckedComponents = new HashSet<ISubscribedComponent>();
         private bool WatchDogSniffer
         {
             get
@@ -210,7 +210,7 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
             };
             PortGather.LineReceived += Port_LineReceived;
 
-            CommunicationMonitor = new GenericCommunicationMonitor(this, Communication, 20000, 120000, 300000, () => CommandQueue.EnqueueCommand("SESSION set verbose false"));
+            CommunicationMonitor = new GenericCommunicationMonitor(this, Communication, 20000, 120000, 300000, () => CommandQueue.EnqueueCommand("SESSION set verbose false", priority: (int)CommandPriority.Low));
 
             ControlPointList = new List<ISubscribedComponent>();
 
@@ -973,6 +973,8 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
                         component.ParseSubscriptionMessage(customName, value);
                         return;
                     }
+                    // No matching component found for the subscription message
+                    this.LogDebug("No matching component found for subscription message. CustomName: '{0}', Value: '{1}'", customName, value);
                 }
 
                 if (args.Text.IndexOf("+OK", StringComparison.Ordinal) == 0)
@@ -1071,7 +1073,7 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
         public void RunPreset(string name)
         {
             this.LogVerbose("Running Preset By Name - {0}", name);
-            CommandQueue.EnqueueCommand(string.Format("DEVICE recallPresetByName \"{0}\"", name));
+            CommandQueue.EnqueueCommand($"DEVICE recallPresetByName \"{name}\"", priority: (int)CommandPriority.Normal);
         }
 
         /// <summary>
@@ -1081,7 +1083,7 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
         public void RunPreset(int id)
         {
             this.LogVerbose("Running Preset By ID - {0}", id);
-            CommandQueue.EnqueueCommand(string.Format("DEVICE recallPreset {0}", id));
+            CommandQueue.EnqueueCommand($"DEVICE recallPreset {id}", priority: (int)CommandPriority.Normal);
         }
 
         public void RecallPreset(string key)
@@ -1247,9 +1249,9 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
         private void CheckQueueCompletion()
         {
             this.LogVerbose("Queue check - LocalQueue: {count} items, InProgress: {inProgress}",
-                CommandQueue.LocalQueue.Count, CommandQueue.CommandQueueInProgress);
+                CommandQueue.Count, CommandQueue.CommandQueueInProgress);
 
-            if (!CommandQueue.LocalQueue.Any() && !CommandQueue.CommandQueueInProgress)
+            if (CommandQueue.IsEmpty && !CommandQueue.CommandQueueInProgress)
             {
                 this.LogDebug("All queue commands completed, finishing subscription process");
 
@@ -1379,7 +1381,7 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
             CommandPassthruFeedback.LinkInputSig(trilist.StringInput[deviceJoinMap.CommandPassThru.JoinNumber]);
             trilist.SetStringSigAction(presetJoinMap.PresetName.JoinNumber, RunPreset);
 
-            trilist.SetStringSigAction(deviceJoinMap.CommandPassThru.JoinNumber, (s) => CommandQueue.EnqueueCommand(s, sendLineRaw: true));
+            trilist.SetStringSigAction(deviceJoinMap.CommandPassThru.JoinNumber, (s) => CommandQueue.EnqueueCommand(s, sendLineRaw: true, priority: (int)CommandPriority.High));
 
             trilist.SetSigTrueAction(deviceJoinMap.Resubscribe.JoinNumber, Resubscribe);
 
