@@ -152,10 +152,10 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
                     string.Format("\"{0}\" {1} {2} {3}", instanceTagLocal, command, attributeCode, value);
             }
 
-            Parent.CommandQueue.EnqueueCommand(new QueuedCommand(cmd, attributeCode, this, attributeCode == "level"));
+            Parent.CommandQueue.EnqueueCommand(new QueuedCommand(cmd, attributeCode, this, priority: (int)CommandPriority.Critical));
         }
 
-        virtual public void ParseGetMessage(string attributeCode, string message)
+        public virtual void ParseGetMessage(string attributeCode, string message)
         {
 
         }
@@ -204,7 +204,7 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
                 cmd = string.Format("\"{0}\" subscribe {1} {2} {3}", instanceTagLocal, attributeCode, Index1, customName);
             }
 
-            Parent.SendLine(cmd);
+            Parent.CommandQueue.EnqueueCommand(cmd, priority: (int)CommandPriority.Critical);
         }
 
         public virtual void ParseSubscriptionMessage(string customName, string value)
@@ -248,8 +248,7 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
             }
             this.LogDebug("SendingUnsub - {command}", cmd);
 
-            Parent.SendLine(cmd);
-
+            Parent.CommandQueue.EnqueueCommand(cmd, priority: (int)CommandPriority.Critical);
         }
 
         public virtual void DoPoll()
