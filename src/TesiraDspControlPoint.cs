@@ -152,7 +152,7 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
                     string.Format("\"{0}\" {1} {2} {3}", instanceTagLocal, command, attributeCode, value);
             }
 
-            Parent.CommandQueue.EnqueueCommand(new QueuedCommand(cmd, attributeCode, this, attributeCode == "level"));
+            Parent.CommandQueue.EnqueueCommand(new QueuedCommand(cmd, attributeCode, this));
         }
 
         virtual public void ParseGetMessage(string attributeCode, string message)

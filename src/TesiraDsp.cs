@@ -169,7 +169,7 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
 
             CommandQueue = new TesiraQueue(2000, this);
 
-            transmitQueue = new GenericQueue($"{Key}-tx-queue", 250, 500);
+            transmitQueue = new GenericQueue($"{Key}-tx-queue");
 
             CommandPassthruFeedback = new StringFeedback("commandPassthru", () => DeviceRx);
 
