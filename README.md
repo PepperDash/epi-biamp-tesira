@@ -26,33 +26,15 @@ Provided under MIT license
 
 This plugin has been tested with both Crestron 3-Series and 4-Series processors.  It implements all available essentials interfaces relevant to a device of this type.  This includes but is not limited to `AudioCodecBase`, `IHasDspPresets`, `IBasicVolumeWithFeedback`, `IRoutingWithFeedback` and `IDeviceInfoProvider`.  Documentation for which controls implement each interface will be documented in each relevant controls section.  Additionally, every component implements `IKeyed` and all devices are added to the `DeviceManager` unpon instantiation.
 
-## Cloning Instructions
-
-After forking this repository into your own GitHub space, you can create a new repository using this one as the template.  Then you must install the necessary dependencies as indicated below.
-
-## Dependencies
-
-The [Essentials](https://github.com/PepperDash/Essentials) libraries are required. They referenced via nuget. You must have nuget.exe installed and in the `PATH` environment variable to use the following command. Nuget.exe is available at [nuget.org](https://dist.nuget.org/win-x86-commandline/latest/nuget.exe).
-
-### Installing Dependencies
-
-To install dependencies once nuget.exe is installed, run the following command from the root directory of your repository:
-`nuget install .\packages.config -OutputDirectory .\packages -excludeVersion`.
-To verify that the packages installed correctly, open the plugin solution in your repo and make sure that all references are found, then try and build it.
-
 ## Feature Notes
 
 Version 2.0.0+ now offers developers the opportunity to individually bridge each control rather than the entire DSP object.  This should lead to more flexibility in development.  In documentation below, all references to the original object type will be referred to as **Legacy**, while new object data will be referred to as **Standalone**
 
 When utilizing a standalone object within a Eisc bridge, it is addressed utilizing first the name of the base device, followed by a pair of two hyphens, then the key of the component.  
 
->It is exceptionally important that **all** keys are unique.  In a future version, it's likely that this naming convention will become *more* verbose, but as of now, to prevent key names from being ridiculously long, I've opted to trust users to police themselves.
-
 For a parent device with a key of ```dsp-1``` and a component with the key of ```Fader01```, the **Standalone** component key is ``dsp-1--Fader01``.
 
 The only exception to this rule is for the Base **Standalone** object, which has a key suffix of **DeviceInfo**
-
->[!IMPORTANT]Important to note this version of the plugin currently implements both eiscApi and EiscApiAdvanced as valid bridge types**
 
 ``` javascript
 "type": "eiscApiAdvanced"
@@ -125,12 +107,14 @@ None
                 "autoReconnect": true,
                 "AutoReconnectIntervalMs": 10000,
                 "username": "default",
-                "password": "default"
+                "password": "default",
+                "disableSshEcho": true
             }
         }
     }
 }
 ```
+> The `disableSshEcho` property is valid in Essentials 2.
 
 ***
 

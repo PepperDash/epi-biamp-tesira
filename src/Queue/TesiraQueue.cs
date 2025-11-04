@@ -1,10 +1,11 @@
-﻿using PepperDash.Core.Logging;
+﻿using Crestron.SimplSharp;
+using PepperDash.Core.Logging;
 
 namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Queue
 {
     public class TesiraQueue
     {
-        private ThreadSafePriorityQueue<QueuedCommand> LocalQueue { get; set; }
+        private CrestronQueue<QueuedCommand> LocalQueue { get; set; }
 
         private TesiraDsp Parent { get; set; }
 
@@ -31,7 +32,7 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Queue
         /// <param name="parent">Parent TesiraDsp Class</param>
         public TesiraQueue(int queueSize, TesiraDsp parent)
         {
-            LocalQueue = new ThreadSafePriorityQueue<QueuedCommand>();
+            LocalQueue = new CrestronQueue<QueuedCommand>(queueSize);
             Parent = parent;
             CommandQueueInProgress = false;
         }
@@ -81,7 +82,7 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Queue
                 Parent.LogVerbose("[EnqueueCommand] Attempting to enqueue command for {controlPoint} with priority {priority}", commandToEnqueue.ControlPoint?.Key ?? "no control point", commandToEnqueue.Priority);
                 Parent.LogVerbose("[EnqueueCommand] Command Queue {state} in progress.", CommandQueueInProgress ? "is" : "is not");
 
-                LocalQueue.Enqueue(commandToEnqueue, commandToEnqueue.Priority);
+                LocalQueue.Enqueue(commandToEnqueue);
 
                 Parent.LogVerbose("[EnqueueCommand] Command Enqueued: '{command}'.  CommandQueue has {count} items", commandToEnqueue.Command, LocalQueue.Count);
 
@@ -132,7 +133,7 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Queue
 
                 CommandQueueInProgress = true;
 
-                if (!LocalQueue.TryDequeue(out lastDequeued))
+                if (!LocalQueue.Dequeue(out lastDequeued))
                 {
                     Parent.LogError("[SendNextQueuedCommand] Failed to dequeue command despite queue not being empty");
                     CommandQueueInProgress = false;
