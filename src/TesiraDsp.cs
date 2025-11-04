@@ -79,21 +79,13 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
             }
         }
 
-        private GenericQueue transmitQueue;
+        private readonly GenericQueue transmitQueue;
 
         private System.Timers.Timer watchDogTimer;
         private System.Timers.Timer watchDogTimeoutTimer;
 
-        private System.Timers.Timer queueCheckTimer;
-
         private System.Timers.Timer unsubscribeTimer;
-        private System.Timers.Timer subscribeTimer;
-        private System.Timers.Timer expanderCheckTimer;
-        private System.Timers.Timer pacer;
-        private System.Timers.Timer paceTimer;
-        private System.Timers.Timer getMaxTimer;
-        private System.Timers.Timer getMinTimer;
-        private System.Timers.Timer componentSubscribeTimer;
+        private System.Timers.Timer queueCheckTimer;
 
         private Thread subscribeThread;
 
@@ -127,6 +119,7 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
         private bool watchDogSnifferValue;
         private int watchDogExpectedResponses = 0;
         private int watchDogReceivedResponses = 0;
+        private readonly HashSet<ISubscribedComponent> recentlyCheckedComponents = new HashSet<ISubscribedComponent>();
         private bool WatchDogSniffer
         {
             get
@@ -176,7 +169,7 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
 
             CommandQueue = new TesiraQueue(2000, this);
 
-            transmitQueue = new GenericQueue($"{Key}-tx-queue", 250, 500);
+            transmitQueue = new GenericQueue($"{Key}-tx-queue");
 
             CommandPassthruFeedback = new StringFeedback("commandPassthru", () => DeviceRx);
 
@@ -217,10 +210,7 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
             };
             PortGather.LineReceived += Port_LineReceived;
 
-            CommunicationMonitor = new GenericCommunicationMonitor(this, Communication, 20000, 120000, 300000, () => SendLine("SESSION set verbose false"));
-
-            // Custom monitoring, will check the heartbeat tracker count every 20s and reset. Heartbeat sbould be coming in every 20s if subscriptions are valid
-            DeviceManager.AddDevice(CommunicationMonitor);
+            CommunicationMonitor = new GenericCommunicationMonitor(this, Communication, 20000, 120000, 300000, () => CommandQueue.EnqueueCommand("SESSION set verbose false", priority: (int)CommandPriority.Low));
 
             ControlPointList = new List<ISubscribedComponent>();
 
@@ -243,8 +233,6 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
 
 
             CommunicationMonitor.StatusChange += CommunicationMonitor_StatusChange;
-            CrestronConsole.AddNewConsoleCommand(CommandQueue.EnqueueCommand, "send" + Key, "", ConsoleAccessLevelEnum.AccessOperator);
-            CrestronConsole.AddNewConsoleCommand(s => Communication.Connect(), "con" + Key, "", ConsoleAccessLevelEnum.AccessOperator);
 
             Feedbacks.Add(CommunicationMonitor.IsOnlineFeedback);
             Feedbacks.Add(CommandPassthruFeedback);
@@ -265,12 +253,12 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
                 return;
             }
             if (isSerialComm) this.LogVerbose("CheckSerialSendStatus NOT READY");
-
         }
 
         public override void Initialize()
         {
             Communication.Connect();
+
             if (!isSerialComm) return;
             CommunicationMonitor.Start();
             OkayToSend = true;
@@ -301,42 +289,10 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
             // Cancel the subscription process
             subscriptionCancellationSource?.Cancel();
 
-            // Dispose of timers to prevent them from continuing
+            // Dispose of unsubscribe timer
             unsubscribeTimer?.Stop();
             unsubscribeTimer?.Dispose();
             unsubscribeTimer = null;
-
-            subscribeTimer?.Stop();
-            subscribeTimer?.Dispose();
-            subscribeTimer = null;
-
-            expanderCheckTimer?.Stop();
-            expanderCheckTimer?.Dispose();
-            expanderCheckTimer = null;
-
-            componentSubscribeTimer?.Stop();
-            componentSubscribeTimer?.Dispose();
-            componentSubscribeTimer = null;
-
-            pacer?.Stop();
-            pacer?.Dispose();
-            pacer = null;
-
-            paceTimer?.Stop();
-            paceTimer?.Dispose();
-            paceTimer = null;
-
-            getMaxTimer?.Stop();
-            getMaxTimer?.Dispose();
-            getMaxTimer = null;
-
-            getMinTimer?.Stop();
-            getMinTimer?.Dispose();
-            getMinTimer = null;
-
-            queueCheckTimer?.Stop();
-            queueCheckTimer?.Dispose();
-            queueCheckTimer = null;
 
             subscribeThread = null;
 
@@ -726,9 +682,9 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
 
         private void StartWatchDog()
         {
-            // Use 5 minutes (300000ms) interval since we now check all subscriptions at once
-            // This is more efficient than checking one component every 90 seconds
-            const int watchDogIntervalMs = 300000; // 5 minutes
+            // Use 2 minutes (120000ms) interval for random sampling approach
+            // Check 5-10 random components each interval to reduce network traffic
+            const int watchDogIntervalMs = 120000; // 2 minutes
 
             if (watchDogTimer == null)
             {
@@ -762,6 +718,7 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
                 WatchDogSniffer = false;
                 watchDogExpectedResponses = 0;
                 watchDogReceivedResponses = 0;
+                recentlyCheckedComponents.Clear();
             }
         }
 
@@ -778,6 +735,14 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
                     controlPointSnapshot = new List<ISubscribedComponent>(ControlPointList);
                 }
 
+                // Safety check - make sure subscription process is actually complete
+                var subscribedCount = controlPointSnapshot.Count(c => c.IsSubscribed);
+                if (subscribedCount == 0)
+                {
+                    this.LogDebug("Watchdog postponed - no components are subscribed yet.");
+                    return;
+                }
+
                 if (WatchdogSuspend)
                 {
                     WatchDogSniffer = false;
@@ -791,31 +756,55 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
                     return;
                 }
 
-                // Check all subscriptions at once instead of just one
+                // Get subscribed components that haven't been checked recently
                 var subscribedComponents = controlPointSnapshot.Where(c => c.IsSubscribed).ToList();
+                var availableToCheck = subscribedComponents.Where(c => !recentlyCheckedComponents.Contains(c)).ToList();
 
-                if (subscribedComponents.Count == 0)
+                // If no unchecked components available, clear the recently checked list and use all subscribed
+                if (availableToCheck.Count == 0 && subscribedComponents.Count > 0)
+                {
+                    this.LogDebug("All components recently checked, clearing recent check history.");
+                    lock (watchdogLock)
+                    {
+                        recentlyCheckedComponents.Clear();
+                    }
+                    availableToCheck = subscribedComponents;
+                }
+
+                if (availableToCheck.Count == 0)
                 {
                     this.LogDebug("No subscribed components to check.");
                     return;
                 }
 
-                this.LogDebug("Watchdog checking all {count} subscribed components.", subscribedComponents.Count);
+                // Select 5-10 random components to check (scale with total component count)
+                int componentsToCheck = Math.Min(Math.Max(5, subscribedComponents.Count / 20), Math.Min(10, availableToCheck.Count));
+                var random = new Random();
+                var componentsToCheckList = availableToCheck.OrderBy(x => random.Next()).Take(componentsToCheck).ToList();
+
+                this.LogDebug("Watchdog checking {count} random components out of {total} subscribed.",
+                    componentsToCheckList.Count, subscribedComponents.Count);
 
                 // Initialize watchdog tracking
                 lock (watchdogLock)
                 {
                     WatchDogSniffer = true;
-                    watchDogExpectedResponses = subscribedComponents.Count;
+                    watchDogExpectedResponses = componentsToCheckList.Count;
                     watchDogReceivedResponses = 0;
+
+                    // Add checked components to recently checked list
+                    foreach (var component in componentsToCheckList)
+                    {
+                        recentlyCheckedComponents.Add(component);
+                    }
                 }
 
-                // Set up timeout timer (10 seconds should be plenty for all responses)
+                // Set up timeout timer (5 seconds should be plenty for random sample)
                 watchDogTimeoutTimer?.Dispose();
-                watchDogTimeoutTimer = CreateOneShotTimer(HandleWatchDogTimeout, 10000);
+                watchDogTimeoutTimer = CreateOneShotTimer(HandleWatchDogTimeout, 5000);
 
-                // Subscribe to all components to verify their subscription status
-                foreach (var component in subscribedComponents)
+                // Subscribe to selected components to verify their subscription status
+                foreach (var component in componentsToCheckList)
                 {
                     component.Subscribe();
                 }
@@ -954,7 +943,6 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
                 }
                 if (args.Text.Equals(ResubscriptionString, StringComparison.OrdinalIgnoreCase))
                 {
-
                     CommandQueue.Clear();
                     Resubscribe();
                     return;
@@ -963,7 +951,6 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
                 // Subscription Message
                 if (args.Text.IndexOf("! ", StringComparison.Ordinal) >= 0)
                 {
-
                     var match = subscriptionRegex.Match(args.Text);
 
                     if (!match.Success) return;
@@ -979,16 +966,15 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
                         controlPointSnapshot = new List<ISubscribedComponent>(ControlPointList);
                     }
 
-                    foreach (var component in from component in controlPointSnapshot let item = component from n in item.CustomNames.Where(n => n == customName) select component)
+                    var component = controlPointSnapshot.FirstOrDefault(c => c.CustomNames.Contains(customName));
+
+                    if (component != null)
                     {
-                        if (component == null)
-                        {
-                            this.LogDebug("Unable to find matching Custom Name {0}", customName);
-                            return;
-                        }
                         component.ParseSubscriptionMessage(customName, value);
+                        return;
                     }
-                    return;
+                    // No matching component found for the subscription message
+                    this.LogDebug("No matching component found for subscription message. CustomName: '{0}', Value: '{1}'", customName, value);
                 }
 
                 if (args.Text.IndexOf("+OK", StringComparison.Ordinal) == 0)
@@ -998,18 +984,19 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
                         CheckSerialSendStatus();
                     }
 
-                    CommandQueue.AdvanceQueue(args.Text);
+                    CommandQueue.HandleResponse(args.Text);
                     return;
                 }
 
                 if (args.Text.IndexOf("DEVICE recallPresetByName", StringComparison.Ordinal) == 0)
                 {
-                    CommandQueue.AdvanceQueue(args.Text);
+                    CommandQueue.HandleResponse(args.Text);
                     return;
                 }
 
                 if (args.Text.IndexOf("-ERR", StringComparison.Ordinal) >= 0)
                 {
+                    CommandQueue.HandleResponse(args.Text);
                     // Error response
                     if (args.Text.IndexOf("ALREADY_SUBSCRIBED", StringComparison.Ordinal) >= 0)
                     {
@@ -1050,8 +1037,6 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
                                 watchDogReceivedResponses = 0;
                             }
                         }
-
-                        CommandQueue.AdvanceQueue(args.Text);
                     }
 
                     return;
@@ -1088,7 +1073,7 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
         public void RunPreset(string name)
         {
             this.LogVerbose("Running Preset By Name - {0}", name);
-            SendLine(string.Format("DEVICE recallPresetByName \"{0}\"", name));
+            CommandQueue.EnqueueCommand($"DEVICE recallPresetByName \"{name}\"", priority: (int)CommandPriority.Normal);
         }
 
         /// <summary>
@@ -1098,7 +1083,7 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
         public void RunPreset(int id)
         {
             this.LogVerbose("Running Preset By ID - {0}", id);
-            SendLine(string.Format("DEVICE recallPreset {0}", id));
+            CommandQueue.EnqueueCommand($"DEVICE recallPreset {id}", priority: (int)CommandPriority.Normal);
         }
 
         public void RecallPreset(string key)
@@ -1140,7 +1125,7 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
                 return;
             }
 
-            pacer = CreateOneShotTimer(() => UnsubscribeFromComponent(0, token), 250);
+            UnsubscribeFromComponent(0, token);
         }
 
         private void UnsubscribeFromComponent(int index, CancellationToken token = default)
@@ -1179,7 +1164,7 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
             {
                 this.LogDebug("Subscribe To Components");
                 unsubscribeTimer?.Dispose();
-                subscribeTimer = CreateOneShotTimer(() => SubscribeToComponents(token), 250);
+                SubscribeToComponents(token);
             }
         }
 
@@ -1202,185 +1187,86 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
                 return;
             }
 
-            this.LogDebug("Subscribing to Components");
+            this.LogDebug("Subscribing to Components - using queue approach");
 
             unsubscribeTimer?.Dispose();
-            subscribeTimer?.Dispose();
             initalSubscription = false;
             if (DevInfo == null)
             {
                 return;
             }
 
-            this.LogVerbose("DevInfo Not Null");
+            this.LogVerbose("DevInfo Not Null - queuing all sync commands");
+
+            // Queue device info request
             DevInfo.GetDeviceInfo();
 
-            expanderCheckTimer = CreateOneShotTimer(() => CheckExpanders(token), 1000);
-        }
-
-
-        private void GetMinLevels()
-        {
-            this.LogDebug("GetMinLevels Started");
-            IEnumerable<IVolumeComponent> newList;
-            lock (watchdogLock)
-            {
-                newList = ControlPointList.OfType<IVolumeComponent>().ToList();
-            }
-
-            if (!newList.Any())
-            {
-                return;
-            }
-
-            paceTimer = CreateOneShotTimer(() => GetMinLevel(newList.ToList(), 0), 250);
-        }
-
-        private void GetMaxLevels()
-        {
-            this.LogDebug("GetMaxLevels Started");
-            IEnumerable<IVolumeComponent> newList;
-            lock (watchdogLock)
-            {
-                newList = ControlPointList.OfType<IVolumeComponent>().ToList();
-            }
-
-            if (!newList.Any())
-            {
-                return;
-            }
-            paceTimer = CreateOneShotTimer(() => GetMaxLevel(newList.ToList(), 0), 250);
-        }
-
-        private void GetMaxLevel(List<IVolumeComponent> faders, int index)
-        {
-            var data = faders[index];
-
-            data?.GetMaxLevel();
-            var indexerOutput = index + 1;
-
-            if (indexerOutput < faders.Count)
-            {
-                getMaxTimer = CreateOneShotTimer(() => GetMaxLevel(faders, indexerOutput), 250);
-                return;
-            }
-            getMaxTimer?.Dispose();
-            pacer = CreateOneShotTimer(() => QueueCheckDelayed(), 250);
-        }
-
-        private void GetMinLevel(List<IVolumeComponent> faders, int index)
-        {
-            var data = faders[index];
-            data?.GetMinLevel();
-            var indexerOutput = index + 1;
-            this.LogVerbose("Indexer = {0} : Count = {1} : MinLevel", indexerOutput, faders.Count());
-            if (indexerOutput < faders.Count)
-            {
-                getMinTimer = CreateOneShotTimer(() => GetMinLevel(faders, indexerOutput), 250);
-                return;
-            }
-            getMinTimer?.Dispose();
-            pacer = CreateOneShotTimer(() => GetMaxLevels(), 250);
-        }
-
-
-        private void QueueCheckDelayed()
-        {
-            this.LogVerbose("Queue Check Delayed Started");
-
-            if (queueCheckTimer == null)
-            {
-                queueCheckTimer = CreateRepeatingTimer(() => QueueCheckSubscribe(), 1000);
-            }
-            else
-            {
-                queueCheckTimer.Stop();
-                queueCheckTimer.Interval = 250;
-                queueCheckTimer.Start();
-            }
-
-        }
-
-
-        private void CheckExpanders(CancellationToken token = default)
-        {
-            if (token.IsCancellationRequested)
-            {
-                this.LogDebug("CheckExpanders cancelled");
-                return;
-            }
-
-            expanderCheckTimer.Dispose();
-            this.LogDebug("CheckExpanders Started");
-
+            // Queue expander initialization if available
             ExpanderTracker?.Initialize();
 
-            // Check cancellation before starting the next timer
-            if (token.IsCancellationRequested)
+            // Queue all min level requests
+            var volumeComponents = ControlPointList.OfType<IVolumeComponent>().ToList();
+            this.LogDebug("Queuing min/max level requests for {count} volume components", volumeComponents.Count);
+
+            foreach (var component in volumeComponents)
             {
-                this.LogDebug("CheckExpanders cancelled before starting GetMinLevels");
-                return;
+                component.GetMinLevel();
             }
 
-            pacer = CreateOneShotTimer(() => GetMinLevels(), 250);
+            // Queue all max level requests  
+            foreach (var component in volumeComponents)
+            {
+                component.GetMaxLevel();
+            }
+
+            // Queue all component subscriptions
+            var subscribableComponents = ControlPointList.Where(c => c.Enabled).ToList();
+            this.LogDebug("Queuing subscriptions for {count} components", subscribableComponents.Count);
+
+            foreach (var component in subscribableComponents)
+            {
+                component.Subscribe();
+            }
+
+            // Start monitoring for queue completion
+            StartQueueCompletionMonitoring();
         }
 
-        private void QueueCheckSubscribe()
+        private void StartQueueCompletionMonitoring()
         {
-            this.LogVerbose("LocalQueue Size = {0} and Command Queue {1} in Progress", CommandQueue.LocalQueue.Count, CommandQueue.CommandQueueInProgress ? "is" : "is not");
-            if (!CommandQueue.LocalQueue.Any() && !CommandQueue.CommandQueueInProgress)
+            this.LogDebug("Starting queue completion monitoring");
+
+            // Use existing queueCheckTimer but simplify the logic
+            if (queueCheckTimer != null)
             {
                 queueCheckTimer.Stop();
+                queueCheckTimer.Dispose();
+            }
+
+            queueCheckTimer = CreateRepeatingTimer(() => CheckQueueCompletion(), 1000);
+        }
+
+        private void CheckQueueCompletion()
+        {
+            this.LogVerbose("Queue check - LocalQueue: {count} items, InProgress: {inProgress}",
+                CommandQueue.Count, CommandQueue.CommandQueueInProgress);
+
+            if (CommandQueue.IsEmpty && !CommandQueue.CommandQueueInProgress)
+            {
+                this.LogDebug("All queue commands completed, finishing subscription process");
+
+                queueCheckTimer?.Stop();
+                queueCheckTimer?.Dispose();
                 queueCheckTimer = null;
-                pacer = CreateOneShotTimer(() => SubscribeToComponentByIndex(0), 250);
 
-            }
-            else
-            {
-                CommandQueue.SendNextQueuedCommand();
-                queueCheckTimer.Stop();
-                queueCheckTimer.Interval = 1000;
-                queueCheckTimer.Start();
+                // Do final polling and start watchdog
+                EndSubscriptionProcess();
             }
         }
 
-
-        private void SubscribeToComponent(ISubscribedComponent data)
-        {
-            if (data == null) return;
-            if (!data.Enabled) return;
-            this.LogDebug("Subscribing To Object - {0}", data.InstanceTag1);
-            data.Subscribe();
-        }
-
-        private void SubscribeToComponentByIndex(int indexer)
-        {
-            ISubscribedComponent data;
-            int controlPointCount;
-            lock (watchdogLock)
-            {
-                if (indexer >= ControlPointList.Count)
-                {
-                    EndSubscriptionProcess();
-                    return;
-                }
-                data = ControlPointList[indexer];
-                controlPointCount = ControlPointList.Count;
-            }
-
-            this.LogDebug("Subscribing to Component {0}", indexer);
-            SubscribeToComponent(data);
-            var indexerOutput = indexer + 1;
-            this.LogVerbose("Indexer = {0} : Count = {1} : ControlPointList", indexerOutput, controlPointCount);
-            componentSubscribeTimer = CreateOneShotTimer(() => SubscribeToComponentByIndex(indexerOutput), 250);
-        }
 
         private void EndSubscriptionProcess()
         {
-            componentSubscribeTimer?.Dispose();
-            pacer?.Dispose();
-            paceTimer?.Dispose();
-
             foreach (var control in Switchers.Select(switcher => switcher.Value).Where(control => control.SelectorCustomName == string.Empty))
             {
                 control.DoPoll();
@@ -1389,6 +1275,10 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
             {
                 control.DoPoll();
             }
+
+            // Start watchdog only after all subscriptions are complete
+            this.LogDebug("All subscriptions complete. Starting watchdog.");
+            StartWatchDog();
         }
 
         #endregion
@@ -1442,8 +1332,6 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
 
                 // Check for cancellation before starting watchdog
                 token.ThrowIfCancellationRequested();
-
-                StartWatchDog();
             }
             catch (OperationCanceledException)
             {
@@ -1493,7 +1381,7 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
             CommandPassthruFeedback.LinkInputSig(trilist.StringInput[deviceJoinMap.CommandPassThru.JoinNumber]);
             trilist.SetStringSigAction(presetJoinMap.PresetName.JoinNumber, RunPreset);
 
-            trilist.SetStringSigAction(deviceJoinMap.CommandPassThru.JoinNumber, (s) => SendLineRaw(s));
+            trilist.SetStringSigAction(deviceJoinMap.CommandPassThru.JoinNumber, (s) => CommandQueue.EnqueueCommand(s, sendLineRaw: true, priority: (int)CommandPriority.High));
 
             trilist.SetSigTrueAction(deviceJoinMap.Resubscribe.JoinNumber, Resubscribe);
 
