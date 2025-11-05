@@ -1110,6 +1110,54 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
             }
         }
 
+        /// <summary>
+        /// Saves/overwrites a preset by name
+        /// </summary>
+        /// <param name="name">Preset name to save/overwrite</param>
+        public void SavePreset(string name)
+        {
+            this.LogVerbose("Saving/Overwriting Preset By Name - {0}", name);
+            CommandQueue.EnqueueCommand($"DEVICE savePresetByName \"{name}\"", priority: (int)CommandPriority.Normal);
+        }
+
+        /// <summary>
+        /// Saves/overwrites a preset by ID
+        /// </summary>
+        /// <param name="id">Preset ID to save/overwrite</param>
+        public void SavePreset(int id)
+        {
+            this.LogVerbose("Saving/Overwriting Preset By ID - {0}", id);
+            CommandQueue.EnqueueCommand($"DEVICE savePreset {id}", priority: (int)CommandPriority.Normal);
+        }
+
+        /// <summary>
+        /// Handles preset override by key (looks up preset and saves it)
+        /// </summary>
+        /// <param name="key">The preset key to override</param>
+        public void SavePresetByKey(string key)
+        {
+            var preset = Presets[key] as TesiraPreset;
+            if (preset == null)
+            {
+                this.LogWarning("No preset found with key {0} to save", key);
+                return;
+            }
+
+            this.LogVerbose("Saving preset {0} (ID: {1})", preset.Name, preset.PresetId);
+            if (!string.IsNullOrEmpty(preset.PresetName))
+            {
+                SavePreset(preset.PresetName);
+            }
+            else if (preset.PresetId > 0)
+            {
+                SavePreset(preset.PresetId);
+            }
+            else
+            {
+                this.LogWarning("Preset {0} has invalid ID and name for saving", preset.Name);
+            }
+        }
+
         #endregion
 
         #region SubscriptionHandling        
@@ -1592,15 +1640,74 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
             // string input executes preset recall using preset name
             trilist.SetStringSigAction(presetJoinMap.PresetName.JoinNumber, RunPreset);
             trilist.SetUShortSigAction(presetJoinMap.PresetName.JoinNumber, RunPresetNumber);
-            // digital input executes preset reall using preset id (RunPresetNumber))
+            
+            // Store references for press-and-hold logic
+            var holdTimers = new Dictionary<uint, CTimer>();
+            var feedbackTimers = new Dictionary<uint, CTimer>();
+            var holdTimeMs = 5000; // 5 seconds default hold time
+            
+            // digital input executes preset recall using preset id (RunPresetNumber))
             foreach (var preset in Presets)
             {
                 if (!(preset.Value is TesiraPreset p)) continue;
                 var runPresetIndex = p.PresetIndex;
                 var presetIndex = runPresetIndex;
                 trilist.StringInput[(uint)(presetJoinMap.PresetNameFeedback.JoinNumber + presetIndex)].StringValue = p.Label;
-                trilist.SetSigTrueAction((uint)(presetJoinMap.PresetSelection.JoinNumber + presetIndex),
-                    () => RecallPreset(p.Key));
+                
+                var presetJoin = (uint)(presetJoinMap.PresetSelection.JoinNumber + presetIndex);
+                var feedbackJoin = (uint)(presetJoinMap.PresetSavedFeedback.JoinNumber + presetIndex);
+                
+                // Press and hold logic for each preset
+                trilist.SetSigTrueAction(presetJoin, () => 
+                {
+                    // Start hold timer
+                    if (holdTimers.ContainsKey(presetJoin))
+                    {
+                        holdTimers[presetJoin]?.Stop();
+                        holdTimers[presetJoin]?.Dispose();
+                        holdTimers.Remove(presetJoin);
+                    }
+                    
+                    holdTimers[presetJoin] = new CTimer(timerObj =>
+                    {
+                        // Hold time reached - save preset
+                        this.LogVerbose("Hold timer expired - saving preset {0}", p.Key);
+                        SavePresetByKey(p.Key);
+                        
+                        // Pulse feedback for 2 seconds
+                        trilist.SetBool(feedbackJoin, true);
+                        if (feedbackTimers.ContainsKey(feedbackJoin))
+                        {
+                            feedbackTimers[feedbackJoin]?.Stop();
+                            feedbackTimers[feedbackJoin]?.Dispose();
+                        }
+                        feedbackTimers[feedbackJoin] = new CTimer(feedbackTimerObj =>
+                        {
+                            trilist.SetBool(feedbackJoin, false);
+                            if (feedbackTimers.ContainsKey(feedbackJoin))
+                            {
+                                feedbackTimers.Remove(feedbackJoin);
+                            }
+                        }, 2000);
+                        
+                        holdTimers.Remove(presetJoin);
+                    }, holdTimeMs);
+                });
+                
+                trilist.SetSigFalseAction(presetJoin, () =>
+                {
+                    // Button released - check if we should recall preset
+                    if (holdTimers.ContainsKey(presetJoin))
+                    {
+                        // Timer still running = short press = recall preset
+                        holdTimers[presetJoin]?.Stop();
+                        holdTimers[presetJoin]?.Dispose();
+                        holdTimers.Remove(presetJoin);
+                        this.LogVerbose("Short press - recalling preset {0}", p.Key);
+                        RecallPreset(p.Key);
+                    }
+                    // If timer not running, hold action already executed
+                });
             }
         }
 
