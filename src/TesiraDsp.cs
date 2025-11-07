@@ -1012,8 +1012,7 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
                     return;
                 }
 
-                if (args.Text.IndexOf("DEVICE savePreset", StringComparison.Ordinal) == 0 && 
-                    args.Text.IndexOf("DEVICE savePresetByName", StringComparison.Ordinal) < 0)
+                if (args.Text.IndexOf("DEVICE savePreset", StringComparison.Ordinal) == 0)
                 {
                     this.LogVerbose("Received savePreset response: {0}", args.Text);
                     CommandQueue.HandleResponse(args.Text);
