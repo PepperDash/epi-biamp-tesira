@@ -116,6 +116,9 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
         // Store feedback actions for each preset
         private Dictionary<string, System.Action> presetFeedbackActions = new Dictionary<string, System.Action>();
 
+        // Store preset hold time from configuration
+        private int presetHoldTimeMs = 5000; // Default 5 seconds
+
         private bool initalSubscription = true;
 
         private readonly object watchdogLock = new object();
@@ -332,6 +335,9 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
             ResubscriptionString = !string.IsNullOrEmpty(props.ResubscribeString)
                 ? props.ResubscribeString
                 : "resubscribeAll";
+
+            // Set preset hold time from configuration
+            presetHoldTimeMs = props.PresetHoldTimeMs > 0 ? props.PresetHoldTimeMs : 5000;
 
             // Lock the entire control point list creation process
             lock (watchdogLock)
@@ -1709,7 +1715,6 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
             
             var holdTimers = new Dictionary<uint, CTimer>();
             var feedbackTimers = new Dictionary<uint, CTimer>();
-            var holdTimeMs = 5000; // 5 seconds default hold time
             
             foreach (var preset in Presets)
             {
@@ -1740,7 +1745,7 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
                             SavePresetByKey(p.Key);
                             
                             holdTimers.Remove(presetJoin);
-                        }, holdTimeMs);
+                        }, presetHoldTimeMs);
                     }
                     else
                     {
