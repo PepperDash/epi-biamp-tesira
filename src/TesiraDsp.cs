@@ -1031,6 +1031,7 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
                 if (args.Text.IndexOf("-ERR", StringComparison.Ordinal) >= 0)
                 {
                     CommandQueue.HandleResponse(args.Text);
+                    
                     // Error response
                     if (args.Text.IndexOf("ALREADY_SUBSCRIBED", StringComparison.Ordinal) >= 0)
                     {
@@ -1178,6 +1179,7 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
             }
 
             this.LogVerbose("Saving preset {0} (ID: {1})", preset.Name, preset.PresetId);
+            
             if (!string.IsNullOrEmpty(preset.PresetName))
             {
                 SavePreset(preset.PresetName);
@@ -1189,7 +1191,11 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
             else
             {
                 this.LogWarning("Preset {0} has invalid ID and name for saving", preset.Name);
+                return;
             }
+            
+            // Trigger feedback immediately after sending save command
+            TriggerPresetSavedFeedbackByKey(key);
         }
 
         private void TriggerPresetSavedFeedback(string presetName)
