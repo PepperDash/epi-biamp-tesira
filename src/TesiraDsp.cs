@@ -117,7 +117,7 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
         private Dictionary<string, System.Action> presetFeedbackActions = new Dictionary<string, System.Action>();
 
         // Store preset hold time from configuration
-        private int presetHoldTimeMs = 5000; // Default 5 seconds
+        private int presetHoldTimeMs;
 
         private bool initalSubscription = true;
 
