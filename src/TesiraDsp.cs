@@ -1760,24 +1760,29 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
                 {
                     this.LogVerbose("Pulsing save feedback for preset {0}", p.Key);
                     trilist.SetBool(feedbackJoin, true);
-                    if (feedbackTimers.ContainsKey(feedbackJoin))
-                    {
-                        feedbackTimers[feedbackJoin]?.Stop();
-                        feedbackTimers[feedbackJoin]?.Dispose();
-                    }
+                    CleanupTimer(feedbackTimers, feedbackJoin);
                     feedbackTimers[feedbackJoin] = new CTimer(feedbackTimerObj =>
                     {
                         trilist.SetBool(feedbackJoin, false);
                         this.LogVerbose("Save feedback pulse ended for preset {0}", p.Key);
-                        if (feedbackTimers.ContainsKey(feedbackJoin))
-                        {
-                            feedbackTimers.Remove(feedbackJoin);
-                        }
+                        CleanupTimer(feedbackTimers, feedbackJoin);
                     }, 2000);
                 };
             }
         }
 
+        /// <summary>
+        /// Helper method to cleanup a timer from a dictionary.
+        /// </summary>
+        private void CleanupTimer(Dictionary<uint, CTimer> timerDict, uint key)
+        {
+            if (timerDict.ContainsKey(key))
+            {
+                timerDict[key]?.Stop();
+                timerDict[key]?.Dispose();
+                timerDict.Remove(key);
+            }
+        }
         private void LinkSourceSelectorsToApi(BasicTriList trilist, TesiraSwitcherJoinMapAdvanced switcherJoinMap)
         {
             this.LogVerbose("There are {0} SourceSelector Control Points", Switchers.Count());
