@@ -54,6 +54,9 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
 
         [JsonProperty("resubscribeString")]
         public string ResubscribeString { get; set; }
+
+        [JsonProperty("presetHoldTimeMs")]
+        public int PresetHoldTimeMs { get; set; } = 5000; // Default 5 seconds
     }
 
     public class TesiraExpanderBlockConfig
