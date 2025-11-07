@@ -114,7 +114,7 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
         private TesiraExpanderTracker ExpanderTracker { get; set; }
 
         // Store feedback actions for each preset
-        private Dictionary<string, System.Action> presetFeedbackActions = new Dictionary<string, System.Action>();
+        private readonly Dictionary<string, System.Action> presetFeedbackActions = new Dictionary<string, System.Action>();
 
         private bool initalSubscription = true;
 
