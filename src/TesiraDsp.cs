@@ -1720,38 +1720,49 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
                 var presetJoin = (uint)(presetJoinMap.PresetSelection.JoinNumber + presetIndex);
                 var feedbackJoin = (uint)(presetJoinMap.PresetSavedFeedback.JoinNumber + presetIndex);
                 
+// Add this field to the class (above or near other fields)
+        private readonly object holdTimersLock = new object();
+
                 trilist.SetBoolSigAction(presetJoin, (isPressed) => 
                 {
                     if (isPressed)
                     {
                         this.LogVerbose("Preset button {0} pressed - starting timer", p.Key);
                         
-                        if (holdTimers.ContainsKey(presetJoin))
+                        lock (holdTimersLock)
                         {
-                            holdTimers[presetJoin]?.Stop();
-                            holdTimers[presetJoin]?.Dispose();
-                            holdTimers.Remove(presetJoin);
+                            if (holdTimers.ContainsKey(presetJoin))
+                            {
+                                holdTimers[presetJoin]?.Stop();
+                                holdTimers[presetJoin]?.Dispose();
+                                holdTimers.Remove(presetJoin);
+                            }
+
+                            holdTimers[presetJoin] = new CTimer(timerObj =>
+                            {
+                                this.LogVerbose("Hold timer expired - saving preset {0}", p.Key);
+                                SavePresetByKey(p.Key);
+                                lock (holdTimersLock)
+                                {
+                                    holdTimers.Remove(presetJoin);
+                                }
+                            }, holdTimeMs);
                         }
-                        
-                        holdTimers[presetJoin] = new CTimer(timerObj =>
-                        {
-                            this.LogVerbose("Hold timer expired - saving preset {0}", p.Key);
-                            SavePresetByKey(p.Key);
-                            
-                            holdTimers.Remove(presetJoin);
-                        }, holdTimeMs);
                     }
                     else
                     {
                         this.LogVerbose("Preset button {0} released", p.Key);
                         
-                        if (holdTimers.ContainsKey(presetJoin))
+                        lock (holdTimersLock)
                         {
-                            holdTimers[presetJoin]?.Stop();
-                            holdTimers[presetJoin]?.Dispose();
-                            holdTimers.Remove(presetJoin);
-                            this.LogVerbose("Short press - recalling preset {0}", p.Key);
-                            RecallPreset(p.Key);
+                            if (holdTimers.ContainsKey(presetJoin))
+                            {
+                                holdTimers[presetJoin]?.Stop();
+                                holdTimers[presetJoin]?.Dispose();
+                                holdTimers.Remove(presetJoin);
+                                this.LogVerbose("Short press - recalling preset {0}", p.Key);
+                                RecallPreset(p.Key);
+                            }
                         }
                     }
                 });
