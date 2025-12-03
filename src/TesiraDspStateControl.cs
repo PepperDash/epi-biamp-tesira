@@ -3,7 +3,6 @@ using System.Text.RegularExpressions;
 using Crestron.SimplSharpPro.DeviceSupport;
 using Newtonsoft.Json;
 using Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Bridge.JoinMaps.Standalone;
-using PepperDash.Core;
 using PepperDash.Core.Logging;
 using PepperDash.Essentials.Core;
 using PepperDash.Essentials.Core.Bridges;
@@ -11,7 +10,7 @@ using PepperDash.Essentials.Core.DeviceTypeInterfaces;
 
 namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
 {
-    public class TesiraDspStateControl : TesiraDspControlPoint, IPrivacy, IStateFeedback
+    public class TesiraDspStateControl : TesiraDspControlPoint, IPrivacy, IStateFeedback, IHasStateControlWithFeedback
     {
         private bool state;
         private readonly int tagForSubscription;
