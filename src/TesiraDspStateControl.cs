@@ -1,8 +1,10 @@
 ﻿using System;
+using System.Linq;
 using System.Text.RegularExpressions;
 using Crestron.SimplSharpPro.DeviceSupport;
 using Newtonsoft.Json;
 using Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Bridge.JoinMaps.Standalone;
+using Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Messengers;
 using PepperDash.Core.Logging;
 using PepperDash.Essentials.Core;
 using PepperDash.Essentials.Core.Bridges;
@@ -56,6 +58,23 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
             this.LogVerbose("Adding StateControl {key}", Key);
             IsSubscribed = false;
             Enabled = config.Enabled;
+        }
+
+        protected override void CreateMobileControlMessengers()
+        {
+            var mc = DeviceManager.AllDevices.OfType<IMobileControl>().FirstOrDefault();
+
+            if (mc == null)
+            {
+                this.LogInformation("Mobile Control not found");
+                return;
+            }
+
+            var messenger = new StateControlMessenger($"{Key}-StateControlMessenger", $"/device/{Key}", this);
+
+            mc.AddDeviceMessenger(messenger);
+
+            base.CreateMobileControlMessengers();
         }
 
         /// <summary>

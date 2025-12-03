@@ -1,9 +1,8 @@
-using Independentsoft.Exchange;
 using Newtonsoft.Json;
 using PepperDash.Core.Logging;
 using PepperDash.Essentials.AppServer.Messengers;
 
-namespace PepperDash.Essentials.AppServer.Messengers
+namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Messengers
 {
   /// <summary>
   /// Messenger class for State Control devices
