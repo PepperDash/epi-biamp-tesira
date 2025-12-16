@@ -1,25 +1,26 @@
-
-
 using PepperDash.Essentials.Core;
 
-/// <summary>
-/// Interface for devices that have state control functionality.
-/// </summary>
-public interface IHasStateControlWithFeedback : IHasStateControl
+namespace PepperDash.Essentials.Plugins.DSP.Biamp.Tesira.Interfaces
 {
   /// <summary>
-  /// Sets the state to On.
+  /// Interface for devices that have state control functionality.
   /// </summary>
-  void StateOn();
+  public interface IHasStateControlWithFeedback : IHasStateControl
+  {
+    /// <summary>
+    /// Sets the state to On.
+    /// </summary>
+    void StateOn();
 
-  /// <summary>
-  /// Sets the state to Off.
-  /// </summary>
-  void StateOff();
+    /// <summary>
+    /// Sets the state to Off.
+    /// </summary>
+    void StateOff();
 
-  /// <summary>
-  /// Gets the state feedback for the device. This property provides a BoolFeedback
-  /// that represents the current state (on/off) of the device.
-  /// </summary>
-  BoolFeedback StateFeedback { get; }
+    /// <summary>
+    /// Gets the state feedback for the device. This property provides a BoolFeedback
+    /// that represents the current state (on/off) of the device.
+    /// </summary>
+    BoolFeedback StateFeedback { get; }
+  }
 }

@@ -9,6 +9,7 @@ using PepperDash.Core.Logging;
 using PepperDash.Essentials.Core;
 using PepperDash.Essentials.Core.Bridges;
 using PepperDash.Essentials.Core.DeviceTypeInterfaces;
+using PepperDash.Essentials.Plugins.DSP.Biamp.Tesira.Interfaces;
 
 namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
 {
@@ -110,7 +111,13 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
 
             // Check for valid subscription response
 
-            if (customName != StateCustomName) return;
+            if (customName != StateCustomName)
+            {
+                this.LogWarning("Received subscription message for unknown custom name {customName}", customName);
+                return;
+            }
+
+            this.LogDebug("Subscription Response: {customName} Value: {value}", customName, value);
             state = bool.Parse(value);
             FireFeedbacks();
             IsSubscribed = true;

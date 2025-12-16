@@ -1,6 +1,7 @@
 using Newtonsoft.Json;
 using PepperDash.Core.Logging;
 using PepperDash.Essentials.AppServer.Messengers;
+using PepperDash.Essentials.Plugins.DSP.Biamp.Tesira.Interfaces;
 
 namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Messengers
 {
