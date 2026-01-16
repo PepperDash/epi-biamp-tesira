@@ -118,6 +118,16 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Bridge.JoinMaps
               JoinType = eJoinType.Serial
             });
 
+    [JoinName("RawLevel")]
+    public JoinDataComplete RawLevel =
+        new JoinDataComplete(new JoinData { JoinNumber = 300, JoinSpan = 1 },
+            new JoinMetadata
+            {
+              Description = "Fader Raw Level with dB suffix",
+              JoinCapabilities = eJoinCapabilities.ToSIMPL,
+              JoinType = eJoinType.Serial
+            });
+
     public TesiraFaderJoinMapAdvanced(uint joinStart)
         : base(joinStart, typeof(TesiraFaderJoinMapAdvanced))
     {

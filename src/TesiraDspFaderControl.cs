@@ -57,6 +57,7 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
         public BoolFeedback MuteFeedback { get; private set; }
         public BoolFeedback VisibleFeedback { get; private set; }
         public IntFeedback VolumeLevelFeedback { get; private set; }
+        public StringFeedback RawLevelFeedback { get; private set; }
         public IntFeedback TypeFeedback { get; private set; }
         public IntFeedback ControlTypeFeedback { get; private set; }
         public IntFeedback PermissionsFeedback { get; private set; }
@@ -122,7 +123,16 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
         /// </summary>
         public bool HasLevel { get; private set; }
 
-        public int RawVolumeLevel { get; private set; }
+        private int rawVolumeLevel;
+        public int RawVolumeLevel
+        {
+            get { return rawVolumeLevel; }
+            private set
+            {
+                rawVolumeLevel = value;
+                RawLevelFeedback.FireUpdate();
+            }
+        }
 
         public eVolumeLevelUnits Units
         {
@@ -219,12 +229,14 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
             VisibleFeedback = new BoolFeedback(Key + "-VisibleFeedback", () => Enabled);
 
             VolumeLevelFeedback = new IntFeedback(Key + "-LevelFeedback", () => VolumeLevel);
+            RawLevelFeedback = new StringFeedback(Key + "-RawLevelFeedback", () => RawVolumeLevel + " dB");
             TypeFeedback = new IntFeedback(Key + "-TypeFeedback", () => (ushort)type);
             ControlTypeFeedback = new IntFeedback(Key + "-ControlTypeFeedback", () => ControlType);
             PermissionsFeedback = new IntFeedback(Key + "-PermissionsFeedback", () => Permissions);
 
             Feedbacks.Add(MuteFeedback);
             Feedbacks.Add(VolumeLevelFeedback);
+            Feedbacks.Add(RawLevelFeedback);
             Feedbacks.Add(NameFeedback);
             Feedbacks.Add(VisibleFeedback);
             Feedbacks.Add(TypeFeedback);
