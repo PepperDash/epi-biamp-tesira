@@ -152,9 +152,10 @@ Within the **Standalone** object, this join map represents a single control as d
 
 #### Serials
 
-| Legacy Join | Standalone Join | Type (RW) | Description                      |
-| ----------- | --------------- | --------- | -------------------------------- |
-| 200         | 1               | R         | Control Label (Pass From Config) |
+| Legacy Join | Standalone Join | Type (RW) | Description                                      |
+| ----------- | --------------- | --------- | ------------------------------------------------ |
+| 200         | 1               | R         | Control Label (Pass From Config)                 |
+| 300         | 2               | R         | Raw Level in dB (e.g., "-12 dB", "-50 dB")      |
 
 #### Config Example
 
