@@ -1149,3 +1149,500 @@ In the provided example config object, given a base object key of ```dsp-1```, t
 ## RoadMap
 
 A Method by which we can continue even with *"bad"* instance tags in the config.  Currently, this causes everything to fail upon subscription.
+<!-- START Minimum Essentials Framework Versions -->
+### Minimum Essentials Framework Versions
+
+- 2.17.0
+<!-- END Minimum Essentials Framework Versions -->
+<!-- START Config Example -->
+### Config Example
+
+```json
+{
+    "key": "GeneratedKey",
+    "uid": 1,
+    "name": "GeneratedName",
+    "type": "TesiraDspProperties",
+    "group": "Group",
+    "properties": {
+        "CommunicationMonitorProperties": "SampleValue",
+        "Control": "SampleValue",
+        "faderControlBlocks": {
+            "SampleString": {
+                "enabled": true,
+                "label": "SampleString",
+                "levelInstanceTag": "SampleString",
+                "muteInstanceTag": "SampleString",
+                "index1": 0,
+                "index2": 0,
+                "hasMute": true,
+                "hasLevel": true,
+                "isMic": true,
+                "useAbsoluteValue": true,
+                "unmuteOnVolChange": true,
+                "incrementAmount": "SampleString",
+                "permissions": 0,
+                "bridgeIndex": "SampleValue",
+                "volumeRepeatRateMs": 0
+            }
+        },
+        "dialerControlBlocks": {
+            "SampleString": {
+                "enabled": true,
+                "isVoip": true,
+                "label": "SampleString",
+                "displayNumber": "SampleString",
+                "dialerInstanceTag": "SampleString",
+                "controlStatusInstanceTag": "SampleString",
+                "index": 0,
+                "callAppearance": 0,
+                "clearOnHangup": true,
+                "appendDtmf": true,
+                "bridgeIndex": "SampleValue"
+            }
+        },
+        "switcherControlBlocks": {
+            "SampleString": {
+                "enabled": true,
+                "label": "SampleString",
+                "type": "SampleString",
+                "switcherInstanceTag": "SampleString",
+                "index1": 0,
+                "bridgeIndex": "SampleValue",
+                "switcherInputs": {
+                    "SampleValue": {
+                        "label": "SampleString"
+                    }
+                },
+                "switcherOutputs": {
+                    "SampleValue": {
+                        "label": "SampleString"
+                    }
+                },
+                "showRoutedStringFeedback": true,
+                "pollIntervalMs": 0
+            }
+        },
+        "routerControlBlocks": {
+            "SampleString": {
+                "enabled": true,
+                "label": "SampleString",
+                "routerInstanceTag": "SampleString",
+                "index1": 0,
+                "routerInputs": {
+                    "SampleValue": {
+                        "label": "SampleString"
+                    }
+                },
+                "routerOutput": {
+                    "label": "SampleString"
+                },
+                "showRoutedStringFeedback": true,
+                "pollIntervalMs": 0,
+                "bridgeIndex": "SampleValue"
+            }
+        },
+        "sourceSelectorControlBlocks": {
+            "SampleString": {
+                "enabled": true,
+                "label": "SampleString",
+                "type": "SampleString",
+                "sourceSelectorInstanceTag": "SampleString",
+                "sourceSelectorInputs": {
+                    "SampleValue": {
+                        "label": "SampleString"
+                    }
+                },
+                "sourceSelectorOutput": {
+                    "label": "SampleString"
+                },
+                "showSelectedStringFeedback": true,
+                "bridgeIndex": "SampleValue"
+            }
+        },
+        "presets": {
+            "SampleString": {
+                "label": "SampleString",
+                "presetName": "SampleString",
+                "presetId": 0,
+                "presetIndex": 0
+            }
+        },
+        "stateControlBlocks": {
+            "SampleString": {
+                "enabled": true,
+                "label": "SampleString",
+                "stateInstanceTag": "SampleString",
+                "subscriptionInstanceTag": "SampleString",
+                "index": 0,
+                "bridgeIndex": "SampleValue"
+            }
+        },
+        "meterControlBlocks": {
+            "SampleString": {
+                "enabled": true,
+                "label": "SampleString",
+                "meterInstanceTag": "SampleString",
+                "index": 0,
+                "meterData": {
+                    "meterMinimum": 0,
+                    "meterMaximum": 0,
+                    "defaultPollTime": 0
+                },
+                "bridgeIndex": "SampleValue"
+            }
+        },
+        "logicMeterControlBlocks": {
+            "SampleString": {
+                "enabled": true,
+                "label": "SampleString",
+                "meterInstanceTag": "SampleString",
+                "index": 0,
+                "bridgeIndex": "SampleValue"
+            }
+        },
+        "crosspointStateControlBlocks": {
+            "SampleString": {
+                "enabled": true,
+                "label": "SampleString",
+                "matrixInstanceTag": "SampleString",
+                "index1": 0,
+                "index2": 0,
+                "bridgeIndex": "SampleValue",
+                "pollEnable": true,
+                "pollTimeMs": 0
+            }
+        },
+        "roomCombinerControlBlocks": {
+            "SampleString": {
+                "enabled": true,
+                "label": "SampleString",
+                "roomCombinerInstanceTag": "SampleString",
+                "roomIndex": 0,
+                "isMic": true,
+                "useAbsoluteValue": true,
+                "umuteOnVolChange": true,
+                "incerementAmount": "SampleString",
+                "permissions": 0,
+                "bridgeIndex": "SampleValue",
+                "volumeRepeatRateMs": 0
+            }
+        },
+        "tesiraExpanderBlocks": {
+            "SampleString": {
+                "hostname": "SampleString",
+                "index": 0
+            }
+        },
+        "resubscribeString": "SampleString"
+    }
+}
+```
+<!-- END Config Example -->
+<!-- START Supported Types -->
+
+<!-- END Supported Types -->
+<!-- START Join Maps -->
+### Join Maps
+
+#### Digitals
+
+| Join | Type (RW) | Description |
+| --- | --- | --- |
+| 2001 | R | State Toggle and Feedback |
+| 2002 | R | State On and Feedback |
+| 2003 | R | State On and Feedback |
+| 2203 | R | Fader Mute Toggle and Feedback |
+| 2204 | R | Fader Mute On and Feedback |
+| 2205 | R | Fader Mute Off and Feedback |
+| 2201 | R | Fader Level Increment |
+| 2202 | R | Fader Level Decrement |
+| 2206 | R | Fader Visible and In Use |
+| 400 | R | Fader Mute Toggle and Feedback |
+| 600 | R | Fader Mute On and Feedback |
+| 800 | R | Fader Mute Off and Feedback |
+| 1000 | R | Fader Level Increment |
+| 1200 | R | Fader Level Decrement |
+| 200 | R | Fader Visible and In Use |
+| 100 | R | Recall Preset Explicitly by Configured Index |
+| 100 | R | Recall Preset by name |
+| 1300 | R | State Toggle and Feedback |
+| 1450 | R | State On and Feedback |
+| 1600 | R | State On and Feedback |
+| 1 | R | Device Online |
+| 150 | R | Poll Current Route |
+| 3501 | R | High to Subscribe - Low to Unsubscribe |
+| 1 | R | Device Online |
+| 1 | R | Trigger control resubscription |
+| 1 | R | Recall Preset Explicitly by Configured Index |
+| 1 | R | Preset Preset and Configured |
+| 1 | R | Recall Preset by name |
+| 1 | R | Device Online |
+| 1 | R | Trigger control resubscription |
+| 1 | R | Poll Current Route |
+| 1 | R | Fader Level Increment |
+| 2 | R | Fader Level Decrement |
+| 3 | R | Fader Mute On and Feedback |
+| 4 | R | Fader Mute Off and Feedback |
+| 5 | R | Fader Mute Toggle and Feedback |
+| 6 | R | Fader Visible and In Use |
+| 1 | R | High to Subscribe - Low to Unsubscribe |
+| 1 | R | State Toggle and Feedback |
+| 2 | R | State On and Feedback |
+| 3 | R | State On and Feedback |
+| 1 | R | State On and Feedback |
+| 2 | R | State On and Feedback |
+| 3 | R | State Toggle and Feedback |
+
+#### Analogs
+
+| Join | Type (RW) | Description |
+| --- | --- | --- |
+| 2201 | R | Fader Level Set and Feedback |
+| 2202 | R | Fader Type [Speaker / Microphone] |
+| 2204 | R | Fader Control Data [Mic / Speaker] |
+| 2203 | R | Fader Permissions |
+| 200 | R | Fader Level Set and Feedback |
+| 400 | R | Fader Type [Speaker / Microphone] |
+| 600 | R | Fader Control Data [Mic / Speaker] |
+| 800 | R | Fader Permissions |
+| 150 | R | Source Selector Index Set and Feedback |
+| 3501 | R | Meter Data |
+| 1 | R | Source Selector Index Set and Feedback |
+| 1 | R | Fader Level Set and Feedback |
+| 2 | R | Fader Type [Speaker / Microphone] |
+| 3 | R | Fader Permissions |
+| 4 | R | Fader Control Data [Mic / Speaker] |
+| 1 | R | Meter Data |
+
+#### Serials
+
+| Join | Type (RW) | Description |
+| --- | --- | --- |
+| 2001 | R | State Label |
+| 2201 | R | Fader Label |
+| 200 | R | Fader Label |
+| 300 | R | Fader Raw Level with dB suffix |
+| 100 | R | Preset Labels as configured for explicit preset recall |
+| 1300 | R | State Label |
+| 1 | R | Device Hostname |
+| 2 | R | Device Serial Number |
+| 3 | R | Device Firmware |
+| 4 | R | Device Mac Address |
+| 150 | R | Source Selector Label |
+| 3501 | R | Meter Label |
+| 1 | R | Device Name |
+| 2 | R | Pass discrete commands directly to/from the device |
+| 3 | R | Serial Number of the Device |
+| 4 | R | Firmware of the Device |
+| 5 | R | Hostname of the Device |
+| 6 | R | IP Address of the Device |
+| 7 | R | Mac Address of the Device |
+| 1 | R | Preset Labels as configured for explicit preset recall |
+| 1 | R | Device Name |
+| 2 | R | Pass discrete commands directly to/from the device |
+| 3 | R | Serial Number of the Device |
+| 4 | R | Firmware of the Device |
+| 5 | R | Hostname of the Device |
+| 6 | R | IP Address of the Device |
+| 7 | R | Mac Address of the Device |
+| 1 | R | Source Selector Label |
+| 2 | R | Source List XSIG -or- Routed String |
+| 1 | R | Fader Label |
+| 1 | R | Meter Label |
+| 1 | R | State Label |
+| 1 | R | State Label |
+<!-- END Join Maps -->
+<!-- START Interfaces Implemented -->
+### Interfaces Implemented
+
+- IRoutingWithFeedback
+- ISubscribedComponent
+- IHasFeedback
+- IStateFeedback
+- IPrivacy
+- IHasStateControlWithFeedback
+- IMeterFeedback
+- IDspPresets
+- ICommunicationMonitor
+- IDeviceInfoProvider
+- IBasicVolumeWithFeedback
+- IVolumeComponent
+- IBasicVolumeWithFeedbackAdvanced
+- IBridgeAdvanced
+- IKeyName
+- IOnline
+<!-- END Interfaces Implemented -->
+<!-- START Base Classes -->
+### Base Classes
+
+- TesiraDspControlPoint
+- EssentialsBridgeableDevice
+- StatusMonitorBase
+- TesiraDspDialerControlPoint
+- AudioCodecBase
+- MessengerBase
+- JoinMapBaseAdvanced
+<!-- END Base Classes -->
+<!-- START Public Methods -->
+### Public Methods
+
+- public void SetSource(int data)
+- public void SetDestination(int data)
+- public void GetSourceNames()
+- public void ExecuteSwitch(object inputSelector, object outputSelector, eRoutingSignalType signalType)
+- public void ExecuteNumericSwitch(ushort inputSelector, ushort outputSelector, eRoutingSignalType signalType)
+- public void SetSource(int data)
+- public void SetDestination(int data)
+- public void GetSourceNames()
+- public void ExecuteSwitch(object inputSelector, object outputSelector, eRoutingSignalType signalType)
+- public void ExecuteNumericSwitch(ushort inputSelector, ushort outputSelector, eRoutingSignalType signalType)
+- public void GetState()
+- public void StateOn()
+- public void StateOff()
+- public void StateToggle()
+- public void PrivacyModeOff()
+- public void PrivacyModeOn()
+- public void PrivacyModeToggle()
+- public void UnSubscribe()
+- public void SendLine(string s, bool bypassTxQueue = false)
+- public void SendLineRaw(string s, bool bypassTxQueue = false)
+- public void RunPresetNumber(ushort n)
+- public void RunPreset(string name)
+- public void RunPreset(int id)
+- public void RecallPreset(string key)
+- public void Resubscribe()
+- public void UpdateDeviceInfo()
+- public void SetSource(int data)
+- public void GetSourceNames()
+- public void ExecuteSwitch(object inputSelector, object outputSelector, eRoutingSignalType signalType)
+- public void ExecuteNumericSwitch(ushort inputSelector, ushort outputSelector, eRoutingSignalType signalType)
+- public void MuteOff()
+- public void MuteOn()
+- public void SetVolume(ushort level)
+- public void SetRoomGroup(ushort group)
+- public void GetVolume()
+- public void GetMinLevel()
+- public void GetMaxLevel()
+- public void GetMute()
+- public void GetRoomGroup()
+- public void MuteToggle()
+- public void VolumeDown(bool press)
+- public void VolumeUp(bool press)
+- public void RunPresetNumber(ushort n)
+- public void RunPreset(string name)
+- public void RunPreset(int id)
+- public void RecallPreset(string key)
+- public void GetDeviceInfo()
+- public void OnDeviceInfoChanged()
+- public void UpdateDeviceInfo()
+- public void MuteOff()
+- public void MuteOn()
+- public void SetVolume(ushort level)
+- public void GetVolume()
+- public void GetMinLevel()
+- public void GetMaxLevel()
+- public void GetMute()
+- public void MuteToggle()
+- public void VolumeDown(bool press)
+- public void VolumeUp(bool press)
+- public void GetState()
+- public void StateOn()
+- public void StateOff()
+- public void StateToggle()
+- public void Enqueue(T item, int priority)
+- public bool TryDequeue(out T item)
+- public bool TryPeek(out T item)
+- public void Clear()
+- public void HandleResponse(string response)
+- public void EnqueueCommand(QueuedCommand commandToEnqueue)
+- public void EnqueueCommand(string command, bool sendLineRaw = false, int priority = (int)
+- public void SendNextQueuedCommand()
+- public void Clear()
+- public void Dial()
+- public void SetDialString(string data)
+- public void OnHook()
+- public void OffHook()
+- public void Answer()
+- public void AutoAnswerOn()
+- public void HoldCall()
+- public void ResumeCall()
+- public void HoldToggle()
+- public void AutoAnswerOff()
+- public void AutoAnswerToggle()
+- public void DoNotDisturbOn()
+- public void DoNotDisturbOff()
+- public void DoNotDisturbToggle()
+- public void SendKeypad(EKeypadKeys data)
+- public void Subscribe()
+- public void Unsubscribe()
+- public void ParseGetMessage(string attributeCode, string message)
+- public void SetData(string data, string macData)
+- public void UpdateDeviceInfo()
+<!-- END Public Methods -->
+<!-- START Bool Feedbacks -->
+### Bool Feedbacks
+
+- StateFeedback
+- SubscribedFeedback
+- StateFeedback
+- PrivacyModeIsOnFeedback
+- SubscribedFeedback
+- MuteFeedback
+- VisibleFeedback
+- MuteFeedback
+- VisibleFeedback
+- CrosspointStateFeedback
+- OffHookFeedback
+- AutoAnswerFeedback
+- DoNotDisturbFeedback
+- IncomingCallFeedback
+- HoldCallFeedback
+- IsOnline
+<!-- END Bool Feedbacks -->
+<!-- START Int Feedbacks -->
+### Int Feedbacks
+
+- SourceIndexFeedback
+- MeterFeedback
+- SourceIndexFeedback
+- MeterFeedback
+- SourceIndexFeedback
+- VolumeLevelFeedback
+- TypeFeedback
+- PermissionsFeedback
+- RoomGroupFeedback
+- VolumeLevelFeedback
+- TypeFeedback
+- ControlTypeFeedback
+- PermissionsFeedback
+- CallStateFeedback
+<!-- END Int Feedbacks -->
+<!-- START String Feedbacks -->
+### String Feedbacks
+
+- SourceNamesFeedback
+- RoutedSourceNameFeedback
+- NameFeedback
+- SourceNamesFeedback
+- RoutedSourceNameFeedback
+- CommandPassthruFeedback
+- SourceNamesFeedback
+- RoutedSourceNameFeedback
+- LabelFeedback
+- IpAddressFeedback
+- HostnameFeedback
+- SerialNumberFeedback
+- FirmwareFeedback
+- MacAddressFeedback
+- MakeFeedback
+- ModelFeedback
+- RawLevelFeedback
+- DialStringFeedback
+- CallerIdNumberFeedback
+- CallerIdNameFeedback
+- LastDialedFeedback
+- NameFeedback
+- DisplayNumberFeedback
+- NameFeedback
+<!-- END String Feedbacks -->
