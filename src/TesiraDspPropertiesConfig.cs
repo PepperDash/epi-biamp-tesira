@@ -202,6 +202,9 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
         [JsonProperty("routerOutput")]
         public RoutingPort RouterOutput { get; set; }
 
+        [JsonProperty("routerOutputs")]
+        public Dictionary<uint, RoutingPort> RouterOutputs { get; set; }
+
         [JsonProperty("showRoutedStringFeedback")]
         public bool ShowRoutedStringFeedback { get; set; }
 

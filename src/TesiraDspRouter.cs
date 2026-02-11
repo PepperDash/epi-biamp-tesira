@@ -42,7 +42,9 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
 
         public Dictionary<uint, string> SwitcherInputs { get; private set; }
 
-        private readonly System.Timers.Timer pollTimer;
+        public Dictionary<uint, string> SwitcherOutputs { get; private set; }
+
+        private readonly Timer pollTimer;
 
         private string SourceNamesXsig { get; set; }
 
@@ -52,7 +54,6 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
 
         public readonly long PollIntervalMs;
 
-        private string Type { get; set; }
         private int Destination { get; set; }
         private int SourceIndex
         {
@@ -84,6 +85,7 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
             : base(config.RouterInstanceTag, string.Empty, config.Index1, 0, parent, string.Format(keyFormatter, parent.Key, key), config.Label, config.BridgeIndex)
         {
             SwitcherInputs = new Dictionary<uint, string>();
+            SwitcherOutputs = new Dictionary<uint, string>();
 
             ShowRoutedString = config.ShowRoutedStringFeedback;
             foreach (var input in config.RouterInputs)
@@ -92,9 +94,14 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
             }
             SwitcherInputs.Add(0, "None");
 
+            foreach (var output in config.RouterOutputs)
+            {
+                SwitcherOutputs.Add(output.Key, output.Value.Label);
+            }
+
             PollIntervalMs = config.PollIntervalMs ?? 90000;
 
-            pollTimer = new System.Timers.Timer();
+            pollTimer = new Timer();
             pollTimer.Elapsed += (sender, e) => DoPoll();
             pollTimer.AutoReset = false; // Initially disabled
             pollTimer.Enabled = false;
@@ -119,10 +126,7 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
 
         private void Initialize(TesiraRouterControlBlockConfig config)
         {
-            Type = "";
-            //DeviceManager.AddDevice(this);
-
-            this.LogVerbose("Adding SourceSelector {key}", Key);
+            this.LogVerbose("Adding Router {key}", Key);
 
             IsSubscribed = false;
 
@@ -130,23 +134,39 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
 
             Enabled = config.Enabled;
 
-            if (config.RouterInputs != null)
+            if (config.RouterInputs == null)
             {
-                foreach (
-                    var input in
-                        from input in config.RouterInputs
-                        let inputPort = input.Value
-                        let inputPortKey = input.Key
-                        select input)
-                {
-                    InputPorts.Add(new RoutingInputPort(input.Value.Label, eRoutingSignalType.Audio,
-                        eRoutingPortConnectionType.BackplaneOnly, input.Key, this));
-                }
+                this.LogWarning("No Router Inputs defined");
+                return;
             }
+
+            foreach (
+                var input in
+                    from input in config.RouterInputs
+                    let inputPort = input.Value
+                    let inputPortKey = input.Key
+                    select input)
+            {
+                InputPorts.Add(new RoutingInputPort(input.Value.Label, eRoutingSignalType.Audio,
+                    eRoutingPortConnectionType.BackplaneOnly, input.Key, this));
+            }
+
+            if (config.RouterOutputs != null && config.RouterOutput != null)
+            {
+                this.LogWarning("Both RouterOutputs and RouterOutput are defined. Only RouterOutputs will be used. RouterOutput will be added to list of RouterOutputs.");
+            }
+
+            foreach (var output in config.RouterOutputs)
+            {
+                var port = new RoutingOutputPort(output.Value.Label, eRoutingSignalType.Audio,
+                    eRoutingPortConnectionType.BackplaneOnly, output.Key, this);
+                OutputPorts.Add(port);
+            }
+
             if (config.RouterOutput == null) return;
-            var output = config.RouterOutput;
-            OutputPorts.Add(new RoutingOutputPort(output.Label, eRoutingSignalType.Audio,
-                eRoutingPortConnectionType.BackplaneOnly, 1, this));
+
+            OutputPorts.Add(new RoutingOutputPort(config.RouterOutput.Label, eRoutingSignalType.Audio,
+                eRoutingPortConnectionType.BackplaneOnly, config.RouterOutputs.Count + 1, this));
         }
 
         /// <summary>
@@ -271,25 +291,39 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
         #region IRouting Members
 
         /// <summary>
-        /// Execute Switch with Essentials MagicRouting
+        /// Execute Switch with Essentials Routing
         /// </summary>
         /// <param name="inputSelector">Input Object Data</param>
         /// <param name="outputSelector">Output Object Data</param>
         /// <param name="signalType">Signal Type to Route</param>
         public void ExecuteSwitch(object inputSelector, object outputSelector, eRoutingSignalType signalType)
         {
-            if (signalType != eRoutingSignalType.Audio) return;
-            if (Destination != 0) return;
-            if (Type == "router")
+            if (signalType != eRoutingSignalType.Audio)
             {
-                SendFullCommand("set", "input", Convert.ToString(inputSelector), 1);
-                DoPoll();
+                this.LogWarning("Signal Type {signalType} is not supported. Only Audio routing is supported.", signalType);
+                return;
+            }
 
-            }
-            else
+            if (Destination == 0)
             {
-                SendFullCommand("set", "sourceSelection", Convert.ToString(inputSelector), 1);
+                this.LogWarning("Output Selector must be greater than 0");
+                return;
             }
+
+            if (!(inputSelector is uint input))
+            {
+                this.LogWarning("Input Selector must be of type uint");
+                return;
+            }
+
+            if (!(outputSelector is uint output))
+            {
+                this.LogWarning("Output Selector must be of type uint");
+                return;
+            }
+
+            SendFullCommand("set", "input", $"{input} {output}", 1);
+            DoPoll();
         }
 
         /// <summary>
@@ -302,16 +336,9 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
         {
             if (signalType != eRoutingSignalType.Audio) return;
             if (Destination != 0) return;
-            if (Type == "router")
-            {
-                SendFullCommand("set", "input", Convert.ToString(inputSelector), 1);
-                SendFullCommand("get", "input", Index1.ToString(CultureInfo.InvariantCulture), 1);
 
-            }
-            else
-            {
-                SendFullCommand("set", "sourceSelection", Convert.ToString(inputSelector), 1);
-            }
+            SendFullCommand("set", "input", Convert.ToString(inputSelector), 1);
+            SendFullCommand("get", "input", Index1.ToString(CultureInfo.InvariantCulture), 1);
         }
 
         #endregion
