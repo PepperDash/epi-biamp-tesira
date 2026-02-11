@@ -54,7 +54,13 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
 
         public readonly long PollIntervalMs;
 
+        /// <summary>
+        /// Subscription Identifier for Switcher
+        /// </summary>
+        public string SelectorCustomName { get; private set; }
+
         private int Destination { get; set; }
+
         private int SourceIndex
         {
             get
@@ -120,6 +126,8 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
 
             parent.Feedbacks.AddRange(Feedbacks);
 
+            SelectorCustomName = $"{InstanceTag1}__Router";
+
             Initialize(config);
 
         }
@@ -174,7 +182,11 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
         /// </summary>
         public override void Subscribe()
         {
-            DoPoll();
+            IsSubscribed = false;
+
+            AddCustomName(SelectorCustomName);
+
+            SendSubscriptionCommand(SelectorCustomName, "input", 250, 1);
         }
 
         /// <summary>
@@ -182,7 +194,9 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
         /// </summary>
         public override void Unsubscribe()
         {
-            pollTimer.Stop();
+            IsSubscribed = false;
+
+            SendUnSubscriptionCommand(SelectorCustomName, "input", 1);
         }
 
         /// <summary>
@@ -192,6 +206,29 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
         /// <param name="value">Response to parse</param>
         public override void ParseSubscriptionMessage(string customName, string value)
         {
+            if (customName != SelectorCustomName)
+            {
+                return;
+            }
+
+            var values = value.Split(' ');
+
+            if (values.Length < 2)
+            {
+                this.LogWarning("Unexpected number of values in subscription message: {value}", value);
+                return;
+            }
+
+            // TODO: Parse to get both Source and Destination Indexes for future use with Essentials Routing
+            try
+            {
+                SourceIndex = int.Parse(values[0]);
+            }
+            catch (Exception e)
+            {
+                this.LogError("Unable to parse subscription message: {value}. Error: {exception}", value, e.Message);
+                this.LogDebug(e, "Stack Trace: ");
+            }
         }
 
         /// <summary>
@@ -228,7 +265,6 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
             {
                 this.LogError("Unable to parse {message}: {exception}", message, e.Message);
                 this.LogDebug(e, "Stack Trace: ");
-
             }
 
         }
@@ -260,22 +296,9 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
 
             foreach (var port in InputPorts)
             {
-
                 var input = port;
                 var index = Convert.ToUInt16(input.Selector);
                 SourceNamesXsig += XSigHelper.CreateByteString(index, input.Key);
-
-                this.LogVerbose("{key} {separator}", input.Key, new string('-', 50));
-                this.LogVerbose(@"    
-                  input.ParentDevice: {input.ParentDevice}
-                  input.Selector: {input.Selector}
-                  input.Selector(Convert.ToInt16): {index}
-                  input.Port: {input.Port}
-                  input.ConnectionType: {input.ConnectionType}
-                  input.Type: {input.Type}",
-                  input.ParentDevice, input.Selector, index, input.Port, input.ConnectionType, input.Type);
-                this.LogVerbose("{separator}", new string('-', 50));
-
             }
             SourceNamesFeedback.FireUpdate();
         }
