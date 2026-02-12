@@ -148,6 +148,8 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
                 return;
             }
 
+            InputPorts.Add(new RoutingInputPort("None", eRoutingSignalType.Audio, eRoutingPortConnectionType.BackplaneOnly, 0, this));
+
             foreach (
                 var input in
                     from input in config.RouterInputs
