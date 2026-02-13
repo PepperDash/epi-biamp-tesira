@@ -183,6 +183,40 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
             SendSubscriptionCommand(SelectorCustomName, "input", 250, 1);
         }
 
+        public override void SendSubscriptionCommand(string customName, string attributeCode, int responseRate, int instanceTag)
+        {
+            // Subscription string format: InstanceTag subscribe attributeCode Index1 customName responseRate
+            // Ex: "RoomLevel subscribe level 1 MyRoomLevel 500"
+            if (string.IsNullOrEmpty(customName) || string.IsNullOrEmpty(attributeCode))
+            {
+                this.LogError("Error: CustomName or AttributeCode is null or empty. {customName}, {attributeCode}, {responseRate}, {instanceTag}", customName, attributeCode, responseRate, instanceTag);
+                return;
+            }
+
+            foreach (var output in SwitcherOutputs)
+            {
+                var cmd = $"{instanceTag} subscribe {attributeCode} {output.Key} {customName}-{output.Key} {responseRate}";
+                Parent.CommandQueue.EnqueueCommand(cmd);
+                this.LogDebug("Sent Subscription Command: {cmd}", cmd);
+            }
+        }
+
+        public override void SendUnSubscriptionCommand(string customName, string attributeCode, int instanceTag)
+        {
+            if (string.IsNullOrEmpty(customName) || string.IsNullOrEmpty(attributeCode))
+            {
+                this.LogError("Error: CustomName or AttributeCode is null or empty. {customName}, {attributeCode}, {instanceTag}", customName, attributeCode, instanceTag);
+                return;
+            }
+
+            foreach (var output in SwitcherOutputs)
+            {
+                var cmd = $"{instanceTag} unsubscribe {attributeCode} {output.Key} {customName}-{output.Key}";
+                Parent.CommandQueue.EnqueueCommand(cmd);
+                this.LogDebug("Sent Unsubscription Command: {cmd}", cmd);
+            }
+        }
+
         /// <summary>
         /// Unsubscribe from component
         /// </summary>
