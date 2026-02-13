@@ -4,12 +4,11 @@ using System.Globalization;
 using System.Linq;
 using System.Text.RegularExpressions;
 using System.Timers;
-using Crestron.SimplSharp;
 using Crestron.SimplSharpPro.DeviceSupport;
 using Newtonsoft.Json;
 using Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Bridge.JoinMaps.Standalone;
 using Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Extensions;
-using PepperDash.Core;
+using Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Interfaces;
 using PepperDash.Core.Logging;
 using PepperDash.Essentials.Core;
 using PepperDash.Essentials.Core.Bridges;
@@ -17,7 +16,7 @@ using IRoutingWithFeedback = Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Inte
 
 namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
 {
-    public class TesiraDspRouter : TesiraDspControlPoint, IRoutingWithFeedback
+    public class TesiraDspRouter : TesiraDspControlPoint, IRoutingWithFeedback, ISubscribedComponent
     {
         private int sourceIndex;
 
@@ -104,13 +103,6 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
             {
                 SwitcherOutputs.Add(output.Key, output.Value.Label);
             }
-
-            PollIntervalMs = config.PollIntervalMs ?? 90000;
-
-            pollTimer = new Timer();
-            pollTimer.Elapsed += (sender, e) => DoPoll();
-            pollTimer.AutoReset = false; // Initially disabled
-            pollTimer.Enabled = false;
 
             RoutedSourceNameFeedback = new StringFeedback(Key + "-RoutedSourceNameFeedback", () => RoutedSourceName);
             SourceIndexFeedback = new IntFeedback(Key + "-SourceIndexFeedback", () => SourceIndex);
@@ -348,7 +340,6 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
             }
 
             SendFullCommand("set", "input", $"{input} {output}", 1);
-            DoPoll();
         }
 
         /// <summary>
