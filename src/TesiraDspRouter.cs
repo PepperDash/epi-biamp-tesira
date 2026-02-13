@@ -195,7 +195,12 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
 
             foreach (var output in SwitcherOutputs)
             {
-                var cmd = $"{InstanceTag1} subscribe {attributeCode} {output.Key} {customName}-{output.Key} {responseRate}";
+                var subscriptionName = $"{customName}-{output.Key}";
+
+                AddCustomName(subscriptionName);
+
+                var cmd = $"{InstanceTag1} subscribe {attributeCode} {output.Key} {subscriptionName} {responseRate}";
+
                 Parent.CommandQueue.EnqueueCommand(cmd);
                 this.LogDebug("Sent Subscription Command: {cmd}", cmd);
             }
