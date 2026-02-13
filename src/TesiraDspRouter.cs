@@ -373,7 +373,7 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
                 return;
             }
 
-            SendFullCommand("set", "input", $"{input} {output}", 1);
+            SendFullCommand("set", "input", $"{output} {input}", 1);
         }
 
         /// <summary>
