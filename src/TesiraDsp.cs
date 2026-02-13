@@ -618,8 +618,9 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
                 Routers.Add(key, new TesiraDspRouter(key, value, this));
                 this.LogVerbose("Added Router {0} InstanceTag {1}", key, value.RouterInstanceTag);
 
-                DeviceManager.AddDevice(Routers[key]);
+                ControlPointList.Add(Routers[key]);
 
+                DeviceManager.AddDevice(Routers[key]);
             }
         }
 
@@ -1268,10 +1269,6 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
         private void EndSubscriptionProcess()
         {
             foreach (var control in Switchers.Select(switcher => switcher.Value).Where(control => control.SelectorCustomName == string.Empty))
-            {
-                control.DoPoll();
-            }
-            foreach (var control in Routers.Select(router => router.Value))
             {
                 control.DoPoll();
             }
