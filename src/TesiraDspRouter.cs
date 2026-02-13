@@ -329,12 +329,6 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
                 return;
             }
 
-            if (Destination == 0)
-            {
-                this.LogWarning("Output Selector must be greater than 0");
-                return;
-            }
-
             if (!(inputSelector is uint input))
             {
                 this.LogWarning("Input Selector must be of type uint");
@@ -344,6 +338,12 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
             if (!(outputSelector is uint output))
             {
                 this.LogWarning("Output Selector must be of type uint");
+                return;
+            }
+
+            if (output == 0)
+            {
+                this.LogWarning("Output Selector must be greater than 0");
                 return;
             }
 
