@@ -266,7 +266,7 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
         /// <param name="signalType">Signal Type to Route</param>
         public void ExecuteSwitch(object inputSelector, object outputSelector, eRoutingSignalType signalType)
         {
-            if (!signalType.HasFlag(eRoutingSignalType.Audio) && !signalType.HasFlag(eRoutingSignalType.SecondaryAudio)) return;
+            if (!signalType.HasFlag(eRoutingSignalType.Audio)) return;
 
             SendFullCommand("set", "sourceSelection", Convert.ToString(inputSelector), 1);
         }

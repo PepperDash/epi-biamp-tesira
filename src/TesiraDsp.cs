@@ -255,7 +255,7 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
             if (isSerialComm) this.LogVerbose("CheckSerialSendStatus NOT READY");
         }
 
-        public override void Initialize()
+        protected override void Initialize()
         {
             Communication.Connect();
 
@@ -1203,7 +1203,7 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
             DevInfo.GetDeviceInfo();
 
             // Queue expander initialization if available
-            ExpanderTracker?.Initialize();
+            ExpanderTracker?.CheckTracker();
 
             // Queue all min level requests
             var volumeComponents = ControlPointList.OfType<IVolumeComponent>().ToList();
