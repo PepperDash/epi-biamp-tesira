@@ -368,7 +368,22 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
 
                 RawVolumeLevel = (int)localValue;
 
-                VolumeLevel = UseAbsoluteValue ? (ushort)localValue : (ushort)localValue.Scale(MinLevel, MaxLevel, 0, 65535, this);
+                if (!UseAbsoluteValue && (localValue < MinLevel || localValue > MaxLevel))
+                {
+                    // Value is outside our known range — the DSP range likely changed externally.
+                    // Clamp to boundary so the ushort cast doesn't wrap, then re-poll to get the new range.
+                    this.LogInformation(
+                        "Level {val} dB outside known range [{min},{max}] — clamping feedback and re-polling min/max.",
+                        localValue, MinLevel, MaxLevel);
+                    var clamped = Math.Max(MinLevel, Math.Min(MaxLevel, localValue));
+                    VolumeLevel = (ushort)clamped.Scale(MinLevel, MaxLevel, 0, 65535, this);
+                    GetMinLevel();
+                    GetMaxLevel();
+                }
+                else
+                {
+                    VolumeLevel = UseAbsoluteValue ? (ushort)localValue : (ushort)localValue.Scale(MinLevel, MaxLevel, 0, 65535, this);
+                }
 
                 SubscriptionTracker["level"].Subscribed = true;
             }
@@ -409,13 +424,14 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
 
             if (rangeChanged)
             {
-                // Rescale using the val reported in the error — most accurate since it reflects
-                // what the DSP has at this moment, regardless of subscription lag.
+                // val is the attempted (out-of-range) level, not the actual DSP level.
+                // Clamp it to the new boundary before scaling to prevent ushort wrap.
                 var currentRaw = double.Parse(m.Groups["val"].Value);
-                RawVolumeLevel = (int)currentRaw;
+                var clampedRaw = Math.Max(MinLevel, Math.Min(MaxLevel, currentRaw));
+                RawVolumeLevel = (int)clampedRaw;
                 VolumeLevel = UseAbsoluteValue
-                    ? (ushort)currentRaw
-                    : (ushort)currentRaw.Scale(MinLevel, MaxLevel, 0, 65535, this);
+                    ? (ushort)clampedRaw
+                    : (ushort)clampedRaw.Scale(MinLevel, MaxLevel, 0, 65535, this);
             }
 
             // Stop the repeat cycle without clearing the held flags — physical button is still down.
@@ -477,17 +493,17 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
                     case "minLevel":
                         {
                             MinLevel = double.Parse(value);
-
                             this.LogDebug("MinLevel is '{MinLevel}'", MinLevel);
-
+                            if (!UseAbsoluteValue)
+                                VolumeLevel = (ushort)((double)RawVolumeLevel).Scale(MinLevel, MaxLevel, 0, 65535, this);
                             break;
                         }
                     case "maxLevel":
                         {
                             MaxLevel = double.Parse(value);
-
                             this.LogDebug("MaxLevel is '{MaxLevel}'", MaxLevel);
-
+                            if (!UseAbsoluteValue)
+                                VolumeLevel = (ushort)((double)RawVolumeLevel).Scale(MinLevel, MaxLevel, 0, 65535, this);
                             break;
                         }
                     case "level":

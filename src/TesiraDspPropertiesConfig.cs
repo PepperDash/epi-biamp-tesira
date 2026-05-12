@@ -56,12 +56,12 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
         public string ResubscribeString { get; set; }
 
         /// <summary>
-        /// Interval in milliseconds at which to re-poll min/max level ranges for all volume
+        /// Interval in seconds at which to re-poll min/max level ranges for all volume
         /// components. Useful when an external program may change ranges at runtime.
-        /// Set to 0 (default) to disable periodic polling.
+        /// Set to 0 (default) to disable. Minimum enforced value when enabled is 60 seconds.
         /// </summary>
-        [JsonProperty("levelRangePollIntervalMs")]
-        public int LevelRangePollIntervalMs { get; set; } = 0;
+        [JsonProperty("levelRangePollIntervalSecs")]
+        public int LevelRangePollIntervalSecs { get; set; } = 0;
 
         /// <summary>
         /// Global maximum time in milliseconds a volume button may be held before the repeat

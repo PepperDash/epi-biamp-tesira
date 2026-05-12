@@ -332,7 +332,14 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
                 ? props.ResubscribeString
                 : "resubscribeAll";
 
-            levelRangePollIntervalMs = props.LevelRangePollIntervalMs;
+            // Convert seconds to ms; 0 = disabled, anything 1-59 is clamped to the 60s minimum
+            var pollSecs = props.LevelRangePollIntervalSecs;
+            if (pollSecs > 0 && pollSecs < 60)
+            {
+                this.LogInformation("levelRangePollIntervalSecs value {secs} is below minimum of 60 — clamping to 60.", pollSecs);
+                pollSecs = 60;
+            }
+            levelRangePollIntervalMs = pollSecs * 1000;
 
             // Lock the entire control point list creation process
             lock (watchdogLock)
@@ -751,7 +758,7 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
             levelRangePollTimer.AutoReset = true;
             levelRangePollTimer.Start();
 
-            this.LogDebug("Level range poll timer started at {interval}ms interval.", levelRangePollIntervalMs);
+            this.LogDebug("Level range poll timer started at {interval}s interval.", levelRangePollIntervalMs / 1000);
         }
 
         private void StopLevelRangePollTimer()
