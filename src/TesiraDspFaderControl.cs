@@ -727,8 +727,11 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
                     volumeUpRepeatDelayTimer.Interval = 200;
                     volumeUpRepeatDelayTimer.Start();
                     volumeHoldTimeoutTimer.Stop();
-                    volumeHoldTimeoutTimer.Interval = VolumeHoldTimeoutMs;
-                    volumeHoldTimeoutTimer.Start();
+                    if (VolumeHoldTimeoutMs > 0)
+                    {
+                        volumeHoldTimeoutTimer.Interval = VolumeHoldTimeoutMs;
+                        volumeHoldTimeoutTimer.Start();
+                    }
                     SendFullCommand("increment", "level", IncrementAmount, 1);
                     if (!AutomaticUnmuteOnVolumeUp) return;
 

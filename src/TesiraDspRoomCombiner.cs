@@ -378,13 +378,17 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
                     : (ushort)clampedRaw.Scale(MinLevel, MaxLevel, 0, 65535, this);
             }
 
-            // Stop the repeat cycle without clearing the held flags — physical button is still down.
-            // Leave the hold timeout running so it remains the authoritative cleanup if release is never received.
-            this.LogDebug("Out-of-range error on {LevelControlPointTag} — stopping repeat timers and preserving hold-timeout cleanup.", LevelControlPointTag);
+            // Stop the active repeat timers and suppress any already-queued repeat-delay/repeat
+            // callbacks from re-arming the cycle by clearing the logical held state they check.
+            // Do not stop the hold-timeout timer here; the absolute maximum hold-time safeguard
+            // should remain available until the normal release/timeout cleanup path runs.
+            this.LogDebug("Out-of-range error on {LevelControlPointTag} — stopping ramp timers and suppressing held state.", LevelControlPointTag);
             volumeUpRepeatTimer.Stop();
             volumeUpRepeatDelayTimer.Stop();
             volumeDownRepeatTimer.Stop();
             volumeDownRepeatDelayTimer.Stop();
+            volUpButtonHeld = false;
+            volDownButtonHeld = false;
             volUpPressTracker = false;
             volDownPressTracker = false;
 
