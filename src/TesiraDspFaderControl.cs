@@ -685,8 +685,11 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
                     volumeDownRepeatDelayTimer.Interval = 200;
                     volumeDownRepeatDelayTimer.Start();
                     volumeHoldTimeoutTimer.Stop();
-                    volumeHoldTimeoutTimer.Interval = VolumeHoldTimeoutMs;
-                    volumeHoldTimeoutTimer.Start();
+                    if (VolumeHoldTimeoutMs > 0)
+                    {
+                        volumeHoldTimeoutTimer.Interval = VolumeHoldTimeoutMs;
+                        volumeHoldTimeoutTimer.Start();
+                    }
                     SendFullCommand("decrement", "level", IncrementAmount, 1);
                 }
                 return;
