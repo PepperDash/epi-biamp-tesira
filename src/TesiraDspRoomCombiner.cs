@@ -619,8 +619,11 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
                     volumeDownRepeatDelayTimer.Interval = 200;
                     volumeDownRepeatDelayTimer.Start();
                     volumeHoldTimeoutTimer.Stop();
-                    volumeHoldTimeoutTimer.Interval = VolumeHoldTimeoutMs;
-                    volumeHoldTimeoutTimer.Start();
+                    if (VolumeHoldTimeoutMs > 0)
+                    {
+                        volumeHoldTimeoutTimer.Interval = VolumeHoldTimeoutMs;
+                        volumeHoldTimeoutTimer.Start();
+                    }
                     SendFullCommand("decrement", "levelOut", IncrementAmount, 1);
                 }
 
@@ -659,8 +662,11 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
                     volumeUpRepeatDelayTimer.Interval = 200;
                     volumeUpRepeatDelayTimer.Start();
                     volumeHoldTimeoutTimer.Stop();
-                    volumeHoldTimeoutTimer.Interval = VolumeHoldTimeoutMs;
-                    volumeHoldTimeoutTimer.Start();
+                    if (VolumeHoldTimeoutMs > 0)
+                    {
+                        volumeHoldTimeoutTimer.Interval = VolumeHoldTimeoutMs;
+                        volumeHoldTimeoutTimer.Start();
+                    }
                     SendFullCommand("increment", "levelOut", IncrementAmount, 1);
                     if (AutomaticUnmuteOnVolumeUp)
                     {
