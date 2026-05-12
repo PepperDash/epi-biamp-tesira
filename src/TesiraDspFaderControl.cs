@@ -82,8 +82,8 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
         // initial button press and cleared synchronously on release, so an in-flight
         // VolumeUpRepeatDelay/VolumeDownRepeatDelay callback can detect that the button
         // was released and bail out before re-arming the repeat cycle.
-        bool volUpButtonHeld;
-        bool volDownButtonHeld;
+        volatile bool volUpButtonHeld;
+        volatile bool volDownButtonHeld;
 
 
         /// <summary>
