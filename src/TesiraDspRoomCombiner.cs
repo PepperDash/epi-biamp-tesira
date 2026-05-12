@@ -442,7 +442,10 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
                             MinLevel = double.Parse(value);
                             this.LogDebug("MinLevel: {MinLevel}", MinLevel);
                             if (!UseAbsoluteValue)
-                                OutVolumeLevel = (ushort)rawOutVolumeLevelDb.Scale(MinLevel, MaxLevel, 0, 65535, this);
+                            {
+                                var clampedRawLevel = Math.Max(MinLevel, Math.Min(MaxLevel, rawOutVolumeLevelDb));
+                                OutVolumeLevel = (ushort)clampedRawLevel.Scale(MinLevel, MaxLevel, 0, 65535, this);
+                            }
                             break;
                         }
                     case "levelOutMax":
@@ -450,7 +453,10 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
                             MaxLevel = double.Parse(value);
                             this.LogDebug("MaxLevel: {MaxLevel}", MaxLevel);
                             if (!UseAbsoluteValue)
-                                OutVolumeLevel = (ushort)rawOutVolumeLevelDb.Scale(MinLevel, MaxLevel, 0, 65535, this);
+                            {
+                                var clampedRawLevel = Math.Max(MinLevel, Math.Min(MaxLevel, rawOutVolumeLevelDb));
+                                OutVolumeLevel = (ushort)clampedRawLevel.Scale(MinLevel, MaxLevel, 0, 65535, this);
+                            }
                             break;
                         }
                     case "muteOut":
