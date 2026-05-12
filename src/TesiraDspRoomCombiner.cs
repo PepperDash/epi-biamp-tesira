@@ -379,13 +379,12 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
             }
 
             // Stop the repeat cycle without clearing the held flags — physical button is still down.
-            // The hold timeout and the eventual button release remain the authoritative cleanup.
-            this.LogDebug("Out-of-range error on {LevelControlPointTag} — stopping ramp timers.", LevelControlPointTag);
+            // Leave the hold timeout running so it remains the authoritative cleanup if release is never received.
+            this.LogDebug("Out-of-range error on {LevelControlPointTag} — stopping repeat timers and preserving hold-timeout cleanup.", LevelControlPointTag);
             volumeUpRepeatTimer.Stop();
             volumeUpRepeatDelayTimer.Stop();
             volumeDownRepeatTimer.Stop();
             volumeDownRepeatDelayTimer.Stop();
-            volumeHoldTimeoutTimer.Stop();
             volUpPressTracker = false;
             volDownPressTracker = false;
 
