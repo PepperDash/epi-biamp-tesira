@@ -307,6 +307,7 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
 
             // Stop subscription thread
             StopSubscriptionThread();
+            StopLevelRangePollTimer();
 
             if (watchDogTimer != null)
             {
