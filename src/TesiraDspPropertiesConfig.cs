@@ -111,6 +111,14 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
 
         [JsonProperty("volumeRepeatRateMs")]
         public int VolumeRepeatRateMs { get; set; } = 100;
+
+        /// <summary>
+        /// Maximum time in milliseconds a volume button may be held before the repeat is
+        /// force-released. Guards against UI panel dropout leaving the repeat running
+        /// indefinitely. Defaults to 10 seconds.
+        /// </summary>
+        [JsonProperty("volumeHoldTimeoutMs")]
+        public int VolumeHoldTimeoutMs { get; set; } = 10000;
     }
 
 
@@ -414,6 +422,14 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
 
         [JsonProperty("volumeRepeatRateMs")]
         public int VolumeRepeatRateMs { get; set; } = 250;
+
+        /// <summary>
+        /// Maximum time in milliseconds a volume button may be held before the repeat is
+        /// force-released. Guards against UI panel dropout leaving the repeat running
+        /// indefinitely. Defaults to 10 seconds.
+        /// </summary>
+        [JsonProperty("volumeHoldTimeoutMs")]
+        public int VolumeHoldTimeoutMs { get; set; } = 10000;
     }
 
     public class RoutingPort

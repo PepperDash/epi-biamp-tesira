@@ -51,6 +51,7 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
         private string IncrementAmount { get; set; }
         private bool UseAbsoluteValue { get; set; }
         private int VolumeRepeatRateMs { get; set; }
+        private int VolumeHoldTimeoutMs { get; set; }
         private EPdtLevelTypes type;
         private string LevelControlPointTag { get { return InstanceTag1; } }
 
@@ -69,11 +70,20 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
         System.Timers.Timer volumeDownRepeatTimer;
         System.Timers.Timer volumeUpRepeatDelayTimer;
         System.Timers.Timer volumeDownRepeatDelayTimer;
+        System.Timers.Timer volumeHoldTimeoutTimer;
 
         //private bool LevelSubscribed { get; set; }
 
         bool volDownPressTracker;
         bool volUpPressTracker;
+
+        // Guards against race condition: timer callbacks can fire after Stop() if they were
+        // already queued on a thread pool thread. These flags are set true only on the
+        // initial button press and cleared synchronously on release, so an in-flight
+        // VolumeUpRepeatDelay/VolumeDownRepeatDelay callback can detect that the button
+        // was released and bail out before re-arming the repeat cycle.
+        bool volUpButtonHeld;
+        bool volDownButtonHeld;
 
 
         /// <summary>
@@ -178,6 +188,7 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
             IncrementAmount = config.IncrementAmount;
             AutomaticUnmuteOnVolumeUp = config.UnmuteOnVolChange;
             VolumeRepeatRateMs = config.VolumeRepeatRateMs;
+            VolumeHoldTimeoutMs = config.VolumeHoldTimeoutMs;
             volumeUpRepeatTimer = new System.Timers.Timer();
             volumeUpRepeatTimer.Elapsed += (sender, e) => VolumeUpRepeat(null);
             volumeUpRepeatTimer.AutoReset = false;
@@ -197,6 +208,11 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
             volumeDownRepeatDelayTimer.Elapsed += (sender, e) => VolumeDownRepeatDelay(null);
             volumeDownRepeatDelayTimer.AutoReset = false;
             volumeDownRepeatDelayTimer.Enabled = false;
+
+            volumeHoldTimeoutTimer = new System.Timers.Timer();
+            volumeHoldTimeoutTimer.Elapsed += (sender, e) => VolumeHoldTimeout();
+            volumeHoldTimeoutTimer.AutoReset = false;
+            volumeHoldTimeoutTimer.Enabled = false;
 
             SubscriptionTracker = new Dictionary<string, SubscriptionTrackingObject>
             {
@@ -250,24 +266,35 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
 
         private void VolumeUpRepeat(object callbackObject)
         {
-            if (volUpPressTracker)
+            if (volUpPressTracker && volUpButtonHeld)
                 VolumeUp(true);
         }
         private void VolumeDownRepeat(object callbackObject)
         {
-            if (volDownPressTracker)
+            if (volDownPressTracker && volDownButtonHeld)
                 VolumeDown(true);
         }
 
         private void VolumeUpRepeatDelay(object callbackObject)
         {
+            // Button may have been released while this callback was queued on the thread pool.
+            // Check the held flag before arming the repeat cycle.
+            if (!volUpButtonHeld) return;
             volUpPressTracker = true;
             VolumeUp(true);
         }
         private void VolumeDownRepeatDelay(object callbackObject)
         {
+            if (!volDownButtonHeld) return;
             volDownPressTracker = true;
             VolumeDown(true);
+        }
+
+        private void VolumeHoldTimeout()
+        {
+            this.LogWarning("Volume hold timeout expired for {LevelControlPointTag} — forcing release. Panel may have dropped.", LevelControlPointTag);
+            VolumeUp(false);
+            VolumeDown(false);
         }
 
         /// <summary>
@@ -551,17 +578,23 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
                 }
                 else if (!volDownPressTracker)
                 {
+                    volDownButtonHeld = true;
                     volumeDownRepeatDelayTimer.Stop();
                     volumeDownRepeatDelayTimer.Interval = 200;
                     volumeDownRepeatDelayTimer.Start();
+                    volumeHoldTimeoutTimer.Stop();
+                    volumeHoldTimeoutTimer.Interval = VolumeHoldTimeoutMs;
+                    volumeHoldTimeoutTimer.Start();
                     SendFullCommand("decrement", "level", IncrementAmount, 1);
                 }
                 return;
             }
 
+            volDownButtonHeld = false;
             volDownPressTracker = false;
             volumeDownRepeatTimer.Stop();
             volumeDownRepeatDelayTimer.Stop();
+            volumeHoldTimeoutTimer.Stop();
         }
 
         /// <summary>
@@ -584,9 +617,13 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
                 }
                 else if (!volUpPressTracker)
                 {
+                    volUpButtonHeld = true;
                     volumeUpRepeatDelayTimer.Stop();
                     volumeUpRepeatDelayTimer.Interval = 200;
                     volumeUpRepeatDelayTimer.Start();
+                    volumeHoldTimeoutTimer.Stop();
+                    volumeHoldTimeoutTimer.Interval = VolumeHoldTimeoutMs;
+                    volumeHoldTimeoutTimer.Start();
                     SendFullCommand("increment", "level", IncrementAmount, 1);
                     if (!AutomaticUnmuteOnVolumeUp) return;
 
@@ -598,9 +635,11 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
                 return;
             }
 
+            volUpButtonHeld = false;
             volUpPressTracker = false;
             volumeUpRepeatTimer.Stop();
             volumeUpRepeatDelayTimer.Stop();
+            volumeHoldTimeoutTimer.Stop();
         }
 
 
@@ -659,7 +698,13 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
 
             trilist.OnlineStatusChange += (d, args) =>
             {
-                if (!args.DeviceOnLine) return;
+                if (!args.DeviceOnLine)
+                {
+                    // Panel dropped — force release of any held volume button to prevent runaway
+                    VolumeUp(false);
+                    VolumeDown(false);
+                    return;
+                }
 
                 foreach (var feedback in Feedbacks)
                 {
