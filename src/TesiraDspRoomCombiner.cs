@@ -320,6 +320,55 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
         const string parsePattern = "[^ ]* (.*)";
         private readonly static Regex parseRegex = new Regex(parsePattern);
 
+        // Matches: -ERR INVALID_PARAMETER Value out of range: attr:levelOut min:-45 max:-5 val:-3
+        private readonly static Regex outOfRangeRegex = new Regex(
+            @"-ERR INVALID_PARAMETER Value out of range: attr:\S+ min:(?<min>[\d.\-]+) max:(?<max>[\d.\-]+) val:(?<val>[\d.\-]+)",
+            RegexOptions.Compiled);
+
+        private void HandleOutOfRangeError(string message)
+        {
+            var m = outOfRangeRegex.Match(message);
+            if (!m.Success) return;
+
+            var reportedMin = double.Parse(m.Groups["min"].Value);
+            var reportedMax = double.Parse(m.Groups["max"].Value);
+
+            var rangeChanged = false;
+
+            if (Math.Abs(reportedMin - MinLevel) > 0.001)
+            {
+                this.LogInformation("MinLevel updated by DSP error response: {old} -> {new}", MinLevel, reportedMin);
+                MinLevel = reportedMin;
+                rangeChanged = true;
+            }
+
+            if (Math.Abs(reportedMax - MaxLevel) > 0.001)
+            {
+                this.LogInformation("MaxLevel updated by DSP error response: {old} -> {new}", MaxLevel, reportedMax);
+                MaxLevel = reportedMax;
+                rangeChanged = true;
+            }
+
+            if (rangeChanged)
+            {
+                var currentRaw = double.Parse(m.Groups["val"].Value);
+                OutVolumeLevel = UseAbsoluteValue
+                    ? (ushort)currentRaw
+                    : (ushort)currentRaw.Scale(MinLevel, MaxLevel, 0, 65535, this);
+            }
+
+            // Stop the repeat cycle without clearing the held flags — physical button is still down.
+            // The hold timeout and the eventual button release remain the authoritative cleanup.
+            this.LogDebug("Out-of-range error on {LevelControlPointTag} — stopping ramp timers.", LevelControlPointTag);
+            volumeUpRepeatTimer.Stop();
+            volumeUpRepeatDelayTimer.Stop();
+            volumeDownRepeatTimer.Stop();
+            volumeDownRepeatDelayTimer.Stop();
+            volumeHoldTimeoutTimer.Stop();
+            volUpPressTracker = false;
+            volDownPressTracker = false;
+        }
+
 
         /// <summary>
         /// Parses a non subscription response
@@ -331,6 +380,13 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
             try
             {
                 this.LogVerbose("Parsing Message: {message} attributeCode: {attributeCode}", message, attributeCode);
+
+                if (message.IndexOf("-ERR INVALID_PARAMETER", StringComparison.Ordinal) >= 0)
+                {
+                    HandleOutOfRangeError(message);
+                    return;
+                }
+
                 // Parse an "+OK" message
 
                 var match = parseRegex.Match(message);
