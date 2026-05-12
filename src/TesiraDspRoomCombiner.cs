@@ -418,8 +418,12 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
 
                 if (message.IndexOf("-ERR INVALID_PARAMETER", StringComparison.Ordinal) >= 0)
                 {
-                    HandleOutOfRangeError(message);
-                    return;
+                    var isOutOfRangeError = Regex.IsMatch(message, @"\bout of range\b", RegexOptions.IgnoreCase);
+                    if (isOutOfRangeError)
+                    {
+                        HandleOutOfRangeError(message);
+                        return;
+                    }
                 }
 
                 // Parse an "+OK" message
