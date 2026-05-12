@@ -188,7 +188,7 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
             IncrementAmount = config.IncrementAmount;
             AutomaticUnmuteOnVolumeUp = config.UnmuteOnVolChange;
             VolumeRepeatRateMs = config.VolumeRepeatRateMs;
-            VolumeHoldTimeoutMs = config.VolumeHoldTimeoutMs;
+            VolumeHoldTimeoutMs = config.VolumeHoldTimeoutMs ?? 10000;
             volumeUpRepeatTimer = new System.Timers.Timer();
             volumeUpRepeatTimer.Elapsed += (sender, e) => VolumeUpRepeat(null);
             volumeUpRepeatTimer.AutoReset = false;
