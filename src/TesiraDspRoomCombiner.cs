@@ -367,6 +367,20 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
             volumeHoldTimeoutTimer.Stop();
             volUpPressTracker = false;
             volDownPressTracker = false;
+
+            // Clamp to the boundary that was exceeded so that a step size larger than the
+            // remaining range doesn't strand the fader short of the limit.
+            var val = double.Parse(m.Groups["val"].Value);
+            if (val > MaxLevel)
+            {
+                this.LogDebug("Clamping levelOut to MaxLevel {MaxLevel} after out-of-range increment.", MaxLevel);
+                SendFullCommand("set", "levelOut", string.Format("{0:0.000000}", MaxLevel), 1);
+            }
+            else if (val < MinLevel)
+            {
+                this.LogDebug("Clamping levelOut to MinLevel {MinLevel} after out-of-range decrement.", MinLevel);
+                SendFullCommand("set", "levelOut", string.Format("{0:0.000000}", MinLevel), 1);
+            }
         }
 
 
