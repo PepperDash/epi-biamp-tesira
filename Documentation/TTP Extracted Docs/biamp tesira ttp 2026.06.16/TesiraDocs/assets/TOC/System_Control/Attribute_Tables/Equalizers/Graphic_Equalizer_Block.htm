@@ -1,0 +1,391 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml"><head>
+
+
+  <meta name="gRootRelPath" content="../../../../.."/>
+	<meta name="gCommonRootRelPath" content="../../../../.."/>
+  <meta name="gTopicId" content="4.2.9.0_2"/>
+  <script type="text/javascript" src="../../../../../template/scripts/rh.min.js"></script>
+  <script type="text/javascript" src="../../../../../template/scripts/common.min.js"></script>
+  <script type="text/javascript" src="../../../../../template/scripts/topic.min.js"></script>
+  <script type="text/javascript" src="../../../../../template/scripts/topicwidgets.min.js"></script>
+<script type="text/javascript" src="../../../../../whxdata/projectsettings.js"></script>
+  <link rel="stylesheet" type="text/css" href="../../../../../template/styles/topic.min.css"/>
+  <link rel="stylesheet" type="text/css" href="../../../../../template/Biamp_Grey_&amp;_Blue/topicheader.css"/>
+  <meta name="topic-status" content="Draft"/>
+<link rel="stylesheet" type="text/css" href="../../../../css/Tesira_Help.css"/>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+  <meta name="generator" content="Adobe RoboHelp 2022"/>
+  <title>Graphic Equalizer Block</title>
+  <meta name="topic-status" content="Draft"/>
+  <meta name="template" content="../../../../layouts/TTP_Attributes.htt"/>
+  <link rel="stylesheet" type="text/css" href="../../../../css/Tesira_Help.css"/>
+  <!--[if gte mso 9]><xml>
+<mso:CustomDocumentProperties>
+<mso:_dlc_DocId msdt:dt="string">AP256XAP2PFD-163404756-75402</mso:_dlc_DocId>
+<mso:_dlc_DocIdItemGuid msdt:dt="string">8d8cebba-bce0-4305-a143-7f786f8829fa</mso:_dlc_DocIdItemGuid>
+<mso:_dlc_DocIdUrl msdt:dt="string">https://biamp.sharepoint.com/customerexperience/documentation/TPubsHub/DocDev/_layouts/15/DocIdRedir.aspx?ID=AP256XAP2PFD-163404756-75402, AP256XAP2PFD-163404756-75402</mso:_dlc_DocIdUrl>
+</mso:CustomDocumentProperties>
+</xml><![endif]-->
+</head>
+
+<body>
+  <div class="topic-header rh-hide" id="rh-topic-header">
+    <div class="logo">
+    </div>
+    <div class="nav">
+      <div class="title" title="Tesira Software Help">
+        <span>Tesira Software Help</span>
+      </div>
+      <div class="gotohome" title="Click here to see this page in full context">
+        <a href="#" onclick="rh._.goToFullLayout()">Click here to see this page in full context</a>
+      </div>
+    </div>
+  </div>
+  <div class="topic-header-shadow rh-hide" id="rh-topic-header-shadow"></div>
+
+
+
+  <div>
+    <p></p>
+    <table border="1" cellpadding="1" cellspacing="1" class="TTP" style="background-color: rgb(255, 255, 255); font-family: &quot;Segoe UI&quot;; font-size: 14px; border-collapse: collapse; width: 100%;">
+      <colgroup>
+        <col style="width:50%"/>
+        <col style="width:50%"/>
+      </colgroup>
+    </table>
+    <h4>TTP Attribute Table | <span style="font-style:italic;">Generate command strings with: <a href="https://support.biamp.com/Tesira/Control/Tesira_command_string_calculator">Tesira Command String Calculator</a></span></h4>
+  </div>
+  <p></p>
+  <div>
+  <h1><span data-field="title" data-format="default">Graphic Equalizer Block</span></h1>
+  <p>  </p>
+  <div data-conref="../../../../snippets/TTP_Status_Attributes.hts">
+  <p>Please refer to the<span> </span>TTP section of the <a href="../../Tesira_Software_System_Control_Overview.htm"><span data-keyref="TesiraSoftware">Tesira</span> Software System Control Overview</a><span> page</span> for more details on the controlling <span data-keyref="TesiraProduct">Tesira</span> devices using the TTP protocol. </p>
+  <p>Each element of the command instruction is delimited by one or more spaces. The commands are case sensitive and upper and lower case characters are used. </p>
+  <p>The TTP string to adjust a DSP object attribute is structured in the following order: </p>
+  <p><b>Instance_Tag Command Attribute [Index] [Value] LF </b></p>
+  <ul>
+    <li><span><span style="font-weight:bold;">Instance Tag</span>:<span> </span></span>Is always required. </li>
+    <li><span style="font-weight:bold;">Command</span>: Is always required. </li>
+    <li><span><span style="font-weight:bold;">Attribute</span>:</span><span> </span>Is always required. </li>
+    <li><span style="font-weight:bold;">[Index]</span>: Is shown in [Brackets] and may be required depending on the<span> </span>Attribute<span> </span>being referenced. If not required it should not be defined. Depending on the Attribute, it can be made up of one or more indexes. </li>
+    <li><span style="font-weight:bold;">[Value]</span>: Is shown in [Brackets] and may be required depending on the<span> </span>Command<span> </span>or<span> </span>Attribute<span> </span>being referenced. If not be required it should not be defined. The Value would not normally have spaces, if it does it can be defined in &quot;double quotes&quot;. It can also be a numerical value. </li>
+    <li><b>LF:</b><span> </span>A Line feed or Carriage Return is used to define the end of the command. </li>
+  </ul>
+  <p>For additional information on individual elements of a TTP string please review the <a href="../../Tesira_Text_Protocol/TTP_Syntax.htm">TTP Syntax</a> page.  </p>
+
+</div>
+  <p>  </p>
+  <table border="1" cellpadding="1" cellspacing="1" class="TTP" style="border-collapse: collapse; width: 804px;">
+    <colgroup>
+      <col/>
+      <col/>
+      <col/>
+      <col/>
+    </colgroup>
+    <thead>
+      <tr>
+        <th>Instance Tag</th>
+        <th>Command</th>
+        <th>Attribute Code</th>
+        <th>Index</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>GraphicEQ1</td>
+        <td>get</td>
+        <td>gain</td>
+        <td>25</td>
+      </tr>
+    </tbody>
+  </table>
+  <p>  </p>
+  <h4>Example</h4>
+  <p><span>GraphicEQ1 get numbands  </span></p>
+  <p>  </p>
+  <table border="1" cellpadding="1" cellspacing="1" class="TTP" style="border-collapse:collapse; width:100%">
+    <colgroup>
+      <col style="width:20%"/>
+      <col style="width:20%"/>
+      <col style="width:20%"/>
+      <col style="width:20%"/>
+      <col style="width:20%"/>
+    </colgroup>
+    <thead>
+      <tr>
+        <th>Attribute</th>
+        <th>Attribute Code</th>
+        <th>Command</th>
+        <th>Indexes</th>
+        <th>Value Range</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Bypass Band</td>
+        <td>bypass</td>
+        <td>get / set / toggle</td>
+        <td>band</td>
+        <td>false, true</td>
+      </tr>
+      <tr>
+        <td>Bypass All</td>
+        <td>bypassAll</td>
+        <td>get / set / toggle</td>
+        <td> </td>
+        <td>false, true</td>
+      </tr>
+      <tr>
+        <td>Band Gain</td>
+        <td>gain</td>
+        <td>get / set / increment / decrement</td>
+        <td>band</td>
+        <td>minGain - maxGain dB</td>
+      </tr>
+      <tr>
+        <td>Band Max Gain</td>
+        <td>maxGain</td>
+        <td>get / set / increment / decrement</td>
+        <td>band</td>
+        <td>0.0 - 15.0 dB</td>
+      </tr>
+      <tr>
+        <td>Band Min Gain</td>
+        <td>minGain</td>
+        <td>get / set / increment / decrement</td>
+        <td>band</td>
+        <td>-30.0 - 0.0 dB</td>
+      </tr>
+      <tr>
+        <td>Band Count</td>
+        <td>numBands</td>
+        <td>get</td>
+        <td> </td>
+        <td>10, 15, or 31</td>
+      </tr>
+      <tr>
+        <td>Number of Channels</td>
+        <td>numChannels</td>
+        <td>get</td>
+        <td> </td>
+        <td>1 - 32</td>
+      </tr>
+    </tbody>
+  </table>
+  <p>  </p>
+  <table border="1" cellpadding="1" cellspacing="1" class="TTP" style="border-collapse:collapse; width:100%">
+    <colgroup>
+      <col style="width: 211px;"/>
+      <col style="width: 213px;"/>
+      <col style="width: 211px;"/>
+      <col style="width: 210px;"/>
+    </colgroup>
+    <thead>
+      <tr>
+        <th style="">Band Number</th>
+        <th>Frequency 1/3 Octave (Hz)</th>
+        <th>Frequency 2/3 Octave (Hz)</th>
+        <th>Frequency 1 Octave (Hz)</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>1</td>
+        <td>20</td>
+        <td>25</td>
+        <td>31.5</td>
+      </tr>
+      <tr>
+        <td>2</td>
+        <td>25</td>
+        <td>40</td>
+        <td>63</td>
+      </tr>
+      <tr>
+        <td>3</td>
+        <td>31.5</td>
+        <td>63</td>
+        <td>125</td>
+      </tr>
+      <tr>
+        <td>4</td>
+        <td>40</td>
+        <td>100</td>
+        <td>250</td>
+      </tr>
+      <tr>
+        <td>5</td>
+        <td>50</td>
+        <td>160</td>
+        <td>500</td>
+      </tr>
+      <tr>
+        <td>6</td>
+        <td>63</td>
+        <td>250</td>
+        <td>1000</td>
+      </tr>
+      <tr>
+        <td>7</td>
+        <td>80</td>
+        <td>400</td>
+        <td>2000</td>
+      </tr>
+      <tr>
+        <td>8</td>
+        <td>100</td>
+        <td>630</td>
+        <td>4000</td>
+      </tr>
+      <tr>
+        <td>9</td>
+        <td>125</td>
+        <td>1000</td>
+        <td>8000</td>
+      </tr>
+      <tr>
+        <td>10</td>
+        <td>160</td>
+        <td>1600</td>
+        <td>16000</td>
+      </tr>
+      <tr>
+        <td>11</td>
+        <td>200</td>
+        <td>2500</td>
+        <td> </td>
+      </tr>
+      <tr>
+        <td>12</td>
+        <td>250</td>
+        <td>4000</td>
+        <td> </td>
+      </tr>
+      <tr>
+        <td>13</td>
+        <td>315</td>
+        <td>6300</td>
+        <td> </td>
+      </tr>
+      <tr>
+        <td>14</td>
+        <td>400</td>
+        <td>10000</td>
+        <td> </td>
+      </tr>
+      <tr>
+        <td>15</td>
+        <td>500</td>
+        <td>16000</td>
+        <td> </td>
+      </tr>
+      <tr>
+        <td>16</td>
+        <td>630</td>
+        <td> </td>
+        <td> </td>
+      </tr>
+      <tr>
+        <td>17</td>
+        <td>800</td>
+        <td> </td>
+        <td> </td>
+      </tr>
+      <tr>
+        <td>18</td>
+        <td>1000</td>
+        <td> </td>
+        <td> </td>
+      </tr>
+      <tr>
+        <td>19</td>
+        <td>1250</td>
+        <td> </td>
+        <td> </td>
+      </tr>
+      <tr>
+        <td>20</td>
+        <td>1600</td>
+        <td> </td>
+        <td> </td>
+      </tr>
+      <tr>
+        <td>21</td>
+        <td>2000</td>
+        <td> </td>
+        <td> </td>
+      </tr>
+      <tr>
+        <td>22</td>
+        <td>2500</td>
+        <td> </td>
+        <td> </td>
+      </tr>
+      <tr>
+        <td>23</td>
+        <td>3150</td>
+        <td> </td>
+        <td> </td>
+      </tr>
+      <tr>
+        <td>24</td>
+        <td>4000</td>
+        <td> </td>
+        <td> </td>
+      </tr>
+      <tr>
+        <td>25</td>
+        <td>5000</td>
+        <td> </td>
+        <td> </td>
+      </tr>
+      <tr>
+        <td>26</td>
+        <td>6300</td>
+        <td> </td>
+        <td> </td>
+      </tr>
+      <tr>
+        <td>27</td>
+        <td>8000</td>
+        <td> </td>
+        <td> </td>
+      </tr>
+      <tr>
+        <td>28</td>
+        <td>10000</td>
+        <td> </td>
+        <td> </td>
+      </tr>
+      <tr>
+        <td>29</td>
+        <td>12500</td>
+        <td> </td>
+        <td> </td>
+      </tr>
+      <tr>
+        <td>30</td>
+        <td>16000</td>
+        <td> </td>
+        <td> </td>
+      </tr>
+      <tr>
+        <td>31</td>
+        <td>20000</td>
+        <td> </td>
+        <td> </td>
+      </tr>
+    </tbody>
+  </table>
+  <p>  </p>
+  <p>  </p>
+
+</div>
+  <div>
+    <p></p>
+  </div>
+
+</body></html>

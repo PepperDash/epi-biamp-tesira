@@ -1,0 +1,663 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml"><head>
+
+
+  <meta name="gRootRelPath" content="../../../../.."/>
+	<meta name="gCommonRootRelPath" content="../../../../.."/>
+  <meta name="gTopicId" content="4.2.1.0_1"/>
+  <script type="text/javascript" src="../../../../../template/scripts/rh.min.js"></script>
+  <script type="text/javascript" src="../../../../../template/scripts/common.min.js"></script>
+  <script type="text/javascript" src="../../../../../template/scripts/topic.min.js"></script>
+  <script type="text/javascript" src="../../../../../template/scripts/topicwidgets.min.js"></script>
+<script type="text/javascript" src="../../../../../whxdata/projectsettings.js"></script>
+  <link rel="stylesheet" type="text/css" href="../../../../../template/styles/topic.min.css"/>
+  <link rel="stylesheet" type="text/css" href="../../../../../template/Biamp_Grey_&amp;_Blue/topicheader.css"/>
+  <meta name="topic-status" content="Draft"/>
+<link rel="stylesheet" type="text/css" href="../../../../css/Tesira_Help.css"/>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+  <meta name="generator" content="Adobe RoboHelp 2022"/>
+  <title>Device</title>
+  <meta name="topic-status" content="Draft"/>
+  <meta name="template" content="../../../../layouts/TTP_Attributes.htt"/>
+  <link rel="stylesheet" type="text/css" href="../../../../css/Tesira_Help.css"/>
+  <!--[if gte mso 9]><xml>
+<mso:CustomDocumentProperties>
+<mso:_dlc_DocId msdt:dt="string">AP256XAP2PFD-163404756-75436</mso:_dlc_DocId>
+<mso:_dlc_DocIdItemGuid msdt:dt="string">c7b70b99-7fd3-409f-9880-fb62c01a317a</mso:_dlc_DocIdItemGuid>
+<mso:_dlc_DocIdUrl msdt:dt="string">https://biamp.sharepoint.com/customerexperience/documentation/TPubsHub/DocDev/_layouts/15/DocIdRedir.aspx?ID=AP256XAP2PFD-163404756-75436, AP256XAP2PFD-163404756-75436</mso:_dlc_DocIdUrl>
+</mso:CustomDocumentProperties>
+</xml><![endif]-->
+</head>
+
+<body>
+  <div class="topic-header rh-hide" id="rh-topic-header">
+    <div class="logo">
+    </div>
+    <div class="nav">
+      <div class="title" title="Tesira Software Help">
+        <span>Tesira Software Help</span>
+      </div>
+      <div class="gotohome" title="Click here to see this page in full context">
+        <a href="#" onclick="rh._.goToFullLayout()">Click here to see this page in full context</a>
+      </div>
+    </div>
+  </div>
+  <div class="topic-header-shadow rh-hide" id="rh-topic-header-shadow"></div>
+
+
+
+  <div>
+    <p></p>
+    <table border="1" cellpadding="1" cellspacing="1" class="TTP" style="background-color: rgb(255, 255, 255); font-family: &quot;Segoe UI&quot;; font-size: 14px; border-collapse: collapse; width: 100%;">
+      <colgroup>
+        <col style="width:50%"/>
+        <col style="width:50%"/>
+      </colgroup>
+    </table>
+    <h4>TTP Attribute Table | <span style="font-style:italic;">Generate command strings with: <a href="https://support.biamp.com/Tesira/Control/Tesira_command_string_calculator">Tesira Command String Calculator</a></span></h4>
+  </div>
+  <p></p>
+  <div>
+  <h1><span data-field="title" data-format="default">Device</span></h1>
+  <p><span>The DEVICE Instance Tag is case sensitive and must be in capital letters. It is used to send<span> </span></span>Device Services<span><span> </span>instructions or Device<span> </span></span>Attributes and Commands<span>.</span></p>
+  <p>  </p>
+  <p>  </p>
+  <h2>Device Services</h2>
+  <p>The Following table summarizes DEVICE Service Codes. Due to the nature of the service being requested they do not require specific commands (get, set, etc)</p>
+  <p>Some service commands are specific to the connected device, such as &#39;reboot&#39;. Other Service commands are design file specific, such as saving or recalling a Preset.</p>
+  <div data-conref="../../../../snippets/TTP_Service_Codes.hts">
+  <p>Each element of the command instruction is delimited by one or more spaces. The commands are case sensitive and upper and lower case characters are used. </p>
+  <p><b>Instance_Tag Service [Index] [Value] LF </b></p>
+  <ul>
+    <li><span><span style="font-weight:bold;">Instance Tag</span>:<span> </span></span>Is always required. </li>
+    <li><span style="font-weight:bold;">Service</span>: Is always required. </li>
+    <li><span style="font-weight:bold;">[Index]</span>: Is shown in [Brackets] and may be required depending on the<span> </span>Attribute<span> </span>being referenced. If not required it should not be defined. Depending on the Attribute, it can be made up of one or more indexes. </li>
+    <li><span style="font-weight:bold;">[Value]</span>: Is shown in [Brackets] and may be required depending on the<span> </span>Command<span> </span>or<span> </span>Attribute<span> </span>being referenced. If not be required it should not be defined. The Value would not normally have spaces, if it does it can be defined in &quot;double quotes&quot;. It can also be a numerical value. </li>
+    <li><b>LF:</b><span> </span>A Line feed or Carriage Return is used to define the end of the command. </li>
+  </ul>
+  <p>For additional information on individual elements of a TTP string please review the <a href="../../Tesira_Text_Protocol/TTP_Syntax.htm">TTP Syntax</a> page. </p>
+
+</div>
+  <p>  </p>
+  <p>The TTP string is structured in the following order:<span style="font-weight:bold;"></span></p>
+  <p><b>Instance_Tag Service [Index] [Value] LF</b></p>
+  <ul>
+    <li><span><span style="font-weight:bold;">Instance Tag</span>:<span> </span></span>Is always required. </li>
+    <li><span style="font-weight:bold;">Service</span>: Is always required. </li>
+    <li><span style="font-weight:bold;">[Index]</span>: Is shown in [Brackets] as may be required depending on the<span> </span>Attribute<span> </span>being referenced. If not required it should not be defined. Depending on the Attribute, it can be made up of one or more indexes. </li>
+    <li><span style="font-weight:bold;">[Value]</span>: Is shown in [Brackets] as may be required depending on the<span> </span>Command<span> </span>or<span> </span>Attribute<span> </span>being referenced. If not be required it should not be defined. The Value would not normally have spaces, if it does it can be defined in &quot;double quotes&quot;. It can also be a numerical value. </li>
+    <li><b>LF:</b><span> </span>A Line feed or Carriage Return is used to define the end of the command.</li>
+  </ul>
+  <p>For additional information on individual elements of a TTP string please review the <a href="../../Tesira_Text_Protocol/TTP_Syntax.htm">TTP Syntax</a> page. </p>
+  <p>  </p>
+  <table border="1" cellpadding="1" cellspacing="1" class="TTP" style="border-collapse: collapse; width: 804px;">
+    <colgroup>
+      <col/>
+      <col/>
+    </colgroup>
+    <thead>
+      <tr>
+        <th>Service Code</th>
+        <th>Parameters</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>clearEventLogs</td>
+        <td> </td>
+      </tr>
+      <tr>
+        <td>clearLogs</td>
+        <td> </td>
+      </tr>
+      <tr>
+        <td>clearWorkplace</td>
+        <td> </td>
+      </tr>
+      <tr>
+        <td>defaultLogConfig</td>
+        <td> </td>
+      </tr>
+      <tr>
+        <td>deleteConfigData</td>
+        <td> </td>
+      </tr>
+      <tr>
+        <td>getLocalCopyOfFile</td>
+        <td>blockID, fileID, filePath</td>
+      </tr>
+      <tr>
+        <td>injectDanteLicenseKey</td>
+        <td>licenseCertificate, oemCertificate</td>
+      </tr>
+      <tr>
+        <td>manualFailover</td>
+        <td>uint32_t unitId</td>
+      </tr>
+      <tr>
+        <td>reboot</td>
+        <td> </td>
+      </tr>
+      <tr>
+        <td>rebootERD</td>
+        <td>HostnameList hostnames, HostnameList failedDevices</td>
+      </tr>
+      <tr>
+        <td>recallPreset</td>
+        <td>PresetId id</td>
+      </tr>
+      <tr>
+        <td>recallPresetByName</td>
+        <td>presetName</td>
+      </tr>
+      <tr>
+        <td>recallPresetShowFailures</td>
+        <td>PresetId id, HostnameList failedDevices</td>
+      </tr>
+      <tr>
+        <td>resetWebServerCredentials</td>
+        <td>applicationName</td>
+      </tr>
+      <tr>
+        <td>restoreERDToFactoryDefaults</td>
+        <td>HostnameList hostnames, HostnameList failedDevices</td>
+      </tr>
+      <tr>
+        <td>savePreset</td>
+        <td>PresetId id</td>
+      </tr>
+      <tr>
+        <td>savePresetByName</td>
+        <td>presetName</td>
+      </tr>
+      <tr>
+        <td>sleep</td>
+        <td> </td>
+      </tr>
+      <tr>
+        <td>startAudio</td>
+        <td> </td>
+      </tr>
+      <tr>
+        <td>startMedia</td>
+        <td> </td>
+      </tr>
+      <tr>
+        <td>startPartitionAudio</td>
+        <td>PartitionID partID</td>
+      </tr>
+      <tr>
+        <td>startPartitionMedia</td>
+        <td>PartitionID partID</td>
+      </tr>
+      <tr>
+        <td>stopAudio</td>
+        <td> </td>
+      </tr>
+      <tr>
+        <td>stopMedia</td>
+        <td> </td>
+      </tr>
+      <tr>
+        <td>stopPartitionAudio</td>
+        <td>PartitionID partID</td>
+      </tr>
+      <tr>
+        <td>stopPartitionMedia</td>
+        <td>PartitionID partID</td>
+      </tr>
+      <tr>
+        <td>syncERDFirmware</td>
+        <td>HostnameList hostnames, HostnameList failedDevices</td>
+      </tr>
+      <tr>
+        <td>verifyDanteLicenseKey</td>
+        <td>bool valid</td>
+      </tr>
+      <tr>
+        <td>wake</td>
+        <td> </td>
+      </tr>
+    </tbody>
+  </table>
+  <p>  </p>
+  <h3>Examples</h3>
+  <p>Reboot the connected device. Result: DEVICE reboot</p>
+  <table border="1" cellpadding="1" cellspacing="1" class="TTP" style="border-collapse: collapse; width: 804px;">
+    <colgroup>
+      <col style="width: 278px;"/>
+      <col style="width: 517px;"/>
+    </colgroup>
+    <thead>
+      <tr>
+        <th style="">Instance Tag</th>
+        <th style="">Service</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td style=""> DEVICE</td>
+        <td style=""> reboot</td>
+      </tr>
+    </tbody>
+  </table>
+  <p>  </p>
+  <p>Start audio on a device. Result: DEVICE startAudio</p>
+  <table border="1" cellpadding="1" cellspacing="1" class="TTP" style="border-collapse: collapse; width: 804px;">
+    <colgroup>
+      <col style="width: 277px;"/>
+      <col style="width: 518px;"/>
+    </colgroup>
+    <thead>
+      <tr>
+        <th style="">Instance Tag</th>
+        <th style="">Service</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td style=""> DEVICE</td>
+        <td style=""> startAudio</td>
+      </tr>
+    </tbody>
+  </table>
+  <p>  </p>
+  <p>Reboot multiple expander devices. Result: </p>
+  <ul class="Disc">
+    <li>If all expander are discoverable and accept the reboot command: <span>+OK &quot;failedDevices&quot;:[ ]</span></li>
+    <li>If all but the EX-IN expander are discoverable and accept the reboot command: <span>+OK &quot;failedDevices&quot;:[&quot;EX-IN-0001&quot;]</span> </li>
+  </ul>
+  <table border="1" cellpadding="1" cellspacing="1" class="TTP" style="border-collapse: collapse; width: 804px;">
+    <colgroup>
+      <col style="width: 274px;"/>
+      <col style="width: 521px;"/>
+    </colgroup>
+    <thead>
+      <tr>
+        <th style="">Instance Tag</th>
+        <th style="">Service</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td style=""> DEVICE</td>
+        <td style=""> <span>rebootERD [&quot;EX-OUT-0000&quot;, &quot;EX-IN-0001&quot;, EX-AEC-0001]</span></td>
+      </tr>
+    </tbody>
+  </table>
+  <p>  </p>
+  <p>  </p>
+  <h2>Device Attributes and Commands</h2>
+  <p>Additionally there are a number of DEVICE Instance Tag command Attributes. These would reference the device that has the current active Serial, SSH or TELNET session.</p>
+  <p>  </p>
+  <div data-conref="../../../../snippets/TTP_Status_Attributes.hts">
+  <p>Please refer to the<span> </span>TTP section of the <a href="../../Tesira_Software_System_Control_Overview.htm"><span data-keyref="TesiraSoftware">Tesira</span> Software System Control Overview</a><span> page</span> for more details on the controlling <span data-keyref="TesiraProduct">Tesira</span> devices using the TTP protocol. </p>
+  <p>Each element of the command instruction is delimited by one or more spaces. The commands are case sensitive and upper and lower case characters are used. </p>
+  <p>The TTP string to adjust a DSP object attribute is structured in the following order: </p>
+  <p><b>Instance_Tag Command Attribute [Index] [Value] LF </b></p>
+  <ul>
+    <li><span><span style="font-weight:bold;">Instance Tag</span>:<span> </span></span>Is always required. </li>
+    <li><span style="font-weight:bold;">Command</span>: Is always required. </li>
+    <li><span><span style="font-weight:bold;">Attribute</span>:</span><span> </span>Is always required. </li>
+    <li><span style="font-weight:bold;">[Index]</span>: Is shown in [Brackets] and may be required depending on the<span> </span>Attribute<span> </span>being referenced. If not required it should not be defined. Depending on the Attribute, it can be made up of one or more indexes. </li>
+    <li><span style="font-weight:bold;">[Value]</span>: Is shown in [Brackets] and may be required depending on the<span> </span>Command<span> </span>or<span> </span>Attribute<span> </span>being referenced. If not be required it should not be defined. The Value would not normally have spaces, if it does it can be defined in &quot;double quotes&quot;. It can also be a numerical value. </li>
+    <li><b>LF:</b><span> </span>A Line feed or Carriage Return is used to define the end of the command. </li>
+  </ul>
+  <p>For additional information on individual elements of a TTP string please review the <a href="../../Tesira_Text_Protocol/TTP_Syntax.htm">TTP Syntax</a> page.  </p>
+
+</div>
+  <p>  </p>
+  <table border="1" cellpadding="1" cellspacing="1" class="TTP" style="border-collapse:collapse; width:100%">
+    <colgroup>
+      <col/>
+      <col/>
+      <col style="width: 137px;"/>
+      <col style="width: 109px;"/>
+      <col style="width: 437px;"/>
+    </colgroup>
+    <thead>
+      <tr>
+        <th>Attribute</th>
+        <th>Attribute Code</th>
+        <th style="">Command</th>
+        <th style="">Indexes</th>
+        <th>Value Range</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Active Faults</td>
+        <td>activeFaultList</td>
+        <td style="">get</td>
+        <td style=""> </td>
+        <td> </td>
+      </tr>
+      <tr>
+        <td>AVB Peer Delay Threshold</td>
+        <td>avbPDelayThreshold</td>
+        <td>get / set / increment / decrement</td>
+        <td> </td>
+        <td>0 - 2147483647</td>
+      </tr>
+      <tr>
+        <td>Block Introspection</td>
+        <td>blockInfo</td>
+        <td>get</td>
+        <td> </td>
+        <td><span>The returned information is variable and dependent on the specific block being queried. For example, channelInfo may be absent for special blocks or contain numChannels (0 if unconfigured), numAVChannels (TesiraLUX I/O only), or numInputs / numOutputs.</span></td>
+      </tr>
+      <tr>
+        <td>Change client log level</td>
+        <td>clientLogLevel</td>
+        <td>get / set</td>
+        <td>log client name</td>
+        <td>none, emergency, critical, error, warning, notice, info, debug</td>
+      </tr>
+      <tr>
+        <td>Retrieve Dante information</td>
+        <td>danteInfo</td>
+        <td>get</td>
+        <td> </td>
+        <td> </td>
+      </tr>
+      <tr>
+        <td>Retrieve device information</td>
+        <td>deviceInfo</td>
+        <td>get</td>
+        <td> </td>
+        <td> </td>
+      </tr>
+      <tr>
+        <td>Discovered Servers</td>
+        <td>discoveredServers</td>
+        <td>get</td>
+        <td> </td>
+        <td> </td>
+      </tr>
+      <tr>
+        <td>DNS Config</td>
+        <td>dnsConfig</td>
+        <td>get / set</td>
+        <td> </td>
+        <td> </td>
+      </tr>
+      <tr>
+        <td>DNS Status</td>
+        <td>dnsStatus</td>
+        <td>get</td>
+        <td> </td>
+        <td> </td>
+      </tr>
+      <tr>
+        <td>Disable/Enable duplicate suppression on engineering log</td>
+        <td>enableDuplicateSuppression</td>
+        <td>get / set / toggle</td>
+        <td> </td>
+        <td>false, true</td>
+      </tr>
+      <tr>
+        <td>Remote Device AVB Peer Delay Threshold</td>
+        <td>ERDavbPDelayThreshold</td>
+        <td>get / set / increment / decrement</td>
+        <td>hostname</td>
+        <td>0 - 2147483647</td>
+      </tr>
+      <tr>
+        <td>Change facility log level</td>
+        <td>facilityLogLevel</td>
+        <td>get / set</td>
+        <td>log facility name</td>
+        <td>none, emergency, critical, error, warning, notice, info, debug</td>
+      </tr>
+      <tr>
+        <td>Host Name</td>
+        <td>hostname</td>
+        <td>get / set</td>
+        <td> </td>
+        <td> </td>
+      </tr>
+      <tr>
+        <td>Resolver Hosts Table</td>
+        <td>hostTable</td>
+        <td>get / set</td>
+        <td> </td>
+        <td> </td>
+      </tr>
+      <tr>
+        <td>HTTPS should be enabled</td>
+        <td>httpsEnabled</td>
+        <td>get / set / toggle</td>
+        <td> </td>
+        <td>false, true</td>
+      </tr>
+      <tr>
+        <td>IGMP should be enabled</td>
+        <td>igmpEnabled</td>
+        <td>get / set / toggle</td>
+        <td> </td>
+        <td>false, true</td>
+      </tr>
+      <tr>
+        <td>Network Interface Config</td>
+        <td>ipConfig</td>
+        <td>get / set</td>
+        <td>interface name</td>
+        <td>control</td>
+      </tr>
+      <tr>
+        <td>Network Interface Status</td>
+        <td>ipStatus</td>
+        <td>get</td>
+        <td>interface name</td>
+        <td>control</td>
+      </tr>
+      <tr>
+        <td>Known Redundant Device States</td>
+        <td>knownRedundantDeviceStates</td>
+        <td>get / subscribe / unsubscribe</td>
+        <td> </td>
+        <td> </td>
+      </tr>
+      <tr>
+        <td>mDNS Enabled</td>
+        <td>mDNSEnabled</td>
+        <td>get / set / toggle</td>
+        <td> </td>
+        <td>false, true</td>
+      </tr>
+      <tr>
+        <td>Retrieve MSRP Information</td>
+        <td>msrpInfo</td>
+        <td>get</td>
+        <td> </td>
+        <td> </td>
+      </tr>
+      <tr>
+        <td>Retrieve Network Port Information</td>
+        <td>networkPortInfo</td>
+        <td>get</td>
+        <td> </td>
+        <td> </td>
+      </tr>
+      <tr>
+        <td>Network Port Mode</td>
+        <td>networkPortMode</td>
+        <td>get / set</td>
+        <td> </td>
+        <td>PORT_MODE_SEPARATE, PORT_MODE_REDUNDANT, PORT_MODE_DAISY_CHAIN</td>
+      </tr>
+      <tr>
+        <td>Network Status</td>
+        <td>networkStatus</td>
+        <td>get</td>
+        <td> </td>
+        <td> </td>
+      </tr>
+      <tr>
+        <td>Disable/Enable POE on a port</td>
+        <td>poeEnabled</td>
+        <td>get / set / toggle</td>
+        <td>port name</td>
+        <td>false, true</td>
+      </tr>
+      <tr>
+        <td>Retrieve POE Information</td>
+        <td>poeInfo</td>
+        <td>get</td>
+        <td> </td>
+        <td> </td>
+      </tr>
+      <tr>
+        <td>Product Revision</td>
+        <td>productRevision</td>
+        <td>get</td>
+        <td> </td>
+        <td> </td>
+      </tr>
+      <tr>
+        <td>Retrieve gPTP Information</td>
+        <td>ptpInfo</td>
+        <td>get</td>
+        <td> </td>
+        <td> </td>
+      </tr>
+      <tr>
+        <td>RSTP should be enabled</td>
+        <td>rstpEnabled</td>
+        <td>get / set / toggle</td>
+        <td> </td>
+        <td>false, true</td>
+      </tr>
+      <tr>
+        <td>Serial Number</td>
+        <td>serialNumber</td>
+        <td>get</td>
+        <td> </td>
+        <td> </td>
+      </tr>
+      <tr>
+        <td>ssh should be disabled</td>
+        <td>sshDisabled</td>
+        <td>get / set / toggle</td>
+        <td> </td>
+        <td>false, true</td>
+      </tr>
+      <tr>
+        <td>telnet should be disabled</td>
+        <td>telnetDisabled</td>
+        <td>get / set / toggle</td>
+        <td> </td>
+        <td>false, true</td>
+      </tr>
+      <tr>
+        <td>Firmware Version</td>
+        <td>version</td>
+        <td>get</td>
+        <td> </td>
+        <td> </td>
+      </tr>
+      <tr>
+        <td>VoIP2 Network Status</td>
+        <td>VoIP2NetworkStatus</td>
+        <td>get</td>
+        <td>card slot, (unused)</td>
+        <td> </td>
+      </tr>
+    </tbody>
+  </table>
+  <p><span style="font-weight:bold;">*Note</span>: Attempting to modify the Host Name via this command will result in an error message if the system is currently configured. A reset of the device is required to make changes to the Host Name first (<span>DEVICE deleteConfigData<span> </span></span>command or a<span> </span><span>Reset Device</span><span> </span>via<span> </span>Device Maintenance). In the scenario where a system is configured and is Reset to change the Host Name, the<span> </span>Equipment Table<span> </span>will need to be re-opened and updated to reflect the new details, and the configuration re-sent to the system.</p>
+  <p>  </p>
+  <table border="1" cellpadding="1" cellspacing="1" class="TTP" style="border-collapse: collapse; width: 804px;">
+    <thead>
+      <tr>
+        <th>Instance Tag</th>
+        <th>Command</th>
+        <th>Attribute Code</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td> DEVICE</td>
+        <td> get</td>
+        <td> serialNumber</td>
+      </tr>
+    </tbody>
+  </table>
+  <h4>Example</h4>
+  <p><span>DEVICE get serialNumber   +OK &quot;value&quot;:&quot;01842224&quot; </span></p>
+  <p>  </p>
+  <h4>Example</h4>
+  <p><span>DEVICE get networkStatus   +OK &quot;value&quot;:{&quot;schemaVersion&quot;:2 &quot;hostname&quot;:&quot;TesiraServer91&quot; &quot;defaultGatewayStatus&quot;:&quot;0.0.0.0&quot; &quot;networkInterfaceStatusWithName&quot;:[{&quot;interfaceId&quot;:&quot;control&quot; &quot;networkInterfaceStatus&quot;:{&quot;macAddress&quot;:&quot;00:90:5e:13:3b:27&quot; &quot;linkStatus&quot;:LINK_1_GB &quot;addressSource&quot;:STATIC &quot;ip&quot;:&quot;10.30.150.62&quot; &quot;netmask&quot;:&quot;255.255.0.0&quot; &quot;dhcpLeaseObtainedDate&quot;:&quot;&quot; &quot;dhcpLeaseExpiresDate&quot;:&quot;&quot; &quot;gateway&quot;:&quot;0.0.0.0&quot;}}] &quot;dnsStatus&quot;:{&quot;primaryDNSServer&quot;:&quot;0.0.0.0&quot; &quot;secondaryDNSServer&quot;:&quot;0.0.0.0&quot; &quot;domainName&quot;:&quot;&quot;} &quot;mDNSEnabled&quot;:true&quot; telnetDisabled&quot;:false} </span></p>
+  <p>  </p>
+  <p>  </p>
+  <h2>ipConfig Commands</h2>
+  <p>The ipConfig command can set the DHCP state, IP address, Subnet mask and Gateway on a Tesira Server, Server IO and TesiraFORTÉ device. Only values that need to be changed are required to be specified.</p>
+  <p>To get the IP configuration of a device:</p>
+  <table border="1" cellpadding="1" cellspacing="1" class="TTP" style="border-collapse: collapse; width: 804px;">
+    <colgroup>
+      <col/>
+      <col/>
+      <col/>
+      <col/>
+    </colgroup>
+    <thead>
+      <tr>
+        <th>Instance Tag</th>
+        <th>Command</th>
+        <th>Attribute Code</th>
+        <th>Index</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td> DEVICE</td>
+        <td> get</td>
+        <td> ipConfig</td>
+        <td> control</td>
+      </tr>
+    </tbody>
+  </table>
+  <p>  </p>
+  <h4>Example</h4>
+  <p><span>DEVICE get ipConfig control +OK &quot;value&quot;:{&quot;autoIPEnabled&quot;:true &quot;ip&quot;:&quot;&quot; &quot;netmask&quot;:&quot;&quot; &quot;gateway&quot;:&quot;&quot;}</span></p>
+  <p>  </p>
+  <h4>Example - S<span>et a device to not use DHCP and with an IP address of 192.168.1.210, a subnet of 255.255.255.0 and no gateway</span></h4>
+  <p><span>DEVICE set ipConfig control {&quot;autoIPEnabled&quot;:false &quot;ip&quot;:&quot;192.168.1.210&quot; &quot;netmask&quot;:&quot;255.255.255.0&quot; &quot;gateway&quot;:&quot;0.0.0.0&quot;}</span></p>
+  <p>  </p>
+  <h4>Example - S<span>et a device that is using a fixed IP address to use DHCP</span></h4>
+  <p><span>DEVICE set ipConfig control {&quot;autoIPEnabled&quot;:true }</span></p>
+  <p>  </p>
+  <h4>Example - C<span>hange a device IP address to a new address in the same subnet (this example moves a device from 192.168.1.210 to 192.168.1.110)<span> </span></span></h4>
+  <p><span>DEVICE set ipConfig control { &quot;ip&quot;:&quot;192.168.1.110&quot; }</span></p>
+  <p>  </p>
+  <h4>Example - R<span>etrieve port status information for all ports</span></h4>
+  <p style="text-align:start; margin-top:5px; margin-bottom:11px"><span style="font-size:10pt"><span style="font-family:Arial, sans-serif"><span style="line-height:14.2667px"><span style="color:#000000"><span style="font-style:normal"><span style="font-variant-ligatures:normal"><span style="font-weight:400"><span style="white-space:normal"><span style="text-decoration-thickness:initial"><span style="text-decoration-style:initial"><span style="text-decoration-color:initial">DEVICE get networkPortInfo</span></span></span></span></span></span></span></span></span></span></span></p>
+  <p> <span style="font-size:10pt; text-align:start"><span style="color:#000000"><span style="font-style:normal"><span style="font-variant-ligatures:normal"><span style="font-weight:400"><span style="white-space:normal"><span style="text-decoration-thickness:initial"><span style="text-decoration-style:initial"><span style="text-decoration-color:initial"><span style="line-height:14.2667px"><span style="font-family:Arial, sans-serif">+OK &quot;networkPortInfo&quot;:[{&quot;name&quot;:&quot;P5&quot; &quot;linkUp&quot;:true &quot;speed&quot;:1000 &quot;statistics&quot;:[{&quot;t&quot;:RX_PACKETS &quot;v&quot;:2129} {&quot;t&quot;:TX_PACKETS &quot;v&quot;:1922} {&quot;t&quot;:RX_MULTICAST_PACKETS &quot;v&quot;:18101} {&quot;t&quot;:TX_MULTICAST_PACKETS &quot;v&quot;:9549} {&quot;t&quot;:RX_BAD_PACKETS &quot;v&quot;:0} {&quot;t&quot;:PORT_UP_COUNTER &quot;v&quot;:1} {&quot;t&quot;:PORT_DOWN_COUNTER &quot;v&quot;:0}] &quot;info&quot;:[{&quot;t&quot;:LLDP_HOSTNAME &quot;v&quot;:&quot;ICX6450-48P Switch&quot;} {&quot;t&quot;:LLDP_PORTNAME &quot;v&quot;:&quot;P5&quot;}] &quot;portRole&quot;:PORT_ROLE_DANTE_ONLY} {&quot;name&quot;:&quot;P4&quot; &quot;linkUp&quot;:true &quot;speed&quot;:100 &quot;statistics&quot;:[{&quot;t&quot;:RX_PACKETS &quot;v&quot;:524} {&quot;t&quot;:TX_PACKETS &quot;v&quot;:528} {&quot;t&quot;:RX_MULTICAST_PACKETS &quot;v&quot;:1029} {&quot;t&quot;:TX_MULTICAST_PACKETS &quot;v&quot;:25477} {&quot;t&quot;:RX_BAD_PACKETS &quot;v&quot;:0} {&quot;t&quot;:PORT_UP_COUNTER &quot;v&quot;:1} {&quot;t&quot;:PORT_DOWN_COUNTER &quot;v&quot;:0}] &quot;info&quot;:[] &quot;portRole&quot;:PORT_ROLE_DANTE_ONLY} {&quot;name&quot;:&quot;P3&quot; &quot;linkUp&quot;:true &quot;speed&quot;:100 &quot;statistics&quot;:[{&quot;t&quot;:RX_PACKETS &quot;v&quot;:473} {&quot;t&quot;:TX_PACKETS &quot;v&quot;:502} {&quot;t&quot;:RX_MULTICAST_PACKETS &quot;v&quot;:1020} {&quot;t&quot;:TX_MULTICAST_PACKETS &quot;v&quot;:25486} {&quot;t&quot;:RX_BAD_PACKETS &quot;v&quot;:0} {&quot;t&quot;:PORT_UP_COUNTER &quot;v&quot;:1} {&quot;t&quot;:PORT_DOWN_COUNTER &quot;v&quot;:0}] &quot;info&quot;:[] &quot;portRole&quot;:PORT_ROLE_DANTE_ONLY} {&quot;name&quot;:&quot;P2&quot; &quot;linkUp&quot;:false &quot;speed&quot;:0 &quot;statistics&quot;:[{&quot;t&quot;:RX_PACKETS &quot;v&quot;:0} {&quot;t&quot;:TX_PACKETS &quot;v&quot;:0} {&quot;t&quot;:RX_MULTICAST_PACKETS &quot;v&quot;:0} {&quot;t&quot;:TX_MULTICAST_PACKETS &quot;v&quot;:0} {&quot;t&quot;:RX_BAD_PACKETS &quot;v&quot;:0} {&quot;t&quot;:PORT_UP_COUNTER &quot;v&quot;:0} {&quot;t&quot;:PORT_DOWN_COUNTER &quot;v&quot;:0}] &quot;info&quot;:[] &quot;portRole&quot;:PORT_ROLE_DANTE_ONLY} {&quot;name&quot;:&quot;P1&quot; &quot;linkUp&quot;:true &quot;speed&quot;:1000 &quot;statistics&quot;:[{&quot;t&quot;:RX_PACKETS &quot;v&quot;:490} {&quot;t&quot;:TX_PACKETS &quot;v&quot;:612} {&quot;t&quot;:RX_MULTICAST_PACKETS &quot;v&quot;:20761} {&quot;t&quot;:TX_MULTICAST_PACKETS &quot;v&quot;:15708} {&quot;t&quot;:RX_BAD_PACKETS &quot;v&quot;:0} {&quot;t&quot;:PORT_UP_COUNTER &quot;v&quot;:1} {&quot;t&quot;:PORT_DOWN_COUNTER &quot;v&quot;:0}] &quot;info&quot;:[{&quot;t&quot;:LLDP_DESCRIPTION &quot;v&quot;:&quot;ExtremeXOS (X440-24p) version 16.2.2.4 16.2.2.4-patch1-3 by release-manager on Fri Feb 17 08:00:10 EST 2017&quot;} {&quot;t&quot;:LLDP_PORTNAME &quot;v&quot;:&quot;P1&quot;}] &quot;portRole&quot;:PORT_ROLE_AVB_ONLY} {&quot;name&quot;:&quot;control&quot; &quot;linkUp&quot;:true &quot;speed&quot;:1000 &quot;statistics&quot;:[{&quot;t&quot;:RX_PACKETS &quot;v&quot;:0} {&quot;t&quot;:TX_PACKETS &quot;v&quot;:13} {&quot;t&quot;:RX_MULTICAST_PACKETS &quot;v&quot;:3173} {&quot;t&quot;:TX_MULTICAST_PACKETS &quot;v&quot;:44336} {&quot;t&quot;:RX_BAD_PACKETS &quot;v&quot;:0} {&quot;t&quot;:PORT_UP_COUNTER &quot;v&quot;:0} {&quot;t&quot;:PORT_DOWN_COUNTER &quot;v&quot;:0}] &quot;info&quot;:[] &quot;portRole&quot;:INVALID PortRoleType}]</span></span></span></span></span></span></span></span></span></span></span></p>
+  <p>  </p>
+  <h4>Example - G<span>et ptp information for all ports</span></h4>
+  <p style="text-align:start; margin-top:5px; margin-bottom:11px"><span style="font-size:10pt"><span style="font-family:Arial, sans-serif"><span style="line-height:14.2667px"><span style="color:#000000"><span style="font-style:normal"><span style="font-variant-ligatures:normal"><span style="font-weight:400"><span style="white-space:normal"><span style="text-decoration-thickness:initial"><span style="text-decoration-style:initial"><span style="text-decoration-color:initial">DEVICE get ptpInfo</span></span></span></span></span></span></span></span></span></span></span></p>
+  <p><span style="font-size:10pt; text-align:start"><span style="color:#000000"><span style="font-style:normal"><span style="font-variant-ligatures:normal"><span style="font-weight:400"><span style="white-space:normal"><span style="text-decoration-thickness:initial"><span style="text-decoration-style:initial"><span style="text-decoration-color:initial"><span style="line-height:14.2667px"><span style="font-family:Arial, sans-serif">+OK &quot;gptpInfo&quot;:[{&quot;GMID&quot;:{&quot;id&quot;:[120 69 1 255 254 5 86 102]} &quot;thisSystemIsGM&quot;:false &quot;stepsRemoved&quot;:4 &quot;priority&quot;:{&quot;priority1&quot;:246 &quot;priority2&quot;:248} &quot;neighborPropDelayThreshholdNs&quot;:1200 &quot;portInfo&quot;:[{&quot;name&quot;:&quot;P5&quot; &quot;asCapable&quot;:false &quot;locked&quot;:false &quot;role&quot;:PTP_PORT_DISABLED &quot;neighborPropDelayNs&quot;:0} {&quot;name&quot;:&quot;P4&quot; &quot;asCapable&quot;:false &quot;locked&quot;:false &quot;role&quot;:PTP_PORT_DISABLED &quot;neighborPropDelayNs&quot;:0} {&quot;name&quot;:&quot;P3&quot; &quot;asCapable&quot;:false &quot;locked&quot;:false &quot;role&quot;:PTP_PORT_DISABLED &quot;neighborPropDelayNs&quot;:0} {&quot;name&quot;:&quot;P2&quot; &quot;asCapable&quot;:false &quot;locked&quot;:false &quot;role&quot;:PTP_PORT_DISABLED &quot;neighborPropDelayNs&quot;:0} {&quot;name&quot;:&quot;P1&quot; &quot;asCapable&quot;:true &quot;locked&quot;:true &quot;role&quot;:PTP_PORT_SLAVE &quot;neighborPropDelayNs&quot;:555} {&quot;name&quot;:&quot;control&quot; &quot;asCapable&quot;:true &quot;locked&quot;:true &quot;role&quot;:PTP_PORT_MASTER &quot;neighborPropDelayNs&quot;:12}]}]</span></span></span></span></span></span></span></span></span></span></span></p>
+  <p>  </p>
+  <h4>Example - E<span>nable or disable POE on the specified port</span></h4>
+  <p style="text-align:start; margin-top:5px; margin-bottom:11px"><span style="font-size:10pt"><span style="font-family:Arial, sans-serif"><span style="line-height:14.2667px"><span style="color:#000000"><span style="font-style:normal"><span style="font-variant-ligatures:normal"><span style="font-weight:400"><span style="white-space:normal"><span style="text-decoration-thickness:initial"><span style="text-decoration-style:initial"><span style="text-decoration-color:initial">DEVICE set poeEnabled &quot;P2&quot; true</span></span></span></span></span></span></span></span></span></span></span></p>
+  <p style="text-align:start; margin-top:5px; margin-bottom:11px"><span style="font-size:10pt"><span style="font-family:Arial, sans-serif"><span style="line-height:14.2667px"><span style="color:#000000"><span style="font-style:normal"><span style="font-variant-ligatures:normal"><span style="font-weight:400"><span style="white-space:normal"><span style="text-decoration-thickness:initial"><span style="text-decoration-style:initial"><span style="text-decoration-color:initial">+OK</span></span></span></span></span></span></span></span></span></span></span></p>
+  <p style="text-align:start; margin-top:5px; margin-bottom:11px"><span style="font-size:10pt"><span style="font-family:Arial, sans-serif"><span style="line-height:14.2667px"><span style="color:#000000"><span style="font-style:normal"><span style="font-variant-ligatures:normal"><span style="font-weight:400"><span style="white-space:normal"><span style="text-decoration-thickness:initial"><span style="text-decoration-style:initial"><span style="text-decoration-color:initial">DEVICE set poeEnabled &quot;P2&quot; false</span></span></span></span></span></span></span></span></span></span></span></p>
+  <p style="text-align:start; margin-top:5px; margin-bottom:11px"><span style="font-size:10pt"><span style="font-family:Arial, sans-serif"><span style="line-height:14.2667px"><span style="color:#000000"><span style="font-style:normal"><span style="font-variant-ligatures:normal"><span style="font-weight:400"><span style="white-space:normal"><span style="text-decoration-thickness:initial"><span style="text-decoration-style:initial"><span style="text-decoration-color:initial">+OK</span></span></span></span></span></span></span></span></span></span></span></p>
+  <p style="text-align:start; margin-top:5px; margin-bottom:11px"><span style="font-size:10pt"><span style="font-family:Arial, sans-serif"><span style="line-height:14.2667px"><span style="color:#000000"><span style="font-style:normal"><span style="font-variant-ligatures:normal"><span style="font-weight:400"><span style="white-space:normal"><span style="text-decoration-thickness:initial"><span style="text-decoration-style:initial"><span style="text-decoration-color:initial">DEVICE get poeEnabled &quot;P2&quot;</span></span></span></span></span></span></span></span></span></span></span></p>
+  <p style="text-align:start; margin-top:5px; margin-bottom:11px"><span style="font-size:10pt"><span style="font-family:Arial, sans-serif"><span style="line-height:14.2667px"><span style="color:#000000"><span style="font-style:normal"><span style="font-variant-ligatures:normal"><span style="font-weight:400"><span style="white-space:normal"><span style="text-decoration-thickness:initial"><span style="text-decoration-style:initial"><span style="text-decoration-color:initial">+OK &quot;enabled&quot;:true</span></span></span></span></span></span></span></span></span></span></span></p>
+  <p style="text-align:start; margin-top:5px; margin-bottom:11px"><span style="font-size:10pt"><span style="font-family:Arial, sans-serif"><span style="line-height:14.2667px"><span style="color:#000000"><span style="font-style:normal"><span style="font-variant-ligatures:normal"><span style="font-weight:400"><span style="white-space:normal"><span style="text-decoration-thickness:initial"><span style="text-decoration-style:initial"><span style="text-decoration-color:initial">DEVICE get msrpInfo</span></span></span></span></span></span></span></span></span></span></span></p>
+  <p style="text-align:start; margin-top:5px; margin-bottom:11px"><span style="font-size:10pt"><span style="font-family:Arial, sans-serif"><span style="line-height:14.2667px"><span style="color:#000000"><span style="font-style:normal"><span style="font-variant-ligatures:normal"><span style="font-weight:400"><span style="white-space:normal"><span style="text-decoration-thickness:initial"><span style="text-decoration-style:initial"><span style="text-decoration-color:initial">+OK &quot;msrpInfo&quot;:[{&quot;portNames&quot;:[&quot;P5&quot; &quot;P4&quot; &quot;P3&quot; &quot;P2&quot; &quot;P1&quot; &quot;control&quot;] &quot;streamInfo&quot;:[]}]</span></span></span></span></span></span></span></span></span></span></span></p>
+  <p>  </p>
+  <h4>Example - G<span>et Dante information for all ports</span></h4>
+  <p style="text-align:start; margin-top:5px; margin-bottom:11px"><span style="font-size:10pt"><span style="font-family:Arial, sans-serif"><span style="line-height:14.2667px"><span style="color:#000000"><span style="font-style:normal"><span style="font-variant-ligatures:normal"><span style="font-weight:400"><span style="white-space:normal"><span style="text-decoration-thickness:initial"><span style="text-decoration-style:initial"><span style="text-decoration-color:initial">DEVICE get danteInfo</span></span></span></span></span></span></span></span></span></span></span></p>
+  <p> <span style="font-size:10pt; text-align:start"><span style="color:#000000"><span style="font-style:normal"><span style="font-variant-ligatures:normal"><span style="font-weight:400"><span style="white-space:normal"><span style="text-decoration-thickness:initial"><span style="text-decoration-style:initial"><span style="text-decoration-color:initial"><span style="line-height:14.2667px"><span style="font-family:Arial, sans-serif">+OK &quot;danteInfo&quot;:{&quot;revs&quot;:{&quot;danteAPIVersion_major&quot;:4 &quot;danteAPIVersion_minor&quot;:2 &quot;danteAPIVersion_bugfix&quot;:2 &quot;ubootVersion_major&quot;:0 &quot;ubootVersion_minor&quot;:0 &quot;ubootVersion_bugfix&quot;:0 &quot;biampVersion_major&quot;:1 &quot;biampVersion_minor&quot;:3 &quot;biampVersion_dot&quot;:0 &quot;biampVersion_build&quot;:1} &quot;netCfg&quot;:{&quot;hostname&quot;:&quot;TesiraConnect04067397-DAN&quot; &quot;primaryInterface&quot;:{&quot;autoConfigure&quot;:true &quot;ipAddress&quot;:&quot;192.168.1.226&quot; &quot;netMask&quot;:&quot;255.255.255.0&quot; &quot;DNSServer&quot;:&quot;0.0.0.0&quot; &quot;defaultGateway&quot;:&quot;192.168.1.200&quot;} &quot;secondaryInterface&quot;:{&quot;autoConfigure&quot;:true &quot;ipAddress&quot;:&quot;192.168.1.226&quot; &quot;netMask&quot;:&quot;255.255.255.0&quot; &quot;DNSServer&quot;:&quot;0.0.0.0&quot; &quot;defaultGateway&quot;:&quot;192.168.1.200&quot;}} &quot;allNetStatus&quot;:{&quot;primaryStatus&quot;:{&quot;macAddress&quot;:&quot;78:45:01:07:df:7e&quot; &quot;linkSpeedInMbS&quot;:1000} &quot;secondaryStatus&quot;:{&quot;macAddress&quot;:&quot;&quot; &quot;linkSpeedInMbS&quot;:0}} &quot;preferredDanteNetworkClockSource&quot;:true &quot;networkClockSlaveOnly&quot;:false &quot;networkLatencyInMicroseconds&quot;:0 &quot;chInfos&quot;:[{&quot;name&quot;:&quot;&quot; &quot;number&quot;:0 &quot;txrx&quot;:TX &quot;faultOnInactive&quot;:false} {&quot;name&quot;:&quot;&quot; &quot;number&quot;:1 &quot;txrx&quot;:TX &quot;faultOnInactive&quot;:false} {&quot;name&quot;:&quot;&quot; &quot;number&quot;:2 &quot;txrx&quot;:TX &quot;faultOnInactive&quot;:false} {&quot;name&quot;:&quot;&quot; &quot;number&quot;:3 &quot;txrx&quot;:TX &quot;faultOnInactive&quot;:false} {&quot;name&quot;:&quot;&quot; &quot;number&quot;:4 &quot;txrx&quot;:TX &quot;faultOnInactive&quot;:false} {&quot;name&quot;:&quot;&quot; &quot;number&quot;:5 &quot;txrx&quot;:TX &quot;faultOnInactive&quot;:false} {&quot;name&quot;:&quot;&quot; &quot;number&quot;:6 &quot;txrx&quot;:TX &quot;faultOnInactive&quot;:false} {&quot;name&quot;:&quot;&quot; &quot;number&quot;:7 &quot;txrx&quot;:TX &quot;faultOnInactive&quot;:false} {&quot;name&quot;:&quot;&quot; &quot;number&quot;:8 &quot;txrx&quot;:TX &quot;faultOnInactive&quot;:false} {&quot;name&quot;:&quot;&quot; &quot;number&quot;:9 &quot;txrx&quot;:TX &quot;faultOnInactive&quot;:false} {&quot;name&quot;:&quot;&quot; &quot;number&quot;:10 &quot;txrx&quot;:TX &quot;faultOnInactive&quot;:false} {&quot;name&quot;:&quot;&quot; &quot;number&quot;:11 &quot;txrx&quot;:TX &quot;faultOnInactive&quot;:false} {&quot;name&quot;:&quot;&quot; &quot;number&quot;:12 &quot;txrx&quot;:TX &quot;faultOnInactive&quot;:false} {&quot;name&quot;:&quot;&quot; &quot;number&quot;:13 &quot;txrx&quot;:TX &quot;faultOnInactive&quot;:false} {&quot;name&quot;:&quot;&quot; &quot;number&quot;:14 &quot;txrx&quot;:TX &quot;faultOnInactive&quot;:false} {&quot;name&quot;:&quot;&quot; &quot;number&quot;:15 &quot;txrx&quot;:TX &quot;faultOnInactive&quot;:false} {&quot;name&quot;:&quot;&quot; &quot;number&quot;:16 &quot;txrx&quot;:TX &quot;faultOnInactive&quot;:false} {&quot;name&quot;:&quot;&quot; &quot;number&quot;:17 &quot;txrx&quot;:TX &quot;faultOnInactive&quot;:false} {&quot;name&quot;:&quot;&quot; &quot;number&quot;:18 &quot;txrx&quot;:TX &quot;faultOnInactive&quot;:false} {&quot;name&quot;:&quot;&quot; &quot;number&quot;:19 &quot;txrx&quot;:TX &quot;faultOnInactive&quot;:false} {&quot;name&quot;:&quot;&quot; &quot;number&quot;:20 &quot;txrx&quot;:TX &quot;faultOnInactive&quot;:false} {&quot;name&quot;:&quot;&quot; &quot;number&quot;:21 &quot;txrx&quot;:TX &quot;faultOnInactive&quot;:false} {&quot;name&quot;:&quot;&quot; &quot;number&quot;:22 &quot;txrx&quot;:TX &quot;faultOnInactive&quot;:false} {&quot;name&quot;:&quot;&quot; &quot;number&quot;:23 &quot;txrx&quot;:TX &quot;faultOnInactive&quot;:false} {&quot;name&quot;:&quot;&quot; &quot;number&quot;:24 &quot;txrx&quot;:TX &quot;faultOnInactive&quot;:false} {&quot;name&quot;:&quot;&quot; &quot;number&quot;:25 &quot;txrx&quot;:TX &quot;faultOnInactive&quot;:false} {&quot;name&quot;:&quot;&quot; &quot;number&quot;:26 &quot;txrx&quot;:TX &quot;faultOnInactive&quot;:false} {&quot;name&quot;:&quot;&quot; &quot;number&quot;:27 &quot;txrx&quot;:TX &quot;faultOnInactive&quot;:false} {&quot;name&quot;:&quot;&quot; &quot;number&quot;:28 &quot;txrx&quot;:TX &quot;faultOnInactive&quot;:false} {&quot;name&quot;:&quot;&quot; &quot;number&quot;:29 &quot;txrx&quot;:TX &quot;faultOnInactive&quot;:false} {&quot;name&quot;:&quot;&quot; &quot;number&quot;:30 &quot;txrx&quot;:TX &quot;faultOnInactive&quot;:false} {&quot;name&quot;:&quot;&quot; &quot;number&quot;:31 &quot;txrx&quot;:TX &quot;faultOnInactive&quot;:false} {&quot;name&quot;:&quot;01&quot; &quot;number&quot;:0 &quot;txrx&quot;:RX &quot;faultOnInactive&quot;:false} {&quot;name&quot;:&quot;02&quot; &quot;number&quot;:1 &quot;txrx&quot;:RX &quot;faultOnInactive&quot;:false} {&quot;name&quot;:&quot;03&quot; &quot;number&quot;:2 &quot;txrx&quot;:RX &quot;faultOnInactive&quot;:false} {&quot;name&quot;:&quot;04&quot; &quot;number&quot;:3 &quot;txrx&quot;:RX &quot;faultOnInactive&quot;:false} {&quot;name&quot;:&quot;05&quot; &quot;number&quot;:4 &quot;txrx&quot;:RX &quot;faultOnInactive&quot;:false} {&quot;name&quot;:&quot;06&quot; &quot;number&quot;:5 &quot;txrx&quot;:RX &quot;faultOnInactive&quot;:false} {&quot;name&quot;:&quot;07&quot; &quot;number&quot;:6 &quot;txrx&quot;:RX &quot;faultOnInactive&quot;:false} {&quot;name&quot;:&quot;08&quot; &quot;number&quot;:7 &quot;txrx&quot;:RX &quot;faultOnInactive&quot;:false} {&quot;name&quot;:&quot;09&quot; &quot;number&quot;:8 &quot;txrx&quot;:RX &quot;faultOnInactive&quot;:false} {&quot;name&quot;:&quot;10&quot; &quot;number&quot;:9 &quot;txrx&quot;:RX &quot;faultOnInactive&quot;:false} {&quot;name&quot;:&quot;11&quot; &quot;number&quot;:10 &quot;txrx&quot;:RX &quot;faultOnInactive&quot;:false} {&quot;name&quot;:&quot;12&quot; &quot;number&quot;:11 &quot;txrx&quot;:RX &quot;faultOnInactive&quot;:false} {&quot;name&quot;:&quot;13&quot; &quot;number&quot;:12 &quot;txrx&quot;:RX &quot;faultOnInactive&quot;:false} {&quot;name&quot;:&quot;14&quot; &quot;number&quot;:13 &quot;txrx&quot;:RX &quot;faultOnInactive&quot;:false} {&quot;name&quot;:&quot;15&quot; &quot;number&quot;:14 &quot;txrx&quot;:RX &quot;faultOnInactive&quot;:false} {&quot;name&quot;:&quot;16&quot; &quot;number&quot;:15 &quot;txrx&quot;:RX &quot;faultOnInactive&quot;:false} {&quot;name&quot;:&quot;17&quot; &quot;number&quot;:16 &quot;txrx&quot;:RX &quot;faultOnInactive&quot;:false} {&quot;name&quot;:&quot;18&quot; &quot;number&quot;:17 &quot;txrx&quot;:RX &quot;faultOnInactive&quot;:false} {&quot;name&quot;:&quot;19&quot; &quot;number&quot;:18 &quot;txrx&quot;:RX &quot;faultOnInactive&quot;:false} {&quot;name&quot;:&quot;20&quot; &quot;number&quot;:19 &quot;txrx&quot;:RX &quot;faultOnInactive&quot;:false} {&quot;name&quot;:&quot;21&quot; &quot;number&quot;:20 &quot;txrx&quot;:RX &quot;faultOnInactive&quot;:false} {&quot;name&quot;:&quot;22&quot; &quot;number&quot;:21 &quot;txrx&quot;:RX &quot;faultOnInactive&quot;:false} {&quot;name&quot;:&quot;23&quot; &quot;number&quot;:22 &quot;txrx&quot;:RX &quot;faultOnInactive&quot;:false} {&quot;name&quot;:&quot;24&quot; &quot;number&quot;:23 &quot;txrx&quot;:RX &quot;faultOnInactive&quot;:false} {&quot;name&quot;:&quot;25&quot; &quot;number&quot;:24 &quot;txrx&quot;:RX &quot;faultOnInactive&quot;:false} {&quot;name&quot;:&quot;26&quot; &quot;number&quot;:25 &quot;txrx&quot;:RX &quot;faultOnInactive&quot;:false} {&quot;name&quot;:&quot;27&quot; &quot;number&quot;:26 &quot;txrx&quot;:RX &quot;faultOnInactive&quot;:false} {&quot;name&quot;:&quot;28&quot; &quot;number&quot;:27 &quot;txrx&quot;:RX &quot;faultOnInactive&quot;:false} {&quot;name&quot;:&quot;29&quot; &quot;number&quot;:28 &quot;txrx&quot;:RX &quot;faultOnInactive&quot;:false} {&quot;name&quot;:&quot;30&quot; &quot;number&quot;:29 &quot;txrx&quot;:RX &quot;faultOnInactive&quot;:false} {&quot;name&quot;:&quot;31&quot; &quot;number&quot;:30 &quot;txrx&quot;:RX &quot;faultOnInactive&quot;:false} {&quot;name&quot;:&quot;32&quot; &quot;number&quot;:31 &quot;txrx&quot;:RX &quot;faultOnInactive&quot;:false}]}</span></span></span></span></span></span></span></span></span></span></span></p>
+  <p>  </p>
+  <p>  </p>
+
+</div>
+  <div>
+    <p></p>
+  </div>
+
+</body></html>

@@ -1,0 +1,123 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml"><head>
+
+
+  <meta name="gRootRelPath" content="../../../.."/>
+	<meta name="gCommonRootRelPath" content="../../../.."/>
+  <meta name="gTopicId" content="4.1.0_6"/>
+  <script type="text/javascript" src="../../../../template/scripts/rh.min.js"></script>
+  <script type="text/javascript" src="../../../../template/scripts/common.min.js"></script>
+  <script type="text/javascript" src="../../../../template/scripts/topic.min.js"></script>
+  <script type="text/javascript" src="../../../../template/scripts/topicwidgets.min.js"></script>
+<script type="text/javascript" src="../../../../whxdata/projectsettings.js"></script>
+  <link rel="stylesheet" type="text/css" href="../../../../template/styles/topic.min.css"/>
+  <link rel="stylesheet" type="text/css" href="../../../../template/Biamp_Grey_&amp;_Blue/topicheader.css"/>
+  <meta name="topic-status" content="Draft"/>
+<link rel="stylesheet" type="text/css" href="../../../css/Tesira_Help.css"/>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+  <meta name="generator" content="Adobe RoboHelp 2022"/>
+  <title>RS-232</title>
+  <meta name="topic-status" content="Draft"/>
+  <meta name="template" content="../../../layouts/Tesira_General.htt"/>
+  <link rel="stylesheet" type="text/css" href="../../../css/Tesira_Help.css"/>
+  <!--[if gte mso 9]><xml>
+<mso:CustomDocumentProperties>
+<mso:_dlc_DocId msdt:dt="string">AP256XAP2PFD-163404756-75459</mso:_dlc_DocId>
+<mso:_dlc_DocIdItemGuid msdt:dt="string">b6d2ff8a-0a87-41bf-acc2-04432a0770c0</mso:_dlc_DocIdItemGuid>
+<mso:_dlc_DocIdUrl msdt:dt="string">https://biamp.sharepoint.com/customerexperience/documentation/TPubsHub/DocDev/_layouts/15/DocIdRedir.aspx?ID=AP256XAP2PFD-163404756-75459, AP256XAP2PFD-163404756-75459</mso:_dlc_DocIdUrl>
+</mso:CustomDocumentProperties>
+</xml><![endif]-->
+</head>
+
+<body>
+  <div class="topic-header rh-hide" id="rh-topic-header">
+    <div class="logo">
+    </div>
+    <div class="nav">
+      <div class="title" title="Tesira Software Help">
+        <span>Tesira Software Help</span>
+      </div>
+      <div class="gotohome" title="Click here to see this page in full context">
+        <a href="#" onclick="rh._.goToFullLayout()">Click here to see this page in full context</a>
+      </div>
+    </div>
+  </div>
+  <div class="topic-header-shadow rh-hide" id="rh-topic-header-shadow"></div>
+
+
+
+  <div></div>
+  <div>
+  <h1><span data-field="title" data-format="default">RS-232</span></h1>
+  <p>A <span data-keyref="TesiraProduct">Tesira</span> <span data-keyref="TesiraSERVER">SERVER</span> or <span data-keyref="TesiraSERVERIO">SERVER I/O</span> has two RS-232 ports. A <span data-keyref="TesiraForte">TesiraFORTÉ</span>, IDH-1 and OH-1 have one RS-232 port. Each Port can be configured to: </p>
+  <ul>
+    <li>Send Command Strings for controlling other devices via the<span> </span>Command String Block </li>
+    <li>Accept full duplex TTP commands for Third Party control </li>
+    <li>Both of the above </li>
+    <li>None of the above </li>
+    <li>Enable Control Tunneling communications from 3rd-party control systems to a controlled end device </li>
+  </ul>
+  <p> Troubleshooting TTP<span> </span>gives information on configuring a PC to connect to a <span data-keyref="TesiraProduct">Tesira</span> system for testing purposes. </p>
+  <p>The baud rate can be adjusted in<span> </span><span>Device Maintenance using the Serial Port Settings</span><span> </span>dialog. Baud rate of the RS-232 port can be set to 300,1200, 2400, 4800, 9600, 19200, 38400, 57600, or 115200.  </p>
+  <table border="1" cellpadding="1" cellspacing="1" class="TTP" style="border-collapse: collapse; width: 804px;">
+    <thead>
+      <tr>
+        <th>Device</th>
+        <th>Port Name</th>
+        <th>Default Setting</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td> <span data-keyref="TesiraSERVER">SERVER</span> and <span data-keyref="TesiraSERVERIO">SERVER I/O</span></td>
+        <td> Serial 1</td>
+        <td> 9600, Command String</td>
+      </tr>
+      <tr>
+        <td> <span data-keyref="TesiraSERVER">SERVER</span> and <span data-keyref="TesiraSERVERIO">SERVER I/O</span></td>
+        <td> Serial 2</td>
+        <td> 115200, TTP</td>
+      </tr>
+      <tr>
+        <td> <span data-keyref="TesiraForte">TesiraFORTÉ</span></td>
+        <td> RS-232</td>
+        <td> 115200, Both</td>
+      </tr>
+      <tr>
+        <td> IDH-1</td>
+        <td> RS-232</td>
+        <td> 115200, Both</td>
+      </tr>
+      <tr>
+        <td> OH-1</td>
+        <td> RS-232</td>
+        <td> 115200, Both</td>
+      </tr>
+    </tbody>
+  </table>
+  <p>If multiple servers are connected together in a system then only one RS-232 port needs to be connected to a third-party control system; TTP commands are proxied via the Ethernet port to other devices in the system. In an unsecured <span data-keyref="TesiraProduct">Tesira</span> system RS-232 connections do not require authentication. </p>
+  <p><span>If a system has security enabled the RS-232 will not require authentication until the connection is fully terminated using a &#39;</span><span>exit</span><span>&#39; command. There will then be a requirement to authenticate at the next log on.</span><span> </span><span>Once logged in to a secured server via RS-232, this user has access until a &#39;exit&#39; command is sent, even if the serial connection is removed and restored. Please review the<span> </span>TTP security<span> </span>setting for more details. </span></p>
+  <p>When controlling multiple <span data-keyref="TesiraProduct">Tesira</span> units that are not part of the same TMF file, each <span data-keyref="TesiraProduct">Tesira</span> server unit will need to be addressed via its own RS-232 port. <span data-keyref="TesiraProduct">Tesira</span> units cannot be linked together via RS-232. </p>
+  <p>A straight through PC Serial Cable is used to communicate from an RS-232 port on a third-party controller (or PC*) to the RS-232 port located on the back of an <span data-keyref="TesiraProduct">Tesira</span> Server. </p>
+  <p style="font-weight: bold">Serial Connection</p>
+  <p><span style="font-weight:bold;">Pin #1</span>: not used </p>
+  <p><span style="font-weight:bold;">Pin #2</span>: Transmit data (TxD) Output </p>
+  <p><span style="font-weight:bold;">Pin #3</span>: Receive data (RxD) Output </p>
+  <p><span style="font-weight:bold;">Pin #4</span>: not used </p>
+  <p><span style="font-weight:bold;">Pin #5</span>: not used </p>
+  <p><span style="font-weight:bold;">Pin #6</span>: not used </p>
+  <p><span style="font-weight:bold;">Pin #7</span>: not used </p>
+  <p><span style="font-weight:bold;">Pin #8</span>: not used </p>
+  <p><span style="font-weight:bold;">Pin #9</span>: not used </p>
+  <p><span>(* A PC can send/receive TTP Strings using a terminal emulator program such as HyperTerminal or PuTTY.) </span></p>
+  <p>  </p>
+  <p>  </p>
+  <p>  </p>
+
+</div>
+  <div>
+    <p></p>
+  </div>
+
+</body></html>
