@@ -120,7 +120,8 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Dialer
 
             else if (attributeCode == "dial" || attributeCode == "end" || attributeCode == "onHook" ||
                 attributeCode == "offHook" || attributeCode == "answer" || attributeCode == "hold" ||
-                attributeCode == "resume" || attributeCode == "lconf" || attributeCode == "leaveConf")
+                attributeCode == "resume" || attributeCode == "lconf" || attributeCode == "leaveConf" ||
+                attributeCode == "redial" || attributeCode == "flash")
             {
                 //requires index, but does not require command
                 cmd = string.IsNullOrEmpty(value) ?

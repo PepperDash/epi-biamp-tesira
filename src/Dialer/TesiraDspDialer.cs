@@ -404,6 +404,9 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Dialer
                 mc.AddDeviceMessenger(conferenceMessenger);
             }
 
+            var controlMessenger = new DialerControlMessenger($"{Key}-ControlMessenger", $"/device/{Key}", this);
+            mc.AddDeviceMessenger(controlMessenger);
+
             base.CreateMobileControlMessengers();
         }
 
@@ -743,19 +746,14 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Dialer
                 this.LogDebug("DialPhonebookEntry ignored - phonebook not enabled for line {line}", LineNumber);
                 return;
             }
-            if (index < 0 || index >= _phonebookEntryCount || _phonebookBuffer == null || index >= _phonebookBuffer.Count)
+            if (index < 0 || index >= _phonebookEntryCount)
             {
-                this.LogDebug("DialPhonebookEntry ignored - index {index} out of range", index);
+                this.LogDebug("DialPhonebookEntry ignored - index {index} out of range (0..{max})", index, _phonebookEntryCount - 1);
                 return;
             }
 
-            var entryData = _phonebookBuffer[index];
-            if (string.IsNullOrEmpty(entryData.Number))
-            {
-                this.LogDebug("DialPhonebookEntry ignored - entry {index} has no number assigned", index);
-                return;
-            }
-
+            // Dial the device-stored speed-dial entry directly by index. This does not depend on the
+            // phonebook having been read first - the device dials its own stored number for the entry.
             var entry = index + 1;
             var appearance = GetAvailableAppearance();
             var appearanceNumber = appearance != null ? appearance.AppearanceNumber : 1;
@@ -918,6 +916,39 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Dialer
             var appearance = ResolveAppearance(callAppearance, () => Appearances.FirstOrDefault(a => a.HoldCallFeedback.BoolValue));
             if (appearance != null)
                 appearance.ResumeCall();
+        }
+
+        /// <summary>
+        /// Redials the last number dialed. Targets the specified call appearance, or the first available
+        /// appearance when <paramref name="callAppearance"/> is zero.
+        /// </summary>
+        /// <param name="callAppearance">1-based call appearance number, or 0 to use the first available appearance.</param>
+        public void Redial(int callAppearance = 0)
+        {
+            var appearance = ResolveAppearance(callAppearance, GetAvailableAppearance);
+            if (appearance != null)
+                appearance.Redial();
+            else
+                this.LogDebug("Redial ignored - no appearance available on line {line}", LineNumber);
+        }
+
+        /// <summary>
+        /// Sends a hook-flash on the line. Hook-flash is an analog (POTS) feature and is ignored on VoIP
+        /// lines. POTS lines have a single call appearance, so flash is a line-level operation.
+        /// </summary>
+        public void Flash()
+        {
+            if (IsVoip)
+            {
+                this.LogDebug("Flash ignored - line {line} is a VoIP line", LineNumber);
+                return;
+            }
+
+            var appearance = Appearances.FirstOrDefault();
+            if (appearance != null)
+                appearance.Flash();
+            else
+                this.LogDebug("Flash ignored - no appearance available on line {line}", LineNumber);
         }
 
         /// <summary>

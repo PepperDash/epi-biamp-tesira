@@ -459,6 +459,28 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Dialer
         }
 
         /// <summary>
+        /// Redials the last number dialed on this appearance.
+        /// </summary>
+        public void Redial()
+        {
+            _line.SendFullCommand(null, "redial", null, 1, AppearanceNumber);
+        }
+
+        /// <summary>
+        /// Sends a hook-flash on this appearance. Hook-flash is an analog (POTS) feature; the request is
+        /// ignored on VoIP lines.
+        /// </summary>
+        public void Flash()
+        {
+            if (_line.IsVoip)
+            {
+                _line.LogDebug("Flash ignored - line {line} is a VoIP line", _line.LineNumber);
+                return;
+            }
+            _line.SendFullCommand(null, "flash", null, 1, AppearanceNumber);
+        }
+
+        /// <summary>
         /// Sends a DTMF digit on this appearance's line. DTMF is a line-level command on the Tesira
         /// dialer (it is not qualified by call appearance).
         /// </summary>
