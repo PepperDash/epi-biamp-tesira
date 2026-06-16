@@ -72,6 +72,7 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
                 RoutedSourceName = SwitcherInputs[(uint)value] ?? "None";
                 RoutedSourceNameFeedback.FireUpdate();
                 SourceIndexFeedback.FireUpdate();
+                UpdateCurrentRoutes();
             }
         }
 
@@ -79,6 +80,27 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
         ///  Feedback for Source Index
         /// </summary>
         public IntFeedback SourceIndexFeedback { get; private set; }
+
+        /// <summary>
+        /// Currently active routes on this device.
+        /// </summary>
+        public List<RouteSwitchDescriptor> CurrentRoutes { get; private set; } = new List<RouteSwitchDescriptor>();
+
+        /// <summary>
+        /// Raised when the active route on this device changes.
+        /// </summary>
+        public event RouteChangedEventHandler RouteChanged;
+
+        private void UpdateCurrentRoutes()
+        {
+            var routes = new List<RouteSwitchDescriptor>();
+            var inputPort = InputPorts.FirstOrDefault(p => p.Selector != null && Convert.ToInt32(p.Selector) == SourceIndex);
+            var outputPort = OutputPorts.FirstOrDefault();
+            if (inputPort != null && outputPort != null)
+                routes.Add(new RouteSwitchDescriptor(outputPort, inputPort));
+            CurrentRoutes = routes;
+            RouteChanged?.Invoke(this, routes.FirstOrDefault());
+        }
 
         /// <summary>
         /// Constructor for Tesira Dsp Switcher Component
@@ -382,18 +404,13 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
         }
 
         /// <summary>
-        /// Execute Numeric Switch with Essentials Magic Routing
+        /// Clears the route to the specified output by selecting input 0 (None).
         /// </summary>
-        /// <param name="inputSelector">Numeric Input Selector</param>
-        /// <param name="outputSelector">Numeric Output Selector</param>
-        /// <param name="signalType">Signal Type to Route</param>
-        public void ExecuteNumericSwitch(ushort inputSelector, ushort outputSelector, eRoutingSignalType signalType)
+        /// <param name="outputSelector">Output Object Data</param>
+        /// <param name="signalType">Signal Type to clear</param>
+        public void ClearRoute(object outputSelector, eRoutingSignalType signalType)
         {
-            if (signalType != eRoutingSignalType.Audio) return;
-            if (Destination != 0) return;
-
-            SendFullCommand("set", "input", Convert.ToString(inputSelector), 1);
-            SendFullCommand("get", "input", Index1.ToString(CultureInfo.InvariantCulture), 1);
+            ExecuteSwitch((uint)0, outputSelector, signalType);
         }
 
         #endregion

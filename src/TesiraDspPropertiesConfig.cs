@@ -114,6 +114,10 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
     }
 
 
+    /// <summary>
+    /// Configuration for a single Tesira dialer LINE. A line owns one phonebook (speed-dial list)
+    /// and one or more call appearances. This replaces the legacy per-(line,appearance) block.
+    /// </summary>
     public class TesiraDialerControlBlockConfig
     {
         [JsonProperty("enabled")]
@@ -134,11 +138,11 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
         [JsonProperty("controlStatusInstanceTag")]
         public string ControlStatusInstanceTag { get; set; }
 
+        /// <summary>
+        /// Line number on the device (1-based).
+        /// </summary>
         [JsonProperty("index")]
         public int Index { get; set; }
-
-        [JsonProperty("callAppearance")]
-        public int CallAppearance { get; set; }
 
         [JsonProperty("clearOnHangup")]
         public bool ClearOnHangup { get; set; }
@@ -146,8 +150,60 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
         [JsonProperty("appendDtmf")]
         public bool AppendDtmf { get; set; }
 
+        /// <summary>
+        /// Optional line-level bridge index for line-level joins.
+        /// </summary>
         [JsonProperty("bridgeIndex")]
         public uint? BridgeIndex { get; set; }
+
+        /// <summary>
+        /// Per-line phonebook (speed-dial) configuration.
+        /// </summary>
+        [JsonProperty("phonebook")]
+        public TesiraDialerPhonebookConfig Phonebook { get; set; }
+
+        /// <summary>
+        /// Call appearances belonging to this line, keyed by appearance number (1-based).
+        /// </summary>
+        [JsonProperty("callAppearances")]
+        public Dictionary<int, TesiraDialerCallAppearanceConfig> CallAppearances { get; set; }
+    }
+
+    /// <summary>
+    /// Configuration for a single call appearance on a dialer line.
+    /// </summary>
+    public class TesiraDialerCallAppearanceConfig
+    {
+        /// <summary>
+        /// Friendly label for this call appearance.
+        /// </summary>
+        [JsonProperty("label")]
+        public string Label { get; set; }
+
+        /// <summary>
+        /// Bridge index used to offset this appearance's joins on the holistic bridge.
+        /// </summary>
+        [JsonProperty("bridgeIndex")]
+        public uint? BridgeIndex { get; set; }
+    }
+
+    /// <summary>
+    /// Per-line phonebook (speed-dial) configuration.
+    /// </summary>
+    public class TesiraDialerPhonebookConfig
+    {
+        /// <summary>
+        /// When true, the line will poll the device for its speed-dial entries.
+        /// </summary>
+        [JsonProperty("enabled")]
+        public bool Enabled { get; set; }
+
+        /// <summary>
+        /// Optional override for the number of speed-dial entries to expose for this line.
+        /// When null, the line's default (TesiraDspDialer.MaxSpeedDialEntries) is used.
+        /// </summary>
+        [JsonProperty("entryCount")]
+        public int? EntryCount { get; set; }
     }
 
     public class TesiraSwitcherControlBlockConfig

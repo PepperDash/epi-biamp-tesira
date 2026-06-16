@@ -142,6 +142,11 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
             }
         }
 
+        public int MaxVolumeLevel
+        {
+            get { return (int)MaxLevel; }
+        }
+
 
         /// <summary>
         /// Constructor for Component

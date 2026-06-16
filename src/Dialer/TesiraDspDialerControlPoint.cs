@@ -51,6 +51,20 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Dialer
         /// <param name="instanceTag">Instance Tag of Control</param>
         public virtual void SendFullCommand(string command, string attributeCode, string value, int instanceTag)
         {
+            SendFullCommand(command, attributeCode, value, instanceTag, Index2);
+        }
+
+        /// <summary>
+        /// Sends a command to the DSP for a specific control component, targeting an explicit
+        /// call appearance index (used as Index2 for call-control service codes).
+        /// </summary>
+        /// <param name="command">Command to send</param>
+        /// <param name="attributeCode">Attribute code for control</param>
+        /// <param name="value">Value for command</param>
+        /// <param name="instanceTag">Instance Tag of Control</param>
+        /// <param name="callAppearanceIndex">Call appearance number used as Index2 for call-control service codes</param>
+        public virtual void SendFullCommand(string command, string attributeCode, string value, int instanceTag, int callAppearanceIndex)
+        {
             if (string.IsNullOrEmpty(attributeCode))
             {
                 this.LogError("Error: AttributeCode is null or empty. Parameters: {command} {attributeCode} {value} {instanceTag}", command, attributeCode, value, instanceTag);
@@ -106,12 +120,12 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Dialer
 
             else if (attributeCode == "dial" || attributeCode == "end" || attributeCode == "onHook" ||
                 attributeCode == "offHook" || attributeCode == "answer" || attributeCode == "hold" ||
-                attributeCode == "resume")
+                attributeCode == "resume" || attributeCode == "lconf" || attributeCode == "leaveConf")
             {
                 //requires index, but does not require command
                 cmd = string.IsNullOrEmpty(value) ?
-                    string.Format("{0} {1} {2} {3}", localInstanceTag, attributeCode, Index1, Index2) :
-                    string.Format("{0} {1} {2} {3} {4}", localInstanceTag, attributeCode, Index1, Index2, value);
+                    string.Format("{0} {1} {2} {3}", localInstanceTag, attributeCode, Index1, callAppearanceIndex) :
+                    string.Format("{0} {1} {2} {3} {4}", localInstanceTag, attributeCode, Index1, callAppearanceIndex, value);
             }
 
             else
