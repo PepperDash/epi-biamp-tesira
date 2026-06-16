@@ -82,6 +82,24 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Dialer
         /// </summary>
         public bool AutoAnswerState { get; protected set; }
 
+        /// <summary>True when the VoIP line is registered and ready (VoIP only).</summary>
+        public bool LineReady { get; protected set; }
+
+        /// <summary>True when a dial tone is detected on the line (POTS only).</summary>
+        public bool DialToneDetected { get; protected set; }
+
+        /// <summary>True when a busy tone is detected on the line (POTS only).</summary>
+        public bool BusyToneDetected { get; protected set; }
+
+        /// <summary>True when a ring-back tone is detected on the line (POTS only).</summary>
+        public bool RingBackToneDetected { get; protected set; }
+
+        /// <summary>True when an inbound ring is detected on the line (POTS only).</summary>
+        public bool RingDetected { get; protected set; }
+
+        /// <summary>True when the line is dialing (POTS only).</summary>
+        public bool Dialing { get; protected set; }
+
         #region Subscription identifiers
 
         /// <summary>Dialer subscription identifier.</summary>
@@ -96,6 +114,18 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Dialer
         public string PotsDialerCustomName { get; protected set; }
         /// <summary>Last-dialed subscription identifier.</summary>
         public string LastDialedCustomName { get; protected set; }
+        /// <summary>Line-ready subscription identifier (VoIP).</summary>
+        public string LineReadyCustomName { get; protected set; }
+        /// <summary>Dial-tone-detected subscription identifier (POTS).</summary>
+        public string DialToneCustomName { get; protected set; }
+        /// <summary>Busy-tone-detected subscription identifier (POTS).</summary>
+        public string BusyToneCustomName { get; protected set; }
+        /// <summary>Ring-back-tone-detected subscription identifier (POTS).</summary>
+        public string RingBackToneCustomName { get; protected set; }
+        /// <summary>Ring-detected subscription identifier (POTS).</summary>
+        public string RingDetectedCustomName { get; protected set; }
+        /// <summary>Dialing subscription identifier (POTS).</summary>
+        public string DialingCustomName { get; protected set; }
 
         #endregion
 
@@ -115,6 +145,18 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Dialer
         public BoolFeedback ConferenceActiveFeedback;
         /// <summary>Int feedback reporting the number of appearances currently in a local conference.</summary>
         public IntFeedback ConferenceCountFeedback;
+        /// <summary>Boolean feedback indicating the VoIP line is registered and ready (VoIP only).</summary>
+        public BoolFeedback LineReadyFeedback;
+        /// <summary>Boolean feedback indicating a dial tone is detected on the line (POTS only).</summary>
+        public BoolFeedback DialToneDetectedFeedback;
+        /// <summary>Boolean feedback indicating a busy tone is detected on the line (POTS only).</summary>
+        public BoolFeedback BusyToneDetectedFeedback;
+        /// <summary>Boolean feedback indicating a ring-back tone is detected on the line (POTS only).</summary>
+        public BoolFeedback RingBackToneDetectedFeedback;
+        /// <summary>Boolean feedback indicating an inbound ring is detected on the line (POTS only).</summary>
+        public BoolFeedback RingDetectedFeedback;
+        /// <summary>Boolean feedback indicating the line is dialing (POTS only).</summary>
+        public BoolFeedback DialingFeedback;
 
         #endregion
 
@@ -147,6 +189,10 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Dialer
         private List<CodecPhonebookEntry> _phonebookBuffer;
         private int _pendingPhonebookResponses;
         private List<CodecPhonebookEntry> _phonebookEntries = new List<CodecPhonebookEntry>();
+
+        // Optional device attributes pushed on subscribe (see TesiraDialerControlBlockConfig).
+        private bool? _redialEnable;
+        private string _autoAnswerRingCount;
 
         /// <summary>
         /// Raised when the list of phonebook (speed-dial) entries changes.
@@ -183,6 +229,12 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Dialer
             DisplayNumberFeedback = new StringFeedback(Key + "-DisplayNumberFeedback", () => DisplayNumber);
             ConferenceActiveFeedback = new BoolFeedback(Key + "-ConferenceActiveFeedback", () => ConferenceActive);
             ConferenceCountFeedback = new IntFeedback(Key + "-ConferenceCountFeedback", () => ConferenceCount);
+            LineReadyFeedback = new BoolFeedback(Key + "-LineReadyFeedback", () => LineReady);
+            DialToneDetectedFeedback = new BoolFeedback(Key + "-DialToneDetectedFeedback", () => DialToneDetected);
+            BusyToneDetectedFeedback = new BoolFeedback(Key + "-BusyToneDetectedFeedback", () => BusyToneDetected);
+            RingBackToneDetectedFeedback = new BoolFeedback(Key + "-RingBackToneDetectedFeedback", () => RingBackToneDetected);
+            RingDetectedFeedback = new BoolFeedback(Key + "-RingDetectedFeedback", () => RingDetected);
+            DialingFeedback = new BoolFeedback(Key + "-DialingFeedback", () => Dialing);
 
             Feedbacks.Add(AutoAnswerFeedback);
             Feedbacks.Add(DoNotDisturbFeedback);
@@ -191,6 +243,12 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Dialer
             Feedbacks.Add(DisplayNumberFeedback);
             Feedbacks.Add(ConferenceActiveFeedback);
             Feedbacks.Add(ConferenceCountFeedback);
+            Feedbacks.Add(LineReadyFeedback);
+            Feedbacks.Add(DialToneDetectedFeedback);
+            Feedbacks.Add(BusyToneDetectedFeedback);
+            Feedbacks.Add(RingBackToneDetectedFeedback);
+            Feedbacks.Add(RingDetectedFeedback);
+            Feedbacks.Add(DialingFeedback);
 
             parent.Feedbacks.AddRange(Feedbacks);
 
@@ -223,6 +281,9 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Dialer
             _phonebookEntryCount = config.Phonebook != null && config.Phonebook.EntryCount.HasValue
                 ? Math.Min(Math.Max(config.Phonebook.EntryCount.Value, 0), MaxSpeedDialEntries)
                 : MaxSpeedDialEntries;
+
+            _redialEnable = config.RedialEnable;
+            _autoAnswerRingCount = config.AutoAnswerRingCount;
 
             // Build the call appearances for this line.
             Appearances = new List<TesiraCallAppearance>();
@@ -433,6 +494,13 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Dialer
                 AddCustomName(LastDialedCustomName);
                 SendSubscriptionCommand(LastDialedCustomName, "lastNum", 500, 1);
 
+                if (!string.IsNullOrEmpty(InstanceTag2))
+                {
+                    LineReadyCustomName = string.Format("{0}__VoIPLineReady{1}", InstanceTag2, Index1).Replace(" ", string.Empty);
+                    AddCustomName(LineReadyCustomName);
+                    SendSubscriptionCommand(LineReadyCustomName, "lineReady", 500, 2);
+                }
+
                 SendFullCommand("get", "dndEnable", null, 1);
             }
             else
@@ -447,17 +515,62 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Dialer
                 SendSubscriptionCommand(HookStateCustomName, "hookState", 500, 2);
                 AddCustomName(HookStateCustomName);
 
+                if (!string.IsNullOrEmpty(InstanceTag2))
+                {
+                    DialToneCustomName = string.Format("{0}__PotsDialTone{1}", InstanceTag2, Index1).Replace(" ", string.Empty);
+                    AddCustomName(DialToneCustomName);
+                    SendSubscriptionCommand(DialToneCustomName, "dialToneDetected", 500, 2);
+
+                    BusyToneCustomName = string.Format("{0}__PotsBusyTone{1}", InstanceTag2, Index1).Replace(" ", string.Empty);
+                    AddCustomName(BusyToneCustomName);
+                    SendSubscriptionCommand(BusyToneCustomName, "busyToneDetected", 500, 2);
+
+                    RingBackToneCustomName = string.Format("{0}__PotsRingBackTone{1}", InstanceTag2, Index1).Replace(" ", string.Empty);
+                    AddCustomName(RingBackToneCustomName);
+                    SendSubscriptionCommand(RingBackToneCustomName, "ringBackToneDetected", 500, 2);
+
+                    RingDetectedCustomName = string.Format("{0}__PotsRinging{1}", InstanceTag2, Index1).Replace(" ", string.Empty);
+                    AddCustomName(RingDetectedCustomName);
+                    SendSubscriptionCommand(RingDetectedCustomName, "ringing", 500, 2);
+
+                    DialingCustomName = string.Format("{0}__PotsDialing{1}", InstanceTag2, Index1).Replace(" ", string.Empty);
+                    AddCustomName(DialingCustomName);
+                    SendSubscriptionCommand(DialingCustomName, "dialing", 500, 2);
+                }
+
                 SendSubscriptionCommand(LastDialedCustomName, "lastNum", 500, 1);
                 AddCustomName(LastDialedCustomName);
 
                 SendFullCommand("get", "autoAnswer", null, 1);
             }
 
+            ApplyConfiguredAttributes();
+
             // Poll the phonebook once on subscribe. Recurring polling is available via DoPoll but is
             // intentionally not started automatically.
             if (_phonebookEnabled)
             {
                 PollPhonebook();
+            }
+        }
+
+        /// <summary>
+        /// Pushes optional device attributes from configuration (redialEnable, autoAnswerRingCount)
+        /// to the control/status block on subscribe. Both attributes live on InstanceTag2.
+        /// </summary>
+        private void ApplyConfiguredAttributes()
+        {
+            if (string.IsNullOrEmpty(InstanceTag2)) return;
+
+            // redialEnable is a VoIP-only attribute.
+            if (IsVoip && _redialEnable.HasValue)
+            {
+                SendFullCommand("set", "redialEnable", _redialEnable.Value ? "true" : "false", 2);
+            }
+
+            if (!string.IsNullOrEmpty(_autoAnswerRingCount))
+            {
+                SendFullCommand("set", "autoAnswerRingCount", _autoAnswerRingCount, 2);
             }
         }
 
@@ -479,6 +592,9 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Dialer
                 SendUnSubscriptionCommand(ControlStatusCustomName, "callState", 2);
                 SendUnSubscriptionCommand(AutoAnswerCustomName, "autoAnswer", 1);
                 SendUnSubscriptionCommand(LastDialedCustomName, "lastNum", 1);
+
+                if (!string.IsNullOrEmpty(LineReadyCustomName))
+                    SendUnSubscriptionCommand(LineReadyCustomName, "lineReady", 2);
             }
             else
             {
@@ -489,6 +605,17 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Dialer
                 SendUnSubscriptionCommand(DialerCustomName, "callState", 2);
                 SendUnSubscriptionCommand(HookStateCustomName, "hookState", 2);
                 SendUnSubscriptionCommand(LastDialedCustomName, "lastNum", 2);
+
+                if (!string.IsNullOrEmpty(DialToneCustomName))
+                    SendUnSubscriptionCommand(DialToneCustomName, "dialToneDetected", 2);
+                if (!string.IsNullOrEmpty(BusyToneCustomName))
+                    SendUnSubscriptionCommand(BusyToneCustomName, "busyToneDetected", 2);
+                if (!string.IsNullOrEmpty(RingBackToneCustomName))
+                    SendUnSubscriptionCommand(RingBackToneCustomName, "ringBackToneDetected", 2);
+                if (!string.IsNullOrEmpty(RingDetectedCustomName))
+                    SendUnSubscriptionCommand(RingDetectedCustomName, "ringing", 2);
+                if (!string.IsNullOrEmpty(DialingCustomName))
+                    SendUnSubscriptionCommand(DialingCustomName, "dialing", 2);
             }
         }
 
@@ -555,9 +682,61 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Dialer
                 }
             }
 
+            if (customName == LineReadyCustomName)
+            {
+                LineReady = ParseProgressBool(value);
+                LineReadyFeedback.FireUpdate();
+                return;
+            }
+
+            if (customName == DialToneCustomName)
+            {
+                DialToneDetected = ParseProgressBool(value);
+                DialToneDetectedFeedback.FireUpdate();
+                return;
+            }
+
+            if (customName == BusyToneCustomName)
+            {
+                BusyToneDetected = ParseProgressBool(value);
+                BusyToneDetectedFeedback.FireUpdate();
+                return;
+            }
+
+            if (customName == RingBackToneCustomName)
+            {
+                RingBackToneDetected = ParseProgressBool(value);
+                RingBackToneDetectedFeedback.FireUpdate();
+                return;
+            }
+
+            if (customName == RingDetectedCustomName)
+            {
+                RingDetected = ParseProgressBool(value);
+                RingDetectedFeedback.FireUpdate();
+                return;
+            }
+
+            if (customName == DialingCustomName)
+            {
+                Dialing = ParseProgressBool(value);
+                DialingFeedback.FireUpdate();
+                return;
+            }
+
             if (customName != LastDialedCustomName) return;
             LastDialed = value;
             LastDialedFeedback.FireUpdate();
+        }
+
+        /// <summary>
+        /// Parses a boolean call-progress subscription value, tolerating surrounding quotes/whitespace.
+        /// </summary>
+        private static bool ParseProgressBool(string value)
+        {
+            if (string.IsNullOrEmpty(value)) return false;
+            bool result;
+            return bool.TryParse(value.Trim().Trim('"'), out result) && result;
         }
 
         private void ProcessAppearanceState(TesiraCallAppearance appearance, string appearanceValue)
@@ -597,6 +776,7 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Dialer
             {
                 appearance.CallerIdNumber = cidMatch.Groups["number"].Value;
                 appearance.CallerIdName = cidMatch.Groups["name"].Value;
+                appearance.CallerIdTimestamp = cidMatch.Groups["time"].Value;
                 appearance.ActiveCall.Name = appearance.CallerIdName;
                 appearance.ActiveCall.Number = appearance.CallerIdNumber;
             }

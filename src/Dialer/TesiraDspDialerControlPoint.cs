@@ -101,7 +101,8 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Dialer
             if (attributeCode == "level" || attributeCode == "mute" || attributeCode == "minLevel" ||
                 attributeCode == "maxLevel" || attributeCode == "label" || attributeCode == "rampInterval" ||
                 attributeCode == "rampStep" || attributeCode == "autoAnswer" || attributeCode == "dndEnable" ||
-                attributeCode == "dtmf" || attributeCode == "state")
+                attributeCode == "dtmf" || attributeCode == "state" || attributeCode == "redialEnable" ||
+                attributeCode == "autoAnswerRingCount")
             {
                 //Command requires Index
                 if (string.IsNullOrEmpty(value))
@@ -188,7 +189,9 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Dialer
                     localInstanceTag = InstanceTag1;
                     break;
             }
-            if (attributeCode == "callState" || attributeCode == "sourceSelection" || attributeCode == "hookState")
+            if (attributeCode == "callState" || attributeCode == "sourceSelection" || attributeCode == "hookState" ||
+                attributeCode == "dialToneDetected" || attributeCode == "busyToneDetected" ||
+                attributeCode == "ringBackToneDetected" || attributeCode == "ringing" || attributeCode == "dialing")
             {
                 cmd = string.Format("\"{0}\" subscribe {1} {2} {3}", localInstanceTag, attributeCode, customName, responseRate);
             }
@@ -230,7 +233,9 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Dialer
                     localInstanceTag = InstanceTag1;
                     break;
             }
-            if (attributeCode == "callState" || attributeCode == "sourceSelection")
+            if (attributeCode == "callState" || attributeCode == "sourceSelection" || attributeCode == "hookState" ||
+                attributeCode == "dialToneDetected" || attributeCode == "busyToneDetected" ||
+                attributeCode == "ringBackToneDetected" || attributeCode == "ringing" || attributeCode == "dialing")
             {
                 cmd = string.Format("\"{0}\" unsubscribe {1} {2}", localInstanceTag, attributeCode, customName);
             }

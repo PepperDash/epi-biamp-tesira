@@ -101,6 +101,20 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Dialer
             }
         }
 
+        private string _callerIdTimestamp;
+        /// <summary>
+        /// Device-reported caller ID timestamp (MMDDHHmm) for the current call.
+        /// </summary>
+        public string CallerIdTimestamp
+        {
+            get { return _callerIdTimestamp; }
+            set
+            {
+                _callerIdTimestamp = value;
+                CallerIdTimestampFeedback.FireUpdate();
+            }
+        }
+
         // ReSharper disable once InconsistentNaming
         private TesiraDspDialer.ECallStatus _callStatusEnum;
         /// <summary>
@@ -145,6 +159,8 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Dialer
         public StringFeedback CallerIdNumberFeedback;
         /// <summary>String feedback for the caller ID name.</summary>
         public StringFeedback CallerIdNameFeedback;
+        /// <summary>String feedback for the caller ID timestamp.</summary>
+        public StringFeedback CallerIdTimestampFeedback;
         /// <summary>Bool feedback for incoming call status.</summary>
         public BoolFeedback IncomingCallFeedback;
         /// <summary>Int feedback for the current call state.</summary>
@@ -185,6 +201,7 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Dialer
             OffHookFeedback = new BoolFeedback(Key + "-OffHookFeedback", () => OffHookStatus);
             CallerIdNumberFeedback = new StringFeedback(Key + "-CallerIDNumberFeedback", () => CallerIdNumber);
             CallerIdNameFeedback = new StringFeedback(Key + "-CallerIDNameFeedback", () => CallerIdName);
+            CallerIdTimestampFeedback = new StringFeedback(Key + "-CallerIDTimestampFeedback", () => CallerIdTimestamp);
             IncomingCallFeedback = new BoolFeedback(Key + "-IncomingCallFeedback", () => IncomingCallState);
             CallStateFeedback = new IntFeedback(Key + "-CallStateFeedback", () => (int)CallStatusEnum);
             HoldCallFeedback = new BoolFeedback(Key + "-HoldCallFeedback", () => CallStatusEnum == TesiraDspDialer.ECallStatus.ON_HOLD);
@@ -194,6 +211,7 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Dialer
             Feedbacks.Add(OffHookFeedback);
             Feedbacks.Add(CallerIdNumberFeedback);
             Feedbacks.Add(CallerIdNameFeedback);
+            Feedbacks.Add(CallerIdTimestampFeedback);
             Feedbacks.Add(IncomingCallFeedback);
             Feedbacks.Add(CallStateFeedback);
             Feedbacks.Add(HoldCallFeedback);

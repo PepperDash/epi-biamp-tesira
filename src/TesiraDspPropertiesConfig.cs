@@ -151,6 +151,21 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
         public bool AppendDtmf { get; set; }
 
         /// <summary>
+        /// Optional. When set, enables (true) or disables (false) the redial feature on a VoIP line.
+        /// Sent to the device on subscribe. VoIP only.
+        /// </summary>
+        [JsonProperty("redialEnable")]
+        public bool? RedialEnable { get; set; }
+
+        /// <summary>
+        /// Optional. Number of rings before auto-answer engages, sent to the device on subscribe.
+        /// VoIP values: AA_IMMEDIATELY, AA_ONE_RING, AA_TWO_RINGS, AA_THREE_RINGS.
+        /// POTS/TI values: AA_ONE_RING..AA_FIVE_RINGS.
+        /// </summary>
+        [JsonProperty("autoAnswerRingCount")]
+        public string AutoAnswerRingCount { get; set; }
+
+        /// <summary>
         /// Optional line-level bridge index for line-level joins.
         /// </summary>
         [JsonProperty("bridgeIndex")]
