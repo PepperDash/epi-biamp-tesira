@@ -1,0 +1,94 @@
+{
+  "system": {},
+  "template": {
+    "devices": [
+      {
+        "key": "processor",
+        "uid": 0,
+        "type": "cp3",
+        "name": "CP3",
+        "group": "processor",
+        "supportedConfigModes": [
+          "compliance",
+          "essentials"
+        ],
+        "supportedSystemTypes": [
+          "hudType",
+          "presType",
+          "vtcType",
+          "custom"
+        ],
+        "supportsCompliance": true,
+        "properties": {}
+      },
+      {
+        "key": "dsp1",
+        "uid": 4,
+        "type": "tesiradsp",
+        "name": "Biamp Tesira Plugin",
+        "group": "dsp",
+        "properties": {
+          "control": {
+            "method": "ssh",
+            "tcpSshProperties": {
+              "address": "192.168.1.1",
+              "port": 22,
+              "username": "default",
+              "password": "default",
+              "autoReconnect": true,
+              "autoReconnectIntervalMs": 5000
+            }
+          },
+          "logicSelectorControlBlocks": {
+            "LogicSelector01": {
+              "enabled": true,
+              "label": "Source Select",
+              "logicSelectorInstanceTag": "LogicSelector1",
+              "bridgeIndex": 1,
+              "showSelectedStringFeedback": false,
+              "logicSelectorInputs": {
+                "1": { "label": "Source 1" },
+                "2": { "label": "Source 2" },
+                "3": { "label": "Source 3" },
+                "4": { "label": "Source 4" }
+              }
+            }
+          }
+        }
+      },
+      {
+        "key": "dsp1-bridge",
+        "uid": 5,
+        "name": "Bridge Dsp",
+        "group": "api",
+        "type": "eiscApiAdvanced",
+        "properties": {
+          "control": {
+            "tcpSshProperties": {
+              "address": "127.0.0.2",
+              "port": 0
+            },
+            "ipid": "C4",
+            "method": "ipidTcp"
+          },
+          "devices": [
+            {
+              "deviceKey": "dsp1",
+              "joinStart": 1
+            }
+          ]
+        }
+      }
+    ],
+    "info": {
+      "comment": "",
+      "lastModifiedDate": "2024-01-01T00:00:00.000Z",
+      "lastUid": 5,
+      "processorType": "cp3",
+      "requiredControlSofwareVersion": "",
+      "systemType": "huddle"
+    },
+    "rooms": [],
+    "tieLines": []
+  }
+}
