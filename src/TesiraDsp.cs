@@ -24,7 +24,7 @@ using IRoutingWithFeedback = Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Inte
 namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
 {
     public class TesiraDsp : EssentialsBridgeableDevice,
-        IDspPresets,
+        IHasDspPresetSave, // extends IDspPresets (RecallPreset + Presets dict implicitly satisfied)
         ICommunicationMonitor,
         IDeviceInfoProvider,
         IHasFeedback
@@ -1052,6 +1052,13 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
                     return;
                 }
 
+                // TODO: Verify Tesira TTP save echo verb on hardware — assumed symmetric with recall.
+                if (args.Text.IndexOf("DEVICE savePresetByName", StringComparison.Ordinal) == 0)
+                {
+                    CommandQueue.HandleResponse(args.Text);
+                    return;
+                }
+
                 if (args.Text.IndexOf("-ERR", StringComparison.Ordinal) >= 0)
                 {
                     CommandQueue.HandleResponse(args.Text);
@@ -1165,6 +1172,42 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
                     return;
                 }
                 RunPreset(preset.PresetId);
+            }
+        }
+
+        /// <summary>
+        /// Saves the current DSP state to the preset identified by <paramref name="presetKey"/>.
+        /// Implements <see cref="IHasDspPresetSave.SavePresetByKey"/>.
+        /// </summary>
+        /// <remarks>
+        /// TODO: Verify Tesira TTP save command verbs on hardware before releasing.
+        /// Assumed by symmetry with recall:
+        ///   DEVICE recallPresetByName "{name}" → DEVICE savePresetByName "{name}"
+        ///   DEVICE recallPreset {id}           → DEVICE savePreset {id}
+        /// </remarks>
+        public void SavePresetByKey(string presetKey)
+        {
+            var preset = Presets[presetKey] as TesiraPreset;
+            if (preset == null)
+            {
+                this.LogVerbose("SavePresetByKey - no preset found for key '{presetKey}'", presetKey);
+                return;
+            }
+
+            this.LogVerbose("Saving preset '{presetName}' | presetId {presetId}", preset.PresetName, preset.PresetId);
+
+            if (!string.IsNullOrEmpty(preset.PresetName))
+            {
+                CommandQueue.EnqueueCommand($"DEVICE savePresetByName \"{preset.PresetName}\"", priority: (int)CommandPriority.Normal);
+            }
+            else
+            {
+                if (preset.PresetId == 0)
+                {
+                    this.LogVerbose("SavePresetByKey - preset '{presetName}' has invalid presetId {presetId}", preset.PresetName, preset.PresetId);
+                    return;
+                }
+                CommandQueue.EnqueueCommand($"DEVICE savePreset {preset.PresetId}", priority: (int)CommandPriority.Normal);
             }
         }
 

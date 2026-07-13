@@ -10,7 +10,7 @@ using PepperDash.Essentials.Core.Bridges;
 
 namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
 {
-    public class TesiraDspPresetDevice : TesiraDspControlPoint, IDspPresets
+    public class TesiraDspPresetDevice : TesiraDspControlPoint, IHasDspPresetSave // extends IDspPresets (RecallPreset + Presets dict implicitly satisfied)
 
     {
         private const string keyFormatter = "{0}--{1}";
@@ -115,6 +115,12 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
         public void RecallPreset(string key)
         {
             Parent.RecallPreset(key);
+        }
+
+        /// <inheritdoc />
+        public void SavePresetByKey(string presetKey)
+        {
+            Parent.SavePresetByKey(presetKey);
         }
 
         #endregion
