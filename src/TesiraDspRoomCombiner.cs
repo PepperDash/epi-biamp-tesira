@@ -31,6 +31,7 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
             }
         }
 
+        private double rawOutVolumeLevelDb;
         private int outVolumeLevel;
         protected int OutVolumeLevel
         {
@@ -99,17 +100,27 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
         private string IncrementAmount { get; set; }
         private bool UseAbsoluteValue { get; set; }
         private int VolumeRepeatRateMs { get; set; }
+        private int VolumeHoldTimeoutMs { get; set; }
         private string LevelControlPointTag { get { return InstanceTag1; } }
 
         System.Timers.Timer volumeUpRepeatTimer;
         System.Timers.Timer volumeDownRepeatTimer;
         System.Timers.Timer volumeUpRepeatDelayTimer;
         System.Timers.Timer volumeDownRepeatDelayTimer;
+        System.Timers.Timer volumeHoldTimeoutTimer;
 
         System.Timers.Timer pollTimer;
 
         bool volDownPressTracker;
         bool volUpPressTracker;
+
+        // Guards against race condition: timer callbacks can fire after Stop() if they were
+        // already queued on a thread pool thread. These flags are set true only on the
+        // initial button press and cleared synchronously on release, so an in-flight
+        // VolumeUpRepeatDelay/VolumeDownRepeatDelay callback can detect that the button
+        // was released and bail out before re-arming the repeat cycle.
+        volatile bool volUpButtonHeld;
+        volatile bool volDownButtonHeld;
 
         /// <summary>
         /// Subscription identifier for Room Combiner
@@ -173,6 +184,7 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
             IncrementAmount = config.IncrementAmount;
             AutomaticUnmuteOnVolumeUp = config.UnmuteOnVolChange;
             VolumeRepeatRateMs = config.VolumeRepeatRateMs;
+            VolumeHoldTimeoutMs = config.VolumeHoldTimeoutMs ?? 10000;
             volumeUpRepeatTimer = new System.Timers.Timer();
             volumeUpRepeatTimer.Elapsed += (sender, e) => VolumeUpRepeat();
             volumeUpRepeatTimer.AutoReset = false;
@@ -192,6 +204,11 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
             volumeDownRepeatDelayTimer.Elapsed += (sender, e) => VolumeDownRepeatDelay();
             volumeDownRepeatDelayTimer.AutoReset = false;
             volumeDownRepeatDelayTimer.Enabled = false;
+
+            volumeHoldTimeoutTimer = new System.Timers.Timer();
+            volumeHoldTimeoutTimer.Elapsed += (sender, e) => VolumeHoldTimeout();
+            volumeHoldTimeoutTimer.AutoReset = false;
+            volumeHoldTimeoutTimer.Enabled = false;
 
             pollTimer = new System.Timers.Timer();
             pollTimer.Elapsed += (sender, e) => DoPoll();
@@ -232,24 +249,33 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
 
         private void VolumeUpRepeat()
         {
-            if (volUpPressTracker)
+            if (volUpPressTracker && volUpButtonHeld)
                 VolumeUp(true);
         }
         private void VolumeDownRepeat()
         {
-            if (volDownPressTracker)
+            if (volDownPressTracker && volDownButtonHeld)
                 VolumeDown(true);
         }
 
         private void VolumeUpRepeatDelay()
         {
+            if (!volUpButtonHeld) return;
             volUpPressTracker = true;
             VolumeUp(true);
         }
         private void VolumeDownRepeatDelay()
         {
+            if (!volDownButtonHeld) return;
             volDownPressTracker = true;
             VolumeDown(true);
+        }
+
+        private void VolumeHoldTimeout()
+        {
+            this.LogWarning("Volume hold timeout expired for {LevelControlPointTag} — forcing release. Panel may have dropped.", LevelControlPointTag);
+            VolumeUp(false);
+            VolumeDown(false);
         }
 
         /// <summary>
@@ -285,7 +311,24 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
             if (customName != LevelCustomName) return;
             var value = double.Parse(data);
 
-            OutVolumeLevel = UseAbsoluteValue ? (ushort)value : (ushort)value.Scale(MinLevel, MaxLevel, 0, 65535, this);
+            rawOutVolumeLevelDb = value;
+
+            if (!UseAbsoluteValue && (value < MinLevel || value > MaxLevel))
+            {
+                // Value is outside our known range — the DSP range likely changed externally.
+                // Clamp to boundary so the ushort cast doesn't wrap, then re-poll to get the new range.
+                this.LogInformation(
+                    "LevelOut {val} dB outside known range [{min},{max}] — clamping feedback and re-polling min/max.",
+                    value, MinLevel, MaxLevel);
+                var clamped = Math.Max(MinLevel, Math.Min(MaxLevel, value));
+                OutVolumeLevel = (ushort)clamped.Scale(MinLevel, MaxLevel, 0, 65535, this);
+                GetMinLevel();
+                GetMaxLevel();
+            }
+            else
+            {
+                OutVolumeLevel = UseAbsoluteValue ? (ushort)value : (ushort)value.Scale(MinLevel, MaxLevel, 0, 65535, this);
+            }
 
             levelIsSubscribed = true;
 
@@ -294,6 +337,75 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
 
         const string parsePattern = "[^ ]* (.*)";
         private readonly static Regex parseRegex = new Regex(parsePattern);
+
+        // Matches: -ERR INVALID_PARAMETER Value out of range: attr:levelOut min:-45 max:-5 val:-3
+        private readonly static Regex outOfRangeRegex = new Regex(
+            @"-ERR INVALID_PARAMETER Value out of range: attr:\S+ min:(?<min>[\d.\-]+) max:(?<max>[\d.\-]+) val:(?<val>[\d.\-]+)",
+            RegexOptions.Compiled);
+
+        private void HandleOutOfRangeError(string message)
+        {
+            var m = outOfRangeRegex.Match(message);
+            if (!m.Success) return;
+
+            var reportedMin = double.Parse(m.Groups["min"].Value);
+            var reportedMax = double.Parse(m.Groups["max"].Value);
+
+            var rangeChanged = false;
+
+            if (Math.Abs(reportedMin - MinLevel) > 0.001)
+            {
+                this.LogInformation("MinLevel updated by DSP error response: {old} -> {new}", MinLevel, reportedMin);
+                MinLevel = reportedMin;
+                rangeChanged = true;
+            }
+
+            if (Math.Abs(reportedMax - MaxLevel) > 0.001)
+            {
+                this.LogInformation("MaxLevel updated by DSP error response: {old} -> {new}", MaxLevel, reportedMax);
+                MaxLevel = reportedMax;
+                rangeChanged = true;
+            }
+
+            if (rangeChanged)
+            {
+                // val is the attempted (out-of-range) level, not the actual DSP level.
+                // Clamp it to the new boundary before scaling to prevent ushort wrap.
+                var currentRaw = double.Parse(m.Groups["val"].Value);
+                var clampedRaw = Math.Max(MinLevel, Math.Min(MaxLevel, currentRaw));
+                OutVolumeLevel = UseAbsoluteValue
+                    ? (ushort)clampedRaw
+                    : (ushort)clampedRaw.Scale(MinLevel, MaxLevel, 0, 65535, this);
+            }
+
+            // Stop the active repeat timers and suppress any already-queued repeat-delay/repeat
+            // callbacks from re-arming the cycle by clearing the logical held state they check.
+            // Do not stop the hold-timeout timer here; the absolute maximum hold-time safeguard
+            // should remain available until the normal release/timeout cleanup path runs.
+            this.LogDebug("Out-of-range error on {LevelControlPointTag} — stopping ramp timers and suppressing held state.", LevelControlPointTag);
+            volumeUpRepeatTimer.Stop();
+            volumeUpRepeatDelayTimer.Stop();
+            volumeDownRepeatTimer.Stop();
+            volumeDownRepeatDelayTimer.Stop();
+            volUpButtonHeld = false;
+            volDownButtonHeld = false;
+            volUpPressTracker = false;
+            volDownPressTracker = false;
+
+            // Clamp to the boundary that was exceeded so that a step size larger than the
+            // remaining range doesn't strand the fader short of the limit.
+            var val = double.Parse(m.Groups["val"].Value);
+            if (val > MaxLevel)
+            {
+                this.LogDebug("Clamping levelOut to MaxLevel {MaxLevel} after out-of-range increment.", MaxLevel);
+                SendFullCommand("set", "levelOut", string.Format("{0:0.000000}", MaxLevel), 1);
+            }
+            else if (val < MinLevel)
+            {
+                this.LogDebug("Clamping levelOut to MinLevel {MinLevel} after out-of-range decrement.", MinLevel);
+                SendFullCommand("set", "levelOut", string.Format("{0:0.000000}", MinLevel), 1);
+            }
+        }
 
 
         /// <summary>
@@ -306,6 +418,17 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
             try
             {
                 this.LogVerbose("Parsing Message: {message} attributeCode: {attributeCode}", message, attributeCode);
+
+                if (message.IndexOf("-ERR INVALID_PARAMETER", StringComparison.Ordinal) >= 0)
+                {
+                    var isOutOfRangeError = Regex.IsMatch(message, @"\bout of range\b", RegexOptions.IgnoreCase);
+                    if (isOutOfRangeError)
+                    {
+                        HandleOutOfRangeError(message);
+                        return;
+                    }
+                }
+
                 // Parse an "+OK" message
 
                 var match = parseRegex.Match(message);
@@ -322,12 +445,22 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
                         {
                             MinLevel = double.Parse(value);
                             this.LogDebug("MinLevel: {MinLevel}", MinLevel);
+                            if (!UseAbsoluteValue)
+                            {
+                                var clampedRawLevel = Math.Max(MinLevel, Math.Min(MaxLevel, rawOutVolumeLevelDb));
+                                OutVolumeLevel = (ushort)clampedRawLevel.Scale(MinLevel, MaxLevel, 0, 65535, this);
+                            }
                             break;
                         }
                     case "levelOutMax":
                         {
                             MaxLevel = double.Parse(value);
                             this.LogDebug("MaxLevel: {MaxLevel}", MaxLevel);
+                            if (!UseAbsoluteValue)
+                            {
+                                var clampedRawLevel = Math.Max(MinLevel, Math.Min(MaxLevel, rawOutVolumeLevelDb));
+                                OutVolumeLevel = (ushort)clampedRawLevel.Scale(MinLevel, MaxLevel, 0, 65535, this);
+                            }
                             break;
                         }
                     case "muteOut":
@@ -431,7 +564,7 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
         /// </summary>
         public void GetMinLevel()
         {
-            SendFullCommand("get", "minLevel", null, 1);
+            SendFullCommand("get", "levelOutMin", null, 1);
         }
 
         /// <summary>
@@ -439,7 +572,7 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
         /// </summary>
         public void GetMaxLevel()
         {
-            SendFullCommand("get", "maxLevel", null, 1);
+            SendFullCommand("get", "levelOutMax", null, 1);
         }
 
 
@@ -485,18 +618,27 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
                 }
                 else if (!volDownPressTracker)
                 {
+                    volDownButtonHeld = true;
                     volumeDownRepeatDelayTimer.Stop();
                     volumeDownRepeatDelayTimer.Interval = 200;
                     volumeDownRepeatDelayTimer.Start();
+                    volumeHoldTimeoutTimer.Stop();
+                    if (VolumeHoldTimeoutMs > 0)
+                    {
+                        volumeHoldTimeoutTimer.Interval = VolumeHoldTimeoutMs;
+                        volumeHoldTimeoutTimer.Start();
+                    }
                     SendFullCommand("decrement", "levelOut", IncrementAmount, 1);
                 }
 
             }
             if (!press)
             {
+                volDownButtonHeld = false;
                 volDownPressTracker = false;
                 volumeDownRepeatTimer.Stop();
                 volumeDownRepeatDelayTimer.Stop();
+                volumeHoldTimeoutTimer.Stop();
             }
         }
 
@@ -519,9 +661,16 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
                 }
                 else if (!volUpPressTracker)
                 {
+                    volUpButtonHeld = true;
                     volumeUpRepeatDelayTimer.Stop();
                     volumeUpRepeatDelayTimer.Interval = 200;
                     volumeUpRepeatDelayTimer.Start();
+                    volumeHoldTimeoutTimer.Stop();
+                    if (VolumeHoldTimeoutMs > 0)
+                    {
+                        volumeHoldTimeoutTimer.Interval = VolumeHoldTimeoutMs;
+                        volumeHoldTimeoutTimer.Start();
+                    }
                     SendFullCommand("increment", "levelOut", IncrementAmount, 1);
                     if (AutomaticUnmuteOnVolumeUp)
                     {
@@ -534,9 +683,11 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
             }
             if (!press)
             {
+                volUpButtonHeld = false;
                 volUpPressTracker = false;
                 volumeUpRepeatTimer.Stop();
                 volumeUpRepeatDelayTimer.Stop();
+                volumeHoldTimeoutTimer.Stop();
             }
         }
 
@@ -595,7 +746,13 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
 
             trilist.OnlineStatusChange += (d, args) =>
             {
-                if (!args.DeviceOnLine) return;
+                if (!args.DeviceOnLine)
+                {
+                    // Panel dropped — force release of any held volume button to prevent runaway
+                    VolumeUp(false);
+                    VolumeDown(false);
+                    return;
+                }
 
                 foreach (var feedback in Feedbacks)
                 {

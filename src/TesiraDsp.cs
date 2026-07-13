@@ -90,6 +90,8 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
 
         private System.Timers.Timer unsubscribeTimer;
         private System.Timers.Timer queueCheckTimer;
+        private System.Timers.Timer levelRangePollTimer;
+        private int levelRangePollIntervalMs;
 
         private Thread subscribeThread;
 
@@ -319,6 +321,7 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
 
             // Stop subscription thread
             StopSubscriptionThread();
+            StopLevelRangePollTimer();
 
             if (watchDogTimer != null)
             {
@@ -342,6 +345,15 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
             ResubscriptionString = !string.IsNullOrEmpty(props.ResubscribeString)
                 ? props.ResubscribeString
                 : "resubscribeAll";
+
+            // Convert seconds to ms; 0 = disabled, anything 1-59 is clamped to the 60s minimum
+            var pollSecs = props.LevelRangePollIntervalSecs;
+            if (pollSecs > 0 && pollSecs < 60)
+            {
+                this.LogInformation("levelRangePollIntervalSecs value {secs} is below minimum of 60 — clamping to 60.", pollSecs);
+                pollSecs = 60;
+            }
+            levelRangePollIntervalMs = pollSecs * 1000;
 
             // Lock the entire control point list creation process
             lock (watchdogLock)
@@ -432,6 +444,10 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
                 this.LogVerbose("faderControlBlock Key - {0}", key);
                 var value = block.Value;
 
+                // Resolve hold timeout: per-fader override takes precedence, fall back to global
+                if (!value.VolumeHoldTimeoutMs.HasValue)
+                    value.VolumeHoldTimeoutMs = props.VolumeHoldTimeoutMs;
+
                 Faders.Add(key, new TesiraDspFaderControl(key, value, this));
                 this.LogVerbose("Added faderControlPoint {0} levelTag: {1} muteTag: {2}", key, value.LevelInstanceTag,
                     value.MuteInstanceTag);
@@ -451,6 +467,11 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
             {
                 var key = roomCombiner.Key;
                 var value = roomCombiner.Value;
+
+                // Resolve hold timeout: per-block override takes precedence, fall back to global
+                if (!value.VolumeHoldTimeoutMs.HasValue)
+                    value.VolumeHoldTimeoutMs = props.VolumeHoldTimeoutMs;
+
                 RoomCombiners.Add(key, new TesiraDspRoomCombiner(key, value, this));
                 this.LogVerbose("Adding Mixer {0} InstanceTag: {1}", key, value.RoomCombinerInstanceTag);
 
@@ -751,6 +772,8 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
             watchDogTimer.Dispose();
             watchDogTimer = null;
 
+            StopLevelRangePollTimer();
+
             // Reset watchdog state
             lock (watchdogLock)
             {
@@ -762,6 +785,40 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
             }
         }
 
+
+        private void StartLevelRangePollTimer()
+        {
+            if (levelRangePollIntervalMs <= 0) return;
+
+            levelRangePollTimer?.Stop();
+            levelRangePollTimer?.Dispose();
+
+            levelRangePollTimer = new System.Timers.Timer(levelRangePollIntervalMs);
+            levelRangePollTimer.Elapsed += (sender, e) => PollLevelRanges();
+            levelRangePollTimer.AutoReset = true;
+            levelRangePollTimer.Start();
+
+            this.LogDebug("Level range poll timer started at {interval}s interval.", levelRangePollIntervalMs / 1000);
+        }
+
+        private void StopLevelRangePollTimer()
+        {
+            if (levelRangePollTimer == null) return;
+            levelRangePollTimer.Stop();
+            levelRangePollTimer.Dispose();
+            levelRangePollTimer = null;
+        }
+
+        private void PollLevelRanges()
+        {
+            var volumeComponents = ControlPointList.OfType<IVolumeComponent>().ToList();
+            this.LogDebug("Level range poll: queuing min/max requests for {count} volume components.", volumeComponents.Count);
+            foreach (var component in volumeComponents)
+            {
+                component.GetMinLevel();
+                component.GetMaxLevel();
+            }
+        }
 
         private void CheckWatchDog()
         {
@@ -1375,6 +1432,7 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
             // Start watchdog only after all subscriptions are complete
             this.LogDebug("All subscriptions complete. Starting watchdog.");
             StartWatchDog();
+            StartLevelRangePollTimer();
         }
 
         #endregion
