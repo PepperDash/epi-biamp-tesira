@@ -1,0 +1,197 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml"><head>
+
+
+  <meta name="gRootRelPath" content="../../../.."/>
+	<meta name="gCommonRootRelPath" content="../../../.."/>
+  <meta name="gTopicId" content="4.1.0_2"/>
+  <script type="text/javascript" src="../../../../template/scripts/rh.min.js"></script>
+  <script type="text/javascript" src="../../../../template/scripts/common.min.js"></script>
+  <script type="text/javascript" src="../../../../template/scripts/topic.min.js"></script>
+  <script type="text/javascript" src="../../../../template/scripts/topicwidgets.min.js"></script>
+<script type="text/javascript" src="../../../../whxdata/projectsettings.js"></script>
+  <link rel="stylesheet" type="text/css" href="../../../../template/styles/topic.min.css"/>
+  <link rel="stylesheet" type="text/css" href="../../../../template/Biamp_Grey_&amp;_Blue/topicheader.css"/>
+  <meta name="topic-status" content="Draft"/>
+<link rel="stylesheet" type="text/css" href="../../../css/Tesira_Help.css"/>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+  <meta name="generator" content="Adobe RoboHelp 2022"/>
+  <title>TTP Subscriptions </title>
+  <meta name="topic-status" content="Draft"/>
+  <meta name="template" content="../../../layouts/Tesira_General.htt"/>
+  <link rel="stylesheet" type="text/css" href="../../../css/Tesira_Help.css"/>
+  <!--[if gte mso 9]><xml>
+<mso:CustomDocumentProperties>
+<mso:_dlc_DocId msdt:dt="string">AP256XAP2PFD-163404756-75451</mso:_dlc_DocId>
+<mso:_dlc_DocIdItemGuid msdt:dt="string">de9657ce-83a9-4756-bf57-7c80fb5d2255</mso:_dlc_DocIdItemGuid>
+<mso:_dlc_DocIdUrl msdt:dt="string">https://biamp.sharepoint.com/customerexperience/documentation/TPubsHub/DocDev/_layouts/15/DocIdRedir.aspx?ID=AP256XAP2PFD-163404756-75451, AP256XAP2PFD-163404756-75451</mso:_dlc_DocIdUrl>
+</mso:CustomDocumentProperties>
+</xml><![endif]-->
+</head>
+
+<body>
+  <div class="topic-header rh-hide" id="rh-topic-header">
+    <div class="logo">
+    </div>
+    <div class="nav">
+      <div class="title" title="Tesira Software Help">
+        <span>Tesira Software Help</span>
+      </div>
+      <div class="gotohome" title="Click here to see this page in full context">
+        <a href="#" onclick="rh._.goToFullLayout()">Click here to see this page in full context</a>
+      </div>
+    </div>
+  </div>
+  <div class="topic-header-shadow rh-hide" id="rh-topic-header-shadow"></div>
+
+
+
+  <div></div>
+  <div>
+  <h1><span data-field="title" data-format="default">TTP Subscriptions </span></h1>
+  <p>Subscriptions enable the updating of metering and level values to be sent to a external control system without the control system requesting information. </p>
+  <p>Elements of a processing object can be subscribed to such as channel levels and meters. The<span> </span>Attribute tables<span> </span>will indicate which functions support subscription. </p>
+  <p>If subscriptions are used the <span data-keyref="TesiraProduct">Tesira</span> server may be sending back replies that were not individually requested from the control system (they were subscribed to). All subscribed objects will be preceded by a ! &quot;publishToken&quot;<span> </span>statement would indicate to the control system that the returned packet is from a subscription not a response to a command that was just sent. </p>
+  <p>Subscriptions are lost when the <span data-keyref="TesiraProduct">Tesira</span> server is rebooted or a change in configuration is sent to the system. Subscriptions can be revalidated by subscribing to the same block at regular intervals. If this is done ensure that the custom label used in<span> </span><span>Index</span><span> </span>is used in the re-subscription. If this label is not included it is possible to inadvertently open multiple subscriptions to the same call state. </p>
+  <p>  </p>
+  <p><b>Instance_Tag Command Attribute [Index] [Value] LF</b></p>
+  <ul>
+    <li><span><span style="font-weight:bold;">Instance Tag</span>:<span> </span></span>Is always required. </li>
+    <li><span style="font-weight:bold;">Command</span>: Is always required. </li>
+    <li><span><span style="font-weight:bold;">Attribute</span>:</span><span> </span>Is always required. </li>
+    <li><span style="font-weight:bold;">[Index]</span>: Is shown in [Brackets] as may be required depending on the<span> </span>Attribute<span> </span>being referenced. If not required it should not be defined. Depending on the Attribute, it can be made up of one or more indexes. </li>
+    <li><span style="font-weight:bold;">[Value]</span>: Is shown in [Brackets] as may be required depending on the<span> </span>Command<span> </span>or<span> </span>Attribute<span> </span>being referenced. If not be required it should not be defined. The Value would not normally have spaces, if it does it can be defined in &quot;double quotes&quot;. It can also be a numerical value. </li>
+    <li><b>LF:</b><span> </span>A Line feed or Carriage Return is used to define the end of the command.</li>
+  </ul>
+  <p>For additional information on individual elements of a TTP string please review the <a href="TTP_Syntax.htm">TTP Syntax</a> page.</p>
+  <p>  </p>
+  <h2><span style="font-weight:bold;">Subscribe</span></h2>
+  <p>An example subscribing to a level with a 500ms refresh. </p>
+  <table border="1" cellpadding="1" cellspacing="1" class="TTP" style="border-collapse:collapse; width:100%">
+    <colgroup>
+      <col/>
+      <col/>
+      <col/>
+      <col/>
+      <col/>
+      <col/>
+    </colgroup>
+    <thead>
+      <tr>
+        <th>Instance Tag</th>
+        <th>Command</th>
+        <th>Attribute Code</th>
+        <th>Index</th>
+        <th>Index</th>
+        <th>Value</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td> MyLevel1</td>
+        <td> subscribe</td>
+        <td> level</td>
+        <td> 1</td>
+        <td> MyLevelName</td>
+        <td> 500</td>
+      </tr>
+    </tbody>
+  </table>
+  <h3><span style="font-weight:bold;">Verbose Subscription Responses</span></h3>
+  <p>When the subscription command is first sent the first reply will be: </p>
+  <p>! &quot;publishToken&quot;:&quot;[CustomName]&quot; &quot;value&quot;:[Value] +OK </p>
+  <p>  </p>
+  <p>Subsequent subscription replies will be formatted: </p>
+  <p>! &quot;publishToken&quot;:&quot;[CustomName]&quot; &quot;value&quot;:[Value] </p>
+  <ul>
+    <li>
+      <p>The<span> </span><span>[CustomName]</span><span> </span>is used as an identifier. The identifier returned is specified in the Index field of the original subscribe command. This name can then be used in a parsing routine for the subscribed item. If no identifier is specified then empty double speech-marks (&quot;&quot;) are shown in the response as a delimiter. </p>
+    </li>
+    <li>
+      <p>The<span> </span><span>[Value]</span><span> </span>is the current state of the control being subscribed to. This will be formatted as an integer or boolean depending on the subscription attribute. </p>
+    </li>
+  </ul>
+  <p>  </p>
+  <h4>Verbose Example</h4>
+  <p><span>MyLevel1 subscribe level 1<span> </span></span>MyLevelName<span><span> </span>500   ! &quot;publishToken&quot;:&quot;MyLevelName&quot; &quot;value&quot;:-100.000000 +OK ! &quot;publishToken&quot;:&quot;MyLevelName&quot; &quot;value&quot;:-98.099998 ! &quot;publishToken&quot;:&quot;MyLevelName&quot; &quot;value&quot;:-77.800003 ! &quot;publishToken&quot;:&quot;MyLevelName&quot; &quot;value&quot;:-35.299999 </span></p>
+  <p>  </p>
+  <h4>Verbose Example</h4>
+  <p><span>MyLevel1 subscribe level 1   ! &quot;publishToken&quot;:&quot;&quot; &quot;value&quot;:-100.000000 +OK ! &quot;publishToken&quot;:&quot;&quot; &quot;value&quot;:-98.099998 ! &quot;publishToken&quot;:&quot;&quot; &quot;value&quot;:-77.800003 ! &quot;publishToken&quot;:&quot;&quot; &quot;value&quot;:-35.299999 </span></p>
+  <p>  </p>
+  <h3>Non-Verbose Subscription Responses</h3>
+  <p><span>If a non-verbose response is required this must be specified before as a SESSION command and must be configured before the subscription. </span></p>
+  <p>  </p>
+  <p>When the subscription command is first sent the first reply will be: </p>
+  <p>! &quot;[CustomName]&quot; [Value] +OK </p>
+  <p>  </p>
+  <p>Subsequent subscription replies will be formatted </p>
+  <p>! &quot;[CustomName]&quot; [Value] </p>
+  <ul>
+    <li>
+      <p>The<span> </span><span>[CustomName]</span><span> </span>is used as an identifier. The identifier returned is specified in the Index field of the original subscribe command. This name can then be used in a parsing routine for the subscribed item. If no identifier is specified then empty double speech-marks (&quot;&quot;) are shown in the response as a delimiter. </p>
+    </li>
+    <li>
+      <p>The<span> </span><span>[Value]</span><span> </span>is the current state of the control being subscribed to. This will be formatted as an integer or boolean depending on the subscription attribute. </p>
+    </li>
+  </ul>
+  <p>  </p>
+  <h4>Verbose Example</h4>
+  <p><span>Welcome to the <span data-keyref="TesiraProduct">Tesira</span> Text Protocol Server...   SESSION set verbose false +OK   MyLevel1 subscribe level 1 myLevelName 500 ! &quot;myLevelName&quot; -40.244328 +OK ! &quot;myLevelName&quot; -38.992748 ! &quot;myLevelName&quot; -41.044147 ! &quot;myLevelName&quot; -40.063908 ! &quot;myLevelName&quot; -38.674465 </span></p>
+  <p>  </p>
+  <p>  </p>
+  <h2>Unsubscribe</h2>
+  <p><span>Once a value has been subscribed to, the unsubscribe command is used to cancel the request. If an Index and value have been specified in the original subscribe request they must be used in the unsubscribe request.</span> </p>
+  <p>  </p>
+  <p><b>Instance_Tag Command Attribute [Index] [Index] LF</b></p>
+  <ul>
+    <li><span><span style="font-weight:bold;">Instance Tag</span>:<span> </span></span>Is always required. <span>Is the same Instance Tag used to originally subscribe. </span></li>
+    <li><span style="font-weight:bold;">Command</span>: <span>Is always required. Is the same Command used to originally subscribe. </span></li>
+    <li><span><span style="font-weight:bold;">Attribute</span>:</span><span> </span><span>Is always required. Is the same Attribute used to originally subscribe. </span></li>
+    <li><span style="font-weight:bold;">[Index]</span>: <span>Is required if specified as part of the Attribute. Is the same Attribute index or indexes used to originally subscribe. </span></li>
+    <li><span><span><span style="font-weight:bold;">[Index]</span>: </span><span>Is required if specified as part of the original subscription. Must match the custom name given in the original subscription. </span></span></li>
+    <li><b>LF:</b><span> </span>A Line feed or Carriage Return is used to define the end of the command. </li>
+  </ul>
+  <p>  </p>
+  <p>An example unsubscribing to a level. </p>
+  <table border="1" cellpadding="1" cellspacing="1" class="TTP" style="border-collapse:collapse; width:100%">
+    <colgroup>
+      <col/>
+      <col/>
+      <col/>
+      <col/>
+      <col/>
+    </colgroup>
+    <thead>
+      <tr>
+        <th>Instance Tag</th>
+        <th>Command</th>
+        <th>Attribute Code</th>
+        <th>Index</th>
+        <th>Index</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td> MyLevel1</td>
+        <td> unsubscribe</td>
+        <td> level</td>
+        <td> 1</td>
+        <td> MyLevelName</td>
+      </tr>
+    </tbody>
+  </table>
+  <h4>  </h4>
+  <h4>Example</h4>
+  <p><span>MyLevel1 subscribe level 1<span> </span></span>MyLevelName<span><span> </span>500   ! &quot;publishToken&quot;:&quot;MyLevelName&quot; &quot;value&quot;:-100.000000 +OK ! &quot;publishToken&quot;:&quot;MyLevelName&quot; &quot;value&quot;:-98.099998 ! &quot;publishToken&quot;:&quot;MyLevelName&quot; &quot;value&quot;:-77.800003 ! &quot;publishToken&quot;:&quot;MyLevelName&quot; &quot;value&quot;:-35.299999   </span></p>
+  <p><span>MyLevel1 unsubscribe level 1<span> </span></span>MyLevelName<span><span> </span>+OK </span></p>
+  <p>  </p>
+  <p>  </p>
+  <p>  </p>
+
+</div>
+  <div>
+    <p></p>
+  </div>
+
+</body></html>

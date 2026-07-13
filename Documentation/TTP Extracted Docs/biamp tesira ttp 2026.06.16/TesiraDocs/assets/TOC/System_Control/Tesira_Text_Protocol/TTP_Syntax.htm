@@ -1,0 +1,214 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml"><head>
+
+
+  <meta name="gRootRelPath" content="../../../.."/>
+	<meta name="gCommonRootRelPath" content="../../../.."/>
+  <meta name="gTopicId" content="4.1.0_1"/>
+  <script type="text/javascript" src="../../../../template/scripts/rh.min.js"></script>
+  <script type="text/javascript" src="../../../../template/scripts/common.min.js"></script>
+  <script type="text/javascript" src="../../../../template/scripts/topic.min.js"></script>
+  <script type="text/javascript" src="../../../../template/scripts/topicwidgets.min.js"></script>
+<script type="text/javascript" src="../../../../whxdata/projectsettings.js"></script>
+  <link rel="stylesheet" type="text/css" href="../../../../template/styles/topic.min.css"/>
+  <link rel="stylesheet" type="text/css" href="../../../../template/Biamp_Grey_&amp;_Blue/topicheader.css"/>
+  <meta name="topic-status" content="Draft"/>
+<link rel="stylesheet" type="text/css" href="../../../css/Tesira_Help.css"/>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+  <meta name="generator" content="Adobe RoboHelp 2022"/>
+  <title>TTP Syntax</title>
+  <meta name="topic-status" content="Draft"/>
+  <meta name="template" content="../../../layouts/Tesira_General.htt"/>
+  <link rel="stylesheet" type="text/css" href="../../../css/Tesira_Help.css"/>
+  <!--[if gte mso 9]><xml>
+<mso:CustomDocumentProperties>
+<mso:_dlc_DocId msdt:dt="string">AP256XAP2PFD-163404756-75463</mso:_dlc_DocId>
+<mso:_dlc_DocIdItemGuid msdt:dt="string">990e53f2-442e-4385-82c3-965cbf00ccb0</mso:_dlc_DocIdItemGuid>
+<mso:_dlc_DocIdUrl msdt:dt="string">https://biamp.sharepoint.com/customerexperience/documentation/TPubsHub/DocDev/_layouts/15/DocIdRedir.aspx?ID=AP256XAP2PFD-163404756-75463, AP256XAP2PFD-163404756-75463</mso:_dlc_DocIdUrl>
+</mso:CustomDocumentProperties>
+</xml><![endif]-->
+</head>
+
+<body>
+  <div class="topic-header rh-hide" id="rh-topic-header">
+    <div class="logo">
+    </div>
+    <div class="nav">
+      <div class="title" title="Tesira Software Help">
+        <span>Tesira Software Help</span>
+      </div>
+      <div class="gotohome" title="Click here to see this page in full context">
+        <a href="#" onclick="rh._.goToFullLayout()">Click here to see this page in full context</a>
+      </div>
+    </div>
+  </div>
+  <div class="topic-header-shadow rh-hide" id="rh-topic-header-shadow"></div>
+
+
+
+  <div></div>
+  <div>
+  <h1><span data-field="title" data-format="default">TTP Syntax</span></h1>
+  <p><span>The<span> </span></span>Services Code<span><span> </span>defines a instruction and function for a DSP block to perform. The<span> </span></span>Attribute Code<span><span> </span>defines the portion of the DSP block to be controlled such as a fader level. Each element of the command instruction is delimited by a single space. The commands are case sensitive and upper and lower case characters are used. </span></p>
+  <p>  </p>
+  <p>  </p>
+  <h2>Instance Tag</h2>
+  <p><span>The<span> </span></span><span>Instance Tag</span><span><span> </span>is case sensitive and is the unique name of a software object used in a <span data-keyref="TesiraProduct">Tesira</span> project. The Instance Tag can be found when disconnected from the System in the<span> </span></span><span>DSP Properties tab of the <a href="../../Tabs/View/Show/Properties.htm">Properties</a> docking menu</span><span>. This defaults to the object code when compiled but can be customized by the user. The <span data-keyref="TesiraProduct">Tesira</span> compiler will also check for duplicate Instance Tags. Instance tags can be defined within speech marks. If instance tags have no spaces they do not require speech marks. Instance tags can be numerical and contain spaces. Any Customized Instance tags that contain spaces must be defined within speech marks. <span>Duplicate instance tags are not allowed. If duplicates are created a dialog will appear allowing editing of the tags. </span></span></p>
+  <p>  </p>
+  <p><span><span style="font-weight:bold;">Note</span>: The following Instance Tag characters are illegal: <span style="font-weight:bold;">/ &amp; </span></span></p>
+  <p>  </p>
+  <h3>Available Instance Tags</h3>
+  <p><span>A<span> </span></span><a href="../Attribute_Tables/Service_Addresses/Session.htm">Session</a><span><span> </span>command can be used to get a listing of available Instance Tags. Any devices that have an incomplete audio path will not be listed. </span></p>
+  <p> </p>
+  <h4>Example </h4>
+  <p>SESSION get aliases </p>
+  <p>+OK &quot;list&quot;:[&quot;123&quot; &quot;AudioMeter1&quot; &quot;AudioMeter2&quot; &quot;AudioMeter3&quot; &quot;DEVICE&quot; &quot;Input1&quot; &quot;Mixer1&quot; &quot;Mute1&quot; &quot;Level1&quot; &quot;Output1&quot;] </p>
+  <p>  </p>
+  <h4>Example - Using an Instance Tag Called Level1 </h4>
+  <p>Level1 get level 1 </p>
+  <p>+OK &quot;value&quot;:0.000000 </p>
+  <p>  </p>
+  <h4>Example - <span>Instance tags can contain spaces enclosed in speech marks </span></h4>
+  <p>&quot;my level 2&quot; get level 1 </p>
+  <p>+OK &quot;value&quot;:-10.000000 </p>
+  <p>  </p>
+  <p>Missing speech marks will return an error: </p>
+  <p>my level 2 get level 1 </p>
+  <p>-ERR address not found: {&quot;deviceId&quot;:0 &quot;classCode&quot;:0 &quot;instanceNum&quot;:0} </p>
+  <p>  </p>
+  <h4>Example - Instance Tags may be Numerical </h4>
+  <p>123 get level 1 </p>
+  <p>+OK &quot;value&quot;:-10.000000 </p>
+  <p>  </p>
+  <p>  </p>
+  <h2>Command</h2>
+  <p><span>The Command field specifies what is to be done with the DSP processing block Attribute. <span data-keyref="TesiraProduct">Tesira</span> Text Protocol supports different Attribute commands as listed below. These are case sensitive and the availability of the command would depend on the DSP object Attribute Code. The following table shows the Commands which only apply to Attribute Codes. An Attribute Code may not support all of them, but it will support at least one.  </span></p>
+  <p>  </p>
+  <p>  </p>
+  <h2>Attribute</h2>
+  <p><span>The attribute Code defines the portion of the DSP Processing block to be controlled such as a fader level, crosspoint mute, etc. </span></p>
+  <p>  </p>
+  <p>  </p>
+  <h2>Service</h2>
+  <p><span>The Services Code defines a instruction and function for a Hardware item to perform or a system wide command such as recalling a Preset</span><span>. Any Service Code commands do not use Attribute<span> </span></span>Commands<span><span> </span>such as get, set, etc. Instead they use their own commands such as<span> </span></span>recallPreset<span><span> </span>or<span> </span></span>dial. </p>
+  <p>  </p>
+  <p>  </p>
+  <h2>Index</h2>
+  <p>Attribute Codes use Index fields to refer to inputs, outputs, or cross attribute of a DSP Block. Due to the different types of DSP blocks, some attributes will not require and Index so no value should be used. Some DSP blocks require a single index such as a level control. Some DSP blocks require 2 indexes such as a matrix mixer. The first index would be the Input or Row and the second index would be the Output or Column. </p>
+  <p>  </p>
+  <p>For a<span> </span>Crossover,<span> </span>Index<span> </span><span>band</span><span> </span>is indexed by number from high to low, so in a four-way crossover high=1, mid high=2, low mid =3 and low=4.<span> </span><span>filter</span><span> </span>is indexed by number. 1 is the high cutoff frequency for each band while 2 is the low. </p>
+  <p>  </p>
+  <h4>Example - <span>Index values can be Encased in Double Quotes</span></h4>
+  <p><span>Mixer1 set crosspoint 1 1 true +OK Mixer1 set crosspoint &quot;1&quot;&quot;1&quot; true +OK </span></p>
+  <p>  </p>
+  <p>When a<span> </span>subscription<span> </span>command is configured a unique custom name can be used in the second Index of the command line. This is used as the identifier for the subscribed item. </p>
+  <p>  </p>
+  <p>Some Service Codes use index fields to define the hardware channel that is being controlled. For example, a<span> </span>Dialer Block<span> </span>will require the<span> </span><span>line</span><span> </span>and<span> </span><span>Call appearance</span> indexes to be specified. </p>
+  <p>  </p>
+  <p>  </p>
+  <h2>Value</h2>
+  <p>Value determines what a DSP block is being set to, incremented by, or decremented by. The<span> </span>interface definition tables<span> </span>define which type of value the string will need in order to execute the TTP string. </p>
+  <p>  </p>
+  <p>A TTP value will depend on the attribute being controlled. It can be: </p>
+  <ul>
+    <li>A number </li>
+    <li>A string (in double quotes) </li>
+    <li>A Boolean (true or false) </li>
+    <li>null </li>
+  </ul>
+  <p>  </p>
+  <table border="1" cellpadding="1" cellspacing="1" class="TTP" style="border-collapse: collapse; width: 804px;">
+    <thead>
+      <tr>
+        <th>Required Action</th>
+        <th>Value Example</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td> Turn On</td>
+        <td> true</td>
+        <td><span>Refers to the &#39;on&#39; state of a processing object component with two states such as a crosspoint, mute or similar. </span></td>
+      </tr>
+      <tr>
+        <td> Turn Off</td>
+        <td> false</td>
+        <td><span>Refers to the &#39;off&#39; state of a processing object component with two states such as a crosspoint, mute or similar. </span></td>
+      </tr>
+      <tr>
+        <td> Adjust Level (set, increment, decrement)</td>
+        <td> 1.0 -1.0 -15 etc...</td>
+        <td><span>A numerical decimal value used to represent the new state.<span><span> </span>For a &#39;set&#39; command this will move the value to the specified level. For an increment it will adjust the value from the current value by the specified amount.</span></span></td>
+      </tr>
+      <tr>
+        <td> State</td>
+        <td> BUTTERWORTH</td>
+        <td><span>A text string can be used to represent a value such as a filter type</span></td>
+      </tr>
+      <tr>
+        <td> Preset</td>
+        <td> 1001</td>
+        <td><span>An Integer that is the required state.</span></td>
+      </tr>
+    </tbody>
+  </table>
+  <p>  </p>
+  <p>  </p>
+  <h2>Special Addresses</h2>
+  <h3>Device</h3>
+  <p><span>The local unit currently connected. See<span> </span></span><a href="../Attribute_Tables/Service_Addresses/Device.htm">Device</a><span><span> </span>for a full listing of commands. </span></p>
+  <table border="1" cellpadding="1" cellspacing="1" class="TTP" style="border-collapse:collapse; width:100%">
+    <thead>
+      <tr>
+        <th>Instance Tag</th>
+        <th>Command</th>
+        <th>Attribute Code</th>
+        <th>Index</th>
+        <th>Line_Feed</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td> DEVICE</td>
+        <td> get</td>
+        <td> ipStatus</td>
+        <td> interface</td>
+        <td> LF</td>
+      </tr>
+    </tbody>
+  </table>
+  <p>  </p>
+  <h3>Session</h3>
+  <p><span>The current<span> </span></span>RS-232<span>,<span> </span></span>Telnet<span><span> </span>or<span> </span></span>SSH<span><span> </span>text session. See </span><a href="../Attribute_Tables/Service_Addresses/Session.htm">Session</a> <span>for a full listing of commands. </span></p>
+  <table border="1" cellpadding="1" cellspacing="1" class="TTP" style="border-collapse:collapse; width:100%">
+    <thead>
+      <tr>
+        <th>Instance Tag</th>
+        <th>Command</th>
+        <th>Attribute Code</th>
+        <th>Value</th>
+        <th>Line_Feed</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td> SESSION</td>
+        <td> set</td>
+        <td> Verbose</td>
+        <td> false</td>
+        <td> LF</td>
+      </tr>
+    </tbody>
+  </table>
+  <p>  </p>
+  <p>  </p>
+  <p>  </p>
+
+</div>
+  <div>
+    <p></p>
+  </div>
+
+</body></html>

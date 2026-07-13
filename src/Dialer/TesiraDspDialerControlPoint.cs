@@ -51,6 +51,20 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Dialer
         /// <param name="instanceTag">Instance Tag of Control</param>
         public virtual void SendFullCommand(string command, string attributeCode, string value, int instanceTag)
         {
+            SendFullCommand(command, attributeCode, value, instanceTag, Index2);
+        }
+
+        /// <summary>
+        /// Sends a command to the DSP for a specific control component, targeting an explicit
+        /// call appearance index (used as Index2 for call-control service codes).
+        /// </summary>
+        /// <param name="command">Command to send</param>
+        /// <param name="attributeCode">Attribute code for control</param>
+        /// <param name="value">Value for command</param>
+        /// <param name="instanceTag">Instance Tag of Control</param>
+        /// <param name="callAppearanceIndex">Call appearance number used as Index2 for call-control service codes</param>
+        public virtual void SendFullCommand(string command, string attributeCode, string value, int instanceTag, int callAppearanceIndex)
+        {
             if (string.IsNullOrEmpty(attributeCode))
             {
                 this.LogError("Error: AttributeCode is null or empty. Parameters: {command} {attributeCode} {value} {instanceTag}", command, attributeCode, value, instanceTag);
@@ -87,7 +101,8 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Dialer
             if (attributeCode == "level" || attributeCode == "mute" || attributeCode == "minLevel" ||
                 attributeCode == "maxLevel" || attributeCode == "label" || attributeCode == "rampInterval" ||
                 attributeCode == "rampStep" || attributeCode == "autoAnswer" || attributeCode == "dndEnable" ||
-                attributeCode == "dtmf" || attributeCode == "state")
+                attributeCode == "dtmf" || attributeCode == "state" || attributeCode == "redialEnable" ||
+                attributeCode == "autoAnswerRingCount")
             {
                 //Command requires Index
                 if (string.IsNullOrEmpty(value))
@@ -106,12 +121,13 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Dialer
 
             else if (attributeCode == "dial" || attributeCode == "end" || attributeCode == "onHook" ||
                 attributeCode == "offHook" || attributeCode == "answer" || attributeCode == "hold" ||
-                attributeCode == "resume")
+                attributeCode == "resume" || attributeCode == "lconf" || attributeCode == "leaveConf" ||
+                attributeCode == "redial" || attributeCode == "flash")
             {
                 //requires index, but does not require command
                 cmd = string.IsNullOrEmpty(value) ?
-                    string.Format("{0} {1} {2} {3}", localInstanceTag, attributeCode, Index1, Index2) :
-                    string.Format("{0} {1} {2} {3} {4}", localInstanceTag, attributeCode, Index1, Index2, value);
+                    string.Format("{0} {1} {2} {3}", localInstanceTag, attributeCode, Index1, callAppearanceIndex) :
+                    string.Format("{0} {1} {2} {3} {4}", localInstanceTag, attributeCode, Index1, callAppearanceIndex, value);
             }
 
             else
@@ -173,7 +189,9 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Dialer
                     localInstanceTag = InstanceTag1;
                     break;
             }
-            if (attributeCode == "callState" || attributeCode == "sourceSelection" || attributeCode == "hookState")
+            if (attributeCode == "callState" || attributeCode == "sourceSelection" || attributeCode == "hookState" ||
+                attributeCode == "dialToneDetected" || attributeCode == "busyToneDetected" ||
+                attributeCode == "ringBackToneDetected" || attributeCode == "ringing" || attributeCode == "dialing")
             {
                 cmd = string.Format("\"{0}\" subscribe {1} {2} {3}", localInstanceTag, attributeCode, customName, responseRate);
             }
@@ -215,7 +233,9 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Dialer
                     localInstanceTag = InstanceTag1;
                     break;
             }
-            if (attributeCode == "callState" || attributeCode == "sourceSelection")
+            if (attributeCode == "callState" || attributeCode == "sourceSelection" || attributeCode == "hookState" ||
+                attributeCode == "dialToneDetected" || attributeCode == "busyToneDetected" ||
+                attributeCode == "ringBackToneDetected" || attributeCode == "ringing" || attributeCode == "dialing")
             {
                 cmd = string.Format("\"{0}\" unsubscribe {1} {2}", localInstanceTag, attributeCode, customName);
             }

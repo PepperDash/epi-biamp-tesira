@@ -1,0 +1,165 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml"><head>
+
+
+  <meta name="gRootRelPath" content="../../../.."/>
+	<meta name="gCommonRootRelPath" content="../../../.."/>
+  <meta name="gTopicId" content="4.1.0_3"/>
+  <script type="text/javascript" src="../../../../template/scripts/rh.min.js"></script>
+  <script type="text/javascript" src="../../../../template/scripts/common.min.js"></script>
+  <script type="text/javascript" src="../../../../template/scripts/topic.min.js"></script>
+  <script type="text/javascript" src="../../../../template/scripts/topicwidgets.min.js"></script>
+<script type="text/javascript" src="../../../../whxdata/projectsettings.js"></script>
+  <link rel="stylesheet" type="text/css" href="../../../../template/styles/topic.min.css"/>
+  <link rel="stylesheet" type="text/css" href="../../../../template/Biamp_Grey_&amp;_Blue/topicheader.css"/>
+  <meta name="topic-status" content="Draft"/>
+<link rel="stylesheet" type="text/css" href="../../../css/Tesira_Help.css"/>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+  <meta name="generator" content="Adobe RoboHelp 2022"/>
+  <title>TTP Responses</title>
+  <meta name="topic-status" content="Draft"/>
+  <meta name="template" content="../../../layouts/Tesira_General.htt"/>
+  <link rel="stylesheet" type="text/css" href="../../../css/Tesira_Help.css"/>
+  <!--[if gte mso 9]><xml>
+<mso:CustomDocumentProperties>
+<mso:_dlc_DocId msdt:dt="string">AP256XAP2PFD-163404756-75458</mso:_dlc_DocId>
+<mso:_dlc_DocIdItemGuid msdt:dt="string">98e049d3-1d9e-4cb0-a0f6-89ddd717d5af</mso:_dlc_DocIdItemGuid>
+<mso:_dlc_DocIdUrl msdt:dt="string">https://biamp.sharepoint.com/customerexperience/documentation/TPubsHub/DocDev/_layouts/15/DocIdRedir.aspx?ID=AP256XAP2PFD-163404756-75458, AP256XAP2PFD-163404756-75458</mso:_dlc_DocIdUrl>
+</mso:CustomDocumentProperties>
+</xml><![endif]-->
+</head>
+
+<body>
+  <div class="topic-header rh-hide" id="rh-topic-header">
+    <div class="logo">
+    </div>
+    <div class="nav">
+      <div class="title" title="Tesira Software Help">
+        <span>Tesira Software Help</span>
+      </div>
+      <div class="gotohome" title="Click here to see this page in full context">
+        <a href="#" onclick="rh._.goToFullLayout()">Click here to see this page in full context</a>
+      </div>
+    </div>
+  </div>
+  <div class="topic-header-shadow rh-hide" id="rh-topic-header-shadow"></div>
+
+
+
+  <div></div>
+  <div>
+  <h1><span data-field="title" data-format="default">TTP Responses</span></h1>
+  <p>A Verbose or non-verbose response can be configured as part of the<span> </span><a href="../Attribute_Tables/Service_Addresses/Session.htm">Session</a><span> </span>Command type. </p>
+  <p>  </p>
+  <p>Verbose: </p>
+  <p>+OK “time”:”12:00” “number”:”503-367-3568” “line”:”2” </p>
+  <p>  </p>
+  <p>Non-Verbose: </p>
+  <p>+OK ”12:00” ”503-367-3568” ”2” </p>
+  <p>  </p>
+  <h4>Example </h4>
+  <p>SESSION set verbose true </p>
+  <p>Mute1 get numChannels </p>
+  <p>+OK &quot;value&quot;:2 </p>
+  <p>  </p>
+  <p>SESSION set verbose false </p>
+  <p>+OK </p>
+  <p>Mute1 get numChannels </p>
+  <p>+OK 2 </p>
+  <p>  </p>
+  <p>  </p>
+  <h2>TTP Feedback</h2>
+  <p><span data-keyref="TesiraProduct">Tesira</span> Text Protocol will provide user feedback if a command is incorrect. The response will vary depending on the command. The <span data-keyref="TesiraProduct">Tesira</span> TTP error responses for the most common types of external programming errors include: </p>
+  <ul>
+    <li>Can’t forward a request to a device that’s not on the network </li>
+    <li>If an invalid address is used </li>
+    <li>If an invalid attribute or service for a block type (it might be valid for a<span> </span><span>different</span><span> </span>object) </li>
+    <li>Right address, right attribute or service, but the request doesn’t make sense given the state of the target object </li>
+    <li>Case-and-spelling errors of various kinds </li>
+  </ul>
+  <p>Please refer to the table below for some examples and details of some of the expected error responses. </p>
+  <table border="1" cellpadding="1" cellspacing="1" class="TTP" style="border-collapse: collapse; width: 804px;">
+    <thead>
+      <tr>
+        <th>TTP Command String</th>
+        <th>Message</th>
+        <th>Resolution</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td> </td>
+        <td> +OK</td>
+        <td>The command was understood and completed successfully. </td>
+      </tr>
+      <tr>
+        <td> Session get  aliases</td>
+        <td> -ERR address not found: {<span>&quot;deviceId&quot;:0 &quot;classCode&quot;:0 &quot;instanceNum&quot;:0</span>}</td>
+        <td><span>The requested address is not valid due to incorrect formatting. The Address field is case sensitive.<span> </span></span><span>Session</span><span><span> </span>commands must be in capitals. Reformat the command as<span> </span></span><span>SESSION get aliases</span><span>. </span></td>
+      </tr>
+      <tr>
+        <td> <span>SESSION Get aliases</span></td>
+        <td> <span>-ERR Parse error at 8: verb was not one of the commands supported by Services</span></td>
+        <td><span>There is a problem 8 characters into the command. The<span> </span></span><span>get</span><span><span> </span>command is incorrectly formatted - it has a capital &#39;G&#39;. Reformat the command as<span> </span></span><span>SESSION get aliases. </span></td>
+      </tr>
+      <tr>
+        <td> <span>SESSION get Aliases</span></td>
+        <td> <span>-ERR &#39;Aliases&#39; is not supported by TextSession::Attributes</span></td>
+        <td><span>Aliases</span><span><span> </span>is not correctly formatted. It has a capital &#39;A&#39;. Reformat the command as<span> </span></span><span>SESSION get aliases. </span></td>
+      </tr>
+      <tr>
+        <td> <span>Mixer1 set inputMute 1</span></td>
+        <td> <span>-ERR Parse error at 22: not enough parameters supplied</span></td>
+        <td><span>The command is missing the value. Reformat the command as<span> </span></span><span>Mixer1 set inputMute 1 true</span><span>. </span></td>
+      </tr>
+      <tr>
+        <td> <span>Mixer1 get inputLevel 1</span></td>
+        <td> <span>+OK &quot;value&quot;:0.000000</span></td>
+        <td><span>The command was delivered and the value of the Input level is 0.0dB. </span></td>
+      </tr>
+      <tr>
+        <td> <span>Input1 get gain channel1</span></td>
+        <td> <span>-ERR Parse error at 16: could not parse value</span></td>
+        <td><span>Channel1 command is invalid. The Input block channel is numerical. Reformat the command as<span> </span></span><span>Input1 get gain 1. </span></td>
+      </tr>
+      <tr>
+        <td><span> AudioMeter2 subscribe level 3 mymeter 1000</span></td>
+        <td>
+          <p> ! &quot;publishToken&quot;:&quot;mymeter&quot; &quot;value&quot;:-100.000000</p>
+          <p>+OK</p>
+        </td>
+        <td><span>A subscribe of the meter refreshing every 1 second. </span></td>
+      </tr>
+      <tr>
+        <td><span> MyLevel1 get level 10</span></td>
+        <td><span> -ERR INVALID_PARAMETER Index out of range:channelIndex min:1 max:8 received:10</span></td>
+        <td><span>Channel 10 not available. Index indicates channels 1 to 8 available. </span></td>
+      </tr>
+      <tr>
+        <td> </td>
+        <td> <span>-ERR WRONG_STATE</span></td>
+        <td><span>VoIP card has received a command it cannot action (For example if the card is not connected to the Call Manager and is given a request to make a call)</span></td>
+      </tr>
+      <tr>
+        <td> </td>
+        <td> <span>-CANNOT_DELIVER</span></td>
+        <td><span>Typically seen on a system with multiple Server devices when connected to one Server and addressing a DSP object in another server. Would indicate a communication issue between servers. </span></td>
+      </tr>
+      <tr>
+        <td> </td>
+        <td> <span>-GENERAL_FAILURE</span></td>
+        <td><span>A &#39;catch all&#39; error code. Can occur when referencing a Instance Tag that is not in the <span data-keyref="TesiraProduct">Tesira</span> file. </span></td>
+      </tr>
+    </tbody>
+  </table>
+  <p>  </p>
+  <p>  </p>
+  <p>  </p>
+
+</div>
+  <div>
+    <p></p>
+  </div>
+
+</body></html>

@@ -1,0 +1,299 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml"><head>
+
+
+  <meta name="gRootRelPath" content="../../../../.."/>
+	<meta name="gCommonRootRelPath" content="../../../../.."/>
+  <meta name="gTopicId" content="4.2.8.0_6"/>
+  <script type="text/javascript" src="../../../../../template/scripts/rh.min.js"></script>
+  <script type="text/javascript" src="../../../../../template/scripts/common.min.js"></script>
+  <script type="text/javascript" src="../../../../../template/scripts/topic.min.js"></script>
+  <script type="text/javascript" src="../../../../../template/scripts/topicwidgets.min.js"></script>
+<script type="text/javascript" src="../../../../../whxdata/projectsettings.js"></script>
+  <link rel="stylesheet" type="text/css" href="../../../../../template/styles/topic.min.css"/>
+  <link rel="stylesheet" type="text/css" href="../../../../../template/Biamp_Grey_&amp;_Blue/topicheader.css"/>
+  <meta name="topic-status" content="Draft"/>
+<link rel="stylesheet" type="text/css" href="../../../../css/Tesira_Help.css"/>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+  <meta name="generator" content="Adobe RoboHelp 2022"/>
+  <title>Room Combiner Block</title>
+  <meta name="topic-status" content="Draft"/>
+  <meta name="template" content="../../../../layouts/TTP_Attributes.htt"/>
+  <link rel="stylesheet" type="text/css" href="../../../../css/Tesira_Help.css"/>
+  <!--[if gte mso 9]><xml>
+<mso:CustomDocumentProperties>
+<mso:_dlc_DocId msdt:dt="string">AP256XAP2PFD-163404756-75428</mso:_dlc_DocId>
+<mso:_dlc_DocIdItemGuid msdt:dt="string">d68c5a10-7a8c-456d-a39f-5684ea771fe4</mso:_dlc_DocIdItemGuid>
+<mso:_dlc_DocIdUrl msdt:dt="string">https://biamp.sharepoint.com/customerexperience/documentation/TPubsHub/DocDev/_layouts/15/DocIdRedir.aspx?ID=AP256XAP2PFD-163404756-75428, AP256XAP2PFD-163404756-75428</mso:_dlc_DocIdUrl>
+</mso:CustomDocumentProperties>
+</xml><![endif]-->
+</head>
+
+<body>
+  <div class="topic-header rh-hide" id="rh-topic-header">
+    <div class="logo">
+    </div>
+    <div class="nav">
+      <div class="title" title="Tesira Software Help">
+        <span>Tesira Software Help</span>
+      </div>
+      <div class="gotohome" title="Click here to see this page in full context">
+        <a href="#" onclick="rh._.goToFullLayout()">Click here to see this page in full context</a>
+      </div>
+    </div>
+  </div>
+  <div class="topic-header-shadow rh-hide" id="rh-topic-header-shadow"></div>
+
+
+
+  <div>
+    <p></p>
+    <table border="1" cellpadding="1" cellspacing="1" class="TTP" style="background-color: rgb(255, 255, 255); font-family: &quot;Segoe UI&quot;; font-size: 14px; border-collapse: collapse; width: 100%;">
+      <colgroup>
+        <col style="width:50%"/>
+        <col style="width:50%"/>
+      </colgroup>
+    </table>
+    <h4>TTP Attribute Table | <span style="font-style:italic;">Generate command strings with: <a href="https://support.biamp.com/Tesira/Control/Tesira_command_string_calculator">Tesira Command String Calculator</a></span></h4>
+  </div>
+  <p></p>
+  <div>
+  <h1><span data-field="title" data-format="default">Room Combiner Block</span></h1>
+  <p>  </p>
+  <div data-conref="../../../../snippets/TTP_Status_Attributes.hts">
+  <p>Please refer to the<span> </span>TTP section of the <a href="../../Tesira_Software_System_Control_Overview.htm"><span data-keyref="TesiraSoftware">Tesira</span> Software System Control Overview</a><span> page</span> for more details on the controlling <span data-keyref="TesiraProduct">Tesira</span> devices using the TTP protocol. </p>
+  <p>Each element of the command instruction is delimited by one or more spaces. The commands are case sensitive and upper and lower case characters are used. </p>
+  <p>The TTP string to adjust a DSP object attribute is structured in the following order: </p>
+  <p><b>Instance_Tag Command Attribute [Index] [Value] LF </b></p>
+  <ul>
+    <li><span><span style="font-weight:bold;">Instance Tag</span>:<span> </span></span>Is always required. </li>
+    <li><span style="font-weight:bold;">Command</span>: Is always required. </li>
+    <li><span><span style="font-weight:bold;">Attribute</span>:</span><span> </span>Is always required. </li>
+    <li><span style="font-weight:bold;">[Index]</span>: Is shown in [Brackets] and may be required depending on the<span> </span>Attribute<span> </span>being referenced. If not required it should not be defined. Depending on the Attribute, it can be made up of one or more indexes. </li>
+    <li><span style="font-weight:bold;">[Value]</span>: Is shown in [Brackets] and may be required depending on the<span> </span>Command<span> </span>or<span> </span>Attribute<span> </span>being referenced. If not be required it should not be defined. The Value would not normally have spaces, if it does it can be defined in &quot;double quotes&quot;. It can also be a numerical value. </li>
+    <li><b>LF:</b><span> </span>A Line feed or Carriage Return is used to define the end of the command. </li>
+  </ul>
+  <p>For additional information on individual elements of a TTP string please review the <a href="../../Tesira_Text_Protocol/TTP_Syntax.htm">TTP Syntax</a> page.  </p>
+
+</div>
+  <p>  </p>
+  <table border="1" cellpadding="1" cellspacing="1" class="TTP" style="border-collapse: collapse; width: 804px;">
+    <colgroup>
+      <col/>
+      <col/>
+      <col/>
+      <col/>
+    </colgroup>
+    <thead>
+      <tr>
+        <th>Instance Tag</th>
+        <th>Command</th>
+        <th>Attribute Code</th>
+        <th>Index</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>RoomCombiner1</td>
+        <td>get</td>
+        <td>wallState</td>
+        <td>1</td>
+      </tr>
+    </tbody>
+  </table>
+  <p>  </p>
+  <h4>Example</h4>
+  <p><span>RoomCombiner1 get wallState 1   </span></p>
+  <p><span>RoomCombiner1 set wallState 1 true</span></p>
+  <p>  </p>
+  <table border="1" cellpadding="1" cellspacing="1" class="TTP" style="border-collapse:collapse; width:100%">
+    <colgroup>
+      <col style="width:20%"/>
+      <col style="width:20%"/>
+      <col style="width:20%"/>
+      <col style="width:20%"/>
+      <col style="width:20%"/>
+    </colgroup>
+    <thead>
+      <tr>
+        <th>Attribute</th>
+        <th>Attribute Code</th>
+        <th>Command</th>
+        <th>Indexes</th>
+        <th>Value Range</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Room Group</td>
+        <td>group</td>
+        <td>get / set / increment / decrement / subscribe / unsubscribe</td>
+        <td>room</td>
+        <td>0 - room count</td>
+      </tr>
+      <tr>
+        <td>Last Mic Hold Enabled</td>
+        <td>lastMicHoldEnable</td>
+        <td>get / set / toggle</td>
+        <td> </td>
+        <td>false, true</td>
+      </tr>
+      <tr>
+        <td>Input Level</td>
+        <td>levelIn</td>
+        <td>get / set / increment / decrement / subscribe / unsubscribe</td>
+        <td>room</td>
+        <td>levelInMin - levelInMax dB</td>
+      </tr>
+      <tr>
+        <td>Max Input Level</td>
+        <td>levelInMax</td>
+        <td>get / set / increment / decrement</td>
+        <td>room</td>
+        <td>levelInMin - 12.0 dB</td>
+      </tr>
+      <tr>
+        <td>Min Input Level</td>
+        <td>levelInMin</td>
+        <td>get / set / increment / decrement</td>
+        <td>room</td>
+        <td>-100.0 - levelInMax dB</td>
+      </tr>
+      <tr>
+        <td>Output Level</td>
+        <td>levelOut</td>
+        <td>get / set / increment / decrement / subscribe / unsubscribe</td>
+        <td>room</td>
+        <td>levelOutMin - levelOutMax dB</td>
+      </tr>
+      <tr>
+        <td>Max Output Level</td>
+        <td>levelOutMax</td>
+        <td>get / set / increment / decrement</td>
+        <td>room</td>
+        <td>levelOutMin - 12.0 dB</td>
+      </tr>
+      <tr>
+        <td>Min Output Level</td>
+        <td>levelOutMin</td>
+        <td>get / set / increment / decrement</td>
+        <td>room</td>
+        <td>-100.0 - levelOutMax dB</td>
+      </tr>
+      <tr>
+        <td>Source Level</td>
+        <td>levelSource</td>
+        <td>get / set / increment / decrement / subscribe / unsubscribe</td>
+        <td>room</td>
+        <td>levelSourceMin - levelSourceMax dB</td>
+      </tr>
+      <tr>
+        <td>Max Source Level</td>
+        <td>levelSourceMax</td>
+        <td>get / set / increment / decrement</td>
+        <td>room</td>
+        <td>levelSourceMin - 12.0 dB</td>
+      </tr>
+      <tr>
+        <td>Min Source Level</td>
+        <td>levelSourceMin</td>
+        <td>get / set / increment / decrement</td>
+        <td>room</td>
+        <td>-100.0 - levelSourceMax dB</td>
+      </tr>
+      <tr>
+        <td>Input Mute</td>
+        <td>muteIn</td>
+        <td>get / set / toggle / subscribe / unsubscribe</td>
+        <td>room</td>
+        <td>false, true</td>
+      </tr>
+      <tr>
+        <td>Output Mute</td>
+        <td>muteOut</td>
+        <td>get / set / toggle / subscribe / unsubscribe</td>
+        <td>room</td>
+        <td>false, true</td>
+      </tr>
+      <tr>
+        <td>Source Mute</td>
+        <td>muteSource</td>
+        <td>get / set / toggle / subscribe / unsubscribe</td>
+        <td>room</td>
+        <td>false, true</td>
+      </tr>
+      <tr>
+        <td>Open Mic Limit</td>
+        <td>nomLimit</td>
+        <td>get / set / increment / decrement</td>
+        <td> </td>
+        <td>1 - 7</td>
+      </tr>
+      <tr>
+        <td>Open Mic Limit Enabled</td>
+        <td>nomLimitEnable</td>
+        <td>get / set / toggle</td>
+        <td> </td>
+        <td>false, true</td>
+      </tr>
+      <tr>
+        <td>Input Count</td>
+        <td>numInputs</td>
+        <td>get</td>
+        <td> </td>
+        <td>2 - 32</td>
+      </tr>
+      <tr>
+        <td>Output Count</td>
+        <td>numOutputs</td>
+        <td>get</td>
+        <td> </td>
+        <td>2 - 32</td>
+      </tr>
+      <tr>
+        <td>Wall Room Precedence</td>
+        <td>preferredRoom</td>
+        <td>get / set / increment / decrement / subscribe / unsubscribe</td>
+        <td>Wall Number</td>
+        <td>A room index</td>
+      </tr>
+      <tr>
+        <td>Room Label</td>
+        <td>roomLabel</td>
+        <td>get / set</td>
+        <td>room</td>
+        <td> </td>
+      </tr>
+      <tr>
+        <td>Source Label</td>
+        <td>sourceLabel</td>
+        <td>get / set</td>
+        <td>source</td>
+        <td> </td>
+      </tr>
+      <tr>
+        <td>Source Selection</td>
+        <td>sourceSelection</td>
+        <td>get / set / increment / decrement / subscribe / unsubscribe</td>
+        <td>room</td>
+        <td>0 - 4</td>
+      </tr>
+      <tr>
+        <td>Wall Closed</td>
+        <td>wallState</td>
+        <td>get / set / toggle / subscribe / unsubscribe</td>
+        <td>wall number</td>
+        <td>false, true</td>
+      </tr>
+    </tbody>
+  </table>
+  <p>  </p>
+  <p>  </p>
+
+</div>
+  <div>
+    <p></p>
+  </div>
+
+</body></html>

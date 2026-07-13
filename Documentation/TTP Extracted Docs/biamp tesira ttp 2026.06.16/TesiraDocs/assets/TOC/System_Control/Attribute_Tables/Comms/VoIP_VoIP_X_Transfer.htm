@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml"><head>
+
+
+  <meta name="gRootRelPath" content="../../../../.."/>
+	<meta name="gCommonRootRelPath" content="../../../../.."/>
+  <meta name="gTopicId" content="4.2.4.0_8"/>
+  <script type="text/javascript" src="../../../../../template/scripts/rh.min.js"></script>
+  <script type="text/javascript" src="../../../../../template/scripts/common.min.js"></script>
+  <script type="text/javascript" src="../../../../../template/scripts/topic.min.js"></script>
+  <script type="text/javascript" src="../../../../../template/scripts/topicwidgets.min.js"></script>
+<script type="text/javascript" src="../../../../../whxdata/projectsettings.js"></script>
+  <link rel="stylesheet" type="text/css" href="../../../../../template/styles/topic.min.css"/>
+  <link rel="stylesheet" type="text/css" href="../../../../../template/Biamp_Grey_&amp;_Blue/topicheader.css"/>
+  <meta name="topic-status" content="Draft"/>
+<link rel="stylesheet" type="text/css" href="../../../../css/Tesira_Help.css"/>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+  <meta name="generator" content="Adobe RoboHelp 2022"/>
+  <title>VoIP VoIP X Transfer</title>
+  <meta name="topic-status" content="Draft"/>
+  <meta name="template" content="../../../../layouts/TTP_Attributes.htt"/>
+  <link rel="stylesheet" type="text/css" href="../../../../css/Tesira_Help.css"/>
+  <!--[if gte mso 9]><xml>
+<mso:CustomDocumentProperties>
+<mso:_dlc_DocId msdt:dt="string">AP256XAP2PFD-163404756-80997</mso:_dlc_DocId>
+<mso:_dlc_DocIdItemGuid msdt:dt="string">2c5e7349-bd41-44c5-a2a9-e5965d8a1db4</mso:_dlc_DocIdItemGuid>
+<mso:_dlc_DocIdUrl msdt:dt="string">https://biamp.sharepoint.com/customerexperience/documentation/TPubsHub/DocDev/_layouts/15/DocIdRedir.aspx?ID=AP256XAP2PFD-163404756-80997, AP256XAP2PFD-163404756-80997</mso:_dlc_DocIdUrl>
+</mso:CustomDocumentProperties>
+</xml><![endif]-->
+</head>
+
+<body>
+  <div class="topic-header rh-hide" id="rh-topic-header">
+    <div class="logo">
+    </div>
+    <div class="nav">
+      <div class="title" title="Tesira Software Help">
+        <span>Tesira Software Help</span>
+      </div>
+      <div class="gotohome" title="Click here to see this page in full context">
+        <a href="#" onclick="rh._.goToFullLayout()">Click here to see this page in full context</a>
+      </div>
+    </div>
+  </div>
+  <div class="topic-header-shadow rh-hide" id="rh-topic-header-shadow"></div>
+
+
+
+  <div>
+    <p></p>
+    <table border="1" cellpadding="1" cellspacing="1" class="TTP" style="background-color: rgb(255, 255, 255); font-family: &quot;Segoe UI&quot;; font-size: 14px; border-collapse: collapse; width: 100%;">
+      <colgroup>
+        <col style="width:50%"/>
+        <col style="width:50%"/>
+      </colgroup>
+    </table>
+    <h4>TTP Attribute Table | <span style="font-style:italic;">Generate command strings with: <a href="https://support.biamp.com/Tesira/Control/Tesira_command_string_calculator">Tesira Command String Calculator</a></span></h4>
+  </div>
+  <p></p>
+  <div>
+  <h1><span data-field="title" data-format="default">VoIP VoIP X Transfer</span></h1>
+  <p>  </p>
+  <p>  </p>
+  <h2>Call Transfer Process</h2>
+  <p>There are a number of supported workflows as part of transferring a call using third party control. The method used is dependent on external factors such as the phone system used. Below, the three different processes are defined. The method chosen would depend on the unique project requirements and functions of the phone system being used and its supported functions. </p>
+  <p>The &#39;transfer&#39; function can be used for the default type of transfer when it has been defined in the <span data-keyref="TesiraSoftware">Tesira</span> software. The other two methods, the &#39;featureKey Blind&#39; or &#39;featureKey Consultative&#39; methods can be used as an &#39;on-the-fly&#39; method of initiating a transfer. </p>
+  <p>  </p>
+  <h3>Transfer</h3>
+  <p><span>This function is a dedicated function for initiating the default type of call transfer. The transfer behavior is defined in the<span> </span></span><a href="../../../Tabs/Audio_Objects/Comms/VoIP_Phone/VoIP_Line_Properties.htm">VoIP Line Properties</a><span><span> </span>block properties configured as part of the <span data-keyref="TesiraSoftware">Tesira</span> design file configuration. For some proxies, the default behavior is a &#39;blind transfer&#39; for others it is a &#39;consultative transfer&#39;. The control developers will need to know what kind of call transfer method is used then this should be configured in the Line properties &gt; General Tab &gt; Consultative Transfer setting. </span></p>
+  <h4>Example - To Transfer to Extension 9175</h4>
+  <p>VoIPControlStatus1 transfer 1 1<br/>
+    +OK</p>
+  <p>VoIPControlStatus1 dial 1 2 9175<br/>
+    +OK</p>
+  <p>  </p>
+  <h3>Blind Transfer</h3>
+  <p>The function:<span> </span><b>featureKey 1 1 FEATURE_KEY_BLIND_TRANSFER</b>, opens a new call appearance and allows the number to be transferred to be entered. The process operates the same as off-hook dialing. </p>
+  <p>Once the transfer target answers the call, a manual confirmation of the transfer can be specified, alternatively, the transfer will complete itself after a timeout period (default 10 seconds) </p>
+  <p>To confirm the transfer, the feature key function with the new line instance is specified:<span> </span><b>featureKey 1 2 FEATURE_KEY_BLIND_TRANSFER</b>. </p>
+  <p>If the transfer does not complete, the original call instance will remain on hold. This will need to be restored manually. </p>
+  <h4>Example - To Transfer to Extension 9175</h4>
+  <p><span>VoIPControlStatus1 featureKey 1 1 FEATURE_KEY_BLIND_TRANSFER</span></p>
+  <p>+OK</p>
+  <p>VoIPControlStatus1 dial 1 2 9175<br/>
+    +OK</p>
+  <p>VoIPControlStatus1 featureKey 1 2 FEATURE_KEY_BLIND_TRANSFER<br/>
+    +OK</p>
+  <p>  </p>
+  <h3>Consultative Transfer</h3>
+  <p>The function:<span> </span><b>featureKey 1 1 FEATURE_KEY_CONSULTATIVE_TRANSFER<span><span> </span>opens</span></b><span> </span>a new call appearance and allows the number to be transferred to be entered. The process operates the same as off-hook dialing.</p>
+  <p>Once the transfer target answers the call, a manual confirmation of the transfer must be specified. To confirm the transfer, the feature key function with the new line instance is specified by<span> </span><b>featureKey 1 2 FEATURE_KEY_CONSULTATIVE_TRANSFER</b>. </p>
+  <h4>Example - To Transfer to Extension 9175</h4>
+  <p>VoIPControlStatus1 featureKey 1 1 FEATURE_KEY_CONSULTATIVE_TRANSFER<br/>
+    +OK</p>
+  <p>VoIPControlStatus1 dial 1 2 9175<br/>
+    +OK</p>
+  <p>VoIPControlStatus1 featureKey 1 2 FEATURE_KEY_CONSULTATIVE_TRANSFER<br/>
+    +OK</p>
+  <p><span>For a consultative transfer, the function featureKey (1, 1, FEATURE_KEY_CONSULTATIVE_TRANSFER) can be used to initiate a new call appearance. The number will be required to be inputted. This process looks like off-hook dialing. The original call is on hold and a new call is placed. Once the transfer target answers the call and would like to accept the transferred call, this function must be called again to complete the call transfer. In case of the failure, the original call is on hold and the call will be required to be restored manually.</span></p>
+  <p>  </p>
+  <p>  </p>
+  <p>  </p>
+
+</div>
+  <div>
+    <p></p>
+  </div>
+
+</body></html>

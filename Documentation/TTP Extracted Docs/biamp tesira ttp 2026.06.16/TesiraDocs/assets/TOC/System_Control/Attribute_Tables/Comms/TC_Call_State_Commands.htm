@@ -1,0 +1,354 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml"><head>
+
+
+  <meta name="gRootRelPath" content="../../../../.."/>
+	<meta name="gCommonRootRelPath" content="../../../../.."/>
+  <meta name="gTopicId" content="4.2.4.0_10"/>
+  <script type="text/javascript" src="../../../../../template/scripts/rh.min.js"></script>
+  <script type="text/javascript" src="../../../../../template/scripts/common.min.js"></script>
+  <script type="text/javascript" src="../../../../../template/scripts/topic.min.js"></script>
+  <script type="text/javascript" src="../../../../../template/scripts/topicwidgets.min.js"></script>
+<script type="text/javascript" src="../../../../../whxdata/projectsettings.js"></script>
+  <link rel="stylesheet" type="text/css" href="../../../../../template/styles/topic.min.css"/>
+  <link rel="stylesheet" type="text/css" href="../../../../../template/Biamp_Grey_&amp;_Blue/topicheader.css"/>
+  <meta name="topic-status" content="Draft"/>
+<link rel="stylesheet" type="text/css" href="../../../../css/Tesira_Help.css"/>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+  <meta name="generator" content="Adobe RoboHelp 2022"/>
+  <title>TC Call State Commands</title>
+  <meta name="topic-status" content="Draft"/>
+  <meta name="template" content="../../../../layouts/TTP_Attributes.htt"/>
+  <link rel="stylesheet" type="text/css" href="../../../../css/Tesira_Help.css"/>
+
+<!--[if gte mso 9]><xml>
+<mso:CustomDocumentProperties>
+<mso:_dlc_DocId msdt:dt="string">AP256XAP2PFD-163404756-75362</mso:_dlc_DocId>
+<mso:_dlc_DocIdItemGuid msdt:dt="string">c9eb55a2-7dc2-4adb-90d7-ed8a5a06ed93</mso:_dlc_DocIdItemGuid>
+<mso:_dlc_DocIdUrl msdt:dt="string">https://biamp.sharepoint.com/customerexperience/documentation/TPubsHub/DocDev/_layouts/15/DocIdRedir.aspx?ID=AP256XAP2PFD-163404756-75362, AP256XAP2PFD-163404756-75362</mso:_dlc_DocIdUrl>
+</mso:CustomDocumentProperties>
+</xml><![endif]-->
+</head>
+
+<body>
+  <div class="topic-header rh-hide" id="rh-topic-header">
+    <div class="logo">
+    </div>
+    <div class="nav">
+      <div class="title" title="Tesira Software Help">
+        <span>Tesira Software Help</span>
+      </div>
+      <div class="gotohome" title="Click here to see this page in full context">
+        <a href="#" onclick="rh._.goToFullLayout()">Click here to see this page in full context</a>
+      </div>
+    </div>
+  </div>
+  <div class="topic-header-shadow rh-hide" id="rh-topic-header-shadow"></div>
+
+
+
+  <div>
+    <p></p>
+    <table border="1" cellpadding="1" cellspacing="1" class="TTP" style="background-color: rgb(255, 255, 255); font-family: &quot;Segoe UI&quot;; font-size: 14px; border-collapse: collapse; width: 100%;">
+      <colgroup>
+        <col style="width:50%"/>
+        <col style="width:50%"/>
+      </colgroup>
+    </table>
+    <h4>TTP Attribute Table | <span style="font-style:italic;">Generate command strings with: <a href="https://support.biamp.com/Tesira/Control/Tesira_command_string_calculator">Tesira Command String Calculator</a></span></h4>
+  </div>
+  <p></p>
+  <div>
+  <h1><span data-field="title" data-format="default">TC Call State Commands</span></h1>
+  <p><span>The analog Control Status Block supports the use of Call State monitoring in order to poll information about the current call state of the telephone card. The response will include multiple information fields for the line. Call State is also available as a subscribed service to allow unsolicited feedback to a connected control system via TTP. A full call state subscription update will be sent if any single part of the call state has changed.  </span></p>
+  <p>  </p>
+  <p>  </p>
+  <h2>Definitions</h2>
+  <h3>Line</h3>
+  <p><span>A single extension on the STC-2 card. A line will have a dedicated phone number and the voice signals for this line are available as an independent input and output in the Tesira system. Each STC-2 card supports two lines and these lines may be used at the same time.  </span></p>
+  <p></p>
+  <h3>Call Appearance</h3>
+  <p><span>A call appearance can be viewed as a voice connection point on a line. Each line supports a single call appearance. The call appearance will always indicate a 0 in the Tesira STC card.  Note that this does not mean that the card does not support call waiting or line conferencing, it simply means that this would be a function of the phone system.  </span></p>
+  <p>  </p>
+  <h3>Call State Requests</h3>
+  <p><span>Get the status of the Call State: </span></p>
+  <table border="1" cellpadding="1" cellspacing="1" class="TTP" style="border-collapse: collapse; width: 804px;">
+    <thead>
+      <tr>
+        <th>Instance Tag</th>
+        <th>Command</th>
+        <th>Attribute Code</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>TIControlStatus1</td>
+        <td>get</td>
+        <td>callState</td>
+      </tr>
+    </tbody>
+  </table>
+  <p>This command will give a onetime indication of the current state of the analog phone. </p>
+  <p>The Instance Tag field is variable and needs to match what is running in the current configuration.  </p>
+  <p>  </p>
+  <p>  </p>
+  <h2>Subscriptions</h2>
+  <h3>Subscribe to a Call State</h3>
+  <p>This command will set a subscription to a VoIP card’s current state. Review <a href="../../Tesira_Text_Protocol/TTP_Subscriptions.htm">TTP<span> S</span>ubscriptions</a> for additional details. If any portion of the card’s call state changes, a subscription response will be provided indicating the current status of all call states. </p>
+  <p><span>The response of the subscription depends on the<span> </span></span><a href="../Service_Addresses/Session.htm">Session</a> verbose<span><span> </span>State that was active at the time the subscription was setup.<span> </span></span></p>
+  <table border="1" cellpadding="1" cellspacing="1" class="TTP" style="border-collapse:collapse; width:100%">
+    <thead>
+      <tr>
+        <th>Instance Tag</th>
+        <th>Command</th>
+        <th>Attribute Code</th>
+        <th>Index</th>
+        <th>Value</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>TIControlStatus1</td>
+        <td>subscribe</td>
+        <td>callState</td>
+        <td>[CustomLabel]</td>
+        <td>[Time(ms)]</td>
+      </tr>
+    </tbody>
+  </table>
+  <p><span>Index</span><span> </span>can be used to assign a custom label to the subscription. This label is not required but is recommended, especially if there is more than one STC-2 card in the system. The label would indicate to the control system which card is providing the state change. Instance Tags are not included in call state subscriptions responses. </p>
+  <p><span>Value</span><span> </span>can be used to throttle the rate of response to the control system. Since a call state subscription update is only provided after a state change there should be no need to place a value in this field. Placing a value, especially if it is too high, could introduce a missed update effectively getting the STC card and the control system out of sync. By default the call state subscription has a 200ms delay, this ensures that the as many changed states as possible are included in a single call state response.  </p>
+  <p>Subscriptions are lost when the Tesira server is rebooted. Subscriptions can be re-validated by subscribing to the same block at regular intervals. If this is done ensure that the custom label used in<span> </span><span>Index</span><span> </span>is used in the re-subscription. If this label is not included it is possible to inadvertently open multiple subscriptions to the same call state. </p>
+  <p>  </p>
+  <h3>Unsubscribing from a Call State</h3>
+  <p><span>Use this command will cancel a previously set subscription. </span></p>
+  <table border="1" cellpadding="1" cellspacing="1" class="TTP" style="border-collapse:collapse; width:100%">
+    <colgroup>
+      <col/>
+      <col/>
+      <col/>
+      <col/>
+    </colgroup>
+    <thead>
+      <tr>
+        <th>Instance Tag</th>
+        <th>Command</th>
+        <th>Attribute Code</th>
+        <th>Index</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>
+          <p>TIControlStatus1</p>
+        </td>
+        <td>
+          <p>unsubscribe</p>
+        </td>
+        <td>
+          <p>callState</p>
+        </td>
+        <td>
+          <p>[CustomLabel]</p>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+  <p>  </p>
+  <p>  </p>
+  <h2>Call State Indication Fields</h2>
+  <p>A Call State response will provide information for the requested STC-2 card line.  Every Call State response will include the following information fields.  </p>
+  <h3>State</h3>
+  <p>The State response gives the current operating conditions of the call on the analog line.   </p>
+  <ul class="Disc">
+    <li>The verbose indicator for the State field is: “state” </li>
+    <li>Non-Verbose indicator responses will be numeric and are shown below.<span> </span> </li>
+  </ul>
+  <table border="1" cellpadding="1" cellspacing="1" class="TTP" style="border-collapse: collapse; width: 804px;">
+    <thead>
+      <tr>
+        <th>Verbose</th>
+        <th>Non-Verbose</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>TI_CALL_STATE_IDLE</td>
+        <td>1</td>
+        <td>The analog line is on hook and ready to make a call</td>
+      </tr>
+      <tr>
+        <td>TI_CALL_STATE_DIALING</td>
+        <td>2</td>
+        <td>A number has been entered in the STC card and it is currently dialing</td>
+      </tr>
+      <tr>
+        <td>TI_CALL_STATE_RINGBACK</td>
+        <td>3</td>
+        <td>The far end is ringing</td>
+      </tr>
+      <tr>
+        <td>TI_CALL_STATE_BUSY_TONE</td>
+        <td>4</td>
+        <td>The far end has presented a busy indication</td>
+      </tr>
+      <tr>
+        <td>TI_CALL_STATE_ERROR_TONE</td>
+        <td>5</td>
+        <td>The STC card has received an error tone on the line</td>
+      </tr>
+      <tr>
+        <td>TI_CALL_STATE_CONNECTED</td>
+        <td>6</td>
+        <td>The call to the far end has been connected</td>
+      </tr>
+      <tr>
+        <td>TI_CALL_STATE_RINGING</td>
+        <td>7</td>
+        <td>A STC card has detected an incoming call</td>
+      </tr>
+      <tr>
+        <td>TI_CALL_STATE_DROPPED</td>
+        <td>8</td>
+        <td>The far end has hung up the call</td>
+      </tr>
+      <tr>
+        <td>TI_CALL_STATE_INIT</td>
+        <td>12</td>
+        <td>The card is booting</td>
+      </tr>
+      <tr>
+        <td>TI_CALL_STATE_FAULT</td>
+        <td>13</td>
+        <td>A fault has been detected on the phone line (reference the prompt field for more information)</td>
+      </tr>
+      <tr>
+        <td>TI_CALL_STATE_CONNECTED_MUTED</td>
+        <td>14</td>
+        <td>A call has been connected but the SVC receive block mute has been engaged</td>
+      </tr>
+    </tbody>
+  </table>
+  <p>  </p>
+  <h3>Line ID</h3>
+  <p>Each STC-2 card supports two phone lines. A line is indicated as a unique extension on the analog system. The Line ID field indicates which line of the card the particular Call State response is located for.  </p>
+  <ul>
+    <li>A Call State response is only valid for a single line; the line of the Control Status block that the request was sent to. </li>
+    <li>The first line is indicated as Line ID 0 and the second line is Line ID 1. </li>
+    <li>The verbose indicator for Line ID is: “lineId” (<span style="font-weight:bold;">Note</span>: the upper case “I” in this indicator) </li>
+  </ul>
+  <p>  </p>
+  <h3>Call ID</h3>
+  <p>Unlike the Tesira SVC-2 (VoIP) card, each line of the STC-2 card only supports a single call appearance. A call appearance is defined as a separate phone connection point of a single phone extension. The Call ID field indicates which call appearance the particular Call State response is reporting. This will vary in the SVC-2 card but the STC-2 card will always report 0. Although the information contained in this Call State response field may not be pertinent to the STC operation, it has been left in so the same control system parser can be used for both types of telephony cards.  </p>
+  <p>The verbose indicator for Call ID is: “callId”. (<span style="font-weight:bold;">Note</span>: the upper case “I” in this indicator) </p>
+  <p>  </p>
+  <h3>Action</h3>
+  <p>The Action field of the Call State response is a function of the Tesira SVC-2 (VoIP) interface.  Although the information contained in this Call State response field may not be pertinent to the STC operation, it has been left in so the same control system parser can be used for both types of telephony cards.  </p>
+  <p>The information provided in this field for the STC card will<span> </span><span>always</span><span> </span>be: </p>
+  <table border="1" cellpadding="1" cellspacing="1" class="TTP" style="border-collapse: collapse; width: 804px;">
+    <thead>
+      <tr>
+        <th>Verbose</th>
+        <th>Non-Verbose</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>UI_DISPLAY_STATUS</td>
+        <td>1</td>
+        <td>Call State response</td>
+      </tr>
+    </tbody>
+  </table>
+  <p>The verbose indicator for Action is: “action” </p>
+  <p>  </p>
+  <h3>Caller ID</h3>
+  <p><span>If caller ID information is available it will be included in the Call State response.  </span></p>
+  <h4>Format</h4>
+  <p><span>&quot;\&quot;MMDDHHmm\&quot;\&quot;incoming_number\&quot;\&quot;caller_Name\&quot;&quot; </span></p>
+  <ul>
+    <li>If no caller ID is available the Call State response for this field will be &quot;&quot; </li>
+    <li>The first set of quotes contains the date and time in the format MMDDHHmm. </li>
+    <li>The second set of quotes represents the incoming phone number in the format 5036417287. </li>
+    <li>The third set of quotes contains the name of the caller. If there are quotes contained within the name, there will be a backslash preceding the quotes within the name, i.e. “John \&quot;Johnny\&quot; Doe&quot; </li>
+    <li>A Backslash ( \ ) is used as a separator in the caller ID string </li>
+    <li>
+      <p>The verbose indicator for Caller ID is: “cid” </p>
+    </li>
+  </ul>
+  <h4>Example - C<span>aller ID Response with all Information Provided</span></h4>
+  <p><span>&quot;\&quot;07131134\&quot;\&quot;15036260281\&quot;\&quot;Biamp Systems\&quot;&quot; </span></p>
+  <h4>Example - C<span>aller ID Response without all Information Provided</span></h4>
+  <p><span>&quot;\&quot;07131134\&quot;\&quot;15036260281\&quot;\&quot;\&quot;&quot; </span></p>
+  <p>  </p>
+  <h3>Prompt</h3>
+  <p>The function of the prompt field in the STC Call State response is to provide further information on fault states detected on the analog line.  </p>
+  <p>The verbose indicator for Prompt is: “prompt” </p>
+  <table border="1" cellpadding="1" cellspacing="1" class="TTP" style="border-collapse: collapse; width: 804px;">
+    <thead>
+      <tr>
+        <th>Verbose</th>
+        <th>Non-Verbose</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>FAULT_NONE</td>
+        <td>1</td>
+        <td>No line fault has been detected</td>
+      </tr>
+      <tr>
+        <td>FAULT_OVERCURRENT</td>
+        <td>2</td>
+        <td>STC-2 card has detected excessive current on the phone line. *</td>
+      </tr>
+      <tr>
+        <td>FAULT_UNDERVOLTAGE</td>
+        <td>3</td>
+        <td>STC-2 card has detected a low voltage condition on the phone line. * <span> </span></td>
+      </tr>
+      <tr>
+        <td>FAULT_UNDERCURRENT</td>
+        <td>4</td>
+        <td> STC-2 card has detected a low current condition on the phone line. * </td>
+      </tr>
+      <tr>
+        <td>FAULT_OVERVOLTAGE</td>
+        <td>5</td>
+        <td>STC-2 card has detected excessive voltage on the phone line. * </td>
+      </tr>
+      <tr>
+        <td>FAULT_POLARITY_REVERSAL</td>
+        <td>6</td>
+        <td>The + &amp; - legs of the analog telephone line are reversed</td>
+      </tr>
+    </tbody>
+  </table>
+  <p>* <span style="font-weight:bold;">Note</span>: <span>The trigger point of a voltage fault is dependent on the Country of Origin settings defined in Tesira software. </span></p>
+  <p>  </p>
+  <h3>Syntax of the Call State Response</h3>
+  <p>Call State response information order: </p>
+  <p>The Call State response will present the information listed above for each line and call appearance of the STC card. If a subscription to a Call State response is setup, the subscription will update if a change is detected in any of the information fields. Call State is available in both verbose and non-verbose responses. Below is an example of the order of information in a Call State response.  </p>
+  <p>HEADER_TOKEN:[{STATE: LINE_ID: CALL_ID: ACTION: CALLER_ID: PROMPT}] </p>
+  <p>  </p>
+  <h3>Call State Full Command Examples</h3>
+  <p>In the following examples a Call State response will be given in both verbose and non-verbose formats. This information is intended to show a clear example of the expected response order. </p>
+  <p>All subscription responses will start with the “!” character for easy recognition. The response will also include token information in the form of the custom label associated with the subscription. Custom labels are defined in the<span> </span><span>Index</span><span> </span>of the Call State command when the subscription is setup.  </p>
+  <p>In the following examples custom label was defines as “Room_1”. The call in each example shows the call state immediately after a call has been placed on line 0. </p>
+  <h4>Verbose Format</h4>
+  <p><span>! &quot;publishToken&quot;:&quot; Room 1&quot; &quot;value&quot;:{&quot;callStateInfo&quot;:[{&quot;state&quot;:TI_CALL_STATE_DIALING &quot;lineId&quot;:0 &quot;callId&quot;:0 &quot;action&quot;:UI_DISPLAY_STATUS &quot;cid&quot;:&quot;\&quot;07131038\&quot;\&quot;146\&quot;\&quot;\&quot;&quot; &quot;prompt&quot;:FAULT_NONE} ]} </span></p>
+  <h4>Non-Verbose Format</h4>
+  <p><span>! &quot;Room_1&quot; [[[2 0 0 2 &quot;\&quot;07131038\&quot;\&quot;146\&quot;\&quot;\&quot;&quot; 1]]] </span></p>
+  <p>  </p>
+  <p>  </p>
+
+</div>
+  <div>
+    <p></p>
+  </div>
+
+</body></html>

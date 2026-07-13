@@ -3,14 +3,14 @@
 		<ProjectType>ProgramLibrary</ProjectType>
 	</PropertyGroup>
 	<PropertyGroup>
-		<TargetFramework>net472</TargetFramework>
+		<TargetFramework>net8</TargetFramework>
 		<RootNamespace>Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira</RootNamespace>
 		<Deterministic>false</Deterministic>
 		<AssemblyTitle>Pepperdash.Essentials.Plugins.Dsp.Biamp.Tesira</AssemblyTitle>
     <Product>Pepperdash.Essentials.Plugins.Dsp.Biamp.Tesira</Product>
 		<Company>PepperDash Technologies</Company>
 		<Description>This software is a plugin designed to work as a part of PepperDash Essentials for Crestron control processors. This plugin allows for control of Biamp Tesira DSPs.</Description>
-		<Copyright>Copyright 2024</Copyright>
+		<Copyright>Copyright 2026</Copyright>
 		<Version>1.0.0-local</Version>
 		<GenerateAssemblyInfo>true</GenerateAssemblyInfo>
 		<InformationalVersion>$(Version)</InformationalVersion>
@@ -18,15 +18,7 @@
 		<Authors>PepperDash Technologies</Authors>
 		<PackageId>Pepperdash.Essentials.Plugins.Dsp.Biamp.Tesira</PackageId>
 		<PackageProjectUrl>https://github.com/PepperDash/epi-biamp-tesira.git</PackageProjectUrl>
-		<PackageTags>crestron 4series biamp tesira</PackageTags>		
-	</PropertyGroup>
-
-	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
-		<DefineConstants>$(DefineConstants);SERIES4</DefineConstants>
-	</PropertyGroup>
-
-	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
-		<DefineConstants>$(DefineConstants);SERIES4</DefineConstants>
+		<PackageTags>crestron 4series net8 biamp tesira</PackageTags>		
 	</PropertyGroup>
 
 	<ItemGroup>
@@ -40,7 +32,7 @@
 	</ItemGroup>
 
 	<ItemGroup>
-		<PackageReference Include="PepperDashEssentials" Version="2.17.0">
+		<PackageReference Include="PepperDashEssentials" Version="3.0.0-dev-v3-routing.21">
 			<ExcludeAssets>runtime</ExcludeAssets>
 		</PackageReference>	</ItemGroup>
 </Project>
