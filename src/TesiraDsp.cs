@@ -1187,10 +1187,17 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
         /// </remarks>
         public void SavePreset(string presetKey)
         {
-            var preset = Presets[presetKey] as TesiraPreset;
-            if (preset == null)
+            IKeyName presetObj;
+            if (!Presets.TryGetValue(presetKey, out presetObj))
             {
                 this.LogVerbose("SavePreset - no preset found for key '{presetKey}'", presetKey);
+                return;
+            }
+
+            var preset = presetObj as TesiraPreset;
+            if (preset == null)
+            {
+                this.LogVerbose("SavePreset - preset for key '{presetKey}' was unexpected type '{presetType}'", presetKey, presetObj.GetType().Name);
                 return;
             }
 
