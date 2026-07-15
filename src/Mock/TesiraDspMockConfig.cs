@@ -31,17 +31,18 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Mock
         /// convention so consumers already wired for the real device can point at the mock
         /// by changing only the parent <c>type</c>.
         /// </summary>
-        [JsonProperty("faders")]
-        public Dictionary<string, TesiraDspMockFaderConfig> Faders { get; set; }
+        [JsonProperty("faderControlBlocks")]
+        public Dictionary<string, TesiraDspMockFaderConfig> FaderControlBlocks { get; set; }
             = new Dictionary<string, TesiraDspMockFaderConfig>();
 
         /// <summary>
-        /// Optional source-selector — becomes a child device implementing
-        /// <see cref="PepperDash.Essentials.Core.DeviceTypeInterfaces.IHasInputs{T}"/> with
-        /// key <c>{parentKey}--{sourceSelectorKey}</c> (default: <c>source-selector</c>).
+        /// Optional source-selector blocks — each becomes a child device implementing
+        /// <see cref="PepperDash.Essentials.Core.DeviceTypeInterfaces.IHasInputs{T}"/>.
+        /// Keyed by block key; child device registered as <c>{parentKey}--{blockKey}</c>
+        /// to match the Tesira EPI <c>switcherControlBlocks</c> naming convention.
         /// </summary>
-        [JsonProperty("sourceSelector")]
-        public TesiraDspMockSourceSelectorConfig SourceSelector { get; set; }
+        [JsonProperty("switcherControlBlocks")]
+        public Dictionary<string, TesiraDspMockSourceSelectorConfig> SwitcherControlBlocks { get; set; }
     }
 
     /// <summary>Preset entry (label only — mock does not hit hardware).</summary>
@@ -71,13 +72,6 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Mock
     {
         [JsonProperty("label")]
         public string Label { get; set; }
-
-        /// <summary>
-        /// Child key appended to the parent for DeviceManager registration.
-        /// Defaults to <c>source-selector</c>.
-        /// </summary>
-        [JsonProperty("key")]
-        public string Key { get; set; } = "source-selector";
 
         /// <summary>Initial selection (key into <see cref="Sources"/>). Optional.</summary>
         [JsonProperty("initialSource")]

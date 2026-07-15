@@ -24,19 +24,20 @@
                         "preset2": { "label": "Preset 2" },
                         "preset3": { "label": "Preset 3" }
                     },
-                    "faders": {
+                    "faderControlBlocks": {
                         "fader1": { "label": "Fader 1", "initialLevelPercent": 50, "initialMute": false },
                         "fader2": { "label": "Fader 2", "initialLevelPercent": 25, "initialMute": true },
                         "fader3": { "label": "Fader 3", "initialLevelPercent": 75, "initialMute": false }
                     },
-                    "sourceSelector": {
-                        "key": "source-selector",
-                        "label": "Source Selector 1",
-                        "initialSource": "source1",
-                        "sources": {
-                            "source1": { "label": "Source 1" },
-                            "source2": { "label": "Source 2" },
-                            "source3": { "label": "Source 3" }
+                    "switcherControlBlocks": {
+                        "src-selector": {
+                            "label": "Source Selector 1",
+                            "initialSource": "source1",
+                            "sources": {
+                                "source1": { "label": "Source 1" },
+                                "source2": { "label": "Source 2" },
+                                "source3": { "label": "Source 3" }
+                            }
                         }
                     }
                 }
