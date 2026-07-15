@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using Crestron.SimplSharp;
 using PepperDash.Core;
 using PepperDash.Core.Logging;
 using PepperDash.Essentials.Core;
@@ -49,6 +50,11 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Mock
         public Dictionary<string, IKeyName> Presets { get; }
             = new Dictionary<string, IKeyName>();
 
+        // Child faders tracked so CustomActivate() can schedule periodic feedback re-fires.
+        private readonly List<TesiraDspMockFader> _faders = new List<TesiraDspMockFader>();
+        // Held to prevent GC of the repeating timer.
+        private CTimer _feedbackRefreshTimer;
+
         public TesiraDspMock(DeviceConfig dc) : base(dc.Key, dc.Name)
         {
             var props = dc.Properties?.ToObject<TesiraDspMockPropertiesConfig>()
@@ -92,6 +98,26 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Mock
 
         // ── Setup helpers ────────────────────────────────────────────────────
 
+        public override bool CustomActivate()
+        {
+            // Re-fire all fader feedbacks on a 5-second period. This recovers from the
+            // Essentials DirectServer "new flow" race condition (Essentials 2.38.0) where
+            // PostInitialState() fires before the WebSocket transport is assigned to the
+            // UiClient. Unlike a hardware-connected DSP (which re-triggers feedbacks via
+            // subscription responses), the mock has no background polling, so this timer
+            // is the mechanism that pushes state to connecting clients after the race window.
+            _feedbackRefreshTimer = new CTimer(_ =>
+            {
+                foreach (var fader in _faders)
+                {
+                    fader.VolumeLevelFeedback.FireUpdate();
+                    fader.MuteFeedback.FireUpdate();
+                }
+            }, null, 5000, 5000);
+
+            return base.CustomActivate();
+        }
+
         private void RegisterFaders(Dictionary<string, TesiraDspMockFaderConfig> faderConfigs)
         {
             if (faderConfigs == null) return;
@@ -106,6 +132,7 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Mock
                     kvp.Value?.InitialMute ?? false);
 
                 DeviceManager.AddDevice(fader);
+                _faders.Add(fader);
             }
         }
 
@@ -119,9 +146,10 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Mock
                 var name = string.IsNullOrEmpty(cfg?.Label) ? kvp.Key : cfg.Label;
 
                 var labels = new Dictionary<string, string>();
-                if (cfg?.Sources != null)
+                var sources = cfg?.EffectiveSources;
+                if (sources != null)
                 {
-                    foreach (var s in cfg.Sources)
+                    foreach (var s in sources)
                         labels[s.Key] = string.IsNullOrEmpty(s.Value?.Label) ? s.Key : s.Value.Label;
                 }
 

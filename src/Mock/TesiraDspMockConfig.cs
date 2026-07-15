@@ -73,13 +73,29 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Mock
         [JsonProperty("label")]
         public string Label { get; set; }
 
-        /// <summary>Initial selection (key into <see cref="Sources"/>). Optional.</summary>
+        /// <summary>Initial selection (key into <see cref="EffectiveSources"/>). Optional.</summary>
         [JsonProperty("initialSource")]
         public string InitialSource { get; set; }
 
+        /// <summary>Mock-format source list.</summary>
         [JsonProperty("sources")]
         public Dictionary<string, TesiraDspMockSourceConfig> Sources { get; set; }
-            = new Dictionary<string, TesiraDspMockSourceConfig>();
+
+        /// <summary>
+        /// Real Tesira-format input list, deserialized from <c>switcherInputs</c>.
+        /// Used as a fallback when <see cref="Sources"/> is absent, making the mock
+        /// drop-in compatible with real Tesira EPI configs without any config edits.
+        /// </summary>
+        [JsonProperty("switcherInputs")]
+        public Dictionary<string, TesiraDspMockSourceConfig> SwitcherInputs { get; set; }
+
+        /// <summary>
+        /// Resolved source list — <see cref="Sources"/> if present and non-empty,
+        /// otherwise <see cref="SwitcherInputs"/>.
+        /// </summary>
+        [JsonIgnore]
+        public Dictionary<string, TesiraDspMockSourceConfig> EffectiveSources =>
+            Sources?.Count > 0 ? Sources : SwitcherInputs;
     }
 
     /// <summary>Source entry (label only).</summary>
