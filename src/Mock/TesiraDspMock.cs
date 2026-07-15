@@ -100,12 +100,12 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Mock
 
         public override bool CustomActivate()
         {
-            // Re-fire all fader feedbacks on a 5-second period. This recovers from the
-            // Essentials DirectServer "new flow" race condition (Essentials 2.38.0) where
-            // PostInitialState() fires before the WebSocket transport is assigned to the
-            // UiClient. Unlike a hardware-connected DSP (which re-triggers feedbacks via
-            // subscription responses), the mock has no background polling, so this timer
-            // is the mechanism that pushes state to connecting clients after the race window.
+            // Re-fire all fader feedbacks every 2 seconds.
+            // Recovers from Essentials DirectServer race condition where PostInitialState()
+            // fires before the WebSocket transport is assigned on the new-flow client connect.
+            // On RMC4 bench setups with empty serverCertificateFile, TLS cert generation can
+            // take ~5s, keeping the WebSocket null for that entire window. A 2s period ensures
+            // state reaches the frontend within 2s of the cert completing and WS being assigned.
             _feedbackRefreshTimer = new CTimer(_ =>
             {
                 foreach (var fader in _faders)
@@ -113,7 +113,7 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Mock
                     fader.VolumeLevelFeedback.FireUpdate();
                     fader.MuteFeedback.FireUpdate();
                 }
-            }, null, 5000, 5000);
+            }, null, 2000, 2000);
 
             return base.CustomActivate();
         }
