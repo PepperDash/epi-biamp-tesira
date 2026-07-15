@@ -1053,7 +1053,7 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
                 }
 
                 // TODO: Verify Tesira TTP save echo verb on hardware — assumed symmetric with recall.
-                if (args.Text.IndexOf("DEVICE savePresetByName", StringComparison.Ordinal) == 0)
+                if (args.Text.IndexOf("DEVICE savePreset", StringComparison.Ordinal) == 0)
                 {
                     CommandQueue.HandleResponse(args.Text);
                     return;
