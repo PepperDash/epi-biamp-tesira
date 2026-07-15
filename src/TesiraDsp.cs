@@ -1177,7 +1177,7 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
 
         /// <summary>
         /// Saves the current DSP state to the preset identified by <paramref name="presetKey"/>.
-        /// Implements <see cref="IHasDspPresetSave.SavePresetByKey"/>.
+        /// Implements <see cref="IHasDspPresetSave.SavePreset"/>.
         /// </summary>
         /// <remarks>
         /// TODO: Verify Tesira TTP save command verbs on hardware before releasing.
@@ -1185,12 +1185,12 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
         ///   DEVICE recallPresetByName "{name}" → DEVICE savePresetByName "{name}"
         ///   DEVICE recallPreset {id}           → DEVICE savePreset {id}
         /// </remarks>
-        public void SavePresetByKey(string presetKey)
+        public void SavePreset(string presetKey)
         {
             var preset = Presets[presetKey] as TesiraPreset;
             if (preset == null)
             {
-                this.LogVerbose("SavePresetByKey - no preset found for key '{presetKey}'", presetKey);
+                this.LogVerbose("SavePreset - no preset found for key '{presetKey}'", presetKey);
                 return;
             }
 
@@ -1204,7 +1204,7 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
             {
                 if (preset.PresetId == 0)
                 {
-                    this.LogVerbose("SavePresetByKey - preset '{presetName}' has invalid presetId {presetId}", preset.PresetName, preset.PresetId);
+                    this.LogVerbose("SavePreset - preset '{presetName}' has invalid presetId {presetId}", preset.PresetName, preset.PresetId);
                     return;
                 }
                 CommandQueue.EnqueueCommand($"DEVICE savePreset {preset.PresetId}", priority: (int)CommandPriority.Normal);

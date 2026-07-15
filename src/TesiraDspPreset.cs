@@ -118,9 +118,9 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
         }
 
         /// <inheritdoc />
-        public void SavePresetByKey(string presetKey)
+        public void SavePreset(string presetKey)
         {
-            Parent.SavePresetByKey(presetKey);
+            Parent.SavePreset(presetKey);
         }
 
         #endregion
