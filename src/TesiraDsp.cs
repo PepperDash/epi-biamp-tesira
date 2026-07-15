@@ -24,7 +24,7 @@ using IRoutingWithFeedback = Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Inte
 namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
 {
     public class TesiraDsp : EssentialsBridgeableDevice,
-        IDspPresets,
+        IHasDspPresetSave, // extends IDspPresets (RecallPreset + Presets dict implicitly satisfied)
         ICommunicationMonitor,
         IDeviceInfoProvider,
         IHasFeedback
@@ -1052,6 +1052,13 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
                     return;
                 }
 
+                // TODO: Verify Tesira TTP save echo verb on hardware — assumed symmetric with recall.
+                if (args.Text.IndexOf("DEVICE savePreset", StringComparison.Ordinal) == 0)
+                {
+                    CommandQueue.HandleResponse(args.Text);
+                    return;
+                }
+
                 if (args.Text.IndexOf("-ERR", StringComparison.Ordinal) >= 0)
                 {
                     CommandQueue.HandleResponse(args.Text);
@@ -1165,6 +1172,49 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
                     return;
                 }
                 RunPreset(preset.PresetId);
+            }
+        }
+
+        /// <summary>
+        /// Saves the current DSP state to the preset identified by <paramref name="presetKey"/>.
+        /// Implements <see cref="IHasDspPresetSave.SavePreset"/>.
+        /// </summary>
+        /// <remarks>
+        /// TODO: Verify Tesira TTP save command verbs on hardware before releasing.
+        /// Assumed by symmetry with recall:
+        ///   DEVICE recallPresetByName "{name}" → DEVICE savePresetByName "{name}"
+        ///   DEVICE recallPreset {id}           → DEVICE savePreset {id}
+        /// </remarks>
+        public void SavePreset(string presetKey)
+        {
+            IKeyName presetObj;
+            if (!Presets.TryGetValue(presetKey, out presetObj))
+            {
+                this.LogVerbose("SavePreset - no preset found for key '{presetKey}'", presetKey);
+                return;
+            }
+
+            var preset = presetObj as TesiraPreset;
+            if (preset == null)
+            {
+                this.LogVerbose("SavePreset - preset for key '{presetKey}' was unexpected type '{presetType}'", presetKey, presetObj.GetType().Name);
+                return;
+            }
+
+            this.LogVerbose("Saving preset '{presetName}' | presetId {presetId}", preset.PresetName, preset.PresetId);
+
+            if (!string.IsNullOrEmpty(preset.PresetName))
+            {
+                CommandQueue.EnqueueCommand($"DEVICE savePresetByName \"{preset.PresetName}\"", priority: (int)CommandPriority.Normal);
+            }
+            else
+            {
+                if (preset.PresetId == 0)
+                {
+                    this.LogVerbose("SavePreset - preset '{presetName}' has invalid presetId {presetId}", preset.PresetName, preset.PresetId);
+                    return;
+                }
+                CommandQueue.EnqueueCommand($"DEVICE savePreset {preset.PresetId}", priority: (int)CommandPriority.Normal);
             }
         }
 
