@@ -46,7 +46,7 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Mock
         {
             if (_volumeLevel == level) return;
             _volumeLevel = level;
-            this.LogVerbose("SetVolume: {level}", level);
+            this.LogDebug("SetVolume: {level}", level);
             VolumeLevelFeedback.FireUpdate();
         }
 
@@ -68,7 +68,7 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Mock
         {
             if (_isMuted) return;
             _isMuted = true;
-            this.LogVerbose("MuteOn");
+            this.LogDebug("MuteOn");
             MuteFeedback.FireUpdate();
         }
 
@@ -76,7 +76,7 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Mock
         {
             if (!_isMuted) return;
             _isMuted = false;
-            this.LogVerbose("MuteOff");
+            this.LogDebug("MuteOff");
             MuteFeedback.FireUpdate();
         }
 
