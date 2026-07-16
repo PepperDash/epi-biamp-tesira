@@ -42,7 +42,7 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Mock
     /// Intended for bench-testing frontend/backend round-trips when no physical DSP
     /// is available. Not for production use.
     /// </remarks>
-    public class TesiraDspMock : EssentialsDevice, IHasDspPresetSave
+    public class TesiraDspMock : EssentialsDevice, IHasDspPresetSave, ICommunicationMonitor
     {
         private const string ChildKeyFormat = "{0}--{1}";
 
@@ -50,8 +50,13 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Mock
         public Dictionary<string, IKeyName> Presets { get; }
             = new Dictionary<string, IKeyName>();
 
+        // ICommunicationMonitor — always-online since the mock has no real hardware.
+        public StatusMonitorBase CommunicationMonitor { get; private set; }
+
         // Child faders tracked so CustomActivate() can schedule periodic feedback re-fires.
         private readonly List<TesiraDspMockFader> _faders = new List<TesiraDspMockFader>();
+        // Child source selectors tracked alongside faders for periodic state re-fire.
+        private readonly List<TesiraDspMockSourceSelector> _selectors = new List<TesiraDspMockSourceSelector>();
         // Held to prevent GC of the repeating timer.
         private CTimer _feedbackRefreshTimer;
 
@@ -63,6 +68,8 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Mock
             RegisterFaders(props.FaderControlBlocks);
             RegisterSwitcherControlBlocks(props.SwitcherControlBlocks);
             PopulatePresets(props.Presets);
+
+            CommunicationMonitor = new AlwaysOnMonitor(this);
 
             this.LogInformation(
                 "TesiraDspMock '{key}' built: {faderCount} fader(s), {presetCount} preset(s), switcherCount={switcherCount}",
@@ -106,12 +113,18 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Mock
             // On RMC4 bench setups with empty serverCertificateFile, TLS cert generation can
             // take ~5s, keeping the WebSocket null for that entire window. A 2s period ensures
             // state reaches the frontend within 2s of the cert completing and WS being assigned.
+            CommunicationMonitor.Start();
+
             _feedbackRefreshTimer = new CTimer(_ =>
             {
                 foreach (var fader in _faders)
                 {
                     fader.VolumeLevelFeedback.FireUpdate();
                     fader.MuteFeedback.FireUpdate();
+                }
+                foreach (var selector in _selectors)
+                {
+                    selector.FireUpdate();
                 }
             }, null, 2000, 2000);
 
@@ -155,6 +168,7 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Mock
 
                 var selector = new TesiraDspMockSourceSelector(childKey, name, labels, cfg?.InitialSource);
                 DeviceManager.AddDevice(selector);
+                _selectors.Add(selector);
             }
         }
 
@@ -175,6 +189,28 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Mock
             public string Key { get; }
             public string Name { get; }
             public MockPreset(string key, string name) { Key = key; Name = name; }
+        }
+
+        // ── Communication monitor — always online (no real hardware) ─────────
+
+        /// <summary>
+        /// Minimal <see cref="StatusMonitorBase"/> implementation that permanently
+        /// reports <see cref="MonitorStatus.IsOk"/>. The mock has no comm port to
+        /// poll, so there is nothing to monitor — it is always "online".
+        /// </summary>
+        private sealed class AlwaysOnMonitor : StatusMonitorBase
+        {
+            public AlwaysOnMonitor(IKeyed parent)
+                // StatusMonitorBase requires warningTime < errorTime and both >= 5000 ms.
+                // Values are never used because Start/Stop are no-ops.
+                : base(parent, 5000, 10000)
+            {
+                // Drive status to IsOk immediately so IsOnlineFeedback is true.
+                Status = MonitorStatus.IsOk;
+            }
+
+            public override void Start() { /* no-op — no poll needed */ }
+            public override void Stop()  { /* no-op — no poll needed */ }
         }
     }
 }

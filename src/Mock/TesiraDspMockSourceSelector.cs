@@ -85,6 +85,15 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Mock
                     CurrentItemChanged?.Invoke(this, EventArgs.Empty);
                 }
             }
+
+            /// <summary>
+            /// Forces <see cref="ItemsUpdated"/> to fire so any subscribed auto-messenger
+            /// re-sends the full source-selector state over WebSocket.
+            /// </summary>
+            public void FireUpdate()
+            {
+                ItemsUpdated?.Invoke(this, EventArgs.Empty);
+            }
         }
 
         private sealed class MockSource : ISelectableItem
@@ -137,6 +146,20 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Mock
             {
                 IsSelected = selected;
             }
+        }
+
+        /// <summary>
+        /// Re-raises <see cref="ISelectableItems{TKey,TValue}.ItemsUpdated"/> so the Essentials
+        /// auto-messenger re-sends the full source-selector state over WebSocket.
+        ///
+        /// Called by <see cref="TesiraDspMock"/>'s periodic refresh timer to recover from the
+        /// DirectServer race condition where <c>PostInitialState()</c> fires before the WebSocket
+        /// transport is assigned on RMC4 (TLS cert generation can take ~5 s on first boot).
+        /// </summary>
+        public void FireUpdate()
+        {
+            if (Inputs is MockSourceInputs inner)
+                inner.FireUpdate();
         }
     }
 }
