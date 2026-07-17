@@ -1,9 +1,12 @@
 using System.Collections.Generic;
+using System.Linq;
 using Crestron.SimplSharp;
 using PepperDash.Core;
 using PepperDash.Core.Logging;
+using PepperDash.Essentials.AppServer.Messengers;
 using PepperDash.Essentials.Core;
 using PepperDash.Essentials.Core.Config;
+using PepperDash.Essentials.Core.DeviceTypeInterfaces;
 
 namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Mock
 {
@@ -57,8 +60,10 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Mock
         private readonly List<TesiraDspMockFader> _faders = new List<TesiraDspMockFader>();
         // Child source selectors tracked alongside faders for periodic state re-fire.
         private readonly List<TesiraDspMockSourceSelector> _selectors = new List<TesiraDspMockSourceSelector>();
-        // Held to prevent GC of the repeating timer.
-        private CTimer _feedbackRefreshTimer;
+        // One-shot bootstrap timer — fires both fader and selector state 5 s after
+        // activation, giving DeviceVolumeMessenger time to subscribe to OutputChange
+        // and (on RMC4) the TLS cert generation time to complete.
+        private CTimer _bootstrapTimer;
 
         public TesiraDspMock(DeviceConfig dc) : base(dc.Key, dc.Name)
         {
@@ -115,18 +120,24 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Mock
             // state reaches the frontend within 2s of the cert completing and WS being assigned.
             CommunicationMonitor.Start();
 
-            _feedbackRefreshTimer = new CTimer(_ =>
+            // One-shot bootstrap timer — fires all fader (volume + mute) and selector
+            // state 5 s after activation.  The delay serves two purposes:
+            //   1. Guarantees DeviceVolumeMessenger has run RegisterActions() and
+            //      subscribed to OutputChange before the first push (activation ordering
+            //      adds messengers to DeviceManager after faders, so they activate last).
+            //   2. On RMC4 bench setups with an empty serverCertificateFile, TLS cert
+            //      generation can take ~5 s; this ensures the WebSocket transport exists
+            //      before state is broadcast.
+            // Faders use ForcePublishState() which resets IntFeedback's internal
+            // change-tracking field so the push fires even if no value has changed
+            // since construction.  Selectors call FireUpdate() which is unconditional.
+            _bootstrapTimer = new CTimer(_ =>
             {
                 foreach (var fader in _faders)
-                {
-                    fader.VolumeLevelFeedback.FireUpdate();
-                    fader.MuteFeedback.FireUpdate();
-                }
+                    fader.ForcePublishState();
                 foreach (var selector in _selectors)
-                {
                     selector.FireUpdate();
-                }
-            }, null, 2000, 2000);
+            }, null, 5000);
 
             return base.CustomActivate();
         }
@@ -189,6 +200,25 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Mock
             public string Key { get; }
             public string Name { get; }
             public MockPreset(string key, string name) { Key = key; Name = name; }
+        }
+
+        /// <summary>
+        /// Registers the mock DSP device with Mobile Control so it appears in
+        /// <c>/devlist</c> and broadcasts its <see cref="ICommunicationMonitor"/> state.
+        /// Child devices (faders, source selector) are auto-registered separately
+        /// because they expose <c>IBasicVolumeWithFeedback</c> / <c>IHasInputs&lt;T&gt;</c>.
+        /// </summary>
+        protected override void CreateMobileControlMessengers()
+        {
+            var mc = DeviceManager.AllDevices.OfType<IMobileControl>().FirstOrDefault();
+            if (mc == null)
+            {
+                this.LogInformation("Mobile Control not found — skipping TesiraDspMock messenger registration");
+                return;
+            }
+
+            mc.AddDeviceMessenger(new ICommunicationMonitorMessenger($"{Key}-commMonitor", $"/device/{Key}", this));
+            base.CreateMobileControlMessengers();
         }
 
         // ── Communication monitor — always online (no real hardware) ─────────
