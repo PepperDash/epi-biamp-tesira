@@ -25,6 +25,7 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
 {
     public class TesiraDsp : EssentialsBridgeableDevice,
         IDspPresets,
+        IDspPresetsDirectRecall,
         ICommunicationMonitor,
         IDeviceInfoProvider,
         IHasFeedback
