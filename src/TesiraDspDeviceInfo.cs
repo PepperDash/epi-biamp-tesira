@@ -4,6 +4,7 @@ using System.Text.RegularExpressions;
 using Crestron.SimplSharpPro.DeviceSupport;
 using Newtonsoft.Json;
 using Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Bridge.JoinMaps.Standalone;
+using Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Queue;
 using PepperDash.Core;
 using PepperDash.Core.Logging;
 using PepperDash.Essentials.Core;
@@ -329,7 +330,7 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
             MacAddressFeedback.LinkInputSig(trilist.StringInput[joinMap.MacAddress.JoinNumber]);
 
 
-            trilist.SetStringSigAction(joinMap.CommandPassThru.JoinNumber, (s) => Parent.SendLineRaw(s));
+            trilist.SetStringSigAction(joinMap.CommandPassThru.JoinNumber, (s) => Parent.CommandQueue.EnqueueCommand(s, sendLineRaw: true, priority: (int)CommandPriority.High));
 
             trilist.OnlineStatusChange += (d, args) =>
             {

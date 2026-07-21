@@ -1305,7 +1305,11 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
                     // Check for cancellation before sending commands
                     token.ThrowIfCancellationRequested();
 
-                    SendLine("SESSION set verbose false");
+                    // Route through the command queue so the DSP's "+OK" reply is
+                    // matched to this command. Sending directly (SendLine) bypasses the
+                    // queue, so its reply would be consumed by HandleResponse and stolen
+                    // from the next queued command, misaligning every subsequent response.
+                    CommandQueue.EnqueueCommand("SESSION set verbose false", priority: (int)CommandPriority.Low);
 
                     // Add delay with cancellation support
                     if (token.WaitHandle.WaitOne(250))
