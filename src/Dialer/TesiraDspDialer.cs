@@ -322,7 +322,20 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Dialer
             if (appearance == null) return;
             ConferenceActiveFeedback.FireUpdate();
             ConferenceCountFeedback.FireUpdate();
-            OnCallStatusChange(appearance.ActiveCall);
+            
+            // Guard against messenger system not being ready during program startup
+            try
+            {
+                OnCallStatusChange(appearance.ActiveCall);
+            }
+            catch (NullReferenceException ex)
+            {
+                this.LogDebug(ex, "Messenger not ready for call status change - {id}", appearance.Key);
+            }
+            catch (Exception ex)
+            {
+                this.LogWarning(ex, "Error sending call status change for appearance {id}", appearance.Key);
+            }
         }
 
         #region Conferencing
