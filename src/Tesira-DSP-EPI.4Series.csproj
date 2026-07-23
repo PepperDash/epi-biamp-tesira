@@ -32,7 +32,7 @@
 	</ItemGroup>
 
 	<ItemGroup>
-		<PackageReference Include="PepperDashEssentials" Version="3.0.0-dev-v3-routing.51">
+		<PackageReference Include="PepperDashEssentials" Version="3.0.0-dev-v3-routing.57">
 			<ExcludeAssets>runtime</ExcludeAssets>
 		</PackageReference>	</ItemGroup>
 </Project>

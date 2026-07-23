@@ -108,6 +108,7 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
         private Dictionary<string, TesiraDspLogicMeter> LogicMeters { get; set; }
         private Dictionary<string, TesiraDspCrosspointState> CrosspointStates { get; set; }
         private Dictionary<string, TesiraDspRoomCombiner> RoomCombiners { get; set; }
+        private Dictionary<string, TesiraDtmfDecode> DtmfDecodes { get; set; }
         public List<TesiraPreset> TesiraPresets { get; private set; }
         private List<ISubscribedComponent> ControlPointList { get; set; }
         public Dictionary<string, IKeyName> Presets { get; private set; }
@@ -227,6 +228,7 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
             LogicMeters = new Dictionary<string, TesiraDspLogicMeter>();
             CrosspointStates = new Dictionary<string, TesiraDspCrosspointState>();
             RoomCombiners = new Dictionary<string, TesiraDspRoomCombiner>();
+            DtmfDecodes = new Dictionary<string, TesiraDtmfDecode>();
             Routers = new Dictionary<string, TesiraDspRouter>();
             SourceSelectors = new Dictionary<string, TesiraDspSourceSelector>();
 
@@ -343,6 +345,7 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
                 Meters.Clear();
                 LogicMeters.Clear();
                 RoomCombiners.Clear();
+                DtmfDecodes.Clear();
 
                 CreateFaders(props);
 
@@ -365,6 +368,8 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
                 CreateCrosspoints(props);
 
                 CreateRoomCombiners(props);
+
+                CreateDtmfDecodes(props);
             }
 
             CreateDevInfo();
@@ -445,6 +450,24 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
                 }
                 DeviceManager.AddDevice(RoomCombiners[key]);
 
+            }
+        }
+
+        private void CreateDtmfDecodes(TesiraDspPropertiesConfig props)
+        {
+            if (props.DtmfDecodeControlBlocks == null) return;
+            this.LogVerbose("DtmfDecodeControlBlocks is not null - There are {0} of them",
+                props.DtmfDecodeControlBlocks.Count());
+            foreach (var block in props.DtmfDecodeControlBlocks)
+            {
+                var key = block.Key;
+                var value = block.Value;
+                DtmfDecodes.Add(key, new TesiraDtmfDecode(key, value, this));
+                this.LogVerbose("Added DTMF Decode {0} InstanceTag: {1}", key, value.DtmfDecodeInstanceTag);
+
+                if (block.Value.Enabled)
+                    ControlPointList.Add(DtmfDecodes[key]);
+                DeviceManager.AddDevice(DtmfDecodes[key]);
             }
         }
 

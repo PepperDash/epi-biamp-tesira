@@ -49,6 +49,9 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
         [JsonProperty("roomCombinerControlBlocks")]
         public Dictionary<string, TesiraRoomCombinerBlockConfig> RoomCombinerControlBlocks { get; set; }
 
+        [JsonProperty("dtmfDecodeControlBlocks")]
+        public Dictionary<string, TesiraDtmfDecodeConfig> DtmfDecodeControlBlocks { get; set; }
+
         [JsonProperty("tesiraExpanderBlocks")]
         public Dictionary<string, TesiraExpanderBlockConfig> ExpanderBlocks { get; set; }
 
@@ -485,6 +488,39 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
 
         [JsonProperty("volumeRepeatRateMs")]
         public int VolumeRepeatRateMs { get; set; } = 250;
+    }
+
+    public class TesiraDtmfDecodeConfig
+    {
+        /// <summary>
+        /// When true, the DTMF decode block will be enabled and monitored.
+        /// </summary>
+        [JsonProperty("enabled")]
+        public bool Enabled { get; set; }
+
+        /// <summary>
+        /// Label for the DTMF decode block (used in UI and logging).
+        /// </summary>
+        [JsonProperty("label")]
+        public string Label { get; set; }
+
+        /// <summary>
+        /// Instance tag for the DTMF Decode block (e.g., "DtmfDecode").
+        /// </summary>
+        [JsonProperty("dtmfDecodeInstanceTag")]
+        public string DtmfDecodeInstanceTag { get; set; }
+
+        /// <summary>
+        /// Optional index for the DTMF block (defaults to 1).
+        /// </summary>
+        [JsonProperty("index")]
+        public int Index { get; set; } = 1;
+
+        /// <summary>
+        /// Bridge index for SIMPL+ bridge integration.
+        /// </summary>
+        [JsonProperty("bridgeIndex")]
+        public uint? BridgeIndex { get; set; }
     }
 
     public class RoutingPort
