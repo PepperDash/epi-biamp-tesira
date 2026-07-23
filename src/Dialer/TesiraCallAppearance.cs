@@ -341,6 +341,11 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Dialer
         {
             if (_line.IsVoip)
             {
+                if (!_line.LineReady)
+                {
+                    _line.LogDebug("Dial ignored - VoIP line {line} is not ready", _line.LineNumber);
+                    return;
+                }
                 if (OffHookStatus)
                 {
                     _line.SendFullCommand(null, "end", null, 2, AppearanceNumber);
@@ -481,6 +486,11 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Dialer
         /// </summary>
         public void Redial()
         {
+            if (_line.IsVoip && !_line.LineReady)
+            {
+                _line.LogDebug("Redial ignored - VoIP line {line} is not ready", _line.LineNumber);
+                return;
+            }
             _line.SendFullCommand(null, "redial", null, 1, AppearanceNumber);
         }
 

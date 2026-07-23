@@ -939,6 +939,11 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Dialer
                 this.LogDebug("DialPhonebookEntry ignored - phonebook not enabled for line {line}", LineNumber);
                 return;
             }
+            if (IsVoip && !LineReady)
+            {
+                this.LogDebug("DialPhonebookEntry ignored - VoIP line {line} is not ready", LineNumber);
+                return;
+            }
             if (index < 0 || index >= _phonebookEntryCount)
             {
                 this.LogDebug("DialPhonebookEntry ignored - index {index} out of range (0..{max})", index, _phonebookEntryCount - 1);
