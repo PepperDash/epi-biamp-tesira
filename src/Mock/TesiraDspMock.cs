@@ -121,7 +121,7 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Mock
             CommunicationMonitor.Start();
 
             // One-shot bootstrap timer — fires all fader (volume + mute) and selector
-            // state 5 s after activation.  The delay serves two purposes:
+            // state 5 s after activation. The delay serves two purposes:
             //   1. Guarantees DeviceVolumeMessenger has run RegisterActions() and
             //      subscribed to OutputChange before the first push (activation ordering
             //      adds messengers to DeviceManager after faders, so they activate last).
@@ -139,7 +139,25 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Mock
                     selector.FireUpdate();
             }, null, 5000);
 
+            // AlwaysOnMonitor sets Status = IsOk in its constructor, which fires
+            // StatusChange before the ICommunicationMonitorMessenger actually subscribes.
+            // That subscription doesn't happen at messenger-construction time — it happens
+            // later, in MobileControlSystemController.Initialize(), which itself only runs
+            // in response to DeviceManager.AllDevicesActivated, dispatched via Task.Run
+            // (i.e. asynchronously, with no fixed delay). A hardcoded CTimer delay raced
+            // this on real hardware with many devices/plugins. Hook the deterministic
+            // DeviceManager.AllDevicesInitialized signal instead — it only fires after
+            // every EssentialsDevice's Initialize() (including MobileControlSystemController's,
+            // which performs the actual messenger registration) has completed.
+            DeviceManager.AllDevicesInitialized += OnAllDevicesInitializedRefreshOnlineStatus;
+
             return base.CustomActivate();
+        }
+
+        private void OnAllDevicesInitializedRefreshOnlineStatus(object sender, System.EventArgs args)
+        {
+            DeviceManager.AllDevicesInitialized -= OnAllDevicesInitializedRefreshOnlineStatus;
+            ((AlwaysOnMonitor)CommunicationMonitor).Refresh();
         }
 
         private void RegisterFaders(Dictionary<string, TesiraDspMockFaderConfig> faderConfigs)
@@ -241,6 +259,18 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Mock
 
             public override void Start() { /* no-op — no poll needed */ }
             public override void Stop()  { /* no-op — no poll needed */ }
+
+            /// <summary>
+            /// Force a fresh StatusChange event even though the value never actually
+            /// changes. The Status setter is a no-op when the new value equals the
+            /// current value, so a real transition is required to get a second event
+            /// out — flip to StatusUnknown then immediately back to IsOk.
+            /// </summary>
+            public void Refresh()
+            {
+                Status = MonitorStatus.StatusUnknown;
+                Status = MonitorStatus.IsOk;
+            }
         }
     }
 }
