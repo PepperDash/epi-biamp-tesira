@@ -1,8 +1,10 @@
 {
-    "//": "Sample config for the TesiraDspMock — an in-memory stand-in for the real Tesira DSP EPI.",
-    "//": "Use type 'tesiradspmock' to opt in. Child device keys follow the same {parentKey}--{childKey} convention",
-    "//": "as the real Tesira EPI, so room-plugin configs that reference child fader / source-selector keys are",
-    "//": "drop-in when swapping. No comm block is required — the mock does not touch hardware.",
+    "_comment": [
+        "Sample config for the TesiraDspMock — an in-memory stand-in for the real Tesira DSP EPI.",
+        "Use type 'tesiradspmock' to opt in. Child device keys follow the same {parentKey}--{childKey} convention",
+        "as the real Tesira EPI, so room-plugin configs that reference child fader / source-selector keys are",
+        "drop-in when swapping. No comm block is required — the mock does not touch hardware."
+    ],
     "system": {},
     "system_url": "",
     "template_url": "",
