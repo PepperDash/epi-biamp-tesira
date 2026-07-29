@@ -150,7 +150,8 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Mock
             /// </summary>
             public void ForceFireUpdate()
             {
-                s_field?.SetValue(this, int.MaxValue);
+                if (s_field == null) throw new MissingFieldException(typeof(IntFeedback).FullName, "_IntValue");
+                s_field.SetValue(this, int.MaxValue);
                 FireUpdate();
             }
         }
