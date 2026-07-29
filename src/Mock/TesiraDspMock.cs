@@ -112,12 +112,7 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Mock
 
         public override bool CustomActivate()
         {
-            // Re-fire all fader feedbacks every 2 seconds.
-            // Recovers from Essentials DirectServer race condition where PostInitialState()
-            // fires before the WebSocket transport is assigned on the new-flow client connect.
-            // On RMC4 bench setups with empty serverCertificateFile, TLS cert generation can
-            // take ~5s, keeping the WebSocket null for that entire window. A 2s period ensures
-            // state reaches the frontend within 2s of the cert completing and WS being assigned.
+            // Start the always-online communication monitor (no polling required for the mock).
             CommunicationMonitor.Start();
 
             // One-shot bootstrap timer — fires all fader (volume + mute) and selector
