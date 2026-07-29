@@ -151,7 +151,7 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Mock
         /// Re-raises <see cref="ISelectableItems{TKey,TValue}.ItemsUpdated"/> so the Essentials
         /// auto-messenger re-sends the full source-selector state over WebSocket.
         ///
-        /// Called by <see cref="TesiraDspMock"/>'s periodic refresh timer to recover from the
+        /// Called by <see cref="TesiraDspMock"/>'s bootstrap timer to recover from the
         /// DirectServer race condition where <c>PostInitialState()</c> fires before the WebSocket
         /// transport is assigned on RMC4 (TLS cert generation can take ~5 s on first boot).
         /// </summary>
