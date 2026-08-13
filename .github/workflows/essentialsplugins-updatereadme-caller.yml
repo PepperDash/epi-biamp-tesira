@@ -1,0 +1,14 @@
+
+name: Generate README
+
+on:
+  push:
+    branches-ignore:
+      - 'robot-docs'
+
+jobs:
+  call-update-readme:
+    uses: PepperDash/workflow-templates/.github/workflows/update-readme.yml@main
+    with:
+      target-branch: ${{ github.ref_name }}
+
