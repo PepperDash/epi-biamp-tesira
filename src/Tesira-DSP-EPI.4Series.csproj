@@ -32,7 +32,7 @@
 	</ItemGroup>
 
 	<ItemGroup>
-		<PackageReference Include="PepperDashEssentials" Version="3.0.0-rc.1">
+		<PackageReference Include="PepperDashEssentials" Version="3.0.0-feat-update-ihaswebview.1">
 			<ExcludeAssets>runtime</ExcludeAssets>
 		</PackageReference>	</ItemGroup>
 </Project>
