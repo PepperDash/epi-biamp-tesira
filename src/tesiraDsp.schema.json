@@ -1,0 +1,722 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://pepperdash.com/schemas/epi-biamp-tesira/tesiraDsp.schema.json",
+  "title": "tesiraDsp",
+  "description": "Device config entry for a device of type \"tesiraDsp\". Properties object for a device of type \"tesiraDsp\" (also \"tesira\", \"tesiraforte\", \"tesiraserver\", \"tesira-dsp\"), backed by TesiraDspPropertiesConfig (TesiraDspPropertiesConfig.cs).",
+  "type": "object",
+  "properties": {
+    "key": {
+      "type": "string",
+      "description": "Unique identifier for this device within the configuration file."
+    },
+    "name": {
+      "type": "string",
+      "description": "Friendly display name for this device."
+    },
+    "type": {
+      "type": "string",
+      "description": "Discriminator identifying the plugin factory that instantiates this device. Accepted aliases are equivalent.",
+      "enum": [
+        "tesiraDsp",
+        "tesira",
+        "tesiraforte",
+        "tesiraserver",
+        "tesira-dsp"
+      ]
+    },
+    "properties": {
+      "$ref": "#/$defs/properties",
+      "description": "Properties object for a device of type \"tesiraDsp\" (also \"tesira\", \"tesiraforte\", \"tesiraserver\", \"tesira-dsp\"), backed by TesiraDspPropertiesConfig (TesiraDspPropertiesConfig.cs)."
+    }
+  },
+  "required": [
+    "key",
+    "name",
+    "type",
+    "properties"
+  ],
+  "$defs": {
+    "properties": {
+      "type": "object",
+      "properties": {
+        "communicationMonitorProperties": {
+          "$ref": "#/$defs/communicationMonitorConfig"
+        },
+        "control": {
+          "$ref": "#/$defs/control"
+        },
+        "faderControlBlocks": {
+          "type": "object",
+          "description": "Level/mute fader control blocks, keyed by an arbitrary item key. Each becomes a child device with key '<parentKey>--<itemKey>'.",
+          "additionalProperties": {
+            "$ref": "#/$defs/faderControlBlock"
+          }
+        },
+        "dialerControlBlocks": {
+          "type": "object",
+          "description": "VoIP/POTS dialer line control blocks, keyed by an arbitrary item key.",
+          "additionalProperties": {
+            "$ref": "#/$defs/dialerControlBlock"
+          }
+        },
+        "switcherControlBlocks": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/$defs/switcherControlBlock"
+          }
+        },
+        "routerControlBlocks": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/$defs/routerControlBlock"
+          }
+        },
+        "sourceSelectorControlBlocks": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/$defs/sourceSelectorControlBlock"
+          }
+        },
+        "presets": {
+          "type": "object",
+          "description": "Named DSP presets that can be recalled by key.",
+          "additionalProperties": {
+            "$ref": "#/$defs/dspPreset"
+          }
+        },
+        "stateControlBlocks": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/$defs/stateControlBlock"
+          }
+        },
+        "meterControlBlocks": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/$defs/meterControlBlock"
+          }
+        },
+        "logicMeterControlBlocks": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/$defs/logicMeterControlBlock"
+          }
+        },
+        "crosspointStateControlBlocks": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/$defs/crosspointStateControlBlock"
+          }
+        },
+        "roomCombinerControlBlocks": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/$defs/roomCombinerControlBlock"
+          }
+        },
+        "dtmfDecodeControlBlocks": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/$defs/dtmfDecodeControlBlock"
+          }
+        },
+        "tesiraExpanderBlocks": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/$defs/expanderBlock"
+          }
+        },
+        "resubscribeString": {
+          "type": "string",
+          "description": "String used to trigger a full resubscribe on the device, if configured."
+        }
+      },
+      "required": [
+        "control"
+      ]
+    },
+    "communicationMonitorConfig": {
+      "type": "object",
+      "properties": {
+        "pollInterval": {
+          "type": "integer",
+          "default": 30000
+        },
+        "timeToWarning": {
+          "type": "integer",
+          "default": 120000
+        },
+        "timeToError": {
+          "type": "integer",
+          "default": 300000
+        },
+        "pollString": {
+          "type": "string",
+          "default": ""
+        }
+      }
+    },
+    "control": {
+      "type": "object",
+      "description": "Standard Essentials communication control block (EssentialsControlPropertiesConfig). Typically method \"Ssh\" for telnet/SSH access to the DSP.",
+      "properties": {
+        "method": {
+          "type": "string",
+          "pattern": "^(?:[nN][oO][nN][eE]|[cC][oO][mM]|[iI][pP][iI][dD]|[iI][pP][iI][dD][tT][cC][pP]|[iI][rR]|[sS][sS][hH]|[tT][cC][pP][iI][pP]|[tT][eE][lL][nN][eE][tT]|[cC][rR][eE][sS][nN][eE][tT]|[cC][eE][cC]|[uU][dD][pP]|[hH][tT][tT][pP]|[hH][tT][tT][pP][sS]|[wW][sS]|[wW][sS][sS]|[sS][eE][cC][uU][rR][eE][tT][cC][pP][iI][pP]|[cC][oO][mM][bB][rR][iI][dD][gG][eE]|[iI][nN][fF][iI][nN][eE][tT][eE][xX])(?:\\s*,\\s*(?:[nN][oO][nN][eE]|[cC][oO][mM]|[iI][pP][iI][dD]|[iI][pP][iI][dD][tT][cC][pP]|[iI][rR]|[sS][sS][hH]|[tT][cC][pP][iI][pP]|[tT][eE][lL][nN][eE][tT]|[cC][rR][eE][sS][nN][eE][tT]|[cC][eE][cC]|[uU][dD][pP]|[hH][tT][tT][pP]|[hH][tT][tT][pP][sS]|[wW][sS]|[wW][sS][sS]|[sS][eE][cC][uU][rR][eE][tT][cC][pP][iI][pP]|[cC][oO][mM][bB][rR][iI][dD][gG][eE]|[iI][nN][fF][iI][nN][eE][tT][eE][xX]))*$",
+          "description": "Case-insensitive."
+        },
+        "endOfLineString": {
+          "type": "string"
+        },
+        "deviceReadyResponsePattern": {
+          "type": "string"
+        },
+        "tcpSshProperties": {
+          "$ref": "#/$defs/tcpSshProperties"
+        }
+      },
+      "required": [
+        "method",
+        "tcpSshProperties"
+      ]
+    },
+    "tcpSshProperties": {
+      "type": "object",
+      "properties": {
+        "address": {
+          "type": "string"
+        },
+        "port": {
+          "type": "integer"
+        },
+        "username": {
+          "type": "string"
+        },
+        "password": {
+          "type": "string"
+        },
+        "autoReconnect": {
+          "type": "boolean",
+          "default": true
+        },
+        "AutoReconnectIntervalMs": {
+          "type": "integer",
+          "default": 5000
+        },
+        "disableSshEcho": {
+          "type": "boolean",
+          "default": false
+        }
+      },
+      "required": [
+        "address",
+        "port"
+      ]
+    },
+    "faderControlBlock": {
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "label": {
+          "type": "string"
+        },
+        "levelInstanceTag": {
+          "type": "string",
+          "description": "Tesira instance tag of the level block."
+        },
+        "muteInstanceTag": {
+          "type": "string",
+          "description": "Tesira instance tag of the mute block."
+        },
+        "index1": {
+          "type": "integer"
+        },
+        "index2": {
+          "type": "integer"
+        },
+        "hasMute": {
+          "type": "boolean"
+        },
+        "hasLevel": {
+          "type": "boolean"
+        },
+        "isMic": {
+          "type": "boolean"
+        },
+        "useAbsoluteValue": {
+          "type": "boolean"
+        },
+        "unmuteOnVolChange": {
+          "type": "boolean"
+        },
+        "incrementAmount": {
+          "type": "string"
+        },
+        "permissions": {
+          "type": "integer"
+        },
+        "bridgeIndex": {
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "volumeRepeatRateMs": {
+          "type": "integer",
+          "default": 100
+        }
+      }
+    },
+    "dialerControlBlock": {
+      "type": "object",
+      "description": "A dialer LINE, owning one phonebook and one or more call appearances.",
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "isVoip": {
+          "type": "boolean"
+        },
+        "label": {
+          "type": "string"
+        },
+        "displayNumber": {
+          "type": "string"
+        },
+        "dialerInstanceTag": {
+          "type": "string"
+        },
+        "controlStatusInstanceTag": {
+          "type": "string"
+        },
+        "index": {
+          "type": "integer",
+          "description": "Line number on the device (1-based)."
+        },
+        "clearOnHangup": {
+          "type": "boolean"
+        },
+        "appendDtmf": {
+          "type": "boolean"
+        },
+        "redialEnable": {
+          "type": [
+            "boolean",
+            "null"
+          ],
+          "description": "VoIP only. Enables/disables the redial feature."
+        },
+        "autoAnswerRingCount": {
+          "type": "string",
+          "description": "VoIP: AA_IMMEDIATELY, AA_ONE_RING, AA_TWO_RINGS, AA_THREE_RINGS. POTS/TI: AA_ONE_RING..AA_FIVE_RINGS."
+        },
+        "bridgeIndex": {
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "phonebook": {
+          "$ref": "#/$defs/dialerPhonebook"
+        },
+        "callAppearances": {
+          "type": "object",
+          "description": "Call appearances belonging to this line, keyed by appearance number (1-based) as a string.",
+          "additionalProperties": {
+            "$ref": "#/$defs/dialerCallAppearance"
+          }
+        }
+      }
+    },
+    "dialerPhonebook": {
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "description": "When true, the line polls the device for its speed-dial entries."
+        },
+        "entryCount": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "description": "Optional override for the number of speed-dial entries to expose for this line."
+        }
+      }
+    },
+    "dialerCallAppearance": {
+      "type": "object",
+      "properties": {
+        "label": {
+          "type": "string",
+          "description": "Friendly label for this call appearance."
+        },
+        "bridgeIndex": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "description": "Bridge index used to offset this appearance's joins on the holistic bridge."
+        }
+      }
+    },
+    "switcherControlBlock": {
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "label": {
+          "type": "string"
+        },
+        "type": {
+          "type": "string"
+        },
+        "switcherInstanceTag": {
+          "type": "string"
+        },
+        "index1": {
+          "type": "integer"
+        },
+        "bridgeIndex": {
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "switcherInputs": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/$defs/routingPort"
+          }
+        },
+        "switcherOutputs": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/$defs/routingPort"
+          }
+        },
+        "showRoutedStringFeedback": {
+          "type": "boolean"
+        },
+        "pollIntervalMs": {
+          "type": [
+            "integer",
+            "null"
+          ]
+        }
+      }
+    },
+    "routerControlBlock": {
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "label": {
+          "type": "string"
+        },
+        "routerInstanceTag": {
+          "type": "string"
+        },
+        "index1": {
+          "type": "integer"
+        },
+        "routerInputs": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/$defs/routingPort"
+          }
+        },
+        "routerOutput": {
+          "$ref": "#/$defs/routingPort"
+        },
+        "routerOutputs": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/$defs/routingPort"
+          }
+        },
+        "showRoutedStringFeedback": {
+          "type": "boolean"
+        },
+        "pollIntervalMs": {
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "bridgeIndex": {
+          "type": [
+            "integer",
+            "null"
+          ]
+        }
+      }
+    },
+    "sourceSelectorControlBlock": {
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "label": {
+          "type": "string"
+        },
+        "type": {
+          "type": "string"
+        },
+        "sourceSelectorInstanceTag": {
+          "type": "string"
+        },
+        "sourceSelectorInputs": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/$defs/routingPort"
+          }
+        },
+        "sourceSelectorOutput": {
+          "$ref": "#/$defs/routingPort"
+        },
+        "showSelectedStringFeedback": {
+          "type": "boolean"
+        },
+        "bridgeIndex": {
+          "type": [
+            "integer",
+            "null"
+          ]
+        }
+      }
+    },
+    "routingPort": {
+      "type": "object",
+      "properties": {
+        "label": {
+          "type": "string"
+        }
+      }
+    },
+    "dspPreset": {
+      "type": "object",
+      "properties": {
+        "label": {
+          "type": "string"
+        },
+        "presetName": {
+          "type": "string"
+        },
+        "presetId": {
+          "type": "integer"
+        },
+        "presetIndex": {
+          "type": "integer"
+        }
+      }
+    },
+    "stateControlBlock": {
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "label": {
+          "type": "string"
+        },
+        "stateInstanceTag": {
+          "type": "string"
+        },
+        "subscriptionInstanceTag": {
+          "type": "string"
+        },
+        "index": {
+          "type": "integer"
+        },
+        "bridgeIndex": {
+          "type": [
+            "integer",
+            "null"
+          ]
+        }
+      }
+    },
+    "meterControlBlock": {
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "label": {
+          "type": "string"
+        },
+        "meterInstanceTag": {
+          "type": "string"
+        },
+        "index": {
+          "type": "integer"
+        },
+        "meterData": {
+          "$ref": "#/$defs/meterMetadata"
+        },
+        "bridgeIndex": {
+          "type": [
+            "integer",
+            "null"
+          ]
+        }
+      }
+    },
+    "meterMetadata": {
+      "type": "object",
+      "properties": {
+        "meterMinimum": {
+          "type": "number"
+        },
+        "meterMaximum": {
+          "type": "number"
+        },
+        "defaultPollTime": {
+          "type": "integer"
+        }
+      }
+    },
+    "logicMeterControlBlock": {
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "label": {
+          "type": "string"
+        },
+        "meterInstanceTag": {
+          "type": "string"
+        },
+        "index": {
+          "type": "integer"
+        },
+        "bridgeIndex": {
+          "type": [
+            "integer",
+            "null"
+          ]
+        }
+      }
+    },
+    "crosspointStateControlBlock": {
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "label": {
+          "type": "string"
+        },
+        "matrixInstanceTag": {
+          "type": "string"
+        },
+        "index1": {
+          "type": "integer"
+        },
+        "index2": {
+          "type": "integer"
+        },
+        "bridgeIndex": {
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "pollEnable": {
+          "type": "boolean"
+        },
+        "pollTimeMs": {
+          "type": "integer"
+        }
+      }
+    },
+    "roomCombinerControlBlock": {
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "label": {
+          "type": "string"
+        },
+        "roomCombinerInstanceTag": {
+          "type": "string"
+        },
+        "roomIndex": {
+          "type": "integer"
+        },
+        "isMic": {
+          "type": "boolean"
+        },
+        "useAbsoluteValue": {
+          "type": "boolean"
+        },
+        "umuteOnVolChange": {
+          "type": "boolean",
+          "description": "Note: property name as spelled in the config class (typo preserved for compatibility)."
+        },
+        "incerementAmount": {
+          "type": "string",
+          "description": "Note: property name as spelled in the config class (typo preserved for compatibility)."
+        },
+        "permissions": {
+          "type": "integer"
+        },
+        "bridgeIndex": {
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "volumeRepeatRateMs": {
+          "type": "integer",
+          "default": 250
+        }
+      }
+    },
+    "dtmfDecodeControlBlock": {
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "description": "When true, the DTMF decode block is enabled and monitored."
+        },
+        "label": {
+          "type": "string"
+        },
+        "dtmfDecodeInstanceTag": {
+          "type": "string",
+          "description": "Instance tag for the DTMF Decode block (e.g. \"DtmfDecode\")."
+        },
+        "index": {
+          "type": "integer",
+          "default": 1
+        },
+        "bridgeIndex": {
+          "type": [
+            "integer",
+            "null"
+          ]
+        }
+      }
+    },
+    "expanderBlock": {
+      "type": "object",
+      "properties": {
+        "hostname": {
+          "type": "string"
+        },
+        "index": {
+          "type": "integer"
+        }
+      }
+    }
+  }
+}
