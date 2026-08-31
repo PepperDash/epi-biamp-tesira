@@ -12,11 +12,12 @@ using Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Interfaces;
 using PepperDash.Core.Logging;
 using PepperDash.Essentials.Core;
 using PepperDash.Essentials.Core.Bridges;
+using Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Routing;
 using IRoutingWithFeedback = Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Interfaces.IRoutingWithFeedback;
 
 namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
 {
-    public class TesiraDspRouter : TesiraDspControlPoint, IRoutingWithFeedback, ISubscribedComponent
+    public class TesiraDspRouter : TesiraDspControlPoint, IRoutingWithFeedback, IHasNamedRoutingSlots, ISubscribedComponent
     {
         private int sourceIndex;
 
@@ -31,6 +32,15 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
         /// Collection of IRouting Output Ports
         /// </summary>
         public RoutingPortCollection<RoutingOutputPort> OutputPorts { get; private set; }
+
+        // Named-slot view over InputPorts/OutputPorts for IHasNamedRoutingSlots, fed from the same
+        // route feedback as CurrentRoutes.
+        private RoutingPortNamedSlots _namedSlots;
+
+        IReadOnlyDictionary<string, IRoutingSlotInfo> IHasNamedRoutingSlots.InputSlots =>
+            _namedSlots?.InputSlots ?? new Dictionary<string, IRoutingSlotInfo>();
+        IReadOnlyDictionary<string, IRoutingOutputSlotInfo> IHasNamedRoutingSlots.OutputSlots =>
+            _namedSlots?.OutputSlots ?? new Dictionary<string, IRoutingOutputSlotInfo>();
 
         /// <summary>
         /// XSig of all Feedback Names
@@ -99,6 +109,7 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
             if (inputPort != null && outputPort != null)
                 routes.Add(new RouteSwitchDescriptor(outputPort, inputPort));
             CurrentRoutes = routes;
+            _namedSlots?.HandleRouteChange(outputPort, inputPort, eRoutingSignalType.Audio);
             RouteChanged?.Invoke(this, routes.FirstOrDefault());
         }
 
@@ -132,6 +143,7 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
 
             InputPorts = new RoutingPortCollection<RoutingInputPort>();
             OutputPorts = new RoutingPortCollection<RoutingOutputPort>();
+            _namedSlots = new RoutingPortNamedSlots(InputPorts, OutputPorts);
 
             Feedbacks.Add(SourceIndexFeedback);
             Feedbacks.Add(NameFeedback);
