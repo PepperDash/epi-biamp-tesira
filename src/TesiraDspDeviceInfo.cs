@@ -128,6 +128,26 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
             Feedbacks.Add(FirmwareFeedback);
             Feedbacks.Add(MacAddressFeedback);
         }
+
+        /// <summary>
+        /// Seeds hostname/IP from the parent's configured comm object so the bridge reports
+        /// something useful before the DSP answers 'DEVICE get networkStatus'. Values are
+        /// overwritten by the device's own response when it arrives.
+        /// </summary>
+        /// <param name="commHostname">Hostname or IP from the comm config; ignored when empty (RS-232)</param>
+        internal void SeedFromCommunication(string commHostname)
+        {
+            if (string.IsNullOrEmpty(commHostname)) return;
+
+            Hostname = commHostname;
+            IpAddress = commHostname;
+
+            DeviceInfo.HostName = commHostname;
+            DeviceInfo.IpAddress = commHostname;
+
+            OnDeviceInfoChanged();
+        }
+
         public void GetDeviceInfo()
         {
             GetFirmware();
@@ -214,6 +234,41 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
                                 IpAddress = matches[4].Value.Trim('"');
                                 this.LogDebug("Parsed IpAddress: {ipAddress}", IpAddress);
                             }
+
+                            // Mirror onto the DeviceInfo DTO consumed by IDeviceInfoProvider
+                            // clients (Mobile Control, device info reporting).
+                            DeviceInfo.HostName = Hostname;
+                            DeviceInfo.MacAddress = MacAddress;
+                            DeviceInfo.IpAddress = IpAddress;
+
+                            OnDeviceInfoChanged();
+                            break;
+                        }
+
+                    case "serialNumber":
+                        {
+                            SerialNumber = matches[0].Value.Trim('"');
+                            this.LogDebug("Parsed SerialNumber: {serialNumber}", SerialNumber);
+
+                            DeviceInfo.SerialNumber = SerialNumber;
+
+                            OnDeviceInfoChanged();
+                            break;
+                        }
+
+                    case "version":
+                        {
+                            Firmware = matches[0].Value.Trim('"');
+                            this.LogDebug("Parsed Firmware: {firmware}", Firmware);
+
+                            DeviceInfo.FirmwareVersion = Firmware;
+
+                            OnDeviceInfoChanged();
+                            break;
+                        }
+
+                    case "discoveredServers":
+                        {
                             try
                             {
                                 // Extract the content between [[ and ]]
@@ -293,6 +348,12 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
                             }
                             break;
                         }
+
+                    default:
+                        this.LogWarning(
+                            "Unhandled device info attributeCode '{attributeCode}'. Response discarded: {message}",
+                            attributeCode, message);
+                        break;
                 }
             }
             catch (Exception e)
@@ -335,13 +396,22 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
             {
                 if (!args.DeviceOnLine) return;
 
-                foreach (var feedback in Feedbacks)
-                {
-                    feedback.FireUpdate();
-                }
-
+                FireAllFeedbacks();
             };
 
+            // The DSP typically answers 'DEVICE get networkStatus' before the bridge activates,
+            // so these feedbacks have already fired by the time the sigs are linked above.
+            // Push current values now rather than relying on OnlineStatusChange, which only
+            // helps when the trilist comes online after linking - not when both start together.
+            FireAllFeedbacks();
+        }
+
+        internal void FireAllFeedbacks()
+        {
+            foreach (var feedback in Feedbacks)
+            {
+                feedback.FireUpdate();
+            }
         }
 
         public void OnDeviceInfoChanged()
