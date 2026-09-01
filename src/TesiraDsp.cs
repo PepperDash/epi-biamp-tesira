@@ -98,6 +98,12 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
         public bool ControlsAdded = false;
 
         private TesiraDspDeviceInfo DevInfo { get; set; }
+
+        /// <summary>
+        /// Hostname/IP from the configured comm object, captured in the constructor and
+        /// seeded onto DevInfo once it exists. Empty for RS-232 control.
+        /// </summary>
+        private string configuredHostname;
         private Dictionary<string, TesiraDspFaderControl> Faders { get; set; }
         private Dictionary<string, TesiraDspDialer> Dialers { get; set; }
         private Dictionary<string, TesiraDspSwitcher> Switchers { get; set; }
@@ -186,17 +192,18 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
                 isSerialComm = false;
 
 
+                // NOTE: DevInfo does not exist yet (CreateDspObjects runs at the end of this
+                // constructor), so the DeviceInfo getter would return a throwaway instance here.
+                // The comm hostname is captured now and seeded onto DevInfo in CreateDevInfo().
                 if (comm is GenericSshClient ssh)
                 {
-                    DeviceInfo.IpAddress = ssh.Hostname;
-                    DeviceInfo.HostName = ssh.Hostname;
+                    configuredHostname = ssh.Hostname;
                 }
 
 
                 if (comm is GenericTcpIpClient tcp)
                 {
-                    DeviceInfo.IpAddress = tcp.Hostname;
-                    DeviceInfo.HostName = tcp.Hostname;
+                    configuredHostname = tcp.Hostname;
                 }
             }
             else
@@ -391,8 +398,22 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
         private void CreateDevInfo()
         {
             DevInfo = new TesiraDspDeviceInfo(this);
-            if (DevInfo != null)
-                DeviceManager.AddDevice(DevInfo);
+            if (DevInfo == null) return;
+
+            DeviceManager.AddDevice(DevInfo);
+
+            // Seed from the configured comm hostname so the bridge reports something useful
+            // before the DSP answers 'DEVICE get networkStatus'.
+            DevInfo.SeedFromCommunication(configuredHostname);
+
+            // Register the device info feedbacks on the parent so the OnlineStatusChange
+            // handler in LinkToApi re-fires them when SIMPL reconnects to an already-online DSP.
+            Feedbacks.Add(DevInfo.NameFeedback);
+            Feedbacks.Add(DevInfo.SerialNumberFeedback);
+            Feedbacks.Add(DevInfo.FirmwareFeedback);
+            Feedbacks.Add(DevInfo.HostnameFeedback);
+            Feedbacks.Add(DevInfo.IpAddressFeedback);
+            Feedbacks.Add(DevInfo.MacAddressFeedback);
         }
 
         private void CreatePresets(TesiraDspPropertiesConfig props)
@@ -1489,6 +1510,11 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
             trilist.SetStringSigAction(deviceJoinMap.CommandPassThru.JoinNumber, (s) => CommandQueue.EnqueueCommand(s, sendLineRaw: true, priority: (int)CommandPriority.High));
 
             trilist.SetSigTrueAction(deviceJoinMap.Resubscribe.JoinNumber, Resubscribe);
+
+            // Link Name/SerialNumber/Firmware/Hostname/IpAddress/MacAddress (serials 1, 3-7).
+            // The standalone join map DevInfo uses declares identical join numbers to
+            // TesiraDspDeviceJoinMapAdvanced, so these land on the same serials.
+            DevInfo?.LinkToApi(trilist, joinStart, string.Format("{0}--DeviceInfoJoinMap", Key), bridge);
 
             LinkFadersToApi(trilist, faderJoinMap);
 
