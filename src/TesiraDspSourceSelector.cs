@@ -302,7 +302,16 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
         {
             if (!signalType.HasFlag(eRoutingSignalType.Audio)) return;
 
-            SendFullCommand("set", "sourceSelection", Convert.ToString(inputSelector), 1);
+            // Selector may be the port's own Selector (the source index) or, from mobile control's
+            // matrix routing, the named slot key - which for these ports is the source's name, not
+            // its index. See RoutingSelectorResolver.
+            if (!RoutingSelectorResolver.TryResolveIndex(inputSelector, InputPorts, out var input))
+            {
+                this.LogWarning("Unable to execute switch: {inputSelector} is not a known input", inputSelector);
+                return;
+            }
+
+            SendFullCommand("set", "sourceSelection", input.ToString(), 1);
         }
 
         /// <summary>

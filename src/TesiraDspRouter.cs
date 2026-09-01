@@ -394,15 +394,18 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
                 return;
             }
 
-            if (!(inputSelector is uint input))
+            // Selector may be the port's own Selector (the router index) or, from mobile control's
+            // matrix routing, the named slot key - which for these ports is the label, not the
+            // index. See RoutingSelectorResolver.
+            if (!RoutingSelectorResolver.TryResolveIndex(inputSelector, InputPorts, out var input))
             {
-                this.LogWarning("Input Selector must be of type uint");
+                this.LogWarning("Unable to execute switch: {inputSelector} is not a known input", inputSelector);
                 return;
             }
 
-            if (!(outputSelector is uint output))
+            if (!RoutingSelectorResolver.TryResolveIndex(outputSelector, OutputPorts, out var output))
             {
-                this.LogWarning("Output Selector must be of type uint");
+                this.LogWarning("Unable to execute switch: {outputSelector} is not a known output", outputSelector);
                 return;
             }
 
