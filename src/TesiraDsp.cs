@@ -1512,9 +1512,21 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
             trilist.SetSigTrueAction(deviceJoinMap.Resubscribe.JoinNumber, Resubscribe);
 
             // Link Name/SerialNumber/Firmware/Hostname/IpAddress/MacAddress (serials 1, 3-7).
-            // The standalone join map DevInfo uses declares identical join numbers to
-            // TesiraDspDeviceJoinMapAdvanced, so these land on the same serials.
-            DevInfo?.LinkToApi(trilist, joinStart, string.Format("{0}--DeviceInfoJoinMap", Key), bridge);
+            // NOTE: do NOT delegate to DevInfo.LinkToApi here. That path calls
+            // JoinMapHelper.GetSerializedJoinMapForDevice, which THROWS KeyNotFoundException
+            // when the key is absent from the config's joinMaps dictionary. A synthetic key
+            // would take out every Link*ToApi call below it. Link against deviceJoinMap instead.
+            if (DevInfo != null)
+            {
+                DevInfo.NameFeedback.LinkInputSig(trilist.StringInput[deviceJoinMap.Name.JoinNumber]);
+                DevInfo.SerialNumberFeedback.LinkInputSig(trilist.StringInput[deviceJoinMap.SerialNumber.JoinNumber]);
+                DevInfo.FirmwareFeedback.LinkInputSig(trilist.StringInput[deviceJoinMap.Firmware.JoinNumber]);
+                DevInfo.HostnameFeedback.LinkInputSig(trilist.StringInput[deviceJoinMap.Hostname.JoinNumber]);
+                DevInfo.IpAddressFeedback.LinkInputSig(trilist.StringInput[deviceJoinMap.IpAddress.JoinNumber]);
+                DevInfo.MacAddressFeedback.LinkInputSig(trilist.StringInput[deviceJoinMap.MacAddress.JoinNumber]);
+
+                DevInfo.FireAllFeedbacks();
+            }
 
             LinkFadersToApi(trilist, faderJoinMap);
 
