@@ -396,13 +396,22 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
             {
                 if (!args.DeviceOnLine) return;
 
-                foreach (var feedback in Feedbacks)
-                {
-                    feedback.FireUpdate();
-                }
-
+                FireAllFeedbacks();
             };
 
+            // The DSP typically answers 'DEVICE get networkStatus' before the bridge activates,
+            // so these feedbacks have already fired by the time the sigs are linked above.
+            // Push current values now rather than relying on OnlineStatusChange, which only
+            // helps when the trilist comes online after linking - not when both start together.
+            FireAllFeedbacks();
+        }
+
+        private void FireAllFeedbacks()
+        {
+            foreach (var feedback in Feedbacks)
+            {
+                feedback.FireUpdate();
+            }
         }
 
         public void OnDeviceInfoChanged()
