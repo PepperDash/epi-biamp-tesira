@@ -25,15 +25,20 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Queue
 
         private readonly object lockObject = new object();
 
+        private int _commandTimeoutMs = 8000;
+
         /// <summary>
         /// How long to wait for a response to an outstanding command before giving up on it
         /// and moving on to the next queued command. Without this, a single lost response
         /// stalls the queue indefinitely, since nothing else ever calls SendNextQueuedCommand.
         /// </summary>
-        public int CommandTimeoutMs { get; set; } = 8000;
+        public int CommandTimeoutMs
+        {
+            get => _commandTimeoutMs;
+            set => _commandTimeoutMs = value < 1 ? 1 : value;
+        }
 
         private System.Timers.Timer commandTimeoutTimer;
-
         /// <summary>
         /// Constructor for Tesira Queue
         /// </summary>
