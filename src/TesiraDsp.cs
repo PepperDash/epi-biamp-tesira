@@ -915,17 +915,23 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
         /// </summary>
         internal void NotifyCommandTimedOut(QueuedCommand command)
         {
-            if (command?.ControlPoint == null) return;
+            // RequestingComponent, not ControlPoint: subscribe-check commands are enqueued with
+            // ControlPoint left null (their -ERR ALREADY_SUBSCRIBED/+OK ack must not be routed to
+            // ParseGetMessage), so ControlPoint is never populated for the commands this watchdog
+            // path exists to catch. RequestingComponent is the separate, correlation-only field
+            // SendSubscriptionCommand tags with the issuing component.
+            var component = command?.RequestingComponent;
+            if (component == null) return;
 
             bool needsResubscribe;
             lock (watchdogLock)
             {
-                needsResubscribe = WatchDogSniffer && currentWatchDogBatch.Contains(command.ControlPoint);
+                needsResubscribe = WatchDogSniffer && currentWatchDogBatch.Contains(component);
 
                 if (needsResubscribe)
                 {
                     this.LogWarning("Watchdog: component '{component}' did not respond to subscription check in time. Resubscribing immediately.",
-                        command.ControlPoint.Key);
+                        component.Key);
 
                     WatchDogSniffer = false;
                     watchDogExpectedResponses = 0;
