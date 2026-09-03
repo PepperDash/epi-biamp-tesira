@@ -41,7 +41,15 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Queue
     /// <param name="bypassTxQueue">bypass TX Queue for this command</param>
     /// <param name="sendLineRaw">send command without appending delimiter</param>
     /// <param name="priority">command priority (higher values = higher priority)</param>
-    public QueuedCommand(string command, string attributeCode, ISubscribedComponent controlPoint, bool bypassTxQueue = false, bool sendLineRaw = false, int priority = 1)
+    /// <param name="requestingComponent">
+    /// Component that issued this command, for correlation purposes only (e.g. the watchdog
+    /// matching a timed-out command back to the component it was checking). Independent of
+    /// <paramref name="controlPoint"/>, which drives response dispatch to ParseGetMessage -
+    /// commands like subscription checks intentionally pass a null controlPoint so their
+    /// -ERR/+OK acks aren't routed there, but still need to be identifiable as "belonging to"
+    /// a component for correlation.
+    /// </param>
+    public QueuedCommand(string command, string attributeCode, ISubscribedComponent controlPoint, bool bypassTxQueue = false, bool sendLineRaw = false, int priority = 1, ISubscribedComponent requestingComponent = null)
     {
       Command = command;
       AttributeCode = attributeCode;
@@ -49,6 +57,7 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Queue
       BypassTxQueue = bypassTxQueue;
       SendLineRaw = sendLineRaw;
       Priority = priority;
+      RequestingComponent = requestingComponent;
     }
 
     /// <summary>
@@ -80,6 +89,12 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Queue
     /// Command priority (higher values = higher priority)
     /// </summary>
     public readonly int Priority;
+
+    /// <summary>
+    /// Component that issued this command, for correlation only - not used for response
+    /// dispatch. See constructor remarks.
+    /// </summary>
+    public readonly ISubscribedComponent RequestingComponent;
   }
 
 }

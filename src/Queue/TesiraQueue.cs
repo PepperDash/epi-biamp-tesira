@@ -25,6 +25,20 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Queue
 
         private readonly object lockObject = new object();
 
+        private int _commandTimeoutMs = 8000;
+
+        /// <summary>
+        /// How long to wait for a response to an outstanding command before giving up on it
+        /// and moving on to the next queued command. Without this, a single lost response
+        /// stalls the queue indefinitely, since nothing else ever calls SendNextQueuedCommand.
+        /// </summary>
+        public int CommandTimeoutMs
+        {
+            get => _commandTimeoutMs;
+            set => _commandTimeoutMs = value < 1 ? 1 : value;
+        }
+
+        private System.Timers.Timer commandTimeoutTimer;
         /// <summary>
         /// Constructor for Tesira Queue
         /// </summary>
@@ -45,6 +59,11 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Queue
         {
             lock (lockObject)
             {
+                // A response arrived (whether or not it's the one actually expected), so the
+                // outstanding command is no longer at risk of stalling the queue.
+                commandTimeoutTimer?.Dispose();
+                commandTimeoutTimer = null;
+
                 Parent.LogVerbose("[HandleResponse] Command Queue {state} in progress.", CommandQueueInProgress ? "is" : "is not");
 
                 if (lastDequeued?.ControlPoint != null)
@@ -146,7 +165,44 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Queue
                     Parent.SendLineRaw(lastDequeued.Command, lastDequeued.BypassTxQueue);
                 else
                     Parent.SendLine(lastDequeued.Command, lastDequeued.BypassTxQueue);
+
+                // Guard against this exact command stalling the queue forever if its response
+                // never arrives. HandleResponse cancels this on any reply; if it fires instead,
+                // the command is discarded and the queue moves on rather than hanging indefinitely.
+                var sentCommand = lastDequeued;
+                commandTimeoutTimer?.Dispose();
+                commandTimeoutTimer = new System.Timers.Timer(CommandTimeoutMs) { AutoReset = false };
+                commandTimeoutTimer.Elapsed += (sender, e) => HandleCommandTimeout(sentCommand);
+                commandTimeoutTimer.Start();
             }
+        }
+
+        /// <summary>
+        /// Fires when no response arrived for <paramref name="timedOutCommand"/> within
+        /// <see cref="CommandTimeoutMs"/> of it actually being sent. Discards it and continues
+        /// with the next queued command instead of leaving the queue stalled indefinitely.
+        /// </summary>
+        private void HandleCommandTimeout(QueuedCommand timedOutCommand)
+        {
+            lock (lockObject)
+            {
+                // Already resolved (a response arrived, queue was cleared, or a newer command
+                // is now outstanding) - nothing to do.
+                if (lastDequeued != timedOutCommand) return;
+
+                Parent.LogWarning("[CommandTimeout] No response received for command '{command}' (ControlPoint: {controlPoint}) within {timeoutMs}ms. Discarding and continuing.",
+                    timedOutCommand.Command, timedOutCommand.ControlPoint?.Key ?? "no control point", CommandTimeoutMs);
+
+                lastDequeued = null;
+                commandTimeoutTimer = null;
+
+                SendNextQueuedCommand();
+            }
+
+            // Outside the lock: lets the parent react (e.g. an immediate watchdog resubscribe)
+            // without nesting TesiraDsp's own locking inside this queue's lock. Only reached
+            // when the timeout above was genuine, not when it had already been resolved.
+            Parent.NotifyCommandTimedOut(timedOutCommand);
         }
 
         /// <summary>
@@ -160,6 +216,8 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Queue
                 LocalQueue.Clear();
                 lastDequeued = null;
                 CommandQueueInProgress = false;
+                commandTimeoutTimer?.Dispose();
+                commandTimeoutTimer = null;
             }
         }
 

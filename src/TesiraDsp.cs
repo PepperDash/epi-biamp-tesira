@@ -82,7 +82,6 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
         private readonly GenericQueue transmitQueue;
 
         private System.Timers.Timer watchDogTimer;
-        private System.Timers.Timer watchDogTimeoutTimer;
 
         private System.Timers.Timer unsubscribeTimer;
         private System.Timers.Timer queueCheckTimer;
@@ -128,6 +127,13 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
         private int watchDogExpectedResponses = 0;
         private int watchDogReceivedResponses = 0;
         private readonly HashSet<ISubscribedComponent> recentlyCheckedComponents = new HashSet<ISubscribedComponent>();
+
+        /// <summary>
+        /// The set of components sampled by the sniffer batch currently in flight (if any).
+        /// Used to recognize, when the queue actually transmits a command, whether that
+        /// command belongs to the outstanding watchdog check.
+        /// </summary>
+        private readonly HashSet<ISubscribedComponent> currentWatchDogBatch = new HashSet<ISubscribedComponent>();
         private bool WatchDogSniffer
         {
             get
@@ -322,7 +328,6 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
                 watchDogTimer.Dispose();
             }
 
-            watchDogTimeoutTimer?.Dispose();
             if (CommunicationMonitor != null)
             {
                 CommunicationMonitor.Stop();
@@ -751,10 +756,6 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
             watchDogTimer.Dispose();
             watchDogTimer = null;
 
-            // Also clean up timeout timer
-            watchDogTimeoutTimer?.Dispose();
-            watchDogTimeoutTimer = null;
-
             StopLevelRangePollTimer();
 
             // Reset watchdog state
@@ -764,6 +765,7 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
                 watchDogExpectedResponses = 0;
                 watchDogReceivedResponses = 0;
                 recentlyCheckedComponents.Clear();
+                currentWatchDogBatch.Clear();
             }
         }
 
@@ -871,16 +873,23 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
                     watchDogExpectedResponses = componentsToCheckList.Count;
                     watchDogReceivedResponses = 0;
 
-                    // Add checked components to recently checked list
+                    // Track this batch so NotifyCommandTimedOut can recognize, if one of these
+                    // commands' own per-command timeout fires (see TesiraQueue), that it belongs
+                    // to this sniffer check rather than to ordinary unrelated traffic.
+                    currentWatchDogBatch.Clear();
                     foreach (var component in componentsToCheckList)
                     {
                         recentlyCheckedComponents.Add(component);
+                        currentWatchDogBatch.Add(component);
                     }
-                }
 
-                // Set up timeout timer (5 seconds should be plenty for random sample)
-                watchDogTimeoutTimer?.Dispose();
-                watchDogTimeoutTimer = CreateOneShotTimer(HandleWatchDogTimeout, 5000);
+                    // No timer armed here: success is driven entirely by ALREADY_SUBSCRIBED
+                    // responses arriving (handled where DSP responses are parsed), and failure
+                    // is driven by TesiraQueue's own per-command timeout calling back into
+                    // NotifyCommandTimedOut below. If the DSP is fully unreachable and none of
+                    // this batch's commands are ever even sent, the next watchdog cycle's
+                    // "WatchDogSniffer still true" check (top of this method) is the backstop.
+                }
 
                 // Subscribe to selected components to verify their subscription status
                 foreach (var component in componentsToCheckList)
@@ -896,24 +905,46 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
             }
         }
 
-        private void HandleWatchDogTimeout()
+        /// <summary>
+        /// Called by the command queue when a command's own per-command timeout fires (i.e. it
+        /// was actually sent but never got a response - see TesiraQueue.HandleCommandTimeout).
+        /// If that command belongs to the sniffer batch currently in flight, this is a real,
+        /// confirmed non-response - not a queue-backlog artifact, since the per-command timeout
+        /// is measured from actual transmission. There's no reason to wait for the rest of the
+        /// sample once we know we need to resubscribe, so react immediately.
+        /// </summary>
+        internal void NotifyCommandTimedOut(QueuedCommand command)
         {
+            // RequestingComponent, not ControlPoint: subscribe-check commands are enqueued with
+            // ControlPoint left null (their -ERR ALREADY_SUBSCRIBED/+OK ack must not be routed to
+            // ParseGetMessage), so ControlPoint is never populated for the commands this watchdog
+            // path exists to catch. RequestingComponent is the separate, correlation-only field
+            // SendSubscriptionCommand tags with the issuing component.
+            var component = command?.RequestingComponent;
+            if (component == null) return;
+
+            bool needsResubscribe;
             lock (watchdogLock)
             {
-                if (WatchDogSniffer)
-                {
-                    this.LogWarning("Watchdog timeout - only received {received}/{expected} responses. Triggering resubscribe.",
-                        watchDogReceivedResponses, watchDogExpectedResponses);
+                needsResubscribe = WatchDogSniffer && currentWatchDogBatch.Contains(component);
 
-                    // Clear watchdog state and trigger resubscribe
+                if (needsResubscribe)
+                {
+                    this.LogWarning("Watchdog: component '{component}' did not respond to subscription check in time. Resubscribing immediately.",
+                        component.Key);
+
                     WatchDogSniffer = false;
                     watchDogExpectedResponses = 0;
                     watchDogReceivedResponses = 0;
-
-                    // Trigger resubscribe on next watchdog cycle
-                    this.LogDebug("Scheduling resubscribe due to watchdog timeout.");
-                    Resubscribe();
+                    currentWatchDogBatch.Clear();
                 }
+            }
+
+            // Call outside watchdogLock: Resubscribe() clears the command queue, which re-enters
+            // TesiraQueue's own lock - no need to hold two locks across that call.
+            if (needsResubscribe)
+            {
+                Resubscribe();
             }
         }
 
@@ -1101,10 +1132,7 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
                                     WatchDogSniffer = false;
                                     watchDogExpectedResponses = 0;
                                     watchDogReceivedResponses = 0;
-
-                                    // Cancel timeout timer since we received all responses
-                                    watchDogTimeoutTimer?.Dispose();
-                                    watchDogTimeoutTimer = null;
+                                    currentWatchDogBatch.Clear();
                                 }
                             }
                         }
@@ -1121,6 +1149,7 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
                                 WatchDogSniffer = false;
                                 watchDogExpectedResponses = 0;
                                 watchDogReceivedResponses = 0;
+                                currentWatchDogBatch.Clear();
                             }
                         }
                     }
@@ -1415,6 +1444,11 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
         public void Resubscribe()
         {
             this.LogInformation("Issue Detected with device subscriptions - resubscribing to all controls");
+
+            // Discard any stale in-flight command/response so a straggler reply from before
+            // this resubscribe can't be misattributed to one of the commands queued below.
+            CommandQueue.Clear();
+
             StopWatchDog();
             StartSubscriptionThread();
         }
