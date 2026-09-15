@@ -108,6 +108,7 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
         private Dictionary<string, TesiraDspSwitcher> Switchers { get; set; }
         private Dictionary<string, TesiraDspRouter> Routers { get; set; }
         private Dictionary<string, TesiraDspSourceSelector> SourceSelectors { get; set; }
+        private Dictionary<string, TesiraDspLogicSelector> LogicSelectors { get; set; }
         private Dictionary<string, TesiraDspStateControl> States { get; set; }
         private Dictionary<string, TesiraDspMeter> Meters { get; set; }
 
@@ -243,6 +244,7 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
             RoomCombiners = new Dictionary<string, TesiraDspRoomCombiner>();
             Routers = new Dictionary<string, TesiraDspRouter>();
             SourceSelectors = new Dictionary<string, TesiraDspSourceSelector>();
+            LogicSelectors = new Dictionary<string, TesiraDspLogicSelector>();
 
             CrestronEnvironment.ProgramStatusEventHandler += CrestronEnvironment_ProgramStatusEventHandler;
 
@@ -366,6 +368,7 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
                 Meters.Clear();
                 LogicMeters.Clear();
                 RoomCombiners.Clear();
+                LogicSelectors.Clear();
 
                 CreateFaders(props);
 
@@ -374,6 +377,8 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
                 CreateRouters(props);
 
                 CreateSourceSelectors(props);
+
+                CreateLogicSelectors(props);
 
                 CreateDialers(props);
 
@@ -648,6 +653,25 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
                 ControlPointList.Add(SourceSelectors[key]);
                 DeviceManager.AddDevice(SourceSelectors[key]);
 
+            }
+        }
+
+        private void CreateLogicSelectors(TesiraDspPropertiesConfig props)
+        {
+            if (props.LogicSelectorControlBlocks == null) return;
+            this.LogVerbose("logicSelectorControlBlocks is not null - There are {0} of them",
+                props.LogicSelectorControlBlocks.Count());
+            foreach (var block in props.LogicSelectorControlBlocks)
+            {
+                var key = block.Key;
+                this.LogVerbose("Logic Selector ControlBlock Key - {0}", key);
+                var value = block.Value;
+
+                LogicSelectors.Add(key, new TesiraDspLogicSelector(key, value, this));
+                this.LogVerbose("Added LogicSelector {0} InstanceTag {1}", key, value.LogicSelectorInstanceTag);
+
+                ControlPointList.Add(LogicSelectors[key]);
+                DeviceManager.AddDevice(LogicSelectors[key]);
             }
         }
 
@@ -1572,6 +1596,8 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
 
             LinkSourceSelectorsToApi(trilist, switcherJoinMap);
 
+            LinkLogicSelectorsToApi(trilist, switcherJoinMap);
+
             LinkPresetsToApi(trilist, presetJoinMap);
 
             LinkDialersToApi(trilist, dialerJoinMap);
@@ -1812,6 +1838,35 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
                 switcher.NameFeedback.LinkInputSig(trilist.StringInput[switcherJoinMap.Label.JoinNumber + x]);
 
                 switcher.GetSourceNames();
+            }
+        }
+
+        private void LinkLogicSelectorsToApi(BasicTriList trilist, TesiraSwitcherJoinMapAdvanced switcherJoinMap)
+        {
+            this.LogVerbose("There are {0} LogicSelector Control Points", LogicSelectors.Count);
+            foreach (var item in LogicSelectors)
+            {
+                var selector = item.Value;
+                var data = selector.BridgeIndex;
+                if (data == null) continue;
+                var y = (uint)data;
+                var x = (ushort)(((y - 1) * 2) + 1);
+
+                this.LogVerbose("Tesira LogicSelector {0} connect to {1}", selector.Key, y);
+
+                if (!selector.Enabled) continue;
+
+                this.LogVerbose("Tesira LogicSelector {0} is Enabled", selector.Key);
+
+                var s = selector as IRoutingWithFeedback;
+                s.SourceIndexFeedback.LinkInputSig(trilist.UShortInput[switcherJoinMap.Index.JoinNumber + x]);
+
+                trilist.SetUShortSigAction(switcherJoinMap.Index.JoinNumber + x, u => selector.SetSource(u));
+                trilist.SetSigTrueAction(switcherJoinMap.Poll.JoinNumber + x, selector.DoPoll);
+
+                selector.NameFeedback.LinkInputSig(trilist.StringInput[switcherJoinMap.Label.JoinNumber + x]);
+
+                selector.GetSourceNames();
             }
         }
 

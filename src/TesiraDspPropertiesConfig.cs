@@ -52,6 +52,9 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
         [JsonProperty("tesiraExpanderBlocks")]
         public Dictionary<string, TesiraExpanderBlockConfig> ExpanderBlocks { get; set; }
 
+        [JsonProperty("logicSelectorControlBlocks")]
+        public Dictionary<string, TesiraLogicSelectorControlBlockConfig> LogicSelectorControlBlocks { get; set; }
+
         [JsonProperty("resubscribeString")]
         public string ResubscribeString { get; set; }
 
@@ -452,5 +455,26 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
     {
         [JsonProperty("label")]
         public string Label { get; set; }
+    }
+
+    public class TesiraLogicSelectorControlBlockConfig
+    {
+        [JsonProperty("enabled")]
+        public bool Enabled { get; set; }
+
+        [JsonProperty("label")]
+        public string Label { get; set; }
+
+        [JsonProperty("logicSelectorInstanceTag")]
+        public string LogicSelectorInstanceTag { get; set; }
+
+        [JsonProperty("logicSelectorInputs")]
+        public Dictionary<uint, RoutingPort> LogicSelectorInputs { get; set; }
+
+        [JsonProperty("showSelectedStringFeedback")]
+        public bool ShowSelectedStringFeedback { get; set; }
+
+        [JsonProperty("bridgeIndex")]
+        public uint? BridgeIndex { get; set; }
     }
 }
