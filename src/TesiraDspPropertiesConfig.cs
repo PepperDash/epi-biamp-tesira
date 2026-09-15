@@ -55,6 +55,22 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
         [JsonProperty("resubscribeString")]
         public string ResubscribeString { get; set; }
 
+        /// <summary>
+        /// Interval in seconds at which to re-poll min/max level ranges for all volume
+        /// components. Useful when an external program may change ranges at runtime.
+        /// Set to 0 (default) to disable. Minimum enforced value when enabled is 60 seconds.
+        /// </summary>
+        [JsonProperty("levelRangePollIntervalSecs")]
+        public int LevelRangePollIntervalSecs { get; set; } = 0;
+
+        /// <summary>
+        /// Global maximum time in milliseconds a volume button may be held before the repeat
+        /// is force-released. Can be overridden per fader/room combiner via volumeHoldTimeoutMs
+        /// on the individual block config. Defaults to 10 seconds.
+        /// </summary>
+        [JsonProperty("volumeHoldTimeoutMs")]
+        public int VolumeHoldTimeoutMs { get; set; } = 10000;
+
         [JsonProperty("presetHoldTimeMs")]
         public int PresetHoldTimeMs { get; set; } = 5000; // Default 5 seconds
     }
@@ -114,6 +130,14 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
 
         [JsonProperty("volumeRepeatRateMs")]
         public int VolumeRepeatRateMs { get; set; } = 100;
+
+        /// <summary>
+        /// Maximum time in milliseconds a volume button may be held before the repeat is
+        /// force-released. Overrides the global volumeHoldTimeoutMs when set.
+        /// Leave unset (null) to use the global value.
+        /// </summary>
+        [JsonProperty("volumeHoldTimeoutMs")]
+        public int? VolumeHoldTimeoutMs { get; set; } = null;
     }
 
 
@@ -204,6 +228,9 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
 
         [JsonProperty("routerOutput")]
         public RoutingPort RouterOutput { get; set; }
+
+        [JsonProperty("routerOutputs")]
+        public Dictionary<uint, RoutingPort> RouterOutputs { get; set; }
 
         [JsonProperty("showRoutedStringFeedback")]
         public bool ShowRoutedStringFeedback { get; set; }
@@ -414,6 +441,14 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
 
         [JsonProperty("volumeRepeatRateMs")]
         public int VolumeRepeatRateMs { get; set; } = 250;
+
+        /// <summary>
+        /// Maximum time in milliseconds a volume button may be held before the repeat is
+        /// force-released. Overrides the global volumeHoldTimeoutMs when set.
+        /// Leave unset (null) to use the global value.
+        /// </summary>
+        [JsonProperty("volumeHoldTimeoutMs")]
+        public int? VolumeHoldTimeoutMs { get; set; } = null;
     }
 
     public class RoutingPort

@@ -1,17 +1,19 @@
 ﻿using System;
+using System.Linq;
 using System.Text.RegularExpressions;
 using Crestron.SimplSharpPro.DeviceSupport;
 using Newtonsoft.Json;
 using Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Bridge.JoinMaps.Standalone;
-using PepperDash.Core;
+using Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Messengers;
 using PepperDash.Core.Logging;
 using PepperDash.Essentials.Core;
 using PepperDash.Essentials.Core.Bridges;
 using PepperDash.Essentials.Core.DeviceTypeInterfaces;
+using PepperDash.Essentials.Plugins.DSP.Biamp.Tesira.Interfaces;
 
 namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
 {
-    public class TesiraDspStateControl : TesiraDspControlPoint, IPrivacy, IStateFeedback
+    public class TesiraDspStateControl : TesiraDspControlPoint, IPrivacy, IStateFeedback, IHasStateControlWithFeedback
     {
         private bool state;
         private readonly int tagForSubscription;
@@ -59,6 +61,23 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
             Enabled = config.Enabled;
         }
 
+        protected override void CreateMobileControlMessengers()
+        {
+            var mc = DeviceManager.AllDevices.OfType<IMobileControl>().FirstOrDefault();
+
+            if (mc == null)
+            {
+                this.LogInformation("Mobile Control not found");
+                return;
+            }
+
+            var messenger = new StateControlMessenger($"{Key}-StateControlMessenger", $"/device/{Key}", this);
+
+            mc.AddDeviceMessenger(messenger);
+
+            base.CreateMobileControlMessengers();
+        }
+
         /// <summary>
         /// Subscribe to component
         /// </summary>
@@ -92,7 +111,13 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
 
             // Check for valid subscription response
 
-            if (customName != StateCustomName) return;
+            if (customName != StateCustomName)
+            {
+                this.LogWarning("Received subscription message for unknown custom name {customName}", customName);
+                return;
+            }
+
+            this.LogDebug("Subscription Response: {customName} Value: {value}", customName, value);
             state = bool.Parse(value);
             FireFeedbacks();
             IsSubscribed = true;
