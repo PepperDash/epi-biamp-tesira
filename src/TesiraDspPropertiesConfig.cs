@@ -70,6 +70,9 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
         /// </summary>
         [JsonProperty("volumeHoldTimeoutMs")]
         public int VolumeHoldTimeoutMs { get; set; } = 10000;
+
+        [JsonProperty("presetHoldTimeMs")]
+        public int PresetHoldTimeMs { get; set; } = 5000; // Default 5 seconds
     }
 
     public class TesiraExpanderBlockConfig
