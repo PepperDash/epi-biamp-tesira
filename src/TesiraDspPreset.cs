@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using Crestron.SimplSharp;
 using Crestron.SimplSharpPro.DeviceSupport;
 using Newtonsoft.Json;
 using Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Bridge.JoinMaps.Standalone;
@@ -58,6 +59,7 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
             trilist.SetStringSigAction(presetJoinMap.PresetName.JoinNumber, Parent.RunPreset);
             trilist.SetUShortSigAction(presetJoinMap.PresetName.JoinNumber, Parent.RunPresetNumber);
 
+            var feedbackTimers = new Dictionary<uint, CTimer>();
 
             foreach (var preset in Presets)
             {
@@ -66,8 +68,51 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
                 var runPresetIndex = p.PresetIndex;
                 var presetIndex = runPresetIndex;
                 trilist.StringInput[(uint)(presetJoinMap.PresetNameFeedback.JoinNumber + presetIndex - 1)].StringValue = p.PresetName;
-                trilist.SetSigTrueAction((uint)(presetJoinMap.PresetSelection.JoinNumber + presetIndex - 1),
-                    () => RecallPreset(p.Key));
+
+                var presetJoin = (uint)(presetJoinMap.PresetSelection.JoinNumber + presetIndex - 1);
+                var feedbackJoin = (uint)(presetJoinMap.PresetSavedFeedback.JoinNumber + presetIndex - 1);
+
+                this.LogDebug("Preset '{presetKey}' (index {presetIndex}): PresetSelection join {presetJoin}, PresetSavedFeedback join {feedbackJoin}",
+                    p.Key, presetIndex, presetJoin, feedbackJoin);
+
+                trilist.SetSigHeldAction(presetJoin, (uint)Parent.PresetHoldTimeMs,
+                    () =>
+                    {
+                        this.LogVerbose("Hold timer expired - saving preset {0}", p.Key);
+                        SavePreset(p.Key);
+                    },
+                    () =>
+                    {
+                        this.LogVerbose("Short press - recalling preset {0}", p.Key);
+                        RecallPreset(p.Key);
+                    });
+
+                var presetSavedState = false;
+                var presetSavedFeedback = new BoolFeedback($"{p.Key}-savedFeedback", () => presetSavedState);
+                presetSavedFeedback.LinkInputSig(trilist.BooleanInput[feedbackJoin]);
+                Feedbacks.Add(presetSavedFeedback);
+
+                Parent.AddPresetSavedFeedbackAction(p.Key, () =>
+                {
+                    this.LogVerbose("Pulsing save feedback for preset {0}", p.Key);
+                    presetSavedState = true;
+                    presetSavedFeedback.FireUpdate();
+                    if (feedbackTimers.ContainsKey(feedbackJoin))
+                    {
+                        feedbackTimers[feedbackJoin]?.Stop();
+                        feedbackTimers[feedbackJoin]?.Dispose();
+                    }
+                    feedbackTimers[feedbackJoin] = new CTimer(feedbackTimerObj =>
+                    {
+                        presetSavedState = false;
+                        presetSavedFeedback.FireUpdate();
+                        this.LogVerbose("Save feedback pulse ended for preset {0}", p.Key);
+                        if (feedbackTimers.ContainsKey(feedbackJoin))
+                        {
+                            feedbackTimers.Remove(feedbackJoin);
+                        }
+                    }, 2000);
+                });
             }
 
 

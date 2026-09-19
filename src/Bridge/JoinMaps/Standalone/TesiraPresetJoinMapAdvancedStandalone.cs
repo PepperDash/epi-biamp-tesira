@@ -50,7 +50,7 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Bridge.JoinMaps.Standal
 
         [JoinName("PresetSavedFeedback")]
         public JoinDataComplete PresetSavedFeedback =
-            new JoinDataComplete(new JoinData { JoinNumber = 50, JoinSpan = 1 },
+            new JoinDataComplete(new JoinData { JoinNumber = 101, JoinSpan = 1 },
                 new JoinMetadata
                 {
                     Description = "Preset Saved Indication - Pulses high for 2 seconds when preset is saved",

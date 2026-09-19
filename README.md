@@ -1,4 +1,3 @@
-![3Series Tested](https://img.shields.io/badge/3-Tested%20on%203%20series-purple.svg)
 ![4Series-Tested](https://img.shields.io/badge/4-Tested%20on%204%20series-teal.svg)
 
 
@@ -9,9 +8,9 @@
 > 2. Do not update Biamp FW independent of Crestron Software and Essentials
 
 > [!IMPORTANT]
-> Biamp FW v4.7.2 requires Essentials v1.15.5, or newer
+> Biamp FW v4.7.2 changed its supported SSH ciphers. Use Essentials Framework 2.38.0 or newer with this plugin.
 >
-> Biamp FW v.4.7.2 includes a change of "deprecated SSH ciphers" which eliminates the ability to connect over SSH using Essentials v1.15.4 and prior.  Essentials v1.15.5 is compiled with the latest Crestron libraries, which are rleied upon for the SSH connection and resolves the issue.
+> Earlier Essentials releases may not include the Crestron libraries required to connect over SSH.
 
 ## License
 
@@ -24,7 +23,9 @@ Provided under MIT license
 
 ## Compatibility
 
-This plugin has been tested with both Crestron 3-Series and 4-Series processors.  It implements all available essentials interfaces relevant to a device of this type.  This includes but is not limited to `AudioCodecBase`, `IHasDspPresets`, `IBasicVolumeWithFeedback`, `IRoutingWithFeedback` and `IDeviceInfoProvider`.  Documentation for which controls implement each interface will be documented in each relevant controls section.  Additionally, every component implements `IKeyed` and all devices are added to the `DeviceManager` unpon instantiation.
+This plugin supports Crestron 4-Series processors and targets .NET Framework 4.7.2. Crestron 3-Series and the .NET Compact Framework 3.5 build are no longer supported. Essentials Framework 2.38.0 or newer is required.
+
+The plugin implements the Essentials interfaces relevant to this device type, including `IHasDspPresetSave`, `IBasicVolumeWithFeedback`, `IRoutingWithFeedback`, and `IDeviceInfoProvider`. Documentation for each interface is included with the relevant controls. Every component also implements `IKeyed`, and all devices are added to the `DeviceManager` upon instantiation.
 
 ## Feature Notes
 
@@ -478,14 +479,17 @@ In the provided example config object, given a base object key of ```dsp-1```, t
 
 If you intend to ONLY do direct preset calling by string, this object is NOT required to recall presets. This activity is provided by the base level device object for the Tesira DSP. It is also provided by the **Standalone** object ```Presets```.  This config object is required regardless of control object if preset control iby index is required.
 
->This control implements [Essentials](https://github.com/PepperDash/Essentials) interfaces **`IHasDspPreset`** and **`IKeyed`**
+>This control implements [Essentials](https://github.com/PepperDash/Essentials) interfaces **`IHasDspPreset`**, **`IHasDspPresetSave`**, and **`IKeyed`**
+
+Pressing the preset's digital join briefly recalls the preset. Holding the same join for `presetHoldTimeMs` (see [Config Notes](#config-notes-4)) saves the current DSP state to that preset. When a save completes, the *Preset Saved Feedback* digital join pulses high for 2 seconds.
 
 #### Digitals
 
-| Legacy Join | Standalone Join | Type (RW) | Description                  |
-| ----------- | --------------- | --------- | ---------------------------- |
-| 100         | 1               | W         | Select Preset By Index       |
-| N/A         | 1               | R         | Preset is Available By Index |
+| Legacy Join | Standalone Join | Type (RW) | Description                                                         |
+| ----------- | ---------------- | --------- | -------------------------------------------------------------------- |
+| 100         | 1                | W         | Select Preset By Index (short press recalls, hold saves)             |
+| N/A         | 1                | R         | Preset is Available By Index                                        |
+| 100         | 101              | R         | Preset Saved Feedback - Pulses high for 2 seconds when preset is saved |
 
 #### Analogs
 
@@ -505,6 +509,7 @@ None
 
 ```json
 {
+    "presetHoldTimeMs" : 5000,
     "presets" : {
         "SomeUniqueKey": {
             "label" : "Default",
@@ -524,6 +529,7 @@ In the provided example config object, given a base object key of ```dsp-1```, t
 **presetName** - the actual name of the preset as defined in biamp software
 **presetID** - the ID of the preset as defined in biamp software
 **presetIndex** - the index of the preset for the digital press recall
+**presetHoldTimeMs** - (Optional, top-level DSP property, not per-preset) Milliseconds the preset's digital join must be held before a save is triggered. Defaults to 5000ms if omitted.
 
 > If a `presetName` is defined, you don't need a `presetId` and vice versa.  One or the other will be fine.
 > If you are utilizing the "select preset by name" methodology, no presets need be defined in config.
@@ -1082,6 +1088,7 @@ In the provided example config object, given a base object key of ```dsp-1```, t
                             "bridgeIndex" : 1
                         }
                      },
+                    "presetHoldTimeMs" : 5000,
                     "presets" : {
                         "1": {
                             "label" : "Default",
