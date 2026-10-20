@@ -222,26 +222,9 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Mock
             public MockPreset(string key, string name) { Key = key; Name = name; }
         }
 
-        /// <summary>
-        /// Registers the mock DSP device with Mobile Control so it appears in
-        /// <c>/devlist</c> and broadcasts its <see cref="ICommunicationMonitor"/> state.
-        /// Child devices (faders, source selector) are auto-registered separately
-        /// because they expose <c>IBasicVolumeWithFeedback</c> / <c>IHasInputs&lt;T&gt;</c>.
-        /// </summary>
-        protected override void CreateMobileControlMessengers()
-        {
-            var mc = DeviceManager.AllDevices.OfType<IMobileControl>().FirstOrDefault();
-            if (mc == null)
-            {
-                this.LogInformation("Mobile Control not found — skipping TesiraDspMock messenger registration");
-                return;
-            }
-
-            mc.AddDeviceMessenger(new ICommunicationMonitorMessenger($"{Key}-commMonitor", $"/device/{Key}", this));
-            base.CreateMobileControlMessengers();
-        }
-
-        // ── Communication monitor — always online (no real hardware) ─────────
+        // Mobile Control: no override needed. Essentials v3 auto-attaches ICommunicationMonitorMessenger to every
+        // ICommunicationMonitor device (registering one here too logged "Messenger ... already exists"), and the
+        // child faders get their volume messengers the same way.
 
         // ── Bench control of the communication status ────────────────────────
 
