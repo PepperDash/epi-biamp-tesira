@@ -243,13 +243,46 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Mock
 
         // ── Communication monitor — always online (no real hardware) ─────────
 
+        // ── Bench control of the communication status ────────────────────────
+
         /// <summary>
-        /// Minimal <see cref="StatusMonitorBase"/> implementation that permanently
-        /// reports <see cref="MonitorStatus.IsOk"/>. The mock has no comm port to
-        /// poll, so there is nothing to monitor — it is always "online".
+        /// Bench control, from the console:
+        /// <c>devjson {"deviceKey":"dsp-01","methodName":"SetIsOnline","params":[false]}</c>.
+        /// Offline reports the communication monitor in error; online reports it OK.
+        /// </summary>
+        public void SetIsOnline(bool online) => SetCommStatus(online ? "ok" : "error");
+
+        /// <summary>
+        /// Bench control, from the console:
+        /// <c>devjson {"deviceKey":"dsp-01","methodName":"SetCommStatus","params":["warning"]}</c>.
+        /// Takes ok / warning / error / unknown (or the MonitorStatus names).
+        /// </summary>
+        public void SetCommStatus(string status)
+        {
+            MonitorStatus parsed;
+            switch ((status ?? string.Empty).Trim().ToLowerInvariant())
+            {
+                case "ok": case "isok": case "online": parsed = MonitorStatus.IsOk; break;
+                case "warning": case "inwarning": parsed = MonitorStatus.InWarning; break;
+                case "error": case "inerror": case "offline": parsed = MonitorStatus.InError; break;
+                case "unknown": case "statusunknown": parsed = MonitorStatus.StatusUnknown; break;
+                default:
+                    this.LogWarning("SetCommStatus: '{status}' is not ok, warning, error or unknown", status);
+                    return;
+            }
+
+            this.LogInformation("MOCK comm status {status}", parsed);
+            ((AlwaysOnMonitor)CommunicationMonitor).SetStatus(parsed);
+        }
+
+        /// <summary>
+        /// Minimal <see cref="StatusMonitorBase"/> for the mock: no comm port to poll. Reports
+        /// <see cref="MonitorStatus.IsOk"/> unless set otherwise from the console (SetIsOnline / SetCommStatus).
         /// </summary>
         private sealed class AlwaysOnMonitor : StatusMonitorBase
         {
+            private MonitorStatus _current = MonitorStatus.IsOk;
+
             public AlwaysOnMonitor(IKeyed parent)
                 // StatusMonitorBase requires warningTime < errorTime and both >= 5000 ms.
                 // Values are never used because Start/Stop are no-ops.
@@ -262,16 +295,22 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Mock
             public override void Start() { /* no-op — no poll needed */ }
             public override void Stop()  { /* no-op — no poll needed */ }
 
+            public void SetStatus(MonitorStatus status)
+            {
+                _current = status;
+                Status = status;
+            }
+
             /// <summary>
             /// Force a fresh StatusChange event even though the value never actually
             /// changes. The Status setter is a no-op when the new value equals the
             /// current value, so a real transition is required to get a second event
-            /// out — flip to StatusUnknown then immediately back to IsOk.
+            /// out — flip to a different value then immediately back to the current one.
             /// </summary>
             public void Refresh()
             {
-                Status = MonitorStatus.StatusUnknown;
-                Status = MonitorStatus.IsOk;
+                Status = _current == MonitorStatus.StatusUnknown ? MonitorStatus.IsOk : MonitorStatus.StatusUnknown;
+                Status = _current;
             }
         }
     }
