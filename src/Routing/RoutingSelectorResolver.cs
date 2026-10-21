@@ -57,5 +57,22 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Routing
             catch (InvalidCastException) { return false; }
             catch (OverflowException) { return false; }
         }
+
+        /// <summary>
+        /// Resolves an input selector like <see cref="TryResolveIndex"/>, except that a null selector
+        /// is input 0 (None). Essentials clears a route by switching the midpoint to a null input
+        /// (<c>RouteDescriptor.ReleaseRoutes</c> with <c>clearRoute</c>, from <c>ClearRoute()</c> on the
+        /// sink), and on the Tesira routing blocks that is the same as selecting input 0.
+        /// </summary>
+        public static bool TryResolveInputIndex(object selector, IEnumerable<CorePort> ports, out uint index)
+        {
+            if (selector == null)
+            {
+                index = 0;
+                return true;
+            }
+
+            return TryResolveIndex(selector, ports, out index);
+        }
     }
 }
