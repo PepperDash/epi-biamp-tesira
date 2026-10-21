@@ -84,6 +84,10 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
 
         private System.Timers.Timer watchDogTimer;
 
+        // Set when a comm monitor warning/error stops a running watchdog, so it restarts once the monitor
+        // recovers on the same connection (a reconnect restarts it through the subscription process instead).
+        private bool watchDogStoppedByMonitor;
+
         private System.Timers.Timer unsubscribeTimer;
         private System.Timers.Timer queueCheckTimer;
 
@@ -673,9 +677,16 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
             if (e.Status == MonitorStatus.IsOk)
             {
                 //StartSubsciptionThread();
+                if (watchDogStoppedByMonitor)
+                {
+                    watchDogStoppedByMonitor = false;
+                    this.LogInformation("Communication recovered; restarting the subscription watchdog");
+                    StartWatchDog();
+                }
             }
             else if (e.Status != MonitorStatus.IsOk)
             {
+                if (watchDogTimer != null) watchDogStoppedByMonitor = true;
                 StopWatchDog();
             }
         }
@@ -693,6 +704,7 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
             if (!e.Client.IsConnected)
             {
                 SuspendWatchdog(true);
+                watchDogStoppedByMonitor = false;
             }
             else
             {
