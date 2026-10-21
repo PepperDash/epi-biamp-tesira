@@ -75,6 +75,27 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Tests
         }
 
         [Fact]
+        public void Null_input_selector_is_input_zero_so_a_cleared_route_reaches_the_dsp()
+        {
+            var ports = new[] { Input("Laptop", 1u) };
+
+            // Essentials' ClearRoute() switches the midpoint to a null input; the routing blocks must send
+            // input 0 (None) instead of dropping the clear.
+            RoutingSelectorResolver.TryResolveInputIndex(null, ports, out var index).Should().BeTrue();
+            index.Should().Be(0u);
+        }
+
+        [Fact]
+        public void Input_resolve_still_maps_slot_keys_and_rejects_unknown_labels()
+        {
+            var ports = new[] { Input("Laptop", 1u), Input("Wireless Presenter", 3u) };
+
+            RoutingSelectorResolver.TryResolveInputIndex("Wireless Presenter", ports, out var index).Should().BeTrue();
+            index.Should().Be(3u);
+            RoutingSelectorResolver.TryResolveInputIndex("Not A Real Input", ports, out _).Should().BeFalse();
+        }
+
+        [Fact]
         public void Untyped_resolve_passes_a_non_string_through()
         {
             var ports = new[] { Input("Laptop", 1u) };
