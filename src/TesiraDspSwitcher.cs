@@ -375,7 +375,7 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
             // Selector may be the port's own Selector (the switcher input index) or, from mobile
             // control's matrix routing, the named slot key - which for these ports is the input's
             // label, not its index. See RoutingSelectorResolver.
-            if (!RoutingSelectorResolver.TryResolveIndex(inputSelector, InputPorts, out var input))
+            if (!RoutingSelectorResolver.TryResolveInputIndex(inputSelector, InputPorts, out var input))
             {
                 this.LogWarning("Unable to execute switch: {inputSelector} is not a known input", inputSelector);
                 return;
