@@ -1,3 +1,4 @@
+using System.Linq;
 using FluentAssertions;
 using Xunit;
 
@@ -20,7 +21,14 @@ public class FactoryDiscoveryTests
     [Fact]
     public void Factory_Count_Is_One()
     {
-        AssemblyFixture.FindFactoryTypes().Should().HaveCount(1);
+        // The real-device factory; the bench mock's factory (namespace ...Tesira.Mock) is counted separately.
+        AssemblyFixture.FindFactoryTypes().Where(t => t.Namespace?.EndsWith(".Mock") != true).Should().HaveCount(1);
+    }
+
+    [Fact]
+    public void MockFactory_Exists()
+    {
+        AssemblyFixture.FindFactoryTypes().Should().ContainSingle(t => t.Name == "TesiraDspMockFactory");
     }
 
     [Fact]
