@@ -205,7 +205,9 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Dialer
                 cmd = string.Format("\"{0}\" subscribe {1} {2} {3}", localInstanceTag, attributeCode, Index1, customName);
             }
 
-            Parent.CommandQueue.EnqueueCommand(cmd, priority: (int)CommandPriority.Critical);
+            // Tag with RequestingComponent (ControlPoint stays null, as in TesiraDspControlPoint) so the
+            // watchdog can attribute a timed-out subscribe check to this dialer and trigger recovery.
+            Parent.CommandQueue.EnqueueCommand(new QueuedCommand(cmd, null, null, priority: (int)CommandPriority.Critical, requestingComponent: this));
         }
 
         public virtual void SendUnSubscriptionCommand(string customName, string attributeCode, int instanceTag)
