@@ -204,7 +204,12 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
                 cmd = string.Format("\"{0}\" subscribe {1} {2} {3}", instanceTagLocal, attributeCode, Index1, customName);
             }
 
-            Parent.CommandQueue.EnqueueCommand(cmd, priority: (int)CommandPriority.Critical);
+            // Enqueue via the QueuedCommand object (not the string overload) so this command
+            // can be tagged with RequestingComponent (= this). ControlPoint is deliberately
+            // left null - the -ERR ALREADY_SUBSCRIBED/+OK ack for a subscribe command isn't a
+            // "get" reply and must not be routed to ParseGetMessage - but the watchdog still
+            // needs to recognize a timed-out subscribe check as belonging to this component.
+            Parent.CommandQueue.EnqueueCommand(new QueuedCommand(cmd, null, null, priority: (int)CommandPriority.Critical, requestingComponent: this));
         }
 
         public virtual void ParseSubscriptionMessage(string customName, string value)

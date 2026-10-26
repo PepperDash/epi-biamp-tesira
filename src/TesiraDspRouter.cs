@@ -9,6 +9,7 @@ using Newtonsoft.Json;
 using Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Bridge.JoinMaps.Standalone;
 using Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Extensions;
 using Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Interfaces;
+using Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Queue;
 using PepperDash.Core.Logging;
 using PepperDash.Essentials.Core;
 using PepperDash.Essentials.Core.Bridges;
@@ -235,7 +236,8 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
 
                 var cmd = $"{InstanceTag1} subscribe {attributeCode} {output.Key} {subscriptionName} {responseRate}";
 
-                Parent.CommandQueue.EnqueueCommand(cmd);
+                // Tag with RequestingComponent so a timed-out watchdog subscribe check triggers recovery.
+                Parent.CommandQueue.EnqueueCommand(new QueuedCommand(cmd, null, null, requestingComponent: this));
                 this.LogDebug("Sent Subscription Command: {cmd}", cmd);
             }
         }
