@@ -907,13 +907,16 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
 
         /// <summary>
         /// Called by the command queue when a command's own per-command timeout fires (i.e. it
-        /// was actually sent but never got a response - see TesiraQueue.HandleCommandTimeout).
-        /// If that command belongs to the sniffer batch currently in flight, this is a real,
-        /// confirmed non-response - not a queue-backlog artifact, since the per-command timeout
-        /// is measured from actual transmission. There's no reason to wait for the rest of the
-        /// sample once we know we need to resubscribe, so react immediately.
+        /// was actually sent but never got a response - see TesiraQueue.HandleCommandTimeout),
+        /// before the queue sends anything else.
+        /// TTP replies carry no correlation id, so a reply that turns up late would be consumed as
+        /// the next command's response. On a network session the only safe recovery is a fresh
+        /// session, so drop and re-establish the connection; the new session's "Welcome" restarts
+        /// the subscription process. A serial port can't be reconnected, so there a watchdog
+        /// failure resubscribes and anything else lets the queue move on, as before.
         /// </summary>
-        internal void NotifyCommandTimedOut(QueuedCommand command)
+        /// <returns>true if recovery is under way and the queue must not continue on its own</returns>
+        internal bool NotifyCommandTimedOut(QueuedCommand command)
         {
             // RequestingComponent, not ControlPoint: subscribe-check commands are enqueued with
             // ControlPoint left null (their -ERR ALREADY_SUBSCRIBED/+OK ack must not be routed to
@@ -921,16 +924,15 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
             // path exists to catch. RequestingComponent is the separate, correlation-only field
             // SendSubscriptionCommand tags with the issuing component.
             var component = command?.RequestingComponent;
-            if (component == null) return;
 
-            bool needsResubscribe;
+            bool watchDogFailure;
             lock (watchdogLock)
             {
-                needsResubscribe = WatchDogSniffer && currentWatchDogBatch.Contains(component);
+                watchDogFailure = component != null && WatchDogSniffer && currentWatchDogBatch.Contains(component);
 
-                if (needsResubscribe)
+                if (watchDogFailure)
                 {
-                    this.LogWarning("Watchdog: component '{component}' did not respond to subscription check in time. Resubscribing immediately.",
+                    this.LogWarning("Watchdog: component '{component}' did not respond to subscription check in time.",
                         component.Key);
 
                     WatchDogSniffer = false;
@@ -940,12 +942,43 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
                 }
             }
 
-            // Call outside watchdogLock: Resubscribe() clears the command queue, which re-enters
+            // Outside watchdogLock: both recoveries clear the command queue, which re-enters
             // TesiraQueue's own lock - no need to hold two locks across that call.
-            if (needsResubscribe)
+            if (!isSerialComm)
             {
-                Resubscribe();
+                ReconnectSession($"No response to '{command?.Command}'");
+                return true;
             }
+
+            if (!watchDogFailure) return false;
+
+            Resubscribe();
+            return true;
+        }
+
+        private int reconnectInProgress;
+
+        /// <summary>
+        /// Drops the TTP session and opens a new one, so no reply from the old session can be matched
+        /// to a command sent on the new one.
+        /// </summary>
+        private void ReconnectSession(string reason)
+        {
+            if (System.Threading.Interlocked.Exchange(ref reconnectInProgress, 1) == 1) return;
+
+            this.LogWarning("{reason}. Reconnecting to re-establish command/response alignment.", reason);
+
+            StopSubscriptionThread();
+            StopWatchDog();
+            CommandQueue.Clear();
+            Communication.Disconnect();
+
+            // Short delay so the old socket is fully closed before the new connection attempt.
+            CreateOneShotTimer(() =>
+            {
+                System.Threading.Interlocked.Exchange(ref reconnectInProgress, 0);
+                Communication.Connect();
+            }, 2000);
         }
 
         /// <summary>
@@ -1053,7 +1086,6 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
                 }
                 if (args.Text.Equals(ResubscriptionString, StringComparison.OrdinalIgnoreCase))
                 {
-                    CommandQueue.Clear();
                     Resubscribe();
                     return;
                 }
@@ -1445,9 +1477,10 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
         {
             this.LogInformation("Issue Detected with device subscriptions - resubscribing to all controls");
 
-            // Discard any stale in-flight command/response so a straggler reply from before
-            // this resubscribe can't be misattributed to one of the commands queued below.
-            CommandQueue.Clear();
+            // Drop unsent commands but keep tracking the one awaiting a reply: forgetting it would let
+            // its reply be consumed by the first subscription command queued below. If that reply
+            // never comes, its timeout reconnects the session (see NotifyCommandTimedOut).
+            CommandQueue.ClearPending();
 
             StopWatchDog();
             StartSubscriptionThread();
