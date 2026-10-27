@@ -31,9 +31,9 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Queue
 
         // TTP commands read: "Instance Tag" verb attribute [index] [value]. Match the verb after the
         // quoted tag, since a tag can itself contain words like "set".
-        private static readonly Regex SetVerb = new Regex(@"^""[^""]*""\s+set\s", RegexOptions.Compiled);
+        private static readonly Regex ChangeVerb = new Regex(@"^""[^""]*""\s+(set|increment|decrement)\s", RegexOptions.Compiled);
 
-        /// <summary>True when a TTP command line uses the <c>set</c> verb.</summary>
-        public static bool IsSetCommand(string command) => command != null && SetVerb.IsMatch(command);
+        /// <summary>True when a TTP command line changes a value: set, increment or decrement.</summary>
+        public static bool IsChangeCommand(string command) => command != null && ChangeVerb.IsMatch(command);
     }
 }
