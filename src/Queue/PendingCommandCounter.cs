@@ -1,5 +1,6 @@
 #nullable disable
 using System.Collections.Generic;
+using System.Text.RegularExpressions;
 
 namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Queue
 {
@@ -27,5 +28,12 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Queue
         public bool Has(object key) => counts.ContainsKey(key);
 
         public void Clear() => counts.Clear();
+
+        // TTP commands read: "Instance Tag" verb attribute [index] [value]. Match the verb after the
+        // quoted tag, since a tag can itself contain words like "set".
+        private static readonly Regex SetVerb = new Regex(@"^""[^""]*""\s+set\s", RegexOptions.Compiled);
+
+        /// <summary>True when a TTP command line uses the <c>set</c> verb.</summary>
+        public static bool IsSetCommand(string command) => command != null && SetVerb.IsMatch(command);
     }
 }
