@@ -703,6 +703,8 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
                     watchDogStoppedByMonitor = false;
                     this.LogInformation("Communication recovered; restarting the subscription watchdog");
                     StartWatchDog();
+                    // StopWatchDog also stopped level range polling
+                    StartLevelRangePollTimer();
                 }
             }
             else if (e.Status != MonitorStatus.IsOk)

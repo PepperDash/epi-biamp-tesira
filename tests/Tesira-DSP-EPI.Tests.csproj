@@ -29,5 +29,7 @@
     <ProjectReference Include="..\src\Tesira-DSP-EPI.4Series.csproj" ReferenceOutputAssembly="false" />
     <!-- Pure-logic slot-key to selector translation, compiled in and exercised directly. -->
     <Compile Include="..\src\Routing\RoutingSelectorResolver.cs" Link="Routing\RoutingSelectorResolver.cs" />
+    <!-- Pure-logic press-and-hold volume ramp shared by faders and room combiners. -->
+    <Compile Include="..\src\VolumeRamp.cs" Link="VolumeRamp.cs" />
   </ItemGroup>
 </Project>

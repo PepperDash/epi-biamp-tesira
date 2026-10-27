@@ -103,24 +103,9 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
         private int VolumeHoldTimeoutMs { get; set; }
         private string LevelControlPointTag { get { return InstanceTag1; } }
 
-        System.Timers.Timer volumeUpRepeatTimer;
-        System.Timers.Timer volumeDownRepeatTimer;
-        System.Timers.Timer volumeUpRepeatDelayTimer;
-        System.Timers.Timer volumeDownRepeatDelayTimer;
-        System.Timers.Timer volumeHoldTimeoutTimer;
+        private VolumeRamp volumeRamp;
 
         System.Timers.Timer pollTimer;
-
-        bool volDownPressTracker;
-        bool volUpPressTracker;
-
-        // Guards against race condition: timer callbacks can fire after Stop() if they were
-        // already queued on a thread pool thread. These flags are set true only on the
-        // initial button press and cleared synchronously on release, so an in-flight
-        // VolumeUpRepeatDelay/VolumeDownRepeatDelay callback can detect that the button
-        // was released and bail out before re-arming the repeat cycle.
-        volatile bool volUpButtonHeld;
-        volatile bool volDownButtonHeld;
 
         /// <summary>
         /// Subscription identifier for Room Combiner
@@ -185,30 +170,12 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
             AutomaticUnmuteOnVolumeUp = config.UnmuteOnVolChange;
             VolumeRepeatRateMs = config.VolumeRepeatRateMs;
             VolumeHoldTimeoutMs = config.VolumeHoldTimeoutMs ?? 10000;
-            volumeUpRepeatTimer = new System.Timers.Timer();
-            volumeUpRepeatTimer.Elapsed += (sender, e) => VolumeUpRepeat();
-            volumeUpRepeatTimer.AutoReset = false;
-            volumeUpRepeatTimer.Enabled = false;
-
-            volumeDownRepeatTimer = new System.Timers.Timer();
-            volumeDownRepeatTimer.Elapsed += (sender, e) => VolumeDownRepeat();
-            volumeDownRepeatTimer.AutoReset = false;
-            volumeDownRepeatTimer.Enabled = false;
-
-            volumeUpRepeatDelayTimer = new System.Timers.Timer();
-            volumeUpRepeatDelayTimer.Elapsed += (sender, e) => VolumeUpRepeatDelay();
-            volumeUpRepeatDelayTimer.AutoReset = false;
-            volumeUpRepeatDelayTimer.Enabled = false;
-
-            volumeDownRepeatDelayTimer = new System.Timers.Timer();
-            volumeDownRepeatDelayTimer.Elapsed += (sender, e) => VolumeDownRepeatDelay();
-            volumeDownRepeatDelayTimer.AutoReset = false;
-            volumeDownRepeatDelayTimer.Enabled = false;
-
-            volumeHoldTimeoutTimer = new System.Timers.Timer();
-            volumeHoldTimeoutTimer.Elapsed += (sender, e) => VolumeHoldTimeout();
-            volumeHoldTimeoutTimer.AutoReset = false;
-            volumeHoldTimeoutTimer.Enabled = false;
+            volumeRamp = new VolumeRamp(
+                isUp => SendFullCommand(isUp ? "increment" : "decrement", "levelOut", IncrementAmount, 1),
+                () => VolumeRepeatRateMs,
+                () => VolumeHoldTimeoutMs,
+                onUpPress: () => { if (AutomaticUnmuteOnVolumeUp && outIsMuted) MuteOff(); },
+                logWarning: message => this.LogWarning("{LevelControlPointTag}: {message}", LevelControlPointTag, message));
 
             pollTimer = new System.Timers.Timer();
             pollTimer.Elapsed += (sender, e) => DoPoll();
@@ -246,37 +213,6 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
             Parent.Feedbacks.AddRange(Feedbacks);
         }
 
-
-        private void VolumeUpRepeat()
-        {
-            if (volUpPressTracker && volUpButtonHeld)
-                VolumeUp(true);
-        }
-        private void VolumeDownRepeat()
-        {
-            if (volDownPressTracker && volDownButtonHeld)
-                VolumeDown(true);
-        }
-
-        private void VolumeUpRepeatDelay()
-        {
-            if (!volUpButtonHeld) return;
-            volUpPressTracker = true;
-            VolumeUp(true);
-        }
-        private void VolumeDownRepeatDelay()
-        {
-            if (!volDownButtonHeld) return;
-            volDownPressTracker = true;
-            VolumeDown(true);
-        }
-
-        private void VolumeHoldTimeout()
-        {
-            this.LogWarning("Volume hold timeout expired for {LevelControlPointTag} — forcing release. Panel may have dropped.", LevelControlPointTag);
-            VolumeUp(false);
-            VolumeDown(false);
-        }
 
         /// <summary>
         /// Subscribe to component
@@ -378,19 +314,10 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
                     : (ushort)clampedRaw.Scale(MinLevel, MaxLevel, 0, 65535, this);
             }
 
-            // Stop the active repeat timers and suppress any already-queued repeat-delay/repeat
-            // callbacks from re-arming the cycle by clearing the logical held state they check.
-            // Do not stop the hold-timeout timer here; the absolute maximum hold-time safeguard
-            // should remain available until the normal release/timeout cleanup path runs.
+            // Stop repeating in both directions; already-queued repeat callbacks see the cleared
+            // held state and do nothing. Hold-timeout timers stay armed.
             this.LogDebug("Out-of-range error on {LevelControlPointTag} — stopping ramp timers and suppressing held state.", LevelControlPointTag);
-            volumeUpRepeatTimer.Stop();
-            volumeUpRepeatDelayTimer.Stop();
-            volumeDownRepeatTimer.Stop();
-            volumeDownRepeatDelayTimer.Stop();
-            volUpButtonHeld = false;
-            volDownButtonHeld = false;
-            volUpPressTracker = false;
-            volDownPressTracker = false;
+            volumeRamp.Cancel();
 
             // Clamp to the boundary that was exceeded so that a step size larger than the
             // remaining range doesn't strand the fader short of the limit.
@@ -419,7 +346,10 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
             {
                 this.LogVerbose("Parsing Message: {message} attributeCode: {attributeCode}", message, attributeCode);
 
-                if (message.IndexOf("-ERR INVALID_PARAMETER", StringComparison.Ordinal) >= 0)
+                // Only level steps feed volume recovery; a rejected group (or other) value must not
+                // overwrite the level limits.
+                if (attributeCode == "levelOut" &&
+                    message.IndexOf("-ERR INVALID_PARAMETER", StringComparison.Ordinal) >= 0)
                 {
                     var isOutOfRangeError = Regex.IsMatch(message, @"\bout of range\b", RegexOptions.IgnoreCase);
                     if (isOutOfRangeError)
@@ -606,40 +536,8 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
         /// <param name="press"></param>
         public void VolumeDown(bool press)
         {
-            this.LogDebug("VolumeDown Sent for {LevelControlPointTag}", LevelControlPointTag);
-            if (press)
-            {
-                if (volDownPressTracker)
-                {
-                    volumeDownRepeatTimer.Stop();
-                    volumeDownRepeatTimer.Interval = VolumeRepeatRateMs;
-                    volumeDownRepeatTimer.Start();
-                    SendFullCommand("decrement", "levelOut", IncrementAmount, 1);
-                }
-                else if (!volDownPressTracker)
-                {
-                    volDownButtonHeld = true;
-                    volumeDownRepeatDelayTimer.Stop();
-                    volumeDownRepeatDelayTimer.Interval = 200;
-                    volumeDownRepeatDelayTimer.Start();
-                    volumeHoldTimeoutTimer.Stop();
-                    if (VolumeHoldTimeoutMs > 0)
-                    {
-                        volumeHoldTimeoutTimer.Interval = VolumeHoldTimeoutMs;
-                        volumeHoldTimeoutTimer.Start();
-                    }
-                    SendFullCommand("decrement", "levelOut", IncrementAmount, 1);
-                }
-
-            }
-            if (!press)
-            {
-                volDownButtonHeld = false;
-                volDownPressTracker = false;
-                volumeDownRepeatTimer.Stop();
-                volumeDownRepeatDelayTimer.Stop();
-                volumeHoldTimeoutTimer.Stop();
-            }
+            this.LogDebug("VolumeDown {press} for {LevelControlPointTag}", press ? "press" : "release", LevelControlPointTag);
+            volumeRamp.Set(false, press);
         }
 
         /// <summary>
@@ -648,47 +546,8 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
         /// <param name="press"></param>
         public void VolumeUp(bool press)
         {
-            this.LogDebug("VolumeUp Sent for {LevelControlPointTag}", LevelControlPointTag);
-
-            if (press)
-            {
-                if (volUpPressTracker)
-                {
-                    volumeUpRepeatTimer.Stop();
-                    volumeUpRepeatTimer.Interval = VolumeRepeatRateMs;
-                    volumeUpRepeatTimer.Start();
-                    SendFullCommand("increment", "levelOut", IncrementAmount, 1);
-                }
-                else if (!volUpPressTracker)
-                {
-                    volUpButtonHeld = true;
-                    volumeUpRepeatDelayTimer.Stop();
-                    volumeUpRepeatDelayTimer.Interval = 200;
-                    volumeUpRepeatDelayTimer.Start();
-                    volumeHoldTimeoutTimer.Stop();
-                    if (VolumeHoldTimeoutMs > 0)
-                    {
-                        volumeHoldTimeoutTimer.Interval = VolumeHoldTimeoutMs;
-                        volumeHoldTimeoutTimer.Start();
-                    }
-                    SendFullCommand("increment", "levelOut", IncrementAmount, 1);
-                    if (AutomaticUnmuteOnVolumeUp)
-                    {
-                        if (outIsMuted)
-                        {
-                            MuteOff();
-                        }
-                    }
-                }
-            }
-            if (!press)
-            {
-                volUpButtonHeld = false;
-                volUpPressTracker = false;
-                volumeUpRepeatTimer.Stop();
-                volumeUpRepeatDelayTimer.Stop();
-                volumeHoldTimeoutTimer.Stop();
-            }
+            this.LogDebug("VolumeUp {press} for {LevelControlPointTag}", press ? "press" : "release", LevelControlPointTag);
+            volumeRamp.Set(true, press);
         }
 
 
