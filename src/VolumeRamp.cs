@@ -119,7 +119,8 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
         internal bool IsRepeatTimerArmed(bool isUp) { lock (rampLock) return Get(isUp).RepeatTimer.Enabled; }
 
         // Timer callbacks. Each checks and changes state atomically, so a callback that was already
-        // queued when the button was released finds Held cleared and does nothing.
+        // queued when the button was released finds Held cleared and does nothing, and one whose
+        // timer a newer press has re-armed finds it enabled and does nothing.
 
         internal void OnDelayElapsed(bool isUp)
         {
@@ -127,6 +128,8 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
             int generation;
             lock (rampLock)
             {
+                // Re-armed by a newer press after this callback was queued: stale
+                if (d.DelayTimer.Enabled) return;
                 if (!d.Held) return;
                 d.Repeating = true;
                 generation = d.Generation;
@@ -140,6 +143,7 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
             int generation;
             lock (rampLock)
             {
+                if (d.RepeatTimer.Enabled) return;
                 if (!d.Held || !d.Repeating) return;
                 generation = d.Generation;
             }
@@ -174,7 +178,20 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
                 isUp ? "up" : "down"));
         }
 
-        /// <summary>Test hook: the hold timer fires as if its interval had elapsed.</summary>
+        // Test hooks: the timer fires as if its interval had elapsed. A one-shot timer is disabled
+        // when it fires, which the callbacks use to tell a genuine firing from a stale one.
+        internal void FireDelayTimer(bool isUp)
+        {
+            lock (rampLock) Get(isUp).DelayTimer.Stop();
+            OnDelayElapsed(isUp);
+        }
+
+        internal void FireRepeatTimer(bool isUp)
+        {
+            lock (rampLock) Get(isUp).RepeatTimer.Stop();
+            OnRepeatElapsed(isUp);
+        }
+
         internal void FireHoldTimer(bool isUp)
         {
             lock (rampLock) Get(isUp).HoldTimer.Stop();

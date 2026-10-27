@@ -32,9 +32,9 @@ public class VolumeRampTests
         using var ramp = CreateRamp();
         ramp.Press(true);
 
-        ramp.OnDelayElapsed(true);
-        ramp.OnRepeatElapsed(true);
-        ramp.OnRepeatElapsed(true);
+        ramp.FireDelayTimer(true);
+        ramp.FireRepeatTimer(true);
+        ramp.FireRepeatTimer(true);
 
         steps.Should().Equal(true, true, true, true);
         upPresses.Should().Be(1, "repeats are not new presses");
@@ -45,7 +45,7 @@ public class VolumeRampTests
     {
         using var ramp = CreateRamp();
         ramp.Press(true);
-        ramp.OnDelayElapsed(true);
+        ramp.FireDelayTimer(true);
         ramp.Release(true);
 
         // A repeat or delay callback that was already queued on the thread pool runs late.
@@ -75,11 +75,26 @@ public class VolumeRampTests
             ramp.Press(true);
             releaseDuringSend = true;
 
-            ramp.OnDelayElapsed(true);
+            ramp.FireDelayTimer(true);
 
             ramp.IsRepeatTimerArmed(true).Should().BeFalse();
             ramp.IsRepeating(true).Should().BeFalse();
         }
+    }
+
+    [Fact]
+    public void Stale_Delay_Callback_Does_Nothing_After_Release_And_Repress()
+    {
+        using var ramp = CreateRamp();
+        ramp.Press(true);
+        ramp.Release(true);
+        ramp.Press(true); // re-arms the 200 ms delay for the new press
+
+        // The first press's delay callback was queued before the release and runs now.
+        ramp.OnDelayElapsed(true);
+
+        steps.Should().Equal(true, true);
+        ramp.IsRepeating(true).Should().BeFalse("the new press has not reached its own delay yet");
     }
 
     [Fact]
@@ -101,8 +116,8 @@ public class VolumeRampTests
         using var ramp = CreateRamp();
         ramp.Press(true);
         ramp.Press(false);
-        ramp.OnDelayElapsed(true);
-        ramp.OnDelayElapsed(false);
+        ramp.FireDelayTimer(true);
+        ramp.FireDelayTimer(false);
 
         ramp.FireHoldTimer(true);
 
@@ -132,7 +147,7 @@ public class VolumeRampTests
     {
         using var ramp = CreateRamp();
         ramp.Press(true);
-        ramp.OnDelayElapsed(true);
+        ramp.FireDelayTimer(true);
 
         ramp.Cancel();
         ramp.OnRepeatElapsed(true);
