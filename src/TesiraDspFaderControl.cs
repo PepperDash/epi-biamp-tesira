@@ -391,11 +391,12 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
             // Clamp to the boundary that was exceeded so that a step size larger than the
             // remaining range doesn't strand the fader short of the limit.
             var val = double.Parse(m.Groups["val"].Value);
-            // Commands run in order, so a correction queued now would land after any level set
-            // the user requested since the rejected step, and undo it.
-            if (Parent.CommandQueue.HasPendingLevelSet(this))
+            // Commands run in order, so a correction queued now would land after any newer level
+            // change (a set, or a step either way) and undo it. If that change is rejected too, its
+            // own error runs this recovery with nothing queued behind it.
+            if (Parent.CommandQueue.HasPendingLevelChange(this))
             {
-                this.LogDebug("Skipping boundary correction for {LevelControlPointTag}: a newer level set is queued.", LevelControlPointTag);
+                this.LogDebug("Skipping boundary correction for {LevelControlPointTag}: a newer level change is queued.", LevelControlPointTag);
                 return;
             }
             if (val > MaxLevel)
@@ -448,7 +449,7 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
                         {
                             MinLevel = double.Parse(value);
                             this.LogDebug("MinLevel is '{MinLevel}'", MinLevel);
-                            if (!UseAbsoluteValue && hasLevel)
+                            if (!UseAbsoluteValue && hasLevel && MinLevel < MaxLevel)
                             {
                                 var clampedRawLevel = Math.Max(MinLevel, Math.Min(MaxLevel, rawLevelDb));
                                 VolumeLevel = (ushort)clampedRawLevel.Scale(MinLevel, MaxLevel, 0, 65535, this);
@@ -459,7 +460,7 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
                         {
                             MaxLevel = double.Parse(value);
                             this.LogDebug("MaxLevel is '{MaxLevel}'", MaxLevel);
-                            if (!UseAbsoluteValue && hasLevel)
+                            if (!UseAbsoluteValue && hasLevel && MinLevel < MaxLevel)
                             {
                                 var clampedRawLevel = Math.Max(MinLevel, Math.Min(MaxLevel, rawLevelDb));
                                 VolumeLevel = (ushort)clampedRawLevel.Scale(MinLevel, MaxLevel, 0, 65535, this);

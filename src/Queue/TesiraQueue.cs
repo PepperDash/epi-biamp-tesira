@@ -26,8 +26,9 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Queue
 
         private readonly object lockObject = new object();
 
-        // Level sets queued but not yet sent, per control point. Updated with the queue under lockObject.
-        private readonly PendingCommandCounter pendingLevelSets = new PendingCommandCounter();
+        // Level changes (set/increment/decrement) queued but not yet sent, per control point.
+        // Updated with the queue under lockObject.
+        private readonly PendingCommandCounter pendingLevelChanges = new PendingCommandCounter();
 
         private int _commandTimeoutMs = 8000;
 
@@ -108,8 +109,8 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Queue
 
                 var countBefore = LocalQueue.Count;
                 LocalQueue.Enqueue(commandToEnqueue);
-                if (LocalQueue.Count > countBefore && IsLevelSet(commandToEnqueue))
-                    pendingLevelSets.Add(commandToEnqueue.ControlPoint);
+                if (LocalQueue.Count > countBefore && IsLevelChange(commandToEnqueue))
+                    pendingLevelChanges.Add(commandToEnqueue.ControlPoint);
 
                 Parent.LogVerbose("[EnqueueCommand] Command Enqueued: '{command}'.  CommandQueue has {count} items", commandToEnqueue.Command, LocalQueue.Count);
 
@@ -174,7 +175,7 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Queue
                     return;
                 }
 
-                if (IsLevelSet(lastDequeued)) pendingLevelSets.Remove(lastDequeued.ControlPoint);
+                if (IsLevelChange(lastDequeued)) pendingLevelChanges.Remove(lastDequeued.ControlPoint);
 
                 Parent.LogVerbose("[SendNextQueuedCommand] Sending Line {line}. ControlPoint: {controlPoint}", lastDequeued.Command, lastDequeued.ControlPoint?.Key ?? "no control point");
 
@@ -231,7 +232,7 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Queue
             {
                 if (LocalQueue == null) return;
                 LocalQueue.Clear();
-                pendingLevelSets.Clear();
+                pendingLevelChanges.Clear();
                 lastDequeued = null;
                 CommandQueueInProgress = false;
                 commandTimeoutTimer?.Dispose();
@@ -249,23 +250,24 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Queue
             {
                 if (LocalQueue == null) return;
                 LocalQueue.Clear();
-                pendingLevelSets.Clear();
+                pendingLevelChanges.Clear();
                 if (lastDequeued == null) CommandQueueInProgress = false;
             }
         }
 
         /// <summary>
-        /// True when a level set for <paramref name="controlPoint"/> is queued and not yet sent.
+        /// True when a level change (set, increment or decrement) for <paramref name="controlPoint"/>
+        /// is queued and not yet sent.
         /// </summary>
-        public bool HasPendingLevelSet(ISubscribedComponent controlPoint)
+        public bool HasPendingLevelChange(ISubscribedComponent controlPoint)
         {
-            lock (lockObject) return pendingLevelSets.Has(controlPoint);
+            lock (lockObject) return pendingLevelChanges.Has(controlPoint);
         }
 
-        private static bool IsLevelSet(QueuedCommand command) =>
+        private static bool IsLevelChange(QueuedCommand command) =>
             command?.ControlPoint != null &&
             (command.AttributeCode == "level" || command.AttributeCode == "levelOut") &&
-            PendingCommandCounter.IsSetCommand(command.Command);
+            PendingCommandCounter.IsChangeCommand(command.Command);
 
     }
 
