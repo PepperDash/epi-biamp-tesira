@@ -32,6 +32,8 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
         }
 
         private double rawOutVolumeLevelDb;
+        // False until the DSP has reported a levelOut value; min/max replies don't rescale before then.
+        private bool hasOutLevel;
         private int outVolumeLevel;
         protected int OutVolumeLevel
         {
@@ -259,9 +261,21 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
         public override void ParseSubscriptionMessage(string customName, string data)
         {
             if (customName != LevelCustomName) return;
-            var value = double.Parse(data);
 
+            ApplyOutLevel(double.Parse(data));
+
+            // No poll-timer reset here: frequent level publishes would otherwise keep postponing the
+            // poll that refreshes mute and group. DoPoll rearms it.
+            levelIsSubscribed = true;
+        }
+
+        /// <summary>
+        /// Updates level feedback from a levelOut value in dB, from a subscription or a GET reply.
+        /// </summary>
+        private void ApplyOutLevel(double value)
+        {
             rawOutVolumeLevelDb = value;
+            hasOutLevel = true;
 
             if (!UseAbsoluteValue && (value < MinLevel || value > MaxLevel))
             {
@@ -279,10 +293,6 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
             {
                 OutVolumeLevel = UseAbsoluteValue ? (ushort)value : (ushort)value.Scale(MinLevel, MaxLevel, 0, 65535, this);
             }
-
-            // No poll-timer reset here: frequent level publishes would otherwise keep postponing the
-            // poll that refreshes mute and group. The GET reply handlers restart it.
-            levelIsSubscribed = true;
         }
 
         const string parsePattern = "[^ ]* (.*)";
@@ -389,7 +399,7 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
                         {
                             MinLevel = double.Parse(value);
                             this.LogDebug("MinLevel: {MinLevel}", MinLevel);
-                            if (!UseAbsoluteValue)
+                            if (!UseAbsoluteValue && hasOutLevel)
                             {
                                 var clampedRawLevel = Math.Max(MinLevel, Math.Min(MaxLevel, rawOutVolumeLevelDb));
                                 OutVolumeLevel = (ushort)clampedRawLevel.Scale(MinLevel, MaxLevel, 0, 65535, this);
@@ -400,11 +410,17 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
                         {
                             MaxLevel = double.Parse(value);
                             this.LogDebug("MaxLevel: {MaxLevel}", MaxLevel);
-                            if (!UseAbsoluteValue)
+                            if (!UseAbsoluteValue && hasOutLevel)
                             {
                                 var clampedRawLevel = Math.Max(MinLevel, Math.Min(MaxLevel, rawOutVolumeLevelDb));
                                 OutVolumeLevel = (ushort)clampedRawLevel.Scale(MinLevel, MaxLevel, 0, 65535, this);
                             }
+                            break;
+                        }
+                    case "levelOut":
+                        {
+                            ApplyOutLevel(double.Parse(value));
+                            ResetTimer(pollTimer, 30000);
                             break;
                         }
                     case "muteOut":
