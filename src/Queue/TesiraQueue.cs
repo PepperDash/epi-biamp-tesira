@@ -265,7 +265,7 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Queue
         private static bool IsLevelSet(QueuedCommand command) =>
             command?.ControlPoint != null &&
             (command.AttributeCode == "level" || command.AttributeCode == "levelOut") &&
-            command.Command.Contains(" set ");
+            PendingCommandCounter.IsSetCommand(command.Command);
 
     }
 

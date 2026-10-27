@@ -56,3 +56,19 @@ public class PendingCommandCounterTests
         counter.Has(other).Should().BeFalse();
     }
 }
+
+public class PendingCommandCounterSetVerbTests
+{
+    [Theory]
+    [InlineData("\"Main Level\" set level 1 -10.000000", true)]
+    [InlineData("\"Room set Main\" set levelOut 2 -6.000000", true)]
+    [InlineData("\"Room set Main\" increment levelOut 2 1", false)]
+    [InlineData("\"Room set Main\" get level 1", false)]
+    [InlineData("\"Main Level\" decrement level 1 1", false)]
+    [InlineData("", false)]
+    [InlineData(null, false)]
+    public void Matches_Only_The_Verb_After_The_Instance_Tag(string? command, bool expected)
+    {
+        PendingCommandCounter.IsSetCommand(command!).Should().Be(expected);
+    }
+}
