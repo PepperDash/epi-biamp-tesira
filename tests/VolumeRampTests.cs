@@ -81,12 +81,27 @@ public class VolumeRampTests
         ramp.OnDelayElapsed(true);
         ramp.OnDelayElapsed(false);
 
-        ramp.OnHoldElapsed(true);
+        ramp.FireHoldTimer(true);
 
         ramp.IsHeld(true).Should().BeFalse();
         ramp.IsRepeating(true).Should().BeFalse();
         ramp.IsHeld(false).Should().BeTrue();
         ramp.IsRepeating(false).Should().BeTrue();
+    }
+
+    [Fact]
+    public void Stale_Hold_Callback_Does_Not_Release_A_Newer_Press()
+    {
+        using var ramp = CreateRamp();
+        ramp.Press(true);
+        ramp.Release(true);
+        ramp.Press(true);
+
+        // The first press's hold callback runs late, after the new press re-armed the timer.
+        ramp.OnHoldElapsed(true);
+
+        ramp.IsHeld(true).Should().BeTrue();
+        ramp.IsHoldTimerArmed(true).Should().BeTrue();
     }
 
     [Fact]

@@ -321,6 +321,8 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
                 // Clamp it to the new boundary before scaling to prevent ushort wrap.
                 var currentRaw = double.Parse(m.Groups["val"].Value);
                 var clampedRaw = Math.Max(MinLevel, Math.Min(MaxLevel, currentRaw));
+                rawOutVolumeLevelDb = clampedRaw;
+                hasOutLevel = true;
                 OutVolumeLevel = UseAbsoluteValue
                     ? (ushort)clampedRaw
                     : (ushort)clampedRaw.Scale(MinLevel, MaxLevel, 0, 65535, this);

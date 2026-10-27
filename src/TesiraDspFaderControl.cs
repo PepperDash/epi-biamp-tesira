@@ -376,6 +376,7 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
                 var currentRaw = double.Parse(m.Groups["val"].Value);
                 var clampedRaw = Math.Max(MinLevel, Math.Min(MaxLevel, currentRaw));
                 rawLevelDb = clampedRaw;
+                hasLevel = true;
                 RawVolumeLevel = (int)clampedRaw;
                 VolumeLevel = UseAbsoluteValue
                     ? (ushort)clampedRaw
