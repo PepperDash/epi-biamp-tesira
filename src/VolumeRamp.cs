@@ -62,6 +62,7 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
                 newPress = !d.Repeating;
                 if (newPress)
                 {
+                    d.Generation++;
                     d.Held = true;
                     Restart(d.DelayTimer, RepeatDelayMs);
                     d.HoldTimer.Stop();
@@ -85,6 +86,7 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
 
         private static void ReleaseLocked(Direction d)
         {
+            d.Generation++;
             d.Held = false;
             d.Repeating = false;
             d.RepeatTimer.Stop();
@@ -104,6 +106,7 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
                 {
                     d.RepeatTimer.Stop();
                     d.DelayTimer.Stop();
+                    d.Generation++;
                     d.Held = false;
                     d.Repeating = false;
                 }
@@ -113,6 +116,7 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
         internal bool IsHeld(bool isUp) { lock (rampLock) return Get(isUp).Held; }
         internal bool IsRepeating(bool isUp) { lock (rampLock) return Get(isUp).Repeating; }
         internal bool IsHoldTimerArmed(bool isUp) { lock (rampLock) return Get(isUp).HoldTimer.Enabled; }
+        internal bool IsRepeatTimerArmed(bool isUp) { lock (rampLock) return Get(isUp).RepeatTimer.Enabled; }
 
         // Timer callbacks. Each checks and changes state atomically, so a callback that was already
         // queued when the button was released finds Held cleared and does nothing.
@@ -120,24 +124,39 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
         internal void OnDelayElapsed(bool isUp)
         {
             var d = Get(isUp);
+            int generation;
             lock (rampLock)
             {
                 if (!d.Held) return;
                 d.Repeating = true;
-                Restart(d.RepeatTimer, repeatRateMs());
+                generation = d.Generation;
             }
-            sendStep(isUp);
+            SendThenRearm(d, isUp, generation);
         }
 
         internal void OnRepeatElapsed(bool isUp)
         {
             var d = Get(isUp);
+            int generation;
             lock (rampLock)
             {
                 if (!d.Held || !d.Repeating) return;
+                generation = d.Generation;
+            }
+            SendThenRearm(d, isUp, generation);
+        }
+
+        // Send first, then re-arm only if the same press is still repeating. Sending can block on
+        // the command queue lock; arming first would let further callbacks pile up behind it and
+        // enqueue steps after a release.
+        private void SendThenRearm(Direction d, bool isUp, int generation)
+        {
+            sendStep(isUp);
+            lock (rampLock)
+            {
+                if (d.Generation != generation || !d.Held || !d.Repeating) return;
                 Restart(d.RepeatTimer, repeatRateMs());
             }
-            sendStep(isUp);
         }
 
         internal void OnHoldElapsed(bool isUp)
@@ -184,6 +203,9 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
         {
             public bool Held;
             public bool Repeating;
+            // Bumped on every new press, release and cancel; a send that finishes under an older
+            // generation must not re-arm the repeat.
+            public int Generation;
             public readonly System.Timers.Timer DelayTimer;
             public readonly System.Timers.Timer RepeatTimer;
             public readonly System.Timers.Timer HoldTimer;

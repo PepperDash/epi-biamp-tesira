@@ -106,6 +106,7 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
         private string LevelControlPointTag { get { return InstanceTag1; } }
 
         private VolumeRamp volumeRamp;
+        private readonly LevelRequestTracker levelRequests = new LevelRequestTracker();
 
         System.Timers.Timer pollTimer;
 
@@ -173,7 +174,11 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
             VolumeRepeatRateMs = config.VolumeRepeatRateMs;
             VolumeHoldTimeoutMs = config.VolumeHoldTimeoutMs ?? 10000;
             volumeRamp = new VolumeRamp(
-                isUp => SendFullCommand(isUp ? "increment" : "decrement", "levelOut", IncrementAmount, 1),
+                isUp =>
+                {
+                    levelRequests.RecordStep();
+                    SendFullCommand(isUp ? "increment" : "decrement", "levelOut", IncrementAmount, 1);
+                },
                 () => VolumeRepeatRateMs,
                 () => VolumeHoldTimeoutMs,
                 onUpPress: () => { if (AutomaticUnmuteOnVolumeUp && outIsMuted) MuteOff(); },
@@ -336,6 +341,11 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
             // Clamp to the boundary that was exceeded so that a step size larger than the
             // remaining range doesn't strand the fader short of the limit.
             var val = double.Parse(m.Groups["val"].Value);
+            if (!levelRequests.ShouldCorrect(val))
+            {
+                this.LogDebug("Skipping boundary correction for {LevelControlPointTag}: a newer level set is queued.", LevelControlPointTag);
+                return;
+            }
             if (val > MaxLevel)
             {
                 this.LogDebug("Clamping levelOut to MaxLevel {MaxLevel} after out-of-range increment.", MaxLevel);
@@ -478,6 +488,7 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
 
             var volumeLevel = UseAbsoluteValue ? level : newLevel.Scale(0, 65535, MinLevel, MaxLevel, this);
 
+            levelRequests.RecordSet(volumeLevel);
             SendFullCommand("set", "levelOut", string.Format("{0:0.000000}", volumeLevel), 1);
         }
 

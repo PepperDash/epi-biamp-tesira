@@ -60,6 +60,29 @@ public class VolumeRampTests
     }
 
     [Fact]
+    public void Release_While_A_Step_Is_Being_Sent_Does_Not_Rearm_The_Repeat()
+    {
+        VolumeRamp? ramp = null;
+        var releaseDuringSend = false;
+        ramp = new VolumeRamp(isUp =>
+        {
+            steps.Add(isUp);
+            // Simulates the button being released while the send was blocked on the queue lock.
+            if (releaseDuringSend) ramp!.Release(isUp);
+        }, () => 60_000, () => 60_000);
+        using (ramp)
+        {
+            ramp.Press(true);
+            releaseDuringSend = true;
+
+            ramp.OnDelayElapsed(true);
+
+            ramp.IsRepeatTimerArmed(true).Should().BeFalse();
+            ramp.IsRepeating(true).Should().BeFalse();
+        }
+    }
+
+    [Fact]
     public void Releasing_One_Direction_Keeps_The_Other_Hold_Timeout_Armed()
     {
         using var ramp = CreateRamp();

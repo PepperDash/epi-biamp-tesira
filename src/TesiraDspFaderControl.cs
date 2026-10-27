@@ -67,6 +67,7 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
 
 
         private VolumeRamp volumeRamp;
+        private readonly LevelRequestTracker levelRequests = new LevelRequestTracker();
 
         // Last level reported by the DSP, in dB, unrounded. RawVolumeLevel truncates to an int for
         // the bridge; rescaling on a min/max change must use the exact value.
@@ -186,7 +187,11 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
             VolumeRepeatRateMs = config.VolumeRepeatRateMs;
             VolumeHoldTimeoutMs = config.VolumeHoldTimeoutMs ?? 10000;
             volumeRamp = new VolumeRamp(
-                isUp => SendFullCommand(isUp ? "increment" : "decrement", "level", IncrementAmount, 1),
+                isUp =>
+                {
+                    levelRequests.RecordStep();
+                    SendFullCommand(isUp ? "increment" : "decrement", "level", IncrementAmount, 1);
+                },
                 () => VolumeRepeatRateMs,
                 () => VolumeHoldTimeoutMs,
                 onUpPress: () => { if (AutomaticUnmuteOnVolumeUp && isMuted) MuteOff(); },
@@ -391,6 +396,11 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
             // Clamp to the boundary that was exceeded so that a step size larger than the
             // remaining range doesn't strand the fader short of the limit.
             var val = double.Parse(m.Groups["val"].Value);
+            if (!levelRequests.ShouldCorrect(val))
+            {
+                this.LogDebug("Skipping boundary correction for {LevelControlPointTag}: a newer level set is queued.", LevelControlPointTag);
+                return;
+            }
             if (val > MaxLevel)
             {
                 this.LogDebug("Clamping level to MaxLevel {MaxLevel} after out-of-range increment.", MaxLevel);
@@ -515,30 +525,23 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
             if (level > volumeLevel && AutomaticUnmuteOnVolumeUp)
                 if (isMuted)
                     MuteOff();
+
+            double levelDb;
             switch (level)
             {
                 case ushort.MinValue:
-                    {
-                        SendFullCommand("set", "level", string.Format("{0:0.000000}", MinLevel), 1);
-                        break;
-                    }
-
+                    levelDb = MinLevel;
+                    break;
                 case ushort.MaxValue:
-                    {
-                        SendFullCommand("set", "level", string.Format("{0:0.000000}", MaxLevel), 1);
-                        break;
-                    }
+                    levelDb = MaxLevel;
+                    break;
                 default:
-                    {
-                        var newLevel = Convert.ToDouble(level);
-
-                        var volumeLevel = UseAbsoluteValue ? level : newLevel.Scale(0, 65535, MinLevel, MaxLevel, this);
-
-                        SendFullCommand("set", "level", string.Format("{0:0.000000}", volumeLevel), 1);
-                        break;
-
-                    }
+                    levelDb = UseAbsoluteValue ? level : Convert.ToDouble(level).Scale(0, 65535, MinLevel, MaxLevel, this);
+                    break;
             }
+
+            levelRequests.RecordSet(levelDb);
+            SendFullCommand("set", "level", string.Format("{0:0.000000}", levelDb), 1);
         }
 
 
