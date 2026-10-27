@@ -174,11 +174,7 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
             VolumeRepeatRateMs = config.VolumeRepeatRateMs;
             VolumeHoldTimeoutMs = config.VolumeHoldTimeoutMs ?? 10000;
             volumeRamp = new VolumeRamp(
-                isUp =>
-                {
-                    levelRequests.RecordStep();
-                    SendFullCommand(isUp ? "increment" : "decrement", "levelOut", IncrementAmount, 1);
-                },
+                isUp => SendFullCommand(isUp ? "increment" : "decrement", "levelOut", IncrementAmount, 1),
                 () => VolumeRepeatRateMs,
                 () => VolumeHoldTimeoutMs,
                 onUpPress: () => { if (AutomaticUnmuteOnVolumeUp && outIsMuted) MuteOff(); },
@@ -228,6 +224,9 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
         /// </summary>
         public override void Subscribe()
         {
+            // (Re)subscribing follows a connect, which clears the command queue
+            levelRequests.Reset();
+
             //Subsribe to Level
             LevelCustomName = string.Format("{0}__roomCombiner{1}", InstanceTag1, Index1);
             AddCustomName(LevelCustomName);
@@ -341,7 +340,7 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
             // Clamp to the boundary that was exceeded so that a step size larger than the
             // remaining range doesn't strand the fader short of the limit.
             var val = double.Parse(m.Groups["val"].Value);
-            if (!levelRequests.ShouldCorrect(val))
+            if (!levelRequests.ShouldCorrect())
             {
                 this.LogDebug("Skipping boundary correction for {LevelControlPointTag}: a newer level set is queued.", LevelControlPointTag);
                 return;
@@ -360,6 +359,16 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
 
 
         /// <summary>
+        /// Records each queued command so out-of-range recovery knows what is still pending.
+        /// </summary>
+        public override void SendFullCommand(string command, string attributeCode, string value, int instanceTag, bool bypassTxQueue = false)
+        {
+            if (!string.IsNullOrEmpty(attributeCode))
+                levelRequests.RecordRequest(command == "set" && attributeCode == "levelOut");
+            base.SendFullCommand(command, attributeCode, value, instanceTag, bypassTxQueue);
+        }
+
+        /// <summary>
         /// Parses a non subscription response
         /// </summary>
         /// <param name="attributeCode">The attribute code of the command</param>
@@ -368,6 +377,9 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
         {
             try
             {
+                // Every reply routed here answers this control point's oldest queued command
+                levelRequests.RecordResponse();
+
                 this.LogVerbose("Parsing Message: {message} attributeCode: {attributeCode}", message, attributeCode);
 
                 // Only level steps feed volume recovery; a rejected group (or other) value must not
@@ -488,7 +500,6 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
 
             var volumeLevel = UseAbsoluteValue ? level : newLevel.Scale(0, 65535, MinLevel, MaxLevel, this);
 
-            levelRequests.RecordSet(volumeLevel);
             SendFullCommand("set", "levelOut", string.Format("{0:0.000000}", volumeLevel), 1);
         }
 
