@@ -31,6 +31,6 @@
     <Compile Include="..\src\Routing\RoutingSelectorResolver.cs" Link="Routing\RoutingSelectorResolver.cs" />
     <!-- Pure-logic press-and-hold volume ramp shared by faders and room combiners. -->
     <Compile Include="..\src\VolumeRamp.cs" Link="VolumeRamp.cs" />
-    <Compile Include="..\src\LevelRequestTracker.cs" Link="LevelRequestTracker.cs" />
+    <Compile Include="..\src\Queue\PendingCommandCounter.cs" Link="Queue\PendingCommandCounter.cs" />
   </ItemGroup>
 </Project>
