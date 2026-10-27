@@ -406,6 +406,10 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
 
             DeviceManager.AddDevice(DevInfo);
 
+            // Forward the child's change event so IDeviceInfoProvider consumers subscribed to the
+            // DSP itself (e.g. Mobile Control) are notified too. Must be wired before seeding.
+            DevInfo.DeviceInfoChanged += (sender, args) => DeviceInfoChanged?.Invoke(this, args);
+
             // Seed from the configured comm hostname so the bridge reports something useful
             // before the DSP answers 'DEVICE get networkStatus'.
             DevInfo.SeedFromCommunication(configuredHostname);
