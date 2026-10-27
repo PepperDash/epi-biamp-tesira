@@ -80,15 +80,16 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
 
         public void Release(bool isUp)
         {
-            var d = Get(isUp);
-            lock (rampLock)
-            {
-                d.Held = false;
-                d.Repeating = false;
-                d.RepeatTimer.Stop();
-                d.DelayTimer.Stop();
-                d.HoldTimer.Stop();
-            }
+            lock (rampLock) ReleaseLocked(Get(isUp));
+        }
+
+        private static void ReleaseLocked(Direction d)
+        {
+            d.Held = false;
+            d.Repeating = false;
+            d.RepeatTimer.Stop();
+            d.DelayTimer.Stop();
+            d.HoldTimer.Stop();
         }
 
         /// <summary>
@@ -141,13 +142,24 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
 
         internal void OnHoldElapsed(bool isUp)
         {
+            var d = Get(isUp);
             lock (rampLock)
             {
-                if (!Get(isUp).Held && !Get(isUp).Repeating) return;
+                // A one-shot timer is disabled when it fires. If it is enabled again, a newer press
+                // re-armed it after this callback was queued, and that press must not be released.
+                if (d.HoldTimer.Enabled) return;
+                if (!d.Held && !d.Repeating) return;
+                ReleaseLocked(d);
             }
             logWarning?.Invoke(string.Format("Volume {0} hold timeout expired; forcing release. Panel may have dropped.",
                 isUp ? "up" : "down"));
-            Release(isUp);
+        }
+
+        /// <summary>Test hook: the hold timer fires as if its interval had elapsed.</summary>
+        internal void FireHoldTimer(bool isUp)
+        {
+            lock (rampLock) Get(isUp).HoldTimer.Stop();
+            OnHoldElapsed(isUp);
         }
 
         private Direction Get(bool isUp) => isUp ? up : down;
