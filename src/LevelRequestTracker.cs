@@ -1,51 +1,60 @@
 #nullable disable
-using System;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
 {
     /// <summary>
-    /// Remembers the most recent level request (a ramp step or a direct set) so out-of-range
-    /// recovery can tell whether its boundary correction would override a newer set.
+    /// Mirrors one control point's outstanding commands, in queue order, so out-of-range recovery
+    /// can tell whether its boundary correction would override a direct level set that is still
+    /// queued behind the rejected step.
     /// </summary>
     /// <remarks>
-    /// Commands are queued in order, so when a step is rejected, any set requested after it is
-    /// still queued behind it. Correcting to the boundary would then be appended after that
-    /// set and undo it.
+    /// The DSP command queue sends one command at a time and routes exactly one reply (+OK or
+    /// -ERR) per command back to the control point that sent it, so recording each send and
+    /// popping on each reply keeps this in step with the queue. A reconnect clears the queue;
+    /// call <see cref="Reset"/> when the control point resubscribes.
     /// </remarks>
     internal sealed class LevelRequestTracker
     {
-        private const double Tolerance = 0.001;
+        // Bounds the mirror if replies are ever lost without a reset.
+        internal const int MaxPending = 256;
 
         private readonly object trackerLock = new object();
-        private bool lastWasSet;
-        private double lastSetDb;
+        private readonly Queue<bool> pendingIsLevelSet = new Queue<bool>();
 
-        public void RecordStep()
-        {
-            lock (trackerLock) lastWasSet = false;
-        }
-
-        public void RecordSet(double levelDb)
+        /// <summary>Records a command as it is queued.</summary>
+        /// <param name="isLevelSet">True for a direct level set, false for anything else.</param>
+        public void RecordRequest(bool isLevelSet)
         {
             lock (trackerLock)
             {
-                lastWasSet = true;
-                lastSetDb = levelDb;
+                if (pendingIsLevelSet.Count >= MaxPending) pendingIsLevelSet.Dequeue();
+                pendingIsLevelSet.Enqueue(isLevelSet);
+            }
+        }
+
+        /// <summary>Consumes the oldest outstanding command when its reply arrives.</summary>
+        public void RecordResponse()
+        {
+            lock (trackerLock)
+            {
+                if (pendingIsLevelSet.Count > 0) pendingIsLevelSet.Dequeue();
             }
         }
 
         /// <summary>
-        /// True when the rejected request is the latest one, so a boundary correction is safe.
-        /// False when a newer set was requested after it.
+        /// Call after <see cref="RecordResponse"/> for the rejected command. True when no direct
+        /// level set is still queued behind it, so a boundary correction cannot undo a newer set.
         /// </summary>
-        /// <param name="rejectedDb">The attempted level from the DSP's out-of-range error.</param>
-        public bool ShouldCorrect(double rejectedDb)
+        public bool ShouldCorrect()
         {
-            lock (trackerLock)
-            {
-                if (!lastWasSet) return true;
-                return Math.Abs(rejectedDb - lastSetDb) < Tolerance;
-            }
+            lock (trackerLock) return !pendingIsLevelSet.Any(isSet => isSet);
+        }
+
+        public void Reset()
+        {
+            lock (trackerLock) pendingIsLevelSet.Clear();
         }
     }
 }
