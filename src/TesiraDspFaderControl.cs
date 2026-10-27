@@ -71,6 +71,8 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
         // Last level reported by the DSP, in dB, unrounded. RawVolumeLevel truncates to an int for
         // the bridge; rescaling on a min/max change must use the exact value.
         private double rawLevelDb;
+        // False until the DSP has reported a level; min/max replies don't rescale before then.
+        private bool hasLevel;
 
         //private bool LevelSubscribed { get; set; }
 
@@ -310,6 +312,7 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
                 var localValue = double.Parse(value);
 
                 rawLevelDb = localValue;
+                hasLevel = true;
                 RawVolumeLevel = (int)localValue;
 
                 if (!UseAbsoluteValue && (localValue < MinLevel || localValue > MaxLevel))
@@ -437,7 +440,7 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
                         {
                             MinLevel = double.Parse(value);
                             this.LogDebug("MinLevel is '{MinLevel}'", MinLevel);
-                            if (!UseAbsoluteValue)
+                            if (!UseAbsoluteValue && hasLevel)
                             {
                                 var clampedRawLevel = Math.Max(MinLevel, Math.Min(MaxLevel, rawLevelDb));
                                 VolumeLevel = (ushort)clampedRawLevel.Scale(MinLevel, MaxLevel, 0, 65535, this);
@@ -448,7 +451,7 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
                         {
                             MaxLevel = double.Parse(value);
                             this.LogDebug("MaxLevel is '{MaxLevel}'", MaxLevel);
-                            if (!UseAbsoluteValue)
+                            if (!UseAbsoluteValue && hasLevel)
                             {
                                 var clampedRawLevel = Math.Max(MinLevel, Math.Min(MaxLevel, rawLevelDb));
                                 VolumeLevel = (ushort)clampedRawLevel.Scale(MinLevel, MaxLevel, 0, 65535, this);
@@ -460,6 +463,7 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
                             var localValue = double.Parse(value);
 
                             rawLevelDb = localValue;
+                            hasLevel = true;
                             RawVolumeLevel = (int)localValue;
 
                             VolumeLevel = UseAbsoluteValue ? (ushort)localValue : (ushort)localValue.Scale(MinLevel, MaxLevel, 0, 65535, this);

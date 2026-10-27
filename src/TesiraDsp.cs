@@ -1573,7 +1573,21 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
 
             trilist.OnlineStatusChange += (d, args) =>
             {
-                if (!args.DeviceOnLine) return;
+                if (!args.DeviceOnLine)
+                {
+                    // Bridge dropped: release any held volume ramp so it can't run until the hold timeout
+                    foreach (var fader in Faders.Values)
+                    {
+                        fader.VolumeUp(false);
+                        fader.VolumeDown(false);
+                    }
+                    foreach (var roomCombiner in RoomCombiners.Values)
+                    {
+                        roomCombiner.VolumeUp(false);
+                        roomCombiner.VolumeDown(false);
+                    }
+                    return;
+                }
 
                 foreach (var feedback in Feedbacks)
                 {
