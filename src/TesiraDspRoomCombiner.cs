@@ -223,10 +223,14 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
         /// </summary>
         public override void Subscribe()
         {
-            //Subsribe to Level
             LevelCustomName = string.Format("{0}__roomCombiner{1}", InstanceTag1, Index1);
             AddCustomName(LevelCustomName);
+            // Limits first: the queue is FIFO, so they arrive before the subscription's first publish
             SendFullCommand("get", "levelOutMin", null, 1);
+            SendFullCommand("get", "levelOutMax", null, 1);
+            // The levelOut subscription is what marks this component subscribed (ParseSubscriptionMessage),
+            // which is also what the watchdog checks
+            SendSubscriptionCommand(LevelCustomName, "levelOut", 250, 1);
             SendFullCommand("get", "group", null, 1);
         }
 
