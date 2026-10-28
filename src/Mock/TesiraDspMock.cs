@@ -45,12 +45,11 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Mock
     /// Intended for bench-testing frontend/backend round-trips when no physical DSP
     /// is available. Not for production use.
     /// </remarks>
-    public class TesiraDspMock : EssentialsDevice, IDspPresets, IDspPresetsDirectRecall, ICommunicationMonitor
+    public class TesiraDspMock : EssentialsDevice, IHasDspPresetSave, IDspPresetsDirectRecall, ICommunicationMonitor
     {
         private const string ChildKeyFormat = "{0}--{1}";
 
         // IDspPresets requires a Presets dictionary keyed by config key, as TesiraDsp does; populated at ctor.
-        // (Essentials v3 has no IHasDspPresetSave, so SavePreset below is a plain method.)
         public Dictionary<string, IKeyName> Presets { get; }
             = new Dictionary<string, IKeyName>();
 

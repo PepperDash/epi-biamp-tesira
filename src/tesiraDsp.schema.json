@@ -129,6 +129,21 @@
         "resubscribeString": {
           "type": "string",
           "description": "String used to trigger a full resubscribe on the device, if configured."
+        },
+        "levelRangePollIntervalSecs": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Seconds between re-polls of every volume control's min/max range. 0 (default) disables it; 1-59 is raised to 60."
+        },
+        "volumeHoldTimeoutMs": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Longest a volume up/down may be held before it is force-released (default 10000). 0 disables it. Faders and room combiners can override it."
+        },
+        "presetHoldTimeMs": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Milliseconds a bridge preset join must be held to save that preset. 0 (default) disables saving; the join recalls on press."
         }
       },
       "required": [
