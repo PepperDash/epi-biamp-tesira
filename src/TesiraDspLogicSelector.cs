@@ -1,3 +1,4 @@
+using System.Linq;
 using Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Queue;
 using PepperDash.Core.Logging;
 
@@ -21,28 +22,44 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
 
         protected override string SelectionAttribute => "states";
 
-        protected override int ParseSelection(string value) => LogicSelectorStates.ActiveChannel(value);
+        // Channel count from the last "states" value; 0 until one arrives
+        private int channelCount;
+
+        protected override int ParseSelection(string value)
+        {
+            var count = LogicSelectorStates.ChannelCount(value);
+            if (count > 0) channelCount = count;
+            return LogicSelectorStates.ActiveChannel(value);
+        }
 
         protected override void SendSelection(int input)
         {
-            string command;
             if (input > 0)
             {
-                command = string.Format("\"{0}\" set state {1} true", InstanceTag1, input);
-            }
-            else if (CurrentSourceIndex > 0)
-            {
-                // "None": turn off the active channel
-                command = string.Format("\"{0}\" set state {1} false", InstanceTag1, CurrentSourceIndex);
-            }
-            else
-            {
-                this.LogVerbose("Logic selector already has no channel selected");
+                SendState(input, true);
                 return;
             }
 
+            // "None": turn every channel off. The commands queue behind any selection still pending, so
+            // the result is none whatever was selected when they run; clearing only the last reported
+            // channel could miss a selection that hadn't been reported yet.
+            var count = channelCount > 0 ? channelCount : (int)SourceSelectorInputs.Keys.DefaultIfEmpty(0u).Max();
+            if (count == 0)
+            {
+                this.LogWarning("Can't clear logic selector {key}: channel count not known yet", Key);
+                return;
+            }
+            for (var channel = 1; channel <= count; channel++)
+            {
+                SendState(channel, false);
+            }
+        }
+
+        private void SendState(int channel, bool value)
+        {
             // Built here rather than with SendFullCommand, which would index "state" with Index1 rather
             // than the channel. The reply is a bare +OK; the change arrives as a "states" publish.
+            var command = string.Format("\"{0}\" set state {1} {2}", InstanceTag1, channel, value ? "true" : "false");
             Parent.CommandQueue.EnqueueCommand(new QueuedCommand(command, "state", this, priority: (int)CommandPriority.Critical));
         }
     }
