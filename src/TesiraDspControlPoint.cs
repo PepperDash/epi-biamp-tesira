@@ -107,8 +107,9 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
                 attributeCode == "maxLevel" || attributeCode == "label" || attributeCode == "rampInterval" ||
                 attributeCode == "rampStep" || attributeCode == "autoAnswer" || attributeCode == "dndEnable" ||
                 attributeCode == "dtmf" || attributeCode == "state" || attributeCode == "levelOut" ||
-                attributeCode == "maxLevelOut" || attributeCode == "minLevelOut" || attributeCode == "muteOut" ||
-                attributeCode == "group" && command == "set")
+                attributeCode == "maxLevelOut" || attributeCode == "minLevelOut" ||
+                attributeCode == "levelOutMax" || attributeCode == "levelOutMin" || attributeCode == "muteOut" ||
+                attributeCode == "group")
             {
                 //Command requires Index
                 if (string.IsNullOrEmpty(value))
