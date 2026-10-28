@@ -256,9 +256,9 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
 
             ApplyOutLevel(double.Parse(data));
 
+            // No poll-timer reset here: frequent level publishes would otherwise keep postponing the
+            // poll that refreshes mute and group. The GET reply handlers restart it.
             levelIsSubscribed = true;
-
-            ResetTimer(pollTimer, 30000);
         }
 
         /// <summary>
