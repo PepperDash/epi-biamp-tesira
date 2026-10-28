@@ -1173,7 +1173,7 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
         {
             this.LogVerbose("Attempting to run preset {0}", n);
 
-            foreach (var preset in Presets.OfType<TesiraPreset>().Where(preset => preset.Index == n))
+            foreach (var preset in TesiraPresets.Where(preset => preset.Index == n))
             {
                 this.LogVerbose("Found a matching Preset - {0}", preset.PresetId);
                 RecallPreset(preset.Key);
@@ -1203,9 +1203,12 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
 
         public void RecallPreset(string key)
         {
-            var preset = Presets[key] as TesiraPreset;
+            if (!Presets.TryGetValue(key, out var item) || !(item is TesiraPreset preset))
+            {
+                this.LogWarning("Preset {key} not found", key);
+                return;
+            }
             this.LogVerbose("Running preset {0}", preset.Name);
-            if (preset == null) return;
 
             this.LogVerbose("Checking Preset {0} | presetIndex {1} | presetId {2} | presetName {3}",
                 preset.Name, preset.PresetIndex, preset.PresetId, preset.PresetName);
