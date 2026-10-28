@@ -1,3 +1,4 @@
+using System;
 using System.Linq;
 using Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Queue;
 using PepperDash.Core.Logging;
@@ -25,6 +26,10 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
         // Channel count from the last "states" value; 0 until one arrives
         private int channelCount;
 
+        // Highest channel this plugin has selected, so a clear before the first "states" value still
+        // turns off anything it turned on
+        private int highestRequested;
+
         protected override int ParseSelection(string value)
         {
             var count = LogicSelectorStates.ChannelCount(value);
@@ -36,14 +41,19 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
         {
             if (input > 0)
             {
+                if (input > highestRequested) highestRequested = input;
                 SendState(input, true);
                 return;
             }
 
             // "None": turn every channel off. The commands queue behind any selection still pending, so
             // the result is none whatever was selected when they run; clearing only the last reported
-            // channel could miss a selection that hadn't been reported yet.
-            var count = channelCount > 0 ? channelCount : (int)SourceSelectorInputs.Keys.DefaultIfEmpty(0u).Max();
+            // channel could miss a selection that hadn't been reported yet. Before the first "states"
+            // value (it arrives with the subscription at startup), cover every configured channel and
+            // every channel this plugin has selected.
+            var count = channelCount > 0
+                ? channelCount
+                : Math.Max((int)SourceSelectorInputs.Keys.DefaultIfEmpty(0u).Max(), highestRequested);
             if (count == 0)
             {
                 this.LogWarning("Can't clear logic selector {key}: channel count not known yet", Key);
