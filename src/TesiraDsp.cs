@@ -1786,18 +1786,14 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
             foreach (var item in CrosspointStates)
             {
                 var xpointState = item.Value;
-                var joinOffset = (xpointState.BridgeIndex - 1) * 3;
-                if (joinOffset == null) continue;
-
-
-                var channel = item.Value;
-                var data = channel.BridgeIndex;
-                if (data == null) continue;
-
+                if (!TryGetBridgeOffset(xpointState, out var index)) continue;
+                var joinOffset = index * 3;
 
                 this.LogVerbose("Adding Crosspoint State ControlPoint {0} | JoinStart:{1}", xpointState.Key, crosspointStateJoinMap.Toggle.JoinNumber + joinOffset);
                 xpointState.CrosspointStateFeedback.LinkInputSig(trilist.BooleanInput[(uint)(crosspointStateJoinMap.Toggle.JoinNumber + joinOffset)]);
                 xpointState.CrosspointStateFeedback.LinkInputSig(trilist.BooleanInput[(uint)(crosspointStateJoinMap.On.JoinNumber + joinOffset)]);
+                xpointState.CrosspointStateFeedback.LinkComplementInputSig(trilist.BooleanInput[(uint)(crosspointStateJoinMap.Off.JoinNumber + joinOffset)]);
+                xpointState.NameFeedback.LinkInputSig(trilist.StringInput[(uint)(crosspointStateJoinMap.Label.JoinNumber + joinOffset)]);
 
                 trilist.SetSigTrueAction((uint)(crosspointStateJoinMap.Toggle.JoinNumber + joinOffset), xpointState.StateToggle);
                 trilist.SetSigTrueAction((uint)(crosspointStateJoinMap.On.JoinNumber + joinOffset), xpointState.StateOn);
@@ -1807,25 +1803,42 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
             }
         }
 
+        /// <summary>
+        /// The zero-based join offset for a component whose bridgeIndex counts from 1 (states, meters,
+        /// crosspoints). False, with a warning for 0, when it has no usable bridgeIndex: 0 would wrap the
+        /// offset to uint.MaxValue, and the out-of-range join would abort the rest of the bridge linking.
+        /// </summary>
+        private bool TryGetBridgeOffset(TesiraDspControlPoint component, out uint offset)
+        {
+            offset = 0;
+            var index = component.BridgeIndex;
+            if (index == null) return false;
+            if (index.Value == 0)
+            {
+                this.LogWarning("{key} has bridgeIndex 0; these joins count from 1, so it is not linked to the bridge", component.Key);
+                return false;
+            }
+            offset = index.Value - 1;
+            return true;
+        }
+
         private void LinkMetersToApi(BasicTriList trilist, TesiraMeterJoinMapAdvanced meterJoinMap)
         {
             this.LogVerbose("There are {0} Meter Control Points", Meters.Count);
             foreach (var item in Meters)
             {
                 var meter = item.Value;
-                var data = meter.BridgeIndex;
-                if (data == null) continue;
-                var x = (uint)(data - 1);
+                if (!TryGetBridgeOffset(meter, out var x)) continue;
 
-
-                this.LogVerbose("AddingMeterBridge {0} | Join:{1}", meter.Key, meterJoinMap.Label.JoinNumber);
+                this.LogVerbose("AddingMeterBridge {0} | Join:{1}", meter.Key, meterJoinMap.Label.JoinNumber + x);
 
                 meter.MeterFeedback.LinkInputSig(trilist.UShortInput[meterJoinMap.Meter.JoinNumber + x]);
                 meter.NameFeedback.LinkInputSig(trilist.StringInput[meterJoinMap.Label.JoinNumber + x]);
                 meter.SubscribedFeedback.LinkInputSig(trilist.BooleanInput[meterJoinMap.Subscribe.JoinNumber + x]);
 
-                trilist.SetSigTrueAction(meterJoinMap.Subscribe.JoinNumber, meter.Subscribe);
-                trilist.SetSigFalseAction(meterJoinMap.Subscribe.JoinNumber, meter.UnSubscribe);
+                // Per meter: without the offset every meter's subscribe landed on one join, last linked wins
+                trilist.SetSigTrueAction(meterJoinMap.Subscribe.JoinNumber + x, meter.Subscribe);
+                trilist.SetSigFalseAction(meterJoinMap.Subscribe.JoinNumber + x, meter.UnSubscribe);
 
             }
         }
@@ -2040,10 +2053,7 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
             foreach (var item in States)
             {
                 var state = item.Value;
-                var data = state.BridgeIndex;
-                if (data == null) continue;
-
-                var x = (uint)data - 1;
+                if (!TryGetBridgeOffset(state, out var x)) continue;
                 this.LogVerbose("Tesira State {0} connect to {1}", state.Key, x);
 
                 if (!state.Enabled) continue;
