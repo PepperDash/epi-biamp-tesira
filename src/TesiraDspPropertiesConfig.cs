@@ -31,6 +31,9 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
         [JsonProperty("sourceSelectorControlBlocks")]
         public Dictionary<string, TesiraSourceSelectorControlBlockConfig> SourceSelectorControlBlocks { get; set; }
 
+        [JsonProperty("logicSelectorControlBlocks")]
+        public Dictionary<string, TesiraLogicSelectorControlBlockConfig> LogicSelectorControlBlocks { get; set; }
+
         [JsonProperty("presets")]
         public Dictionary<string, TesiraDspPresets> Presets { get; set; }
 
@@ -320,6 +323,27 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
         [JsonProperty("bridgeIndex")]
         public uint? BridgeIndex { get; set; }
 
+    }
+
+    /// <summary>
+    /// A Logic Selector used as a switcher. Same settings as a Source Selector; the instance tag and
+    /// inputs can also be given as logicSelectorInstanceTag / logicSelectorInputs.
+    /// </summary>
+    public class TesiraLogicSelectorControlBlockConfig : TesiraSourceSelectorControlBlockConfig
+    {
+        [JsonProperty("logicSelectorInstanceTag")]
+        public string LogicSelectorInstanceTag
+        {
+            get => SourceSelectorInstanceTag;
+            set => SourceSelectorInstanceTag = value;
+        }
+
+        [JsonProperty("logicSelectorInputs")]
+        public Dictionary<uint, RoutingPort> LogicSelectorInputs
+        {
+            get => SourceSelectorInputs;
+            set => SourceSelectorInputs = value;
+        }
     }
 
     public class TesiraSourceSelectorControlBlockConfig

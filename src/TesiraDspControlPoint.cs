@@ -191,7 +191,7 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
                     instanceTagLocal = InstanceTag1;
                     break;
             }
-            if (attributeCode == "callState" || attributeCode == "sourceSelection")
+            if (attributeCode == "callState" || attributeCode == "sourceSelection" || attributeCode == "states")
             {
                 cmd = string.Format("\"{0}\" subscribe {1} {2} {3}", instanceTagLocal, attributeCode, customName, responseRate);
             }
@@ -243,7 +243,7 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
                     localInstanceTag = InstanceTag1;
                     break;
             }
-            if (attributeCode == "callState" || attributeCode == "sourceSelection")
+            if (attributeCode == "callState" || attributeCode == "sourceSelection" || attributeCode == "states")
             {
                 cmd = string.Format("\"{0}\" unsubscribe {1} {2}", localInstanceTag, attributeCode, customName);
             }
