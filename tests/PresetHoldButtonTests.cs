@@ -63,6 +63,20 @@ public class PresetHoldButtonTests
     }
 
     [Fact]
+    public void Cancel_Drops_A_Pending_Press_Without_Recall_Or_Save()
+    {
+        using var button = Create();
+        button.Set(true);
+
+        button.Cancel();     // bridge went offline; the release never arrives
+        button.OnHoldElapsed();
+        button.Set(false);
+
+        actions.Should().BeEmpty();
+        button.IsHoldTimerArmed.Should().BeFalse();
+    }
+
+    [Fact]
     public void Release_Without_Press_Does_Nothing()
     {
         using var button = Create();

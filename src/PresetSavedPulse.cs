@@ -27,13 +27,15 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
         /// <summary>Goes high now and low after the pulse time; a new pulse restarts the time.</summary>
         public void Pulse()
         {
+            // Publish inside the lock so a pulse and an expiry can't publish out of order. Feedback
+            // subscribers (linked sigs) don't call back into this class.
             lock (pulseLock)
             {
                 state = true;
                 timer.Stop();
                 timer.Start();
+                Feedback.FireUpdate();
             }
-            Feedback.FireUpdate();
         }
 
         private void Expire()
@@ -44,8 +46,8 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
                 // restarted it after this handler was queued, so that pulse still owns the state.
                 if (timer.Enabled) return;
                 state = false;
+                Feedback.FireUpdate();
             }
-            Feedback.FireUpdate();
         }
 
         public void Dispose() => timer.Dispose();

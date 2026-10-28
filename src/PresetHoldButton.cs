@@ -63,6 +63,20 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
             if (runRecall) recall();
         }
 
+        /// <summary>
+        /// Drops a pending press without recalling or saving, for when the bridge goes offline and
+        /// the release may never arrive. The hold timer can no longer save.
+        /// </summary>
+        public void Cancel()
+        {
+            lock (buttonLock)
+            {
+                pressed = false;
+                decided = true;
+                holdTimer.Stop();
+            }
+        }
+
         internal void OnHoldElapsed()
         {
             lock (buttonLock)

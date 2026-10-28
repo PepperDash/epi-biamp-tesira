@@ -153,6 +153,11 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
                     () => dsp.RecallPreset(presetKey),
                     () => dsp.SavePreset(presetKey));
                 trilist.SetBoolSigAction(selectJoin, button.Set);
+                // A press whose release is lost when the bridge drops must not go on to save
+                trilist.OnlineStatusChange += (device, args) =>
+                {
+                    if (!args.DeviceOnLine) button.Cancel();
+                };
             }
             else
             {
