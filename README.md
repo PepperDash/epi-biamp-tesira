@@ -414,6 +414,45 @@ In the provided example config object, given a base object key of ```dsp-1```, t
 
 ***
 
+### LogicSelector
+
+Controls a Tesira **Logic Selector** block as a switcher. A Logic Selector has interlocked boolean channels: selecting one turns the others off, and selecting none turns the active one off. It behaves exactly like a [SourceSelector](#sourceselector): the same interfaces (**`IKeyed`**, **`IRoutingWithFeedback`**), the same Legacy and Standalone joins, and the same routing and feedback. Selection `0` means no channel.
+
+Logic selectors share the DSP's switcher joins with source selectors, so give each a `bridgeIndex` that doesn't clash with a source selector's.
+
+The plugin subscribes once per block, to the `states` attribute, which the Tesira publishes as one line for all channels (`[false true false false]`). It selects a channel with `set state <channel> true`.
+
+#### Config Example
+
+> All logic selector configs must be part of a dictionary called **logicSelectorControlBlocks**.
+
+```json
+{
+    "logicSelectorControlBlocks" : {
+        "logicSelector01" : {
+            "enabled" : true,
+            "label" : "Logic Selector 1",
+            "logicSelectorInstanceTag" : "LogicSelector1",
+            "bridgeIndex" : 3,
+            "logicSelectorInputs" : {
+                "1" : {"label": "Channel 1" },
+                "2" : {"label": "Channel 2" },
+                "3" : {"label": "Channel 3" },
+                "4" : {"label": "Channel 4" }
+            }
+        }
+    }
+}
+```
+
+#### Config Notes
+
+> **logicSelectorInstanceTag** - instance tag of the Logic Selector block (`sourceSelectorInstanceTag` also works).
+**logicSelectorInputs** - labels for the block's channels; the keys **must** be channel numbers starting at 1 (`sourceSelectorInputs` also works). A selected channel without a label shows as "Input *n*".
+All other settings are as for a SourceSelector.
+
+***
+
 ### State
 
 Controls objects with the attribute type of "state" and subscribes to them as necessary.

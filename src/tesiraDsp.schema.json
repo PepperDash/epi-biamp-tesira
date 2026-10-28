@@ -77,6 +77,13 @@
             "$ref": "#/$defs/sourceSelectorControlBlock"
           }
         },
+        "logicSelectorControlBlocks": {
+          "type": "object",
+          "description": "Logic Selector blocks used as switchers (interlocked boolean channels).",
+          "additionalProperties": {
+            "$ref": "#/$defs/logicSelectorControlBlock"
+          }
+        },
         "presets": {
           "type": "object",
           "description": "Named DSP presets that can be recalled by key.",
@@ -494,6 +501,45 @@
         },
         "sourceSelectorOutput": {
           "$ref": "#/$defs/routingPort"
+        },
+        "showSelectedStringFeedback": {
+          "type": "boolean"
+        },
+        "bridgeIndex": {
+          "type": [
+            "integer",
+            "null"
+          ]
+        }
+      }
+    },
+    "logicSelectorControlBlock": {
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "label": {
+          "type": "string"
+        },
+        "logicSelectorInstanceTag": {
+          "type": "string"
+        },
+        "logicSelectorInputs": {
+          "type": "object",
+          "description": "Channel labels; keys are channel numbers starting at 1.",
+          "additionalProperties": {
+            "$ref": "#/$defs/routingPort"
+          }
+        },
+        "sourceSelectorInstanceTag": {
+          "type": "string"
+        },
+        "sourceSelectorInputs": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/$defs/routingPort"
+          }
         },
         "showSelectedStringFeedback": {
           "type": "boolean"

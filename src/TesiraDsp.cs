@@ -388,6 +388,8 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
 
                 CreateSourceSelectors(props);
 
+                CreateLogicSelectors(props);
+
                 CreateDialers(props);
 
                 CreateStates(props);
@@ -685,6 +687,29 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
                 ControlPointList.Add(SourceSelectors[key]);
                 DeviceManager.AddDevice(SourceSelectors[key]);
 
+            }
+        }
+
+        // Logic Selectors are switchers too; they share SourceSelectors so the bridge, routing,
+        // watchdog and startup poll treat them like Source Selectors.
+        private void CreateLogicSelectors(TesiraDspPropertiesConfig props)
+        {
+            if (props.LogicSelectorControlBlocks == null) return;
+            foreach (var block in props.LogicSelectorControlBlocks)
+            {
+                var key = block.Key;
+                if (SourceSelectors.ContainsKey(key))
+                {
+                    this.LogError("Logic selector key {key} is already used by a source selector; skipping it", key);
+                    continue;
+                }
+
+                var selector = new TesiraDspLogicSelector(key, block.Value, this);
+                SourceSelectors.Add(key, selector);
+                this.LogVerbose("Added logic selector {key} InstanceTag {instanceTag}", key, block.Value.SourceSelectorInstanceTag);
+
+                ControlPointList.Add(selector);
+                DeviceManager.AddDevice(selector);
             }
         }
 
