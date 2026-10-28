@@ -19,4 +19,14 @@ public class LogicSelectorStatesTests
     {
         LogicSelectorStates.ActiveChannel(value!).Should().Be(expected);
     }
+
+    [Theory]
+    [InlineData("[false false false false]", 4)]
+    [InlineData("[true]", 1)]
+    [InlineData("[]", 0)]
+    [InlineData(null, 0)]
+    public void ChannelCount_Counts_The_Channels(string? value, int expected)
+    {
+        LogicSelectorStates.ChannelCount(value!).Should().Be(expected);
+    }
 }

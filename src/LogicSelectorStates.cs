@@ -15,15 +15,22 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
         /// </summary>
         public static int ActiveChannel(string value)
         {
-            if (string.IsNullOrWhiteSpace(value)) return 0;
-
-            var tokens = value.Trim().TrimStart('[').TrimEnd(']')
-                .Split(new[] { ' ', '\t' }, StringSplitOptions.RemoveEmptyEntries);
+            var tokens = Tokens(value);
             for (var i = 0; i < tokens.Length; i++)
             {
                 if (string.Equals(tokens[i], "true", StringComparison.OrdinalIgnoreCase)) return i + 1;
             }
             return 0;
+        }
+
+        /// <summary>The number of channels in the value; 0 if it can't be read.</summary>
+        public static int ChannelCount(string value) => Tokens(value).Length;
+
+        private static string[] Tokens(string value)
+        {
+            if (string.IsNullOrWhiteSpace(value)) return new string[0];
+            return value.Trim().TrimStart('[').TrimEnd(']')
+                .Split(new[] { ' ', '\t' }, StringSplitOptions.RemoveEmptyEntries);
         }
     }
 }
