@@ -109,7 +109,7 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
                 attributeCode == "dtmf" || attributeCode == "state" || attributeCode == "levelOut" ||
                 attributeCode == "maxLevelOut" || attributeCode == "minLevelOut" ||
                 attributeCode == "levelOutMax" || attributeCode == "levelOutMin" || attributeCode == "muteOut" ||
-                attributeCode == "group" && command == "set")
+                attributeCode == "group")
             {
                 //Command requires Index
                 if (string.IsNullOrEmpty(value))
