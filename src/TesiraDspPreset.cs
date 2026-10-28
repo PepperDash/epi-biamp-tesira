@@ -21,6 +21,9 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
         /// </summary>
         internal const string SaveAttributePrefix = "savePreset:";
 
+        // One saved-feedback pulse per preset, shared by every bridge this device links to
+        private readonly Dictionary<string, PresetSavedPulse> savedPulses = new Dictionary<string, PresetSavedPulse>();
+
         public TesiraDspPresetDevice(TesiraDsp parent)
             : base("", "", 0, 0, parent, string.Format(keyFormatter, parent.Key, "Presets"), "Presets", 0)
         {
@@ -75,7 +78,7 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
                 LinkPresetJoin(trilist, Parent, p.Key,
                     (uint)(presetJoinMap.PresetSelection.JoinNumber + presetIndex - 1),
                     (uint)(presetJoinMap.PresetSavedFeedback.JoinNumber + presetIndex - 1),
-                    Feedbacks);
+                    Feedbacks, savedPulses);
             }
 
 
@@ -137,27 +140,36 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
         /// With presetHoldTimeMs set, a short press recalls on release and a hold saves; otherwise
         /// the join recalls on press. The saved join pulses when the DSP confirms a save.
         /// </summary>
+        /// <param name="pulses">The linking device's pulses by preset key. A preset's pulse is created,
+        /// added to <paramref name="feedbacks"/> and subscribed once; later bridges reuse it, since a
+        /// second feedback with the same key would throw.</param>
         internal static void LinkPresetJoin(BasicTriList trilist, TesiraDsp dsp, string presetKey, uint selectJoin,
-            uint savedJoin, FeedbackCollection<PepperDash.Essentials.Core.Feedback> feedbacks)
+            uint savedJoin, FeedbackCollection<PepperDash.Essentials.Core.Feedback> feedbacks,
+            IDictionary<string, PresetSavedPulse> pulses)
         {
             if (dsp.PresetHoldTimeMs > 0)
             {
-                trilist.SetSigHeldAction(selectJoin, (uint)dsp.PresetHoldTimeMs,
-                    () => dsp.SavePreset(presetKey),
-                    () => dsp.RecallPreset(presetKey));
+                var button = new PresetHoldButton(dsp.PresetHoldTimeMs,
+                    () => dsp.RecallPreset(presetKey),
+                    () => dsp.SavePreset(presetKey));
+                trilist.SetBoolSigAction(selectJoin, button.Set);
             }
             else
             {
                 trilist.SetSigTrueAction(selectJoin, () => dsp.RecallPreset(presetKey));
             }
 
-            var pulse = new PresetSavedPulse(presetKey);
-            pulse.Feedback.LinkInputSig(trilist.BooleanInput[savedJoin]);
-            feedbacks.Add(pulse.Feedback);
-            dsp.PresetSaved += key =>
+            if (!pulses.TryGetValue(presetKey, out var pulse))
             {
-                if (key == presetKey) pulse.Pulse();
-            };
+                pulse = new PresetSavedPulse(presetKey);
+                pulses[presetKey] = pulse;
+                feedbacks.Add(pulse.Feedback);
+                dsp.PresetSaved += key =>
+                {
+                    if (key == presetKey) pulse.Pulse();
+                };
+            }
+            pulse.Feedback.LinkInputSig(trilist.BooleanInput[savedJoin]);
         }
 
         /// <summary>

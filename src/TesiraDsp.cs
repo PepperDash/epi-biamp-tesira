@@ -1239,6 +1239,9 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
         // Receives the replies to preset saves (see SavePreset); null when no presets are configured
         private TesiraDspPresetDevice presetDevice;
 
+        // One saved-feedback pulse per preset, shared by every bridge the DSP links to
+        private readonly Dictionary<string, PresetSavedPulse> presetSavedPulses = new Dictionary<string, PresetSavedPulse>();
+
         /// <summary>
         /// How long a bridge preset join must be held to save that preset. 0 disables saving from
         /// the bridge, and the join recalls on press.
@@ -1900,7 +1903,7 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
                 TesiraDspPresetDevice.LinkPresetJoin(trilist, this, p.Key,
                     (uint)(presetJoinMap.PresetSelection.JoinNumber + presetIndex),
                     (uint)(presetJoinMap.PresetSavedFeedback.JoinNumber + presetIndex),
-                    Feedbacks);
+                    Feedbacks, presetSavedPulses);
             }
         }
 
