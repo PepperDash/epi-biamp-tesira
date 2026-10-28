@@ -23,6 +23,9 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
 
         protected override string SelectionAttribute => "states";
 
+        // Most channels a Tesira Logic Selector can have
+        private const int MaxChannels = 32;
+
         // Channel count from the last "states" value; 0 until one arrives
         private int channelCount;
 
@@ -41,6 +44,12 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
         {
             if (input > 0)
             {
+                var limit = channelCount > 0 ? channelCount : MaxChannels;
+                if (input > limit)
+                {
+                    this.LogWarning("Logic selector {key}: channel {input} is out of range (1-{limit}); ignored", Key, input, limit);
+                    return;
+                }
                 if (input > highestRequested) highestRequested = input;
                 SendState(input, true);
                 return;
@@ -54,6 +63,7 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
             var count = channelCount > 0
                 ? channelCount
                 : Math.Max((int)SourceSelectorInputs.Keys.DefaultIfEmpty(0u).Max(), highestRequested);
+            count = Math.Min(count, MaxChannels);
             if (count == 0)
             {
                 this.LogWarning("Can't clear logic selector {key}: channel count not known yet", Key);
