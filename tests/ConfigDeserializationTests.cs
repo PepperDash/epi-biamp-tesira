@@ -51,6 +51,9 @@ public class ConfigDeserializationTests
     [InlineData("roomCombinerControlBlocks")]
     [InlineData("tesiraExpanderBlocks")]
     [InlineData("resubscribeString")]
+    [InlineData("levelRangePollIntervalSecs")]
+    [InlineData("volumeHoldTimeoutMs")]
+    [InlineData("presetHoldTimeMs")]
     public void Config_Property_Has_JsonPropertyAttribute(string jsonName)
     {
         HasJsonProperty(ConfigType.Value!, jsonName).Should()

@@ -24,7 +24,7 @@ using IRoutingWithFeedback = Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Inte
 namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
 {
     public class TesiraDsp : EssentialsBridgeableDevice,
-        IDspPresets,
+        IHasDspPresetSave, // extends IDspPresets
         IDspPresetsDirectRecall,
         ICommunicationMonitor,
         IDeviceInfoProvider,
@@ -353,6 +353,9 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
                 ? props.ResubscribeString
                 : "resubscribeAll";
 
+            // 0 (default) = presets recall on press and can't be saved from the bridge
+            PresetHoldTimeMs = Math.Max(0, props.PresetHoldTimeMs);
+
             // Convert seconds to ms; 0 = disabled, anything 1-59 is clamped to the 60s minimum
             var pollSecs = props.LevelRangePollIntervalSecs;
             if (pollSecs > 0 && pollSecs < 60)
@@ -455,7 +458,7 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
                 this.LogVerbose("Added Preset {0} {1}", value.Label, value.PresetName);
             }
 
-            var presetDevice = new TesiraDspPresetDevice(this);
+            presetDevice = new TesiraDspPresetDevice(this);
             DeviceManager.AddDevice(presetDevice);
         }
 
@@ -1233,6 +1236,20 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
 
         #region Presets
 
+        // Receives the replies to preset saves (see SavePreset); null when no presets are configured
+        private TesiraDspPresetDevice presetDevice;
+
+        /// <summary>
+        /// How long a bridge preset join must be held to save that preset. 0 disables saving from
+        /// the bridge, and the join recalls on press.
+        /// </summary>
+        public int PresetHoldTimeMs { get; private set; }
+
+        /// <summary>
+        /// Raised with the preset key when the DSP confirms a save (+OK).
+        /// </summary>
+        public event Action<string> PresetSaved;
+
         public void RunPresetNumber(ushort n)
         {
             this.LogVerbose("Attempting to run preset {0}", n);
@@ -1292,9 +1309,63 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
             }
         }
 
+        /// <summary>
+        /// Saves the DSP's current state to the preset with the given config key, by preset name if it
+        /// has one, otherwise by preset id. <see cref="PresetSaved"/> is raised when the DSP confirms.
+        /// </summary>
+        public void SavePreset(string key)
+        {
+            if (!Presets.TryGetValue(key, out var item) || !(item is TesiraPreset preset))
+            {
+                this.LogWarning("SavePreset - preset {key} not found", key);
+                return;
+            }
+
+            string command;
+            if (!string.IsNullOrEmpty(preset.PresetName))
+            {
+                command = $"DEVICE savePresetByName \"{preset.PresetName}\"";
+            }
+            else if (preset.PresetId > 0)
+            {
+                command = $"DEVICE savePreset {preset.PresetId}";
+            }
+            else
+            {
+                this.LogWarning("SavePreset - preset {key} has neither a presetName nor a valid presetId", key);
+                return;
+            }
+
+            this.LogVerbose("Saving preset {key}: {command}", key, command);
+
+            // The reply (+OK, or -ERR PRESET_NOT_FOUND) is routed to the preset device, which raises
+            // PresetSaved on success. The DSP echoes the command first; only +OK/-ERR complete it.
+            CommandQueue.EnqueueCommand(new QueuedCommand(command, TesiraDspPresetDevice.SaveAttributePrefix + key,
+                presetDevice, priority: (int)CommandPriority.Normal));
+        }
+
+        internal void OnPresetSaved(string key)
+        {
+            var handlers = PresetSaved;
+            if (handlers == null) return;
+
+            // Invoke each handler on its own, so one bridge's failure can't stop another's feedback
+            foreach (var handler in handlers.GetInvocationList())
+            {
+                try
+                {
+                    ((Action<string>)handler)(key);
+                }
+                catch (Exception e)
+                {
+                    this.LogError(e, "Error in a preset-saved handler for {key}", key);
+                }
+            }
+        }
+
         #endregion
 
-        #region SubscriptionHandling        
+        #region SubscriptionHandling
 
         #region Unsubscribe
 
@@ -1826,8 +1897,10 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
                 var runPresetIndex = p.PresetIndex;
                 var presetIndex = runPresetIndex;
                 trilist.StringInput[(uint)(presetJoinMap.PresetNameFeedback.JoinNumber + presetIndex)].StringValue = p.Label;
-                trilist.SetSigTrueAction((uint)(presetJoinMap.PresetSelection.JoinNumber + presetIndex),
-                    () => RecallPreset(p.Key));
+                TesiraDspPresetDevice.LinkPresetJoin(trilist, this, p.Key,
+                    (uint)(presetJoinMap.PresetSelection.JoinNumber + presetIndex),
+                    (uint)(presetJoinMap.PresetSavedFeedback.JoinNumber + presetIndex),
+                    Feedbacks);
             }
         }
 

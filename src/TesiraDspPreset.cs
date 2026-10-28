@@ -10,10 +10,16 @@ using PepperDash.Essentials.Core.Bridges;
 
 namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
 {
-    public class TesiraDspPresetDevice : TesiraDspControlPoint, IDspPresets
+    public class TesiraDspPresetDevice : TesiraDspControlPoint, IHasDspPresetSave // extends IDspPresets
 
     {
         private const string keyFormatter = "{0}--{1}";
+
+        /// <summary>
+        /// Attribute-code prefix TesiraDsp.SavePreset tags save commands with, followed by the preset
+        /// key, so the queue routes the save's reply here.
+        /// </summary>
+        internal const string SaveAttributePrefix = "savePreset:";
 
         public TesiraDspPresetDevice(TesiraDsp parent)
             : base("", "", 0, 0, parent, string.Format(keyFormatter, parent.Key, "Presets"), "Presets", 0)
@@ -66,8 +72,10 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
                 var runPresetIndex = p.PresetIndex;
                 var presetIndex = runPresetIndex;
                 trilist.StringInput[(uint)(presetJoinMap.PresetNameFeedback.JoinNumber + presetIndex - 1)].StringValue = p.PresetName;
-                trilist.SetSigTrueAction((uint)(presetJoinMap.PresetSelection.JoinNumber + presetIndex - 1),
-                    () => RecallPreset(p.Key));
+                LinkPresetJoin(trilist, Parent, p.Key,
+                    (uint)(presetJoinMap.PresetSelection.JoinNumber + presetIndex - 1),
+                    (uint)(presetJoinMap.PresetSavedFeedback.JoinNumber + presetIndex - 1),
+                    Feedbacks);
             }
 
 
@@ -117,7 +125,60 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
             Parent.RecallPreset(key);
         }
 
+        public void SavePreset(string key)
+        {
+            Parent.SavePreset(key);
+        }
+
         #endregion
+
+        /// <summary>
+        /// Wires one preset's bridge joins, shared by the DSP bridge and this standalone bridge.
+        /// With presetHoldTimeMs set, a short press recalls on release and a hold saves; otherwise
+        /// the join recalls on press. The saved join pulses when the DSP confirms a save.
+        /// </summary>
+        internal static void LinkPresetJoin(BasicTriList trilist, TesiraDsp dsp, string presetKey, uint selectJoin,
+            uint savedJoin, FeedbackCollection<PepperDash.Essentials.Core.Feedback> feedbacks)
+        {
+            if (dsp.PresetHoldTimeMs > 0)
+            {
+                trilist.SetSigHeldAction(selectJoin, (uint)dsp.PresetHoldTimeMs,
+                    () => dsp.SavePreset(presetKey),
+                    () => dsp.RecallPreset(presetKey));
+            }
+            else
+            {
+                trilist.SetSigTrueAction(selectJoin, () => dsp.RecallPreset(presetKey));
+            }
+
+            var pulse = new PresetSavedPulse(presetKey);
+            pulse.Feedback.LinkInputSig(trilist.BooleanInput[savedJoin]);
+            feedbacks.Add(pulse.Feedback);
+            dsp.PresetSaved += key =>
+            {
+                if (key == presetKey) pulse.Pulse();
+            };
+        }
+
+        /// <summary>
+        /// Receives the replies to preset saves, which TesiraDsp.SavePreset routes here.
+        /// </summary>
+        public override void ParseGetMessage(string attributeCode, string message)
+        {
+            if (attributeCode == null || !attributeCode.StartsWith(SaveAttributePrefix, StringComparison.Ordinal))
+                return;
+
+            var key = attributeCode.Substring(SaveAttributePrefix.Length);
+            if (message.StartsWith("+OK", StringComparison.Ordinal))
+            {
+                this.LogDebug("Preset {key} saved", key);
+                Parent.OnPresetSaved(key);
+            }
+            else
+            {
+                this.LogWarning("Save of preset {key} failed: {message}", key, message);
+            }
+        }
 
     }
 
