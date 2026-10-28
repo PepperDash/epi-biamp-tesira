@@ -1175,12 +1175,6 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
                     return;
                 }
 
-                if (args.Text.IndexOf("DEVICE recallPresetByName", StringComparison.Ordinal) == 0)
-                {
-                    CommandQueue.HandleResponse(args.Text);
-                    return;
-                }
-
                 if (args.Text.IndexOf("-ERR", StringComparison.Ordinal) >= 0)
                 {
                     CommandQueue.HandleResponse(args.Text);
