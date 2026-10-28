@@ -120,7 +120,7 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Bridge.JoinMaps
 
     [JoinName("RawLevel")]
     public JoinDataComplete RawLevel =
-        new JoinDataComplete(new JoinData { JoinNumber = 300, JoinSpan = 1 },
+        new JoinDataComplete(new JoinData { JoinNumber = 400, JoinSpan = 1 },
             new JoinMetadata
             {
               Description = "Fader Raw Level with dB suffix",
