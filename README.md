@@ -478,14 +478,17 @@ In the provided example config object, given a base object key of ```dsp-1```, t
 
 If you intend to ONLY do direct preset calling by string, this object is NOT required to recall presets. This activity is provided by the base level device object for the Tesira DSP. It is also provided by the **Standalone** object ```Presets```.  This config object is required regardless of control object if preset control iby index is required.
 
->This control implements [Essentials](https://github.com/PepperDash/Essentials) interfaces **`IHasDspPreset`** and **`IKeyed`**
+>This control implements [Essentials](https://github.com/PepperDash/Essentials) interfaces **`IHasDspPresetSave`** (which extends `IDspPresets`) and **`IKeyed`**
+
+By default, a preset's digital join recalls the preset on press. To save presets from the bridge, set `presetHoldTimeMs` on the DSP (see Config Notes). Then a short press recalls the preset on release, and holding the join for `presetHoldTimeMs` saves the DSP's current state to that preset. When the DSP confirms the save, the *Preset Saved* join pulses high for 2 seconds. A failed save (for example, `-ERR PRESET_NOT_FOUND`) is logged and does not pulse.
 
 #### Digitals
 
-| Legacy Join | Standalone Join | Type (RW) | Description                  |
-| ----------- | --------------- | --------- | ---------------------------- |
-| 100         | 1               | W         | Select Preset By Index       |
-| N/A         | 1               | R         | Preset is Available By Index |
+| Legacy Join | Standalone Join | Type (RW) | Description                                                        |
+| ----------- | --------------- | --------- | ------------------------------------------------------------------ |
+| 100         | 1               | W         | Select Preset By Index (with `presetHoldTimeMs`: press recalls, hold saves) |
+| N/A         | 1               | R         | Preset is Available By Index                                       |
+| 100         | 101             | R         | Preset Saved By Index: pulses high for 2 seconds when a save is confirmed |
 
 #### Analogs
 
@@ -505,6 +508,7 @@ None
 
 ```json
 {
+    "presetHoldTimeMs" : 3000,
     "presets" : {
         "SomeUniqueKey": {
             "label" : "Default",
@@ -524,6 +528,7 @@ In the provided example config object, given a base object key of ```dsp-1```, t
 **presetName** - the actual name of the preset as defined in biamp software
 **presetID** - the ID of the preset as defined in biamp software
 **presetIndex** - the index of the preset for the digital press recall
+**presetHoldTimeMs** - (optional, on the DSP, not per preset) milliseconds a preset join must be held to save that preset. `0` (the default) disables saving from the bridge, and the join recalls on press.
 
 > If a `presetName` is defined, you don't need a `presetId` and vice versa.  One or the other will be fine.
 > If you are utilizing the "select preset by name" methodology, no presets need be defined in config.
