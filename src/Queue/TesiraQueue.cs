@@ -113,7 +113,8 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Queue
                 Parent.LogVerbose("[EnqueueCommand] Command Queue {state} in progress.", CommandQueueInProgress ? "is" : "is not");
 
                 var countBefore = LocalQueue.Count;
-                if (!LocalQueue.Enqueue(commandToEnqueue, CommandLanes.IsBackground(commandToEnqueue.Command)))
+                var isBackground = backgroundScopeDepth > 0 || CommandLanes.IsBackground(commandToEnqueue.Command);
+                if (!LocalQueue.Enqueue(commandToEnqueue, isBackground))
                     Parent.LogWarning("[EnqueueCommand] Queue full ({count}); dropped '{command}'", LocalQueue.Count, commandToEnqueue.Command);
                 if (LocalQueue.Count > countBefore && IsLevelChange(commandToEnqueue))
                     pendingLevelChanges.Add(commandToEnqueue.ControlPoint);
@@ -229,6 +230,34 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Queue
 
             Parent.LogWarning("[CommandTimeout] Discarding '{command}' and continuing.", timedOutCommand.Command);
             SendNextQueuedCommand();
+        }
+
+        // Per thread: the plugin's own bursts run on their own threads, so presses arriving on other
+        // threads stay in the foreground lane.
+        [System.ThreadStatic]
+        private static int backgroundScopeDepth;
+
+        /// <summary>
+        /// Until disposed, every command this thread queues goes in the background lane, behind user
+        /// and program commands. For work the plugin does on its own behalf: startup and restore
+        /// subscriptions with the reads that come with them, watchdog checks, range polls.
+        /// </summary>
+        public System.IDisposable BackgroundScope()
+        {
+            backgroundScopeDepth++;
+            return new ScopeExit();
+        }
+
+        private sealed class ScopeExit : System.IDisposable
+        {
+            private bool disposed;
+
+            public void Dispose()
+            {
+                if (disposed) return;
+                disposed = true;
+                backgroundScopeDepth--;
+            }
         }
 
         /// <summary>
