@@ -129,35 +129,28 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
         private bool initalSubscription = true;
 
         private readonly object watchdogLock = new object();
-        private bool watchDogSnifferValue;
-        private int watchDogExpectedResponses = 0;
-        private int watchDogReceivedResponses = 0;
-        private readonly HashSet<ISubscribedComponent> recentlyCheckedComponents = new HashSet<ISubscribedComponent>();
 
-        /// <summary>
-        /// The set of components sampled by the sniffer batch currently in flight (if any).
-        /// Used to recognize, when one of this batch's commands times out (see
-        /// NotifyCommandTimedOut), whether that command belongs to the outstanding watchdog
-        /// check rather than to ordinary unrelated traffic.
-        /// </summary>
-        private readonly HashSet<ISubscribedComponent> currentWatchDogBatch = new HashSet<ISubscribedComponent>();
-        private bool WatchDogSniffer
-        {
-            get
-            {
-                lock (watchdogLock)
-                {
-                    return watchDogSnifferValue;
-                }
-            }
-            set
-            {
-                lock (watchdogLock)
-                {
-                    watchDogSnifferValue = value;
-                }
-            }
-        }
+        // Subscription watchdog (#160), after Biamp's own modules: every tick re-subscribes the sentinels
+        // (one per partition, from config) plus the next few components of a rotating patrol. Each probe
+        // command's reply is attributed to its component: ALREADY_SUBSCRIBED is healthy, +OK means the DSP
+        // had dropped subscriptions (design push, partition restart) so everything is resubscribed at once,
+        // and configuration errors quarantine the component. Guarded by watchdogLock.
+        private const int defaultWatchdogIntervalSecs = 30;
+        private const int defaultWatchdogPatrolSize = 2;
+        private int watchDogIntervalMs = defaultWatchdogIntervalSecs * 1000;
+        private WatchdogPatrol<ISubscribedComponent> watchdogPatrol = new WatchdogPatrol<ISubscribedComponent>(defaultWatchdogPatrolSize);
+        private readonly ProbeBatch<ISubscribedComponent, QueuedCommand> probeBatch = new ProbeBatch<ISubscribedComponent, QueuedCommand>();
+        private List<string> watchdogSentinelKeys = new List<string>();
+
+        // Components seen subscribed this session. Subscribe() resets IsSubscribed on many components and
+        // only a publish sets it again, which a healthy (ALREADY_SUBSCRIBED) probe never produces, so
+        // IsSubscribed alone would drop components from the patrol after their first probe.
+        private readonly HashSet<ISubscribedComponent> knownSubscribed = new HashSet<ISubscribedComponent>();
+
+        // Ticks the current probe batch has stayed open; at maxOpenProbeTicks the check counts as failed.
+        private int openProbeTicks;
+        private const int maxOpenProbeTicks = 4;
+
         public bool WatchdogSuspend { get; private set; }
 
         private readonly DeviceConfig dc;
@@ -365,6 +358,22 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
             }
             // long math, capped at the timer's int maximum (~24.8 days): a large value must not wrap
             levelRangePollIntervalMs = (int)Math.Min((long)pollSecs * 1000, int.MaxValue);
+
+            var watchdogSecs = props.WatchdogIntervalSecs ?? defaultWatchdogIntervalSecs;
+            if (watchdogSecs < 10)
+            {
+                this.LogInformation("watchdogIntervalSecs value {secs} is below minimum of 10 — clamping to 10.", watchdogSecs);
+                watchdogSecs = 10;
+            }
+            watchDogIntervalMs = (int)Math.Min((long)watchdogSecs * 1000, int.MaxValue);
+            var patrolSize = Math.Max(0, props.WatchdogPatrolSize ?? defaultWatchdogPatrolSize);
+            lock (watchdogLock)
+            {
+                watchdogPatrol = new WatchdogPatrol<ISubscribedComponent>(patrolSize);
+                watchdogSentinelKeys = (props.WatchdogSentinels ?? new List<string>()).Where(k => !string.IsNullOrWhiteSpace(k)).ToList();
+            }
+            this.LogDebug("Subscription watchdog: every {secs}s, sentinels [{sentinels}], patrol {patrol}",
+                watchdogSecs, string.Join(", ", watchdogSentinelKeys), patrolSize);
 
             // Lock the entire control point list creation process
             lock (watchdogLock)
@@ -802,10 +811,6 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
 
         private void StartWatchDog()
         {
-            // Use 2 minutes (120000ms) interval for random sampling approach
-            // Check 5-10 random components each interval to reduce network traffic
-            const int watchDogIntervalMs = 120000; // 2 minutes
-
             if (watchDogTimer == null)
             {
                 watchDogTimer = new System.Timers.Timer(watchDogIntervalMs);
@@ -830,14 +835,41 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
 
             StopLevelRangePollTimer();
 
-            // Reset watchdog state
+            // Only the probes in flight. Subscription history and quarantines last for the session
+            // (StopWatchDog also runs for a same-session Resubscribe or a comm monitor pause); a new
+            // session resets them (see ResetWatchdogSession).
             lock (watchdogLock)
             {
-                WatchDogSniffer = false;
-                watchDogExpectedResponses = 0;
-                watchDogReceivedResponses = 0;
-                recentlyCheckedComponents.Clear();
-                currentWatchDogBatch.Clear();
+                probeBatch.Close();
+                openProbeTicks = 0;
+            }
+        }
+
+        /// <summary>
+        /// Called by the command queue when it discards queued commands: probes among them will never
+        /// be answered, so the check in flight is over.
+        /// </summary>
+        internal void NotifyQueueCleared()
+        {
+            lock (watchdogLock)
+            {
+                probeBatch.Close();
+                openProbeTicks = 0;
+            }
+        }
+
+        /// <summary>
+        /// A new TTP session: forget which components were subscribed and release quarantines (the
+        /// design may have changed since).
+        /// </summary>
+        private void ResetWatchdogSession()
+        {
+            lock (watchdogLock)
+            {
+                probeBatch.Close();
+                knownSubscribed.Clear();
+                watchdogPatrol.ClearQuarantine();
+                openProbeTicks = 0;
             }
         }
 
@@ -880,117 +912,186 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
         {
             try
             {
-                // Create a snapshot of the ControlPointList to avoid collection modification issues
-                List<ISubscribedComponent> controlPointSnapshot;
-                lock (watchdogLock)
+                if (WatchdogSuspend)
                 {
-                    if (ControlPointList.Count == 0) return;
-                    controlPointSnapshot = new List<ISubscribedComponent>(ControlPointList);
+                    lock (watchdogLock) probeBatch.Close();
+                    return;
                 }
 
-                // Safety check - make sure subscription process is actually complete
-                var subscribedCount = controlPointSnapshot.Count(c => c.IsSubscribed);
-                if (subscribedCount == 0)
+                List<ISubscribedComponent> candidates;
+                bool stillWaiting;
+                bool backstop = false;
+                lock (watchdogLock)
+                {
+                    foreach (var c in ControlPointList.Where(c => c.Enabled && c.IsSubscribed))
+                        knownSubscribed.Add(c);
+
+                    // Probe-able: subscribed this session, and (for meters) still asked for.
+                    candidates = ControlPointList
+                        .Where(c => c.Enabled && knownSubscribed.Contains(c))
+                        .Where(c => !(c is TesiraDspMeter meter) || meter.SubscriptionRequested)
+                        .ToList();
+
+                    // A probe still open is queued or in flight behind other traffic: each reply either
+                    // arrives, times out on its own once sent (NotifyCommandTimedOut) or is discarded with
+                    // the queue (NotifyQueueCleared closes the batch). So wait, rather than treat a busy
+                    // queue as lost subscriptions. Only a batch open this many ticks is a failed check.
+                    stillWaiting = probeBatch.IsOpen;
+                    if (stillWaiting && ++openProbeTicks >= maxOpenProbeTicks)
+                    {
+                        probeBatch.Close();
+                        backstop = true;
+                    }
+                    if (!stillWaiting) openProbeTicks = 0;
+                }
+
+                if (backstop)
+                {
+                    this.LogWarning("Watchdog: subscription probes still unanswered after {ticks} checks; resubscribing all control points.", maxOpenProbeTicks);
+                    lock (watchdogLock) openProbeTicks = 0;
+                    Resubscribe();
+                    return;
+                }
+
+                if (stillWaiting)
+                {
+                    this.LogDebug("Watchdog: last check's probes are still queued or in flight; skipping this check.");
+                    return;
+                }
+
+                if (candidates.Count == 0)
                 {
                     this.LogDebug("Watchdog postponed - no components are subscribed yet.");
                     return;
                 }
 
-                if (WatchdogSuspend)
-                {
-                    WatchDogSniffer = false;
-                    return;
-                }
-
-                if (WatchDogSniffer)
-                {
-                    this.LogDebug("Resubscribing all control points.");
-                    Resubscribe();
-                    return;
-                }
-
-                // Get subscribed components that haven't been checked recently
-                var subscribedComponents = controlPointSnapshot.Where(c => c.IsSubscribed).ToList();
-                var availableToCheck = subscribedComponents.Where(c => !recentlyCheckedComponents.Contains(c)).ToList();
-
-                // If no unchecked components available, clear the recently checked list and use all subscribed
-                if (availableToCheck.Count == 0 && subscribedComponents.Count > 0)
-                {
-                    this.LogDebug("All components recently checked, clearing recent check history.");
-                    lock (watchdogLock)
-                    {
-                        recentlyCheckedComponents.Clear();
-                    }
-                    availableToCheck = subscribedComponents;
-                }
-
-                if (availableToCheck.Count == 0)
-                {
-                    this.LogDebug("No subscribed components to check.");
-                    return;
-                }
-
-                // Select 5-10 random components to check (scale with total component count)
-                int componentsToCheck = Math.Min(Math.Max(5, subscribedComponents.Count / 20), Math.Min(10, availableToCheck.Count));
-                var random = new Random();
-                var componentsToCheckList = availableToCheck.OrderBy(x => random.Next()).Take(componentsToCheck).ToList();
-
-                this.LogDebug("Watchdog checking {count} random components out of {total} subscribed.",
-                    componentsToCheckList.Count, subscribedComponents.Count);
-
-                // Initialize watchdog tracking
+                IReadOnlyList<ISubscribedComponent> probe;
+                int quarantined;
                 lock (watchdogLock)
                 {
-                    WatchDogSniffer = true;
-                    watchDogExpectedResponses = componentsToCheckList.Count;
-                    watchDogReceivedResponses = 0;
-
-                    // Track this batch so NotifyCommandTimedOut can recognize, if one of these
-                    // commands' own per-command timeout fires (see TesiraQueue), that it belongs
-                    // to this sniffer check rather than to ordinary unrelated traffic.
-                    currentWatchDogBatch.Clear();
-                    foreach (var component in componentsToCheckList)
-                    {
-                        recentlyCheckedComponents.Add(component);
-                        currentWatchDogBatch.Add(component);
-                    }
-
-                    // No timer armed here: success is driven entirely by ALREADY_SUBSCRIBED
-                    // responses arriving (handled where DSP responses are parsed), and failure
-                    // is driven by TesiraQueue's own per-command timeout calling back into
-                    // NotifyCommandTimedOut below. If the DSP is fully unreachable and none of
-                    // this batch's commands are ever even sent, the next watchdog cycle's
-                    // "WatchDogSniffer still true" check (top of this method) is the backstop.
+                    probe = watchdogPatrol.NextProbeSet(candidates, ResolveSentinels(candidates));
+                    quarantined = watchdogPatrol.QuarantinedCount;
+                    probeBatch.Begin(probe);
                 }
 
-                // Subscribe to selected components to verify their subscription status
-                foreach (var component in componentsToCheckList)
+                this.LogDebug("Watchdog probing {components} ({count} of {total} subscribed components; {quarantined} quarantined)",
+                    string.Join(", ", probe.Select(c => c.Key)), probe.Count, candidates.Count, quarantined);
+
+                // Each subscribe command these queue is counted as an expected reply (see
+                // NotifySubscribeEnqueued) and its reply is attributed back (NotifySubscribeReply).
+                foreach (var component in probe)
                 {
-                    if (SubscribeAutomatically(component)) continue;
-
-                    // Opted out after it was picked (a meter whose join went low): no probe was
-                    // sent, so don't wait for its reply.
-                    lock (watchdogLock)
-                    {
-                        if (currentWatchDogBatch.Remove(component) && watchDogExpectedResponses > 0)
-                            watchDogExpectedResponses--;
-
-                        // Every reply still expected may already be in (or none was expected).
-                        if (WatchDogSniffer && watchDogReceivedResponses >= watchDogExpectedResponses)
-                        {
-                            WatchDogSniffer = false;
-                            watchDogExpectedResponses = 0;
-                            watchDogReceivedResponses = 0;
-                            currentWatchDogBatch.Clear();
-                        }
-                    }
+                    SubscribeAutomatically(component);
                 }
 
+                lock (watchdogLock)
+                {
+                    probeBatch.EndCapture();
+                }
             }
             catch (Exception ex)
             {
                 this.LogError("Watchdog Error: {message}", ex.Message);
                 this.LogDebug(ex, "Stack Trace: ");
+            }
+        }
+
+        /// <summary>
+        /// Configured sentinels (watchdogSentinels) that are probe candidates. Keys may be the block key
+        /// ("RmaRoom") or the full device key ("dsp-1--RmaRoom").
+        /// </summary>
+        private List<ISubscribedComponent> ResolveSentinels(List<ISubscribedComponent> candidates)
+        {
+            var sentinels = new List<ISubscribedComponent>();
+            foreach (var key in watchdogSentinelKeys)
+            {
+                var fullKey = string.Format(KeyFormatter, Key, key);
+                var match = candidates.FirstOrDefault(c =>
+                    string.Equals(c.Key, key, StringComparison.OrdinalIgnoreCase) ||
+                    string.Equals(c.Key, fullKey, StringComparison.OrdinalIgnoreCase));
+                if (match != null) sentinels.Add(match);
+            }
+            return sentinels;
+        }
+
+        /// <summary>
+        /// Called by the command queue, under its lock, as a subscribe command tagged with its
+        /// component is queued. While a watchdog probe is being queued, it is counted as an expected reply.
+        /// </summary>
+        internal void NotifySubscribeEnqueued(QueuedCommand command)
+        {
+            var component = command?.RequestingComponent;
+            if (component == null || !ProbeReplies.IsSubscribeCommand(command.Command)) return;
+
+            lock (watchdogLock)
+            {
+                probeBatch.ExpectReply(component, command);
+            }
+        }
+
+        /// <summary>
+        /// Called by the command queue, under its lock, with the reply to a subscribe command tagged
+        /// with its component. Replies to watchdog probes decide what happens next.
+        /// </summary>
+        internal void NotifySubscribeReply(QueuedCommand command, string response)
+        {
+            var component = command?.RequestingComponent;
+            if (component == null || !ProbeReplies.IsSubscribeCommand(command.Command)) return;
+
+            ProbeReply? reply;
+            var newlyQuarantined = false;
+            int quarantined;
+            lock (watchdogLock)
+            {
+                reply = probeBatch.Record(command, response);
+
+                // Any subscribe that succeeded or was already there means the component is subscribed,
+                // probe or not: a healthy reply publishes nothing to set IsSubscribed again.
+                var ack = ProbeReplies.Classify(response);
+                if (ack == ProbeReply.Healthy || ack == ProbeReply.Lost) knownSubscribed.Add(component);
+                if (reply == ProbeReply.ConfigError) newlyQuarantined = watchdogPatrol.Quarantine(component);
+                quarantined = watchdogPatrol.QuarantinedCount;
+            }
+
+            switch (reply)
+            {
+                case ProbeReply.Lost:
+                    // The DSP had dropped this subscription. A design push or partition restart drops
+                    // many, so restore everything now (as Biamp's modules do) rather than a cycle later.
+                    // Off the queue's lock: this queues a subscribe per component.
+                    this.LogWarning("Watchdog: '{command}' was accepted as new (+OK), so the DSP had dropped subscriptions; restoring all subscriptions.", command.Command);
+                    System.Threading.Tasks.Task.Run(() => RepairSubscriptions());
+                    break;
+                case ProbeReply.ConfigError:
+                    if (newlyQuarantined)
+                        this.LogWarning("Watchdog: '{component}' quarantined, its subscription can't succeed: {response} ({count} quarantined). Check its config against the design.",
+                            component.Key, response, quarantined);
+                    break;
+                case ProbeReply.OtherError:
+                    this.LogWarning("Watchdog: '{command}' failed: {response}. Resubscribing '{component}'.", command.Command, response, component.Key);
+                    System.Threading.Tasks.Task.Run(() => SubscribeAutomatically(component));
+                    break;
+            }
+        }
+
+        /// <summary>
+        /// Re-sends every component's subscriptions without clearing the queue or re-reading device
+        /// info: the session is fine, only subscriptions were dropped. Quarantined components are skipped.
+        /// </summary>
+        private void RepairSubscriptions()
+        {
+            List<ISubscribedComponent> components;
+            lock (watchdogLock)
+            {
+                components = ControlPointList
+                    .Where(c => c.Enabled && !watchdogPatrol.IsQuarantined(c))
+                    .ToList();
+            }
+
+            this.LogInformation("Restoring subscriptions for {count} components", components.Count);
+            foreach (var component in components)
+            {
+                SubscribeAutomatically(component);
             }
         }
 
@@ -1017,17 +1118,14 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
             bool watchDogFailure;
             lock (watchdogLock)
             {
-                watchDogFailure = component != null && WatchDogSniffer && currentWatchDogBatch.Contains(component);
+                watchDogFailure = component != null && probeBatch.Contains(component);
 
                 if (watchDogFailure)
                 {
                     this.LogWarning("Watchdog: component '{component}' did not respond to subscription check in time.",
                         component.Key);
 
-                    WatchDogSniffer = false;
-                    watchDogExpectedResponses = 0;
-                    watchDogReceivedResponses = 0;
-                    currentWatchDogBatch.Clear();
+                    probeBatch.Close();
                 }
             }
 
@@ -1167,6 +1265,7 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
                 if (args.Text.Contains("Welcome"))
                 {
                     // Indicates a new TTP session
+                    ResetWatchdogSession();
                     if (!isSerialComm)
                     {
                         CommunicationMonitor.Start();
@@ -1222,46 +1321,12 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
 
                 if (args.Text.IndexOf("-ERR", StringComparison.Ordinal) >= 0)
                 {
+                    // Watchdog probe replies are attributed to their command by the queue
+                    // (NotifySubscribeReply), not counted here.
                     CommandQueue.HandleResponse(args.Text);
-                    // Error response
-                    if (args.Text.IndexOf("ALREADY_SUBSCRIBED", StringComparison.Ordinal) >= 0)
-                    {
-                        if (WatchDogSniffer)
-                        {
-                            lock (watchdogLock)
-                            {
-                                watchDogReceivedResponses++;
-                                this.LogVerbose("Watchdog response {received}/{expected} - Component already subscribed.",
-                                    watchDogReceivedResponses, watchDogExpectedResponses);
 
-                                // Clear sniffer flag when all responses received
-                                if (watchDogReceivedResponses >= watchDogExpectedResponses)
-                                {
-                                    this.LogDebug("All watchdog responses received. Subscriptions verified.");
-                                    WatchDogSniffer = false;
-                                    watchDogExpectedResponses = 0;
-                                    watchDogReceivedResponses = 0;
-                                    currentWatchDogBatch.Clear();
-                                }
-                            }
-                        }
-                    }
-                    else
-                    {
+                    if (args.Text.IndexOf("ALREADY_SUBSCRIBED", StringComparison.Ordinal) < 0)
                         this.LogDebug("Error From DSP: '{0}'", args.Text);
-
-                        // Any other error during watchdog check means we need to resubscribe
-                        if (WatchDogSniffer)
-                        {
-                            lock (watchdogLock)
-                            {
-                                WatchDogSniffer = false;
-                                watchDogExpectedResponses = 0;
-                                watchDogReceivedResponses = 0;
-                                currentWatchDogBatch.Clear();
-                            }
-                        }
-                    }
 
                     return;
                 }

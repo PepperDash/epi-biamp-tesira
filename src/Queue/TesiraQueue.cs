@@ -1,12 +1,13 @@
-﻿using Crestron.SimplSharp;
-using Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Interfaces;
+﻿using Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Interfaces;
 using PepperDash.Core.Logging;
 
 namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Queue
 {
     public class TesiraQueue
     {
-        private CrestronQueue<QueuedCommand> LocalQueue { get; set; }
+        // Two lanes: subscriptions and session traffic wait behind user and program commands, so a
+        // startup, resubscribe or watchdog restore burst can't delay a button press (see CommandLanes).
+        private TwoLaneQueue<QueuedCommand> LocalQueue { get; set; }
 
         private TesiraDsp Parent { get; set; }
 
@@ -52,7 +53,7 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Queue
         /// <param name="parent">Parent TesiraDsp Class</param>
         public TesiraQueue(int queueSize, TesiraDsp parent)
         {
-            LocalQueue = new CrestronQueue<QueuedCommand>(queueSize);
+            LocalQueue = new TwoLaneQueue<QueuedCommand>(queueSize);
             Parent = parent;
             CommandQueueInProgress = false;
         }
@@ -83,6 +84,10 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Queue
                     Parent.LogVerbose("[HandleResponse] Incoming Response: '{response}'. No Controlpoint waiting for response", response);
                 }
 
+                // Subscribe replies go to the watchdog, attributed to the component that sent them.
+                if (lastDequeued?.RequestingComponent != null)
+                    Parent.NotifySubscribeReply(lastDequeued, response);
+
                 lastDequeued = null;
 
                 if (LocalQueue.IsEmpty)
@@ -108,9 +113,12 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Queue
                 Parent.LogVerbose("[EnqueueCommand] Command Queue {state} in progress.", CommandQueueInProgress ? "is" : "is not");
 
                 var countBefore = LocalQueue.Count;
-                LocalQueue.Enqueue(commandToEnqueue);
+                if (!LocalQueue.Enqueue(commandToEnqueue, CommandLanes.IsBackground(commandToEnqueue.Command)))
+                    Parent.LogWarning("[EnqueueCommand] Queue full ({count}); dropped '{command}'", LocalQueue.Count, commandToEnqueue.Command);
                 if (LocalQueue.Count > countBefore && IsLevelChange(commandToEnqueue))
                     pendingLevelChanges.Add(commandToEnqueue.ControlPoint);
+                if (LocalQueue.Count > countBefore && commandToEnqueue.RequestingComponent != null)
+                    Parent.NotifySubscribeEnqueued(commandToEnqueue);
 
                 Parent.LogVerbose("[EnqueueCommand] Command Enqueued: '{command}'.  CommandQueue has {count} items", commandToEnqueue.Command, LocalQueue.Count);
 
@@ -168,7 +176,7 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Queue
 
                 CommandQueueInProgress = true;
 
-                if (!LocalQueue.Dequeue(out lastDequeued))
+                if (!LocalQueue.TryDequeue(out lastDequeued))
                 {
                     Parent.LogError("[SendNextQueuedCommand] Failed to dequeue command despite queue not being empty");
                     CommandQueueInProgress = false;
@@ -233,6 +241,7 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Queue
                 if (LocalQueue == null) return;
                 LocalQueue.Clear();
                 pendingLevelChanges.Clear();
+                Parent.NotifyQueueCleared();
                 lastDequeued = null;
                 CommandQueueInProgress = false;
                 commandTimeoutTimer?.Dispose();
@@ -251,6 +260,7 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Queue
                 if (LocalQueue == null) return;
                 LocalQueue.Clear();
                 pendingLevelChanges.Clear();
+                Parent.NotifyQueueCleared();
                 if (lastDequeued == null) CommandQueueInProgress = false;
             }
         }
