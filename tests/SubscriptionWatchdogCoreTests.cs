@@ -97,61 +97,83 @@ public class WatchdogPatrolTests
 
 public class ProbeBatchTests
 {
+    // Commands are distinct objects, as QueuedCommand instances are.
+    private sealed class Cmd { public string Name = ""; public override string ToString() => Name; }
+    private static Cmd C(string name) => new Cmd { Name = name };
+
     [Fact]
     public void Closes_When_Every_Expected_Reply_Is_Healthy()
     {
-        var batch = new ProbeBatch<string>();
+        var batch = new ProbeBatch<string, Cmd>();
+        var level = C("fader level"); var mute = C("fader mute"); var state = C("state");
         batch.Begin(new[] { "fader", "state" });
-        batch.ExpectReply("fader"); // level
-        batch.ExpectReply("fader"); // mute
-        batch.ExpectReply("state");
+        batch.ExpectReply("fader", level);
+        batch.ExpectReply("fader", mute);
+        batch.ExpectReply("state", state);
         batch.EndCapture().Should().BeTrue();
 
-        batch.Record("fader", "-ERR ALREADY_SUBSCRIBED").Should().Be(ProbeReply.Healthy);
-        batch.Record("state", "-ERR ALREADY_SUBSCRIBED").Should().Be(ProbeReply.Healthy);
+        batch.Record(level, "-ERR ALREADY_SUBSCRIBED").Should().Be(ProbeReply.Healthy);
+        batch.Record(state, "-ERR ALREADY_SUBSCRIBED").Should().Be(ProbeReply.Healthy);
         batch.IsOpen.Should().BeTrue();
-        batch.Record("fader", "-ERR ALREADY_SUBSCRIBED").Should().Be(ProbeReply.Healthy);
+        batch.Record(mute, "-ERR ALREADY_SUBSCRIBED").Should().Be(ProbeReply.Healthy);
         batch.IsOpen.Should().BeFalse();
     }
 
     [Fact]
     public void A_Lost_Reply_Closes_The_Batch_At_Once()
     {
-        var batch = new ProbeBatch<string>();
+        var batch = new ProbeBatch<string, Cmd>();
+        var a = C("a"); var b = C("b");
         batch.Begin(new[] { "a", "b" });
-        batch.ExpectReply("a");
-        batch.ExpectReply("b");
+        batch.ExpectReply("a", a);
+        batch.ExpectReply("b", b);
         batch.EndCapture();
 
-        batch.Record("a", "+OK").Should().Be(ProbeReply.Lost);
+        batch.Record(a, "+OK").Should().Be(ProbeReply.Lost);
         batch.IsOpen.Should().BeFalse();
-        batch.Record("b", "-ERR ALREADY_SUBSCRIBED").Should().BeNull();
+        batch.Record(b, "-ERR ALREADY_SUBSCRIBED").Should().BeNull();
     }
 
     [Fact]
-    public void Replies_For_Non_Members_Or_Unexpected_Commands_Are_Ignored()
+    public void A_Subscribe_Queued_Before_The_Probe_Does_Not_Take_The_Probes_Place()
     {
-        var batch = new ProbeBatch<string>();
+        var batch = new ProbeBatch<string, Cmd>();
+        var earlier = C("a, queued before the probe");
+        var probe = C("a probe");
         batch.Begin(new[] { "a" });
-        batch.ExpectReply("a");
-        batch.ExpectReply("other"); // not a member
+        batch.ExpectReply("a", probe);
         batch.EndCapture();
 
-        batch.Record("other", "+OK").Should().BeNull();
+        batch.Record(earlier, "-ERR ALREADY_SUBSCRIBED").Should().BeNull();
         batch.IsOpen.Should().BeTrue();
-        batch.Record("a", "-ERR address not found: [0 0 0]").Should().Be(ProbeReply.ConfigError);
+        batch.Record(probe, "+OK").Should().Be(ProbeReply.Lost);
+    }
+
+    [Fact]
+    public void Commands_From_Non_Members_Are_Not_Expected()
+    {
+        var batch = new ProbeBatch<string, Cmd>();
+        var a = C("a"); var other = C("other");
+        batch.Begin(new[] { "a" });
+        batch.ExpectReply("a", a);
+        batch.ExpectReply("other", other);
+        batch.EndCapture();
+
+        batch.Record(other, "+OK").Should().BeNull();
+        batch.IsOpen.Should().BeTrue();
+        batch.Record(a, "-ERR address not found: [0 0 0]").Should().Be(ProbeReply.ConfigError);
         batch.IsOpen.Should().BeFalse();
-        batch.Record("a", "+OK").Should().BeNull();
+        batch.Record(a, "+OK").Should().BeNull();
     }
 
     [Fact]
     public void Commands_Queued_After_Capture_Ends_Are_Not_Expected()
     {
-        var batch = new ProbeBatch<string>();
+        var batch = new ProbeBatch<string, Cmd>();
         batch.Begin(new[] { "a" });
-        batch.ExpectReply("a");
+        batch.ExpectReply("a", C("probe"));
         batch.EndCapture();
-        batch.ExpectReply("a"); // e.g. a user subscribe after the probe
+        batch.ExpectReply("a", C("user subscribe after the probe"));
 
         batch.Outstanding.Should().Be(1);
     }
@@ -159,7 +181,7 @@ public class ProbeBatchTests
     [Fact]
     public void A_Batch_Where_Nothing_Was_Queued_Closes_At_End_Of_Capture()
     {
-        var batch = new ProbeBatch<string>();
+        var batch = new ProbeBatch<string, Cmd>();
         batch.Begin(new[] { "meter" }); // opted out between pick and probe
         batch.EndCapture().Should().BeFalse();
         batch.IsOpen.Should().BeFalse();
@@ -169,21 +191,22 @@ public class ProbeBatchTests
     public void Reply_Arriving_During_Capture_Does_Not_Close_Early()
     {
         // The queue can send and answer the first probe while later members are still queuing.
-        var batch = new ProbeBatch<string>();
+        var batch = new ProbeBatch<string, Cmd>();
+        var a = C("a"); var b = C("b");
         batch.Begin(new[] { "a", "b" });
-        batch.ExpectReply("a");
-        batch.Record("a", "-ERR ALREADY_SUBSCRIBED");
+        batch.ExpectReply("a", a);
+        batch.Record(a, "-ERR ALREADY_SUBSCRIBED");
         batch.IsOpen.Should().BeTrue();
-        batch.ExpectReply("b");
+        batch.ExpectReply("b", b);
         batch.EndCapture().Should().BeTrue();
-        batch.Record("b", "-ERR ALREADY_SUBSCRIBED");
+        batch.Record(b, "-ERR ALREADY_SUBSCRIBED");
         batch.IsOpen.Should().BeFalse();
     }
 
     [Fact]
     public void Contains_Is_False_Once_Closed()
     {
-        var batch = new ProbeBatch<string>();
+        var batch = new ProbeBatch<string, Cmd>();
         batch.Begin(new[] { "a" });
         batch.Contains("a").Should().BeTrue();
         batch.Close();

@@ -112,15 +112,20 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
 
     /// <summary>
     /// One tick's probes in flight. Each subscribe command a probed component sends is expected to
-    /// get exactly one reply, attributed to that component (a component can send several, e.g. a fader's
+    /// get exactly one reply, matched to that command (a component can send several, e.g. a fader's
     /// level and mute). The batch closes when every reply is in, or when a reply says subscriptions
     /// were lost.
     /// </summary>
     /// <remarks>Kept free of Crestron types so it can be unit tested. Not thread safe; lock around it.</remarks>
-    internal sealed class ProbeBatch<T> where T : class
+    internal sealed class ProbeBatch<TComponent, TCommand>
+        where TComponent : class
+        where TCommand : class
     {
-        private readonly HashSet<T> members = new HashSet<T>();
-        private readonly Dictionary<T, int> outstanding = new Dictionary<T, int>();
+        private readonly HashSet<TComponent> members = new HashSet<TComponent>();
+
+        // The exact probe commands queued while capturing. Only their replies count, so a subscribe
+        // a member had queued before the probe can't take a probe's place.
+        private readonly HashSet<TCommand> outstanding = new HashSet<TCommand>();
 
         /// <summary>A batch has been started and not yet closed.</summary>
         public bool IsOpen { get; private set; }
@@ -128,15 +133,15 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
         /// <summary>While true, subscribe commands from members count as expected replies.</summary>
         public bool Capturing { get; private set; }
 
-        public int Outstanding => outstanding.Values.Sum();
+        public int Outstanding => outstanding.Count;
 
-        public bool Contains(T component) => IsOpen && component != null && members.Contains(component);
+        public bool Contains(TComponent component) => IsOpen && component != null && members.Contains(component);
 
-        public void Begin(IEnumerable<T> components)
+        public void Begin(IEnumerable<TComponent> components)
         {
             members.Clear();
             outstanding.Clear();
-            foreach (var c in components ?? Enumerable.Empty<T>())
+            foreach (var c in components ?? Enumerable.Empty<TComponent>())
             {
                 if (c != null) members.Add(c);
             }
@@ -144,11 +149,11 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
             Capturing = IsOpen;
         }
 
-        /// <summary>Counts a subscribe command a member queued while the batch was capturing.</summary>
-        public void ExpectReply(T component)
+        /// <summary>Expects a reply to a subscribe command a member queued while the batch was capturing.</summary>
+        public void ExpectReply(TComponent component, TCommand command)
         {
-            if (!Capturing || component == null || !members.Contains(component)) return;
-            outstanding[component] = outstanding.TryGetValue(component, out var n) ? n + 1 : 1;
+            if (!Capturing || component == null || command == null || !members.Contains(component)) return;
+            outstanding.Add(command);
         }
 
         /// <summary>
@@ -163,15 +168,14 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
         }
 
         /// <summary>
-        /// Records a reply to one of a member's probe commands. A <see cref="ProbeReply.Lost"/>
+        /// Records the reply to one of this batch's probe commands. A <see cref="ProbeReply.Lost"/>
         /// reply closes the batch; otherwise it closes once every expected reply is in.
         /// </summary>
-        /// <returns>the reply's classification, or null when it isn't one this batch is waiting for</returns>
-        public ProbeReply? Record(T component, string response)
+        /// <returns>the reply's classification, or null when the command isn't one this batch is waiting for</returns>
+        public ProbeReply? Record(TCommand command, string response)
         {
-            if (!IsOpen || component == null || !outstanding.TryGetValue(component, out var n) || n == 0) return null;
+            if (!IsOpen || command == null || !outstanding.Remove(command)) return null;
 
-            outstanding[component] = n - 1;
             var reply = ProbeReplies.Classify(response);
 
             if (reply == ProbeReply.Lost || (!Capturing && Outstanding == 0)) Close();

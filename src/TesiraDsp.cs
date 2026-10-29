@@ -139,7 +139,7 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
         private const int defaultWatchdogPatrolSize = 2;
         private int watchDogIntervalMs = defaultWatchdogIntervalSecs * 1000;
         private WatchdogPatrol<ISubscribedComponent> watchdogPatrol = new WatchdogPatrol<ISubscribedComponent>(defaultWatchdogPatrolSize);
-        private readonly ProbeBatch<ISubscribedComponent> probeBatch = new ProbeBatch<ISubscribedComponent>();
+        private readonly ProbeBatch<ISubscribedComponent, QueuedCommand> probeBatch = new ProbeBatch<ISubscribedComponent, QueuedCommand>();
         private List<string> watchdogSentinelKeys = new List<string>();
 
         // Components seen subscribed this session. Subscribe() resets IsSubscribed on many components and
@@ -831,7 +831,21 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
 
             StopLevelRangePollTimer();
 
-            // Reset watchdog state. Quarantines go too: the design may have been fixed by the next session.
+            // Only the probes in flight. Subscription history and quarantines last for the session
+            // (StopWatchDog also runs for a same-session Resubscribe or a comm monitor pause); a new
+            // session resets them (see ResetWatchdogSession).
+            lock (watchdogLock)
+            {
+                probeBatch.Close();
+            }
+        }
+
+        /// <summary>
+        /// A new TTP session: forget which components were subscribed and release quarantines (the
+        /// design may have changed since).
+        /// </summary>
+        private void ResetWatchdogSession()
+        {
             lock (watchdogLock)
             {
                 probeBatch.Close();
@@ -977,7 +991,7 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
 
             lock (watchdogLock)
             {
-                probeBatch.ExpectReply(component);
+                probeBatch.ExpectReply(component, command);
             }
         }
 
@@ -995,7 +1009,7 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
             int quarantined;
             lock (watchdogLock)
             {
-                reply = probeBatch.Record(component, response);
+                reply = probeBatch.Record(command, response);
                 if (reply == ProbeReply.Healthy) knownSubscribed.Add(component);
                 if (reply == ProbeReply.ConfigError) newlyQuarantined = watchdogPatrol.Quarantine(component);
                 quarantined = watchdogPatrol.QuarantinedCount;
@@ -1213,6 +1227,7 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
                 if (args.Text.Contains("Welcome"))
                 {
                     // Indicates a new TTP session
+                    ResetWatchdogSession();
                     if (!isSerialComm)
                     {
                         CommunicationMonitor.Start();
