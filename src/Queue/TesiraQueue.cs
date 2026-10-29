@@ -27,6 +27,10 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Queue
 
         private readonly object lockObject = new object();
 
+        // Log-once flags, guarded by lockObject.
+        private bool droppingWhileDisconnected;
+        private bool queueFullLogged;
+
         // Level changes (set/increment/decrement) queued but not yet sent, per control point.
         // Updated with the queue under lockObject.
         private readonly PendingCommandCounter pendingLevelChanges = new PendingCommandCounter();
@@ -109,6 +113,20 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Queue
         {
             lock (lockObject)
             {
+                // Nothing can be sent while the Tesira is disconnected, and the queue is cleared when it
+                // reconnects (whose Welcome restores every subscription and so the real state). Queuing
+                // meanwhile only grows the queue: hours offline filled it with stale routes and reads.
+                if (!Parent.Communication.IsConnected)
+                {
+                    if (!droppingWhileDisconnected)
+                    {
+                        droppingWhileDisconnected = true;
+                        Parent.LogInformation("[EnqueueCommand] Tesira disconnected: dropping commands until it reconnects, when subscriptions restore the current state. First dropped: '{command}'", commandToEnqueue.Command);
+                    }
+                    return;
+                }
+                droppingWhileDisconnected = false;
+
                 Parent.LogVerbose("[EnqueueCommand] Attempting to enqueue command for {controlPoint} with priority {priority}", commandToEnqueue.ControlPoint?.Key ?? "no control point", commandToEnqueue.Priority);
                 Parent.LogVerbose("[EnqueueCommand] Command Queue {state} in progress.", CommandQueueInProgress ? "is" : "is not");
 
@@ -116,8 +134,16 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Queue
                 // In a background scope, reads go to the background too; writes never do (see BackgroundScope).
                 var isBackground = CommandLanes.IsBackground(commandToEnqueue.Command)
                     || (backgroundScopeDepth > 0 && CommandLanes.IsReadOrSubscription(commandToEnqueue.Command));
-                if (!LocalQueue.Enqueue(commandToEnqueue, isBackground))
-                    Parent.LogWarning("[EnqueueCommand] Queue full ({count}); dropped '{command}'", LocalQueue.Count, commandToEnqueue.Command);
+                if (LocalQueue.Enqueue(commandToEnqueue, isBackground))
+                {
+                    queueFullLogged = false;
+                }
+                else if (!queueFullLogged)
+                {
+                    // Once per episode, not once per dropped command.
+                    queueFullLogged = true;
+                    Parent.LogWarning("[EnqueueCommand] Queue full ({count}); dropping commands until it drains. First dropped: '{command}'", LocalQueue.Count, commandToEnqueue.Command);
+                }
                 if (LocalQueue.Count > countBefore && IsLevelChange(commandToEnqueue))
                     pendingLevelChanges.Add(commandToEnqueue.ControlPoint);
                 if (LocalQueue.Count > countBefore && commandToEnqueue.RequestingComponent != null)
