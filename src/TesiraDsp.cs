@@ -2031,6 +2031,12 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
             {
                 if (!router.Enabled) continue;
                 if (!TryGetBridgeOffset(router, out var x)) continue;
+                if (x >= TesiraRouterJoinMapAdvanced.MaxRouters)
+                {
+                    this.LogWarning("Router {key} outputs not bridged: bridgeIndex {index} is past the router block (1-{max}); use the standalone bridge",
+                        router.Key, x + 1, TesiraRouterJoinMapAdvanced.MaxRouters);
+                    continue;
+                }
 
                 var routerOffset = x * TesiraRouterJoinMapAdvanced.OutputsPerRouter;
                 this.LogVerbose("Router {key} outputs start at join {join}", router.Key, routerJoinMap.OutputRoute.JoinNumber + routerOffset);
