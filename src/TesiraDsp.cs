@@ -1836,9 +1836,10 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
                 meter.NameFeedback.LinkInputSig(trilist.StringInput[meterJoinMap.Label.JoinNumber + x]);
                 meter.SubscribedFeedback.LinkInputSig(trilist.BooleanInput[meterJoinMap.Subscribe.JoinNumber + x]);
 
-                // Per meter: without the offset every meter's subscribe landed on one join, last linked wins
-                trilist.SetSigTrueAction(meterJoinMap.Subscribe.JoinNumber + x, meter.Subscribe);
-                trilist.SetSigFalseAction(meterJoinMap.Subscribe.JoinNumber + x, meter.UnSubscribe);
+                // Per meter: without the offset every meter's subscribe landed on one join, last linked wins.
+                // One action for both edges: SetSigTrueAction and SetSigFalseAction share the sig's
+                // single action slot, so setting both left only the unsubscribe.
+                trilist.SetBoolSigAction(meterJoinMap.Subscribe.JoinNumber + x, meter.SetSubscribed);
 
             }
         }
