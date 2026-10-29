@@ -336,8 +336,13 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Queue
         {
             lock (lockObject)
             {
-                return pendingLevelChanges.Has(controlPoint)
-                    || (controlPoint?.InstanceTag1 != null && pendingLevelChanges.Has(PendingCommandCounter.RawKey(controlPoint.InstanceTag1)));
+                if (pendingLevelChanges.Has(controlPoint)) return true;
+
+                // Raw writes to this control's own channel. A tag is either a level block (level) or a
+                // room combiner (levelOut), so checking both attributes can't match another control.
+                if (!(controlPoint is TesiraDspControlPoint cp) || cp.InstanceTag1 == null) return false;
+                return pendingLevelChanges.Has(PendingCommandCounter.RawKey(cp.InstanceTag1, "level", cp.Index1))
+                    || pendingLevelChanges.Has(PendingCommandCounter.RawKey(cp.InstanceTag1, "levelOut", cp.Index1));
             }
         }
 
@@ -346,8 +351,8 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Queue
         private static object PendingKey(QueuedCommand command)
         {
             if (IsLevelChange(command)) return command.ControlPoint;
-            if (command?.ControlPoint == null && PendingCommandCounter.TryGetRawLevelTarget(command?.Command, out var tag))
-                return PendingCommandCounter.RawKey(tag);
+            if (command?.ControlPoint == null && PendingCommandCounter.TryGetRawLevelTarget(command?.Command, out var tag, out var attribute, out var index))
+                return PendingCommandCounter.RawKey(tag, attribute, index);
             return null;
         }
 
