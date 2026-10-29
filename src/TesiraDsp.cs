@@ -1685,9 +1685,11 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
             var meterJoinMap = new TesiraMeterJoinMapAdvanced(joinStart);
             var crosspointStateJoinMap = new TesiraCrosspointStateJoinMapAdvanced(joinStart);
             var roomCombinerJoinMap = new TesiraRoomCombinerJoinMapAdvanced(joinStart);
+            var routerJoinMap = new TesiraRouterJoinMapAdvanced(joinStart);
 
             if (bridge != null)
             {
+                bridge.AddJoinMap(string.Format("{0}--RouterJoinMap", Key), routerJoinMap);
                 bridge.AddJoinMap(string.Format("{0}--DeviceInfoJoinMap", Key), deviceJoinMap);
                 bridge.AddJoinMap(string.Format("{0}--DialerJoinMap", Key), dialerJoinMap);
                 bridge.AddJoinMap(string.Format("{0}--FaderJoinMap", Key), faderJoinMap);
@@ -1734,6 +1736,8 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
             LinkLegacySwitchersToApi(trilist, switcherJoinMap);
 
             LinkSwitchersToApi(trilist, switcherJoinMap);
+
+            LinkRouterOutputsToApi(trilist, routerJoinMap);
 
             LinkSourceSelectorsToApi(trilist, switcherJoinMap);
 
@@ -2014,6 +2018,27 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
                 switcher.NameFeedback.LinkInputSig(trilist.StringInput[switcherJoinMap.Label.JoinNumber + x]);
 
                 switcher.GetSourceNames();
+            }
+        }
+
+        /// <summary>
+        /// Each router's outputs on their own joins: output N of the router with bridgeIndex B is
+        /// OutputRoute + ((B - 1) * OutputsPerRouter) + (N - 1). The switcher slot still carries output 1.
+        /// </summary>
+        private void LinkRouterOutputsToApi(BasicTriList trilist, TesiraRouterJoinMapAdvanced routerJoinMap)
+        {
+            foreach (var router in Routers.Values)
+            {
+                if (!router.Enabled) continue;
+                if (!TryGetBridgeOffset(router, out var x)) continue;
+
+                var routerOffset = x * TesiraRouterJoinMapAdvanced.OutputsPerRouter;
+                this.LogVerbose("Router {key} outputs start at join {join}", router.Key, routerJoinMap.OutputRoute.JoinNumber + routerOffset);
+
+                router.LinkOutputsToApi(trilist,
+                    routerJoinMap.OutputRoute.JoinNumber + routerOffset,
+                    routerJoinMap.OutputRouteName.JoinNumber + routerOffset,
+                    TesiraRouterJoinMapAdvanced.OutputsPerRouter);
             }
         }
 
