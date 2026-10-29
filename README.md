@@ -808,7 +808,7 @@ Controls Biamp Tesira RoomCombiner objects.  Control of LevelOut, MuteOut, and g
 
 In order to keep the types of joins similar to a standard fader object, the choice was made to not provide direct control for wall states in this component.  If direct wall state control is required, utilize a `State Control` block.
 
-Within the **Legacy** object, this Join map represents a control that is part of an array of controls.  Each join number = Join Map Number + roomCombiner ```bridgeIndex``` as defined by the config.
+Within the **Legacy** object, this Join map represents a control that is part of an array of controls.  Each join number = Join Map Number + roomCombiner ```bridgeIndex``` as defined by the config. Each combiner takes six joins (offset ((`bridgeIndex` − 1) × 6)); `bridgeIndex` 1–66 fits before the router joins at 2601, and a higher one is logged and not linked.
 
 Within the **Standalone** object, this join map represents a single control as defined by the key in the bridge.
 

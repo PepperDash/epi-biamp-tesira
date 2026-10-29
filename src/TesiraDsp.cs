@@ -1777,6 +1777,9 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
             };
         }
 
+        // 2201 + (66 - 1) * 6 + 5 = 2596, the last combiner join before the router block at 2601.
+        private const uint MaxBridgedRoomCombiners = 66;
+
         private void LinkRoomCombinersToApi(BasicTriList trilist, TesiraRoomCombinerJoinMapAdvanced roomCombinerJoinMap)
         {
             this.LogVerbose("There are {0} Room Combiner Control Points", RoomCombiners.Count);
@@ -1789,6 +1792,14 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
                 var y = (uint)data;
 
                 var x = y > 1 ? ((y - 1) * 6) : 0;
+
+                // Six joins per combiner from 2201; the router block starts at 2601.
+                if (y > MaxBridgedRoomCombiners)
+                {
+                    this.LogWarning("Room combiner {key} not bridged: bridgeIndex {index} would overlap the router joins (2601+); room combiners use bridgeIndex 1-{max}",
+                        roomCombiner.Key, y, MaxBridgedRoomCombiners);
+                    continue;
+                }
 
                 this.LogVerbose("Tesira Room Combiner {0} connect", x);
 
