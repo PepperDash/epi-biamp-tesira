@@ -831,10 +831,13 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
         {
             var volumeComponents = ControlPointList.OfType<IVolumeComponent>().ToList();
             this.LogDebug("Level range poll: queuing min/max requests for {count} volume components.", volumeComponents.Count);
-            foreach (var component in volumeComponents)
+            using (CommandQueue.BackgroundScope())
             {
-                component.GetMinLevel();
-                component.GetMaxLevel();
+                foreach (var component in volumeComponents)
+                {
+                    component.GetMinLevel();
+                    component.GetMaxLevel();
+                }
             }
         }
 
@@ -1492,15 +1495,19 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
             var volumeComponents = ControlPointList.OfType<IVolumeComponent>().ToList();
             this.LogDebug("Queuing min/max level requests for {count} volume components", volumeComponents.Count);
 
-            foreach (var component in volumeComponents)
+            // The plugin's own reads: they wait behind user commands (see TesiraQueue.BackgroundScope).
+            using (CommandQueue.BackgroundScope())
             {
-                component.GetMinLevel();
-            }
+                foreach (var component in volumeComponents)
+                {
+                    component.GetMinLevel();
+                }
 
-            // Queue all max level requests  
-            foreach (var component in volumeComponents)
-            {
-                component.GetMaxLevel();
+                // Queue all max level requests
+                foreach (var component in volumeComponents)
+                {
+                    component.GetMaxLevel();
+                }
             }
 
             // Queue all component subscriptions. Meters are opt-in: they publish every interval,
@@ -1523,17 +1530,22 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
         /// <summary>
         /// Subscribe on the plugin's own behalf (session start, resubscribe, watchdog). Meters only
         /// re-subscribe if they were asked for and never record a request, so this can't undo an opt-out.
+        /// Everything it queues (subscribes and the reads components send with them) waits behind
+        /// user commands, so a startup, restore or watchdog burst can't delay a press.
         /// </summary>
         /// <returns>true if a subscribe was queued</returns>
-        private static bool SubscribeAutomatically(ISubscribedComponent component)
+        private bool SubscribeAutomatically(ISubscribedComponent component)
         {
-            if (component is TesiraDspMeter meter)
+            using (CommandQueue.BackgroundScope())
             {
-                return meter.RestoreSubscription();
-            }
+                if (component is TesiraDspMeter meter)
+                {
+                    return meter.RestoreSubscription();
+                }
 
-            component.Subscribe();
-            return true;
+                component.Subscribe();
+                return true;
+            }
         }
 
         private void StartQueueCompletionMonitoring()
