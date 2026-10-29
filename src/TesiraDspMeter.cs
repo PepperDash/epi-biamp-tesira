@@ -81,8 +81,16 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
             }
         }
 
+        /// <summary>
+        /// True once something asked this meter to stream (bridge join high or <see cref="Subscribe"/>),
+        /// until <see cref="UnSubscribe"/>. Meters publish every interval, so session start and
+        /// resubscribe only restore the ones that were asked for.
+        /// </summary>
+        public bool SubscriptionRequested { get; private set; }
+
         public override void Subscribe()
         {
+            SubscriptionRequested = true;
             MeterCustomName = string.Format("{0}__meter{1}", InstanceTag1, Index1);
             AddCustomName(MeterCustomName);
             SendSubscriptionCommand(MeterCustomName, meterAttributeCode, defaultPollTime, 0);
@@ -90,6 +98,7 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
 
         public void UnSubscribe()
         {
+            SubscriptionRequested = false;
             IsSubscribed = false;
 
             SendUnSubscriptionCommand(MeterCustomName, meterAttributeCode, 0);
