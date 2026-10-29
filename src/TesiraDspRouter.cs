@@ -70,6 +70,10 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
 
         private int Destination { get; set; }
 
+        /// <summary>
+        /// The route of <see cref="FirstOutput"/>: what the single-route joins (SourceIndex,
+        /// RoutedSourceName) report.
+        /// </summary>
         private int SourceIndex
         {
             get
@@ -79,20 +83,38 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
             set
             {
                 sourceIndex = value;
-                RoutedSourceName = SwitcherInputs[(uint)value] ?? "None";
+                RoutedSourceName = InputLabel((uint)value);
                 RoutedSourceNameFeedback.FireUpdate();
                 SourceIndexFeedback.FireUpdate();
-                UpdateCurrentRoutes();
             }
         }
 
         /// <summary>
-        ///  Feedback for Source Index
+        ///  Feedback for Source Index: the input routed to the first configured output
         /// </summary>
         public IntFeedback SourceIndexFeedback { get; private set; }
 
         /// <summary>
-        /// Currently active routes on this device.
+        /// Input routed to each configured output, keyed by Tesira output number. 0 = cleared.
+        /// </summary>
+        public Dictionary<uint, IntFeedback> OutputRouteFeedbacks { get; private set; } = new Dictionary<uint, IntFeedback>();
+
+        /// <summary>
+        /// Label of the input routed to each configured output, keyed by Tesira output number.
+        /// </summary>
+        public Dictionary<uint, StringFeedback> OutputRouteNameFeedbacks { get; private set; } = new Dictionary<uint, StringFeedback>();
+
+        // Tesira output number -> routed input. Written from receive threads, read by feedbacks.
+        private readonly Dictionary<uint, uint> outputRoutes = new Dictionary<uint, uint>();
+        private readonly object routesLock = new object();
+
+        /// <summary>
+        /// The lowest configured output number: the output the single-route joins and SetSource use.
+        /// </summary>
+        private uint FirstOutput => SwitcherOutputs.Count > 0 ? SwitcherOutputs.Keys.Min() : 1;
+
+        /// <summary>
+        /// Currently active routes on this device, one per output.
         /// </summary>
         public List<RouteSwitchDescriptor> CurrentRoutes { get; private set; } = new List<RouteSwitchDescriptor>();
 
@@ -101,16 +123,61 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
         /// </summary>
         public event RouteChangedEventHandler RouteChanged;
 
-        private void UpdateCurrentRoutes()
+        /// <summary>
+        /// The input currently routed to an output, as last reported by the DSP. 0 = cleared or unknown.
+        /// </summary>
+        public uint GetOutputRoute(uint output)
+        {
+            lock (routesLock)
+            {
+                return outputRoutes.TryGetValue(output, out var input) ? input : 0;
+            }
+        }
+
+        private string InputLabel(uint input) =>
+            SwitcherInputs.TryGetValue(input, out var label) && label != null ? label : (input == 0 ? "None" : $"Input {input}");
+
+        private void UpdateOutputRoute(uint output, uint input)
+        {
+            if (!SwitcherOutputs.ContainsKey(output))
+            {
+                this.LogDebug("Route for unconfigured output {output} ignored", output);
+                return;
+            }
+
+            this.LogDebug("Output {output} routed to input {input}", output, input);
+
+            List<RouteSwitchDescriptor> routes;
+            lock (routesLock)
+            {
+                outputRoutes[output] = input;
+                routes = BuildCurrentRoutes();
+            }
+            CurrentRoutes = routes;
+
+            if (OutputRouteFeedbacks.TryGetValue(output, out var routeFeedback)) routeFeedback.FireUpdate();
+            if (OutputRouteNameFeedbacks.TryGetValue(output, out var nameFeedback)) nameFeedback.FireUpdate();
+            if (output == FirstOutput) SourceIndex = (int)input;
+
+            var outputPort = OutputPorts.FirstOrDefault(p => p.Selector != null && Convert.ToUInt32(p.Selector) == output);
+            var inputPort = InputPorts.FirstOrDefault(p => p.Selector != null && Convert.ToUInt32(p.Selector) == input);
+            _namedSlots?.HandleRouteChange(outputPort, inputPort, eRoutingSignalType.Audio);
+            if (outputPort != null && inputPort != null)
+                RouteChanged?.Invoke(this, new RouteSwitchDescriptor(outputPort, inputPort));
+        }
+
+        // Call with routesLock held.
+        private List<RouteSwitchDescriptor> BuildCurrentRoutes()
         {
             var routes = new List<RouteSwitchDescriptor>();
-            var inputPort = InputPorts.FirstOrDefault(p => p.Selector != null && Convert.ToInt32(p.Selector) == SourceIndex);
-            var outputPort = OutputPorts.FirstOrDefault();
-            if (inputPort != null && outputPort != null)
-                routes.Add(new RouteSwitchDescriptor(outputPort, inputPort));
-            CurrentRoutes = routes;
-            _namedSlots?.HandleRouteChange(outputPort, inputPort, eRoutingSignalType.Audio);
-            RouteChanged?.Invoke(this, routes.FirstOrDefault());
+            foreach (var route in outputRoutes)
+            {
+                var outputPort = OutputPorts.FirstOrDefault(p => p.Selector != null && Convert.ToUInt32(p.Selector) == route.Key);
+                var inputPort = InputPorts.FirstOrDefault(p => p.Selector != null && Convert.ToUInt32(p.Selector) == route.Value);
+                if (outputPort != null && inputPort != null)
+                    routes.Add(new RouteSwitchDescriptor(outputPort, inputPort));
+            }
+            return routes;
         }
 
         /// <summary>
@@ -126,20 +193,45 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
             SwitcherOutputs = new Dictionary<uint, string>();
 
             ShowRoutedString = config.ShowRoutedStringFeedback;
-            foreach (var input in config.RouterInputs)
+            foreach (var input in config.RouterInputs ?? new Dictionary<uint, RoutingPort>())
             {
-                SwitcherInputs.Add(input.Key, input.Value.Label);
+                SwitcherInputs[input.Key] = input.Value.Label;
             }
-            SwitcherInputs.Add(0, "None");
+            SwitcherInputs[0] = "None";
 
-            foreach (var output in config.RouterOutputs)
+            foreach (var output in config.RouterOutputs ?? new Dictionary<uint, RoutingPort>())
             {
+                if (output.Key == 0)
+                {
+                    this.LogWarning("Router output 0 ignored: Tesira outputs count from 1");
+                    continue;
+                }
                 SwitcherOutputs.Add(output.Key, output.Value.Label);
+            }
+
+            // Legacy single output: its number is index1 (when set), else the next one after routerOutputs.
+            // It's an ordinary output from here on: routable, subscribed and reported.
+            if (config.RouterOutput != null)
+            {
+                var legacyOutput = config.Index1 > 0 ? (uint)config.Index1 : (uint)((config.RouterOutputs?.Count ?? 0) + 1);
+                if (SwitcherOutputs.ContainsKey(legacyOutput))
+                    this.LogWarning("routerOutput ignored: output {output} is already in routerOutputs", legacyOutput);
+                else
+                    SwitcherOutputs.Add(legacyOutput, config.RouterOutput.Label);
             }
 
             RoutedSourceNameFeedback = new StringFeedback(Key + "-RoutedSourceNameFeedback", () => RoutedSourceName);
             SourceIndexFeedback = new IntFeedback(Key + "-SourceIndexFeedback", () => SourceIndex);
             SourceNamesFeedback = new StringFeedback(Key + "-SourceNamesFeedback", () => SourceNamesXsig);
+
+            foreach (var output in SwitcherOutputs.Keys)
+            {
+                var n = output;
+                OutputRouteFeedbacks[n] = new IntFeedback($"{Key}-Output{n}RouteFeedback", () => (int)GetOutputRoute(n));
+                OutputRouteNameFeedbacks[n] = new StringFeedback($"{Key}-Output{n}RouteNameFeedback", () => InputLabel(GetOutputRoute(n)));
+                Feedbacks.Add(OutputRouteFeedbacks[n]);
+                Feedbacks.Add(OutputRouteNameFeedbacks[n]);
+            }
 
             InputPorts = new RoutingPortCollection<RoutingInputPort>();
             OutputPorts = new RoutingPortCollection<RoutingOutputPort>();
@@ -187,22 +279,13 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
                     eRoutingPortConnectionType.BackplaneOnly, input.Key, this));
             }
 
-            if (config.RouterOutputs != null && config.RouterOutput != null)
+            // SwitcherOutputs already includes a legacy routerOutput (see the constructor).
+            foreach (var output in SwitcherOutputs)
             {
-                this.LogWarning("Both RouterOutputs and RouterOutput are defined. Only RouterOutputs will be used. RouterOutput will be added to list of RouterOutputs.");
-            }
-
-            foreach (var output in config.RouterOutputs)
-            {
-                var port = new RoutingOutputPort(output.Value.Label, eRoutingSignalType.Audio,
+                var port = new RoutingOutputPort(output.Value, eRoutingSignalType.Audio,
                     eRoutingPortConnectionType.BackplaneOnly, output.Key, this);
                 OutputPorts.Add(port);
             }
-
-            if (config.RouterOutput == null) return;
-
-            OutputPorts.Add(new RoutingOutputPort(config.RouterOutput.Label, eRoutingSignalType.Audio,
-                eRoutingPortConnectionType.BackplaneOnly, config.RouterOutputs.Count + 1, this));
         }
 
         /// <summary>
@@ -227,16 +310,18 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
                 return;
             }
 
-            foreach (var output in SwitcherOutputs)
+            // One subscription per output; each publishes the routed input as a single value
+            // ("! "Router1__Router-3" 2"), starting with the current route when it's made.
+            foreach (var output in SwitcherOutputs.Keys)
             {
-                var subscriptionName = $"{customName}-{output.Key}";
+                var subscriptionName = RouterProtocol.SubscriptionName(customName, output);
 
                 AddCustomName(subscriptionName);
 
-                var cmd = $"{InstanceTag1} subscribe {attributeCode} {output.Key} {subscriptionName} {responseRate}";
+                var cmd = RouterProtocol.SubscribeCommand(InstanceTag1, output, subscriptionName, responseRate);
 
                 // Tag with RequestingComponent so a timed-out watchdog subscribe check triggers recovery.
-                Parent.CommandQueue.EnqueueCommand(new QueuedCommand(cmd, null, null, requestingComponent: this));
+                Parent.CommandQueue.EnqueueCommand(new QueuedCommand(cmd, null, null, priority: (int)CommandPriority.Critical, requestingComponent: this));
                 this.LogDebug("Sent Subscription Command: {cmd}", cmd);
             }
         }
@@ -249,9 +334,9 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
                 return;
             }
 
-            foreach (var output in SwitcherOutputs)
+            foreach (var output in SwitcherOutputs.Keys)
             {
-                var cmd = $"{instanceTag} unsubscribe {attributeCode} {output.Key} {customName}-{output.Key}";
+                var cmd = RouterProtocol.UnsubscribeCommand(InstanceTag1, output, RouterProtocol.SubscriptionName(customName, output));
                 Parent.CommandQueue.EnqueueCommand(cmd);
                 this.LogDebug("Sent Unsubscription Command: {cmd}", cmd);
             }
@@ -274,29 +359,20 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
         /// <param name="value">Response to parse</param>
         public override void ParseSubscriptionMessage(string customName, string value)
         {
-            if (customName != SelectorCustomName)
+            if (!RouterProtocol.TryParseSubscriptionOutput(customName, SelectorCustomName, out var output))
             {
+                this.LogDebug("Unexpected subscription name {customName} for router {key}", customName, Key);
                 return;
             }
 
-            var values = value.Split(' ');
-
-            if (values.Length < 2)
+            if (!RouterProtocol.TryParseInput(value, out var input))
             {
-                this.LogWarning("Unexpected number of values in subscription message: {value}", value);
+                this.LogWarning("Unable to parse route for output {output}: {value}", output, value);
                 return;
             }
 
-            // TODO: Parse to get both Source and Destination Indexes for future use with Essentials Routing
-            try
-            {
-                SourceIndex = int.Parse(values[0]);
-            }
-            catch (Exception e)
-            {
-                this.LogError("Unable to parse subscription message: {value}. Error: {exception}", value, e.Message);
-                this.LogDebug(e, "Stack Trace: ");
-            }
+            IsSubscribed = true;
+            UpdateOutputRoute(output, input);
         }
 
         /// <summary>
@@ -327,7 +403,16 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
 
                 if (message.IndexOf("+OK", StringComparison.Ordinal) <= -1) return;
 
-                SourceIndex = int.Parse(value);
+                // Only per-output gets carry a route; a set's bare "+OK" has nothing to parse.
+                if (!RouterProtocol.TryParseGetOutput(attributeCode, out var output)) return;
+
+                if (!RouterProtocol.TryParseInput(message, out var input))
+                {
+                    this.LogWarning("Unable to parse route for output {output}: {message}", output, message);
+                    return;
+                }
+
+                UpdateOutputRoute(output, input);
             }
             catch (Exception e)
             {
@@ -343,7 +428,44 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
         /// <param name="data">Source to route</param>
         public void SetSource(int data)
         {
-            ExecuteSwitch(data, 0, eRoutingSignalType.Audio);
+            if (data < 0)
+            {
+                this.LogWarning("Unable to route input {input}: inputs count from 0 (0 clears)", data);
+                return;
+            }
+
+            RouteOutput(FirstOutput, (uint)data);
+        }
+
+        /// <summary>
+        /// Routes an input to one output and reads the route back. Input 0 clears the output.
+        /// </summary>
+        /// <param name="output">Tesira output number (from routerOutputs)</param>
+        /// <param name="input">Tesira input number (from routerInputs), or 0 to clear</param>
+        public void RouteOutput(uint output, uint input)
+        {
+            if (!SwitcherOutputs.ContainsKey(output))
+            {
+                this.LogWarning("Unable to route: output {output} is not in routerOutputs", output);
+                return;
+            }
+
+            if (!SwitcherInputs.ContainsKey(input))
+            {
+                this.LogWarning("Unable to route: input {input} is not in routerInputs", input);
+                return;
+            }
+
+            Parent.CommandQueue.EnqueueCommand(new QueuedCommand(RouterProtocol.SetCommand(InstanceTag1, output, input), null, null, priority: (int)CommandPriority.Critical));
+
+            // Changes inside one publish interval can collapse into a single publish, or none, so
+            // read the route back rather than rely on the subscription alone.
+            PollOutput(output);
+        }
+
+        private void PollOutput(uint output)
+        {
+            Parent.CommandQueue.EnqueueCommand(new QueuedCommand(RouterProtocol.GetCommand(InstanceTag1, output), RouterProtocol.GetAttributeCode(output), this, priority: (int)CommandPriority.Critical));
         }
 
         /// <summary>
@@ -371,9 +493,15 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
             SourceNamesFeedback.FireUpdate();
         }
 
+        /// <summary>
+        /// Reads every configured output's route.
+        /// </summary>
         public override void DoPoll()
         {
-            SendFullCommand("get", "input", string.Empty, 1);
+            foreach (var output in SwitcherOutputs.Keys)
+            {
+                PollOutput(output);
+            }
         }
 
         #region IRouting Members
@@ -407,13 +535,7 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
                 return;
             }
 
-            if (output == 0)
-            {
-                this.LogWarning("Output Selector must be greater than 0");
-                return;
-            }
-
-            SendFullCommand("set", "input", $"{output} {input}", 1);
+            RouteOutput(output, input);
         }
 
         /// <summary>
@@ -429,25 +551,66 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
         #endregion
 
 
+        /// <summary>
+        /// Links each configured output to its own joins: output N's route (set and feedback) on
+        /// routeJoin + N - 1, and its routed input label on nameJoin + N - 1. Outputs above
+        /// maxOutputs are logged and not linked.
+        /// </summary>
+        internal void LinkOutputsToApi(BasicTriList trilist, uint routeJoin, uint nameJoin, uint maxOutputs)
+        {
+            foreach (var output in SwitcherOutputs.Keys)
+            {
+                if (output > maxOutputs)
+                {
+                    this.LogWarning("Router output {output} not bridged: the join map holds outputs 1-{max}", output, maxOutputs);
+                    continue;
+                }
+
+                var n = output;
+                var offset = n - 1;
+                OutputRouteFeedbacks[n].LinkInputSig(trilist.UShortInput[routeJoin + offset]);
+                OutputRouteNameFeedbacks[n].LinkInputSig(trilist.StringInput[nameJoin + offset]);
+                trilist.SetUShortSigAction(routeJoin + offset, u => RouteOutput(n, u));
+            }
+        }
+
         public override void LinkToApi(BasicTriList trilist, uint joinStart, string joinMapKey, EiscApiAdvanced bridge)
         {
-            var joinMap = new TesiraSwitcherJoinMapAdvancedStandalone(joinStart);
+            var joinMap = new TesiraRouterJoinMapAdvancedStandalone(joinStart);
 
             var joinMapSerialized = JoinMapHelper.GetSerializedJoinMapForDevice(joinMapKey);
 
             if (!string.IsNullOrEmpty(joinMapSerialized))
-                joinMap = JsonConvert.DeserializeObject<TesiraSwitcherJoinMapAdvancedStandalone>(joinMapSerialized);
+                joinMap = JsonConvert.DeserializeObject<TesiraRouterJoinMapAdvancedStandalone>(joinMapSerialized);
 
             bridge?.AddJoinMap(Key, joinMap);
 
             if (!Enabled) return;
 
-            this.LogVerbose("Tesira Switcher {0} is Enabled", Key);
+            this.LogVerbose("Tesira Router {0} is Enabled", Key);
 
-            var s = this as IRoutingWithFeedback;
-            s.SourceIndexFeedback.LinkInputSig(trilist.UShortInput[joinMap.Index.JoinNumber]);
+            // Per output: route set and feedback on OutputRoute + N - 1, so output 1 shares the old
+            // Index join.
+            var routeJoin = joinMap.OutputRoute.JoinNumber;
+            var maxOutputs = TesiraRouterJoinMapAdvancedStandalone.MaxOutputs;
+            LinkOutputsToApi(trilist, routeJoin, joinMap.OutputRouteName.JoinNumber, maxOutputs);
 
-            trilist.SetUShortSigAction(joinMap.Index.JoinNumber, u => SetSource(u));
+            // Index (the first output) gets its own link only when it isn't some output's route join;
+            // otherwise two outputs would share one analog.
+            var indexJoin = joinMap.Index.JoinNumber;
+            var indexOutput = SwitcherOutputs.Keys.Where(o => o <= maxOutputs && routeJoin + o - 1 == indexJoin).ToList();
+            if (indexOutput.Count == 0)
+            {
+                var s = this as IRoutingWithFeedback;
+                s.SourceIndexFeedback.LinkInputSig(trilist.UShortInput[indexJoin]);
+                trilist.SetUShortSigAction(indexJoin, u => SetSource(u));
+            }
+            else if (indexOutput[0] != FirstOutput)
+            {
+                this.LogWarning("Index join {join} is output {output}'s route join, so it carries output {output}, not the first output {first}",
+                    indexJoin, indexOutput[0], indexOutput[0], FirstOutput);
+            }
+
             trilist.SetSigTrueAction(joinMap.Poll.JoinNumber, DoPoll);
 
             NameFeedback.LinkInputSig(trilist.StringInput[joinMap.Label.JoinNumber]);

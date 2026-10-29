@@ -34,5 +34,6 @@
     <Compile Include="..\src\Queue\PendingCommandCounter.cs" Link="Queue\PendingCommandCounter.cs" />
     <Compile Include="..\src\PresetHoldButton.cs" Link="PresetHoldButton.cs" />
     <Compile Include="..\src\LogicSelectorStates.cs" Link="LogicSelectorStates.cs" />
+    <Compile Include="..\src\RouterProtocol.cs" Link="RouterProtocol.cs" />
   </ItemGroup>
 </Project>
