@@ -11,8 +11,8 @@ public class CommandLanesTests
     [InlineData("\"RMA-ROOM\" unsubscribe level 1 RMA-ROOM__level1", true)]
     [InlineData("Router6 subscribe input 1 r 250", true)]
     [InlineData("\"Room 1 Level\" subscribe level 1 x 500", true)] // quoted tag with spaces
-    [InlineData("SESSION set verbose false", true)]
-    [InlineData("SESSION get aliases", true)]
+    [InlineData("SESSION set verbose false", false)] // must stay ahead of the reads queued after it
+    [InlineData("SESSION get aliases", false)]
     [InlineData("\"RMA-ROOM\" set level 1 -10.0", false)]
     [InlineData("\"RMA-ROOM\" increment level 1 2.0", false)]
     [InlineData("\"RMA-ROOM\" toggle mute 1", false)]
@@ -26,7 +26,7 @@ public class CommandLanesTests
     [InlineData(null, false)]
     [InlineData("garbage", false)]
     [InlineData("\"unterminated subscribe", false)]
-    public void IsBackground_Puts_Subscriptions_And_Session_Traffic_In_The_Background(string? command, bool expected)
+    public void IsBackground_Puts_Only_Subscriptions_In_The_Background(string? command, bool expected)
     {
         CommandLanes.IsBackground(command!).Should().Be(expected);
     }
@@ -61,6 +61,36 @@ public class TwoLaneQueueTests
         q.Enqueue("user on", false);
         q.TryDequeue(out var next);
         next.Should().Be("user on");
+    }
+
+    [Fact]
+    public void A_Steady_Foreground_Stream_Still_Lets_Background_Items_Through()
+    {
+        var q = new TwoLaneQueue<string>(100);
+        q.Enqueue("probe1", true);
+        q.Enqueue("probe2", true);
+        for (var i = 0; i < 20; i++) q.Enqueue("ramp" + i, false);
+
+        var order = new System.Collections.Generic.List<string>();
+        while (q.TryDequeue(out var item)) order.Add(item);
+
+        order.IndexOf("probe1").Should().Be(TwoLaneQueue<string>.MaxForegroundRun);
+        order.IndexOf("probe2").Should().Be(2 * TwoLaneQueue<string>.MaxForegroundRun + 1);
+        order.Should().HaveCount(22);
+    }
+
+    [Fact]
+    public void A_Foreground_Run_With_Nothing_Waiting_Does_Not_Count()
+    {
+        var q = new TwoLaneQueue<string>(100);
+        for (var i = 0; i < 20; i++) q.Enqueue("fg" + i, false);
+        for (var i = 0; i < 20; i++) q.TryDequeue(out _);
+
+        // A restore burst arriving after a long run of presses still waits behind the next press.
+        q.Enqueue("restore", true);
+        q.Enqueue("press", false);
+        q.TryDequeue(out var first);
+        first.Should().Be("press");
     }
 
     [Fact]
