@@ -177,9 +177,12 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
                     SendUnSubscriptionCommand(customName, meterAttributeCode, 0);
                     return;
                 }
+
+                // Inside the lock: an UnSubscribe() between the check above and this line would
+                // otherwise be undone, leaving the subscribed join high on a stopped meter.
+                IsSubscribed = true;
             }
 
-            IsSubscribed = true;
             SubscribedFeedback.FireUpdate();
 
             this.LogVerbose("Parsing Message: {message}", message);
