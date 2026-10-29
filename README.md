@@ -48,6 +48,7 @@ The Tesira drops subscriptions without closing the session when a design is push
 - `-ERR ALREADY_SUBSCRIBED` means the subscription is still there. **`+OK` means the DSP had dropped it, so every subscription is restored at once**, without clearing the command queue or reconnecting.
 - A check whose subscribe can never succeed (missing instance tag, bad attribute or index, attribute that can't be subscribed) **quarantines** that component: it is logged once and not checked again until the next session.
 - No reply to a check still drops and re-opens the session, as before.
+- Subscriptions (startup, restores, checks) wait behind control commands in the plugin's command queue, so a restore burst never delays a button press.
 
 Set `watchdogSentinels` to one component per partition: a push drops a partition's subscriptions together, so a sentinel in each one catches every push within one check. Without it, the first subscribed component is the sentinel and other partitions are caught when the patrol reaches them.
 

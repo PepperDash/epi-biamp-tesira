@@ -36,5 +36,6 @@
     <Compile Include="..\src\LogicSelectorStates.cs" Link="LogicSelectorStates.cs" />
     <Compile Include="..\src\RouterProtocol.cs" Link="RouterProtocol.cs" />
     <Compile Include="..\src\SubscriptionWatchdogCore.cs" Link="SubscriptionWatchdogCore.cs" />
+    <Compile Include="..\src\Queue\CommandLanes.cs" Link="Queue\CommandLanes.cs" />
   </ItemGroup>
 </Project>
