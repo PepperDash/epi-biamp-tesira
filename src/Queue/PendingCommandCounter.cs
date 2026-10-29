@@ -35,5 +35,27 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Queue
 
         /// <summary>True when a TTP command line changes a value: set, increment or decrement.</summary>
         public static bool IsChangeCommand(string command) => command != null && ChangeVerb.IsMatch(command);
+
+        // A raw line (pass-through) that changes a level: "Tag" set level 1 -10, Tag increment levelOut 2 1.
+        private static readonly Regex RawLevelChange = new Regex(
+            @"^\s*(?:""(?<tag>[^""]*)""|(?<tag>\S+))\s+(set|increment|decrement)\s+(level|levelOut)\b",
+            RegexOptions.Compiled | RegexOptions.IgnoreCase);
+
+        /// <summary>
+        /// The instance tag a raw command line changes the level of, for lines no component sent
+        /// (command pass-through). False for anything else.
+        /// </summary>
+        public static bool TryGetRawLevelTarget(string command, out string instanceTag)
+        {
+            instanceTag = null;
+            if (command == null) return false;
+            var m = RawLevelChange.Match(command);
+            if (!m.Success || m.Groups["tag"].Value.Length == 0) return false;
+            instanceTag = m.Groups["tag"].Value;
+            return true;
+        }
+
+        /// <summary>The counter key for raw level changes to an instance tag (case-insensitive).</summary>
+        public static string RawKey(string instanceTag) => "raw:" + (instanceTag ?? string.Empty).ToUpperInvariant();
     }
 }

@@ -72,4 +72,27 @@ public class PendingCommandCounterChangeVerbTests
     {
         PendingCommandCounter.IsChangeCommand(command!).Should().Be(expected);
     }
+    [Theory]
+    [InlineData("\"RMA-ROOM\" set level 1 -10.0", "RMA-ROOM")]
+    [InlineData("\"Room 1 Level\" increment level 1 2.0", "Room 1 Level")]
+    [InlineData("RoomCombiner1 set levelOut 2 -6", "RoomCombiner1")]     // unquoted pass-through
+    [InlineData("  \"RMA-ROOM\" DECREMENT LEVEL 1 1", "RMA-ROOM")]       // case-insensitive
+    [InlineData("\"RMA-ROOM\" set mute 1 true", null)]                   // not a level
+    [InlineData("\"RMA-ROOM\" get level 1", null)]                       // a read
+    [InlineData("\"RMA-ROOM\" set levelOutMax 1 0", null)]               // a different attribute
+    [InlineData("DEVICE recallPreset 1001", null)]
+    [InlineData("", null)]
+    [InlineData(null, null)]
+    public void TryGetRawLevelTarget_Finds_The_Tag_Of_A_Raw_Level_Change(string? command, string? expectedTag)
+    {
+        var found = PendingCommandCounter.TryGetRawLevelTarget(command!, out var tag);
+        found.Should().Be(expectedTag != null);
+        tag.Should().Be(expectedTag);
+    }
+
+    [Fact]
+    public void RawKey_Is_Case_Insensitive()
+    {
+        PendingCommandCounter.RawKey("rma-room").Should().Be(PendingCommandCounter.RawKey("RMA-ROOM"));
+    }
 }

@@ -371,16 +371,16 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
 
             if (rangeChanged)
             {
-                // val is the attempted (out-of-range) level, not the actual DSP level.
-                // Clamp it to the new boundary before scaling to prevent ushort wrap.
-                var currentRaw = double.Parse(m.Groups["val"].Value);
-                var clampedRaw = Math.Max(MinLevel, Math.Min(MaxLevel, currentRaw));
-                rawLevelDb = clampedRaw;
-                hasLevel = true;
-                RawVolumeLevel = (int)clampedRaw;
-                VolumeLevel = UseAbsoluteValue
-                    ? (ushort)clampedRaw
-                    : (ushort)clampedRaw.Scale(MinLevel, MaxLevel, 0, 65535, this);
+                // val is the attempted (rejected) level, not the DSP's: rescale the last known actual
+                // level against the new range, and read the actual level back.
+                if (hasLevel)
+                {
+                    var clampedRaw = Math.Max(MinLevel, Math.Min(MaxLevel, rawLevelDb));
+                    VolumeLevel = UseAbsoluteValue
+                        ? (ushort)clampedRaw
+                        : (ushort)clampedRaw.Scale(MinLevel, MaxLevel, 0, 65535, this);
+                }
+                GetVolume();
             }
 
             // Stop repeating in both directions; already-queued repeat callbacks see the cleared

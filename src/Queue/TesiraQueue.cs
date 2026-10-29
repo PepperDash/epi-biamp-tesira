@@ -148,8 +148,8 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Queue
                     queueFullLogged = true;
                     Parent.LogWarning("[EnqueueCommand] Queue full ({count}); dropping commands until it drains. First dropped: '{command}'", LocalQueue.Count, commandToEnqueue.Command);
                 }
-                if (LocalQueue.Count > countBefore && IsLevelChange(commandToEnqueue))
-                    pendingLevelChanges.Add(commandToEnqueue.ControlPoint);
+                if (LocalQueue.Count > countBefore && PendingKey(commandToEnqueue) is object pendingKey)
+                    pendingLevelChanges.Add(pendingKey);
                 if (LocalQueue.Count > countBefore && commandToEnqueue.RequestingComponent != null)
                     Parent.NotifySubscribeEnqueued(commandToEnqueue);
 
@@ -216,7 +216,7 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Queue
                     return;
                 }
 
-                if (IsLevelChange(lastDequeued)) pendingLevelChanges.Remove(lastDequeued.ControlPoint);
+                if (PendingKey(lastDequeued) is object sentKey) pendingLevelChanges.Remove(sentKey);
 
                 Parent.LogVerbose("[SendNextQueuedCommand] Sending Line {line}. ControlPoint: {controlPoint}", lastDequeued.Command, lastDequeued.ControlPoint?.Key ?? "no control point");
 
@@ -334,7 +334,21 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Queue
         /// </summary>
         public bool HasPendingLevelChange(ISubscribedComponent controlPoint)
         {
-            lock (lockObject) return pendingLevelChanges.Has(controlPoint);
+            lock (lockObject)
+            {
+                return pendingLevelChanges.Has(controlPoint)
+                    || (controlPoint?.InstanceTag1 != null && pendingLevelChanges.Has(PendingCommandCounter.RawKey(controlPoint.InstanceTag1)));
+            }
+        }
+
+        // What a queued level change counts against: its component, or for a raw pass-through line
+        // (no component) the instance tag it targets, so a ramp correction can't overwrite it either.
+        private static object PendingKey(QueuedCommand command)
+        {
+            if (IsLevelChange(command)) return command.ControlPoint;
+            if (command?.ControlPoint == null && PendingCommandCounter.TryGetRawLevelTarget(command?.Command, out var tag))
+                return PendingCommandCounter.RawKey(tag);
+            return null;
         }
 
         private static bool IsLevelChange(QueuedCommand command) =>
