@@ -1500,8 +1500,12 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
                 component.GetMaxLevel();
             }
 
-            // Queue all component subscriptions
-            var subscribableComponents = ControlPointList.Where(c => c.Enabled).ToList();
+            // Queue all component subscriptions. Meters are opt-in: they publish every interval,
+            // so only the ones asked to stream (bridge join high or Subscribe()) are restored.
+            var subscribableComponents = ControlPointList
+                .Where(c => c.Enabled)
+                .Where(c => !(c is TesiraDspMeter meter) || meter.SubscriptionRequested)
+                .ToList();
             this.LogDebug("Queuing subscriptions for {count} components", subscribableComponents.Count);
 
             foreach (var component in subscribableComponents)

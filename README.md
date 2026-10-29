@@ -682,6 +682,8 @@ In the provided example config object, given a base object key of ```dsp-1```, t
 Enables metering on the sepecified meter.  
 Using this is a bad idea, please avoid unless specifically requested.  
 
+Meters are opt-in: a meter streams only while something has asked for it. Raise the meter's subscribe join (or call `Subscribe()` on the meter device) to start it, and lower the join (or call `UnSubscribe()`) to stop it. A meter that was asked for is subscribed again after a reconnect, design push or resubscribe; one that wasn't stays off. Before v4, every meter was subscribed when the session started, whether or not anything used it. For level-threshold feedback, prefer a logic meter in the design, which publishes only when its state changes.  
+
 Within the **Legacy** object this Join map represents a control that is part of an array of controls.  Each join number = Join Map Number + (```bridgeIndex``` − 1); `bridgeIndex` counts from 1, and a meter with `bridgeIndex` 0 is logged and not linked.
 
 Within the **Standalone** object, this join map represents a single control as defined by the key in the bridge.
