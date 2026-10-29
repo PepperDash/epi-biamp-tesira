@@ -113,7 +113,9 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Queue
                 Parent.LogVerbose("[EnqueueCommand] Command Queue {state} in progress.", CommandQueueInProgress ? "is" : "is not");
 
                 var countBefore = LocalQueue.Count;
-                var isBackground = backgroundScopeDepth > 0 || CommandLanes.IsBackground(commandToEnqueue.Command);
+                // In a background scope, reads go to the background too; writes never do (see BackgroundScope).
+                var isBackground = CommandLanes.IsBackground(commandToEnqueue.Command)
+                    || (backgroundScopeDepth > 0 && CommandLanes.IsReadOrSubscription(commandToEnqueue.Command));
                 if (!LocalQueue.Enqueue(commandToEnqueue, isBackground))
                     Parent.LogWarning("[EnqueueCommand] Queue full ({count}); dropped '{command}'", LocalQueue.Count, commandToEnqueue.Command);
                 if (LocalQueue.Count > countBefore && IsLevelChange(commandToEnqueue))
@@ -238,9 +240,11 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Queue
         private static int backgroundScopeDepth;
 
         /// <summary>
-        /// Until disposed, every command this thread queues goes in the background lane, behind user
-        /// and program commands. For work the plugin does on its own behalf: startup and restore
-        /// subscriptions with the reads that come with them, watchdog checks, range polls.
+        /// Until disposed, the reads and subscriptions this thread queues go in the background lane,
+        /// behind user and program commands. For work the plugin does on its own behalf: startup and
+        /// restore subscriptions with the reads that come with them, watchdog checks, range polls.
+        /// Writes (e.g. a dialer's configured redial/auto-answer settings) stay in the foreground, so an
+        /// older one can't land after a newer user write to the same attribute.
         /// </summary>
         public System.IDisposable BackgroundScope()
         {

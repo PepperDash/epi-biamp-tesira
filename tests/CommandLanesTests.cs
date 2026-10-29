@@ -32,6 +32,25 @@ public class CommandLanesTests
     }
 }
 
+public class CommandLanesReadTests
+{
+    [Theory]
+    [InlineData("\"RMA-ROOM\" get minLevel 1", true)]
+    [InlineData("\"RMA-ROOM\" subscribe level 1 x 250", true)]
+    [InlineData("\"RMA-ROOM\" unsubscribe level 1 x", true)]
+    [InlineData("\"Dialer1\" set redialEnable 1 true", false)]   // configuration write
+    [InlineData("\"Dialer1\" set autoAnswerRingCount 1 2", false)]
+    [InlineData("\"RMA-ROOM\" toggle mute 1", false)]
+    [InlineData("SESSION set verbose false", false)]
+    [InlineData("SESSION get aliases", false)]
+    [InlineData("", false)]
+    [InlineData(null, false)]
+    public void IsReadOrSubscription_Excludes_Writes(string? command, bool expected)
+    {
+        CommandLanes.IsReadOrSubscription(command!).Should().Be(expected);
+    }
+}
+
 public class TwoLaneQueueTests
 {
     [Fact]

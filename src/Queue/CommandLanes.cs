@@ -26,6 +26,24 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Queue
                 || string.Equals(verb, "unsubscribe", StringComparison.OrdinalIgnoreCase);
         }
 
+        /// <summary>
+        /// True for commands that change nothing on the DSP: get, subscribe and unsubscribe. Only these
+        /// may wait in the background on the plugin's behalf; a write must keep its place relative to
+        /// other writes, or an older one could land after a newer one.
+        /// </summary>
+        public static bool IsReadOrSubscription(string command)
+        {
+            if (string.IsNullOrWhiteSpace(command)) return false;
+
+            var text = command.TrimStart();
+            if (text.StartsWith("SESSION ", StringComparison.OrdinalIgnoreCase)) return false;
+
+            var verb = Verb(text);
+            return string.Equals(verb, "get", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(verb, "subscribe", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(verb, "unsubscribe", StringComparison.OrdinalIgnoreCase);
+        }
+
         // The word after the instance tag. Tags may be quoted and contain spaces: "Room 1" set level 1 0.
         private static string Verb(string text)
         {
