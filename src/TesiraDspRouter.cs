@@ -145,6 +145,8 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
                 return;
             }
 
+            this.LogDebug("Output {output} routed to input {input}", output, input);
+
             List<RouteSwitchDescriptor> routes;
             lock (routesLock)
             {
@@ -207,6 +209,17 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
                 SwitcherOutputs.Add(output.Key, output.Value.Label);
             }
 
+            // Legacy single output: its number is index1 (when set), else the next one after routerOutputs.
+            // It's an ordinary output from here on: routable, subscribed and reported.
+            if (config.RouterOutput != null)
+            {
+                var legacyOutput = config.Index1 > 0 ? (uint)config.Index1 : (uint)((config.RouterOutputs?.Count ?? 0) + 1);
+                if (SwitcherOutputs.ContainsKey(legacyOutput))
+                    this.LogWarning("routerOutput ignored: output {output} is already in routerOutputs", legacyOutput);
+                else
+                    SwitcherOutputs.Add(legacyOutput, config.RouterOutput.Label);
+            }
+
             RoutedSourceNameFeedback = new StringFeedback(Key + "-RoutedSourceNameFeedback", () => RoutedSourceName);
             SourceIndexFeedback = new IntFeedback(Key + "-SourceIndexFeedback", () => SourceIndex);
             SourceNamesFeedback = new StringFeedback(Key + "-SourceNamesFeedback", () => SourceNamesXsig);
@@ -266,22 +279,13 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
                     eRoutingPortConnectionType.BackplaneOnly, input.Key, this));
             }
 
-            if (config.RouterOutputs != null && config.RouterOutput != null)
-            {
-                this.LogWarning("Both RouterOutputs and RouterOutput are defined. Only RouterOutputs will be used. RouterOutput will be added to list of RouterOutputs.");
-            }
-
+            // SwitcherOutputs already includes a legacy routerOutput (see the constructor).
             foreach (var output in SwitcherOutputs)
             {
                 var port = new RoutingOutputPort(output.Value, eRoutingSignalType.Audio,
                     eRoutingPortConnectionType.BackplaneOnly, output.Key, this);
                 OutputPorts.Add(port);
             }
-
-            if (config.RouterOutput == null) return;
-
-            OutputPorts.Add(new RoutingOutputPort(config.RouterOutput.Label, eRoutingSignalType.Audio,
-                eRoutingPortConnectionType.BackplaneOnly, (config.RouterOutputs?.Count ?? 0) + 1, this));
         }
 
         /// <summary>
@@ -586,14 +590,25 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
             this.LogVerbose("Tesira Router {0} is Enabled", Key);
 
             // Per output: route set and feedback on OutputRoute + N - 1, so output 1 shares the old
-            // Index join. Index stays linked when the first output isn't 1 (or isn't bridged).
-            LinkOutputsToApi(trilist, joinMap.OutputRoute.JoinNumber, joinMap.OutputRouteName.JoinNumber, TesiraRouterJoinMapAdvancedStandalone.MaxOutputs);
+            // Index join.
+            var routeJoin = joinMap.OutputRoute.JoinNumber;
+            var maxOutputs = TesiraRouterJoinMapAdvancedStandalone.MaxOutputs;
+            LinkOutputsToApi(trilist, routeJoin, joinMap.OutputRouteName.JoinNumber, maxOutputs);
 
-            if (joinMap.Index.JoinNumber != joinMap.OutputRoute.JoinNumber || !SwitcherOutputs.ContainsKey(1))
+            // Index (the first output) gets its own link only when it isn't some output's route join;
+            // otherwise two outputs would share one analog.
+            var indexJoin = joinMap.Index.JoinNumber;
+            var indexOutput = SwitcherOutputs.Keys.Where(o => o <= maxOutputs && routeJoin + o - 1 == indexJoin).ToList();
+            if (indexOutput.Count == 0)
             {
                 var s = this as IRoutingWithFeedback;
-                s.SourceIndexFeedback.LinkInputSig(trilist.UShortInput[joinMap.Index.JoinNumber]);
-                trilist.SetUShortSigAction(joinMap.Index.JoinNumber, u => SetSource(u));
+                s.SourceIndexFeedback.LinkInputSig(trilist.UShortInput[indexJoin]);
+                trilist.SetUShortSigAction(indexJoin, u => SetSource(u));
+            }
+            else if (indexOutput[0] != FirstOutput)
+            {
+                this.LogWarning("Index join {join} is output {output}'s route join, so it carries output {output}, not the first output {first}",
+                    indexJoin, indexOutput[0], indexOutput[0], FirstOutput);
             }
 
             trilist.SetSigTrueAction(joinMap.Poll.JoinNumber, DoPoll);
