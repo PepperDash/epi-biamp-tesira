@@ -70,6 +70,28 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
         public int LevelRangePollIntervalSecs { get; set; } = 0;
 
         /// <summary>
+        /// Seconds between subscription watchdog checks. Each check re-subscribes the sentinels and the
+        /// next watchdogPatrolSize components; a +OK reply means the DSP dropped subscriptions (design
+        /// push, partition restart) and everything is resubscribed. Default 30; minimum 10.
+        /// </summary>
+        [JsonProperty("watchdogIntervalSecs")]
+        public int? WatchdogIntervalSecs { get; set; }
+
+        /// <summary>
+        /// Components checked per watchdog check besides the sentinels, in rotation. Default 2.
+        /// </summary>
+        [JsonProperty("watchdogPatrolSize")]
+        public int? WatchdogPatrolSize { get; set; }
+
+        /// <summary>
+        /// Keys of the components checked on every watchdog check, ideally one per partition: a design
+        /// push drops a partition's subscriptions together. Block key ("RmaRoom") or device key
+        /// ("dsp-1--RmaRoom"). Default: the first subscribed component.
+        /// </summary>
+        [JsonProperty("watchdogSentinels")]
+        public List<string> WatchdogSentinels { get; set; }
+
+        /// <summary>
         /// Global maximum time in milliseconds a volume button may be held before the repeat
         /// is force-released. Can be overridden per fader/room combiner via volumeHoldTimeoutMs
         /// on the individual block config. Defaults to 10 seconds.
