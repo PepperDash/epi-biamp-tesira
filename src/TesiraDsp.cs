@@ -966,7 +966,7 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
                 // Subscribe to selected components to verify their subscription status
                 foreach (var component in componentsToCheckList)
                 {
-                    component.Subscribe();
+                    SubscribeAutomatically(component);
                 }
 
             }
@@ -1510,11 +1510,26 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
 
             foreach (var component in subscribableComponents)
             {
-                component.Subscribe();
+                SubscribeAutomatically(component);
             }
 
             // Start monitoring for queue completion
             StartQueueCompletionMonitoring();
+        }
+
+        /// <summary>
+        /// Subscribe on the plugin's own behalf (session start, resubscribe, watchdog). Meters only
+        /// re-subscribe if they were asked for and never record a request, so this can't undo an opt-out.
+        /// </summary>
+        private static void SubscribeAutomatically(ISubscribedComponent component)
+        {
+            if (component is TesiraDspMeter meter)
+            {
+                meter.RestoreSubscription();
+                return;
+            }
+
+            component.Subscribe();
         }
 
         private void StartQueueCompletionMonitoring()
