@@ -278,37 +278,41 @@ In the provided example config object, given a base object key of ```dsp-1```, t
 
 ### Router
 
-Controls objects with the attribute type of `input`.  No Subscriptions available on this control block
+Controls a Router block's `input` attribute, one route per output: output N can be set to any input M, and M = 0 clears it. Each output listed in `routerOutputs` is subscribed, so its feedback follows changes made anywhere (presets, Tesira software, other control systems). After every route the plugin reads that output back, because the DSP can merge changes made within one publish interval.
 
-Within the **Legacy** object, this Join map represents a control that is part of an array of controls.  Each join number = Join Map Number + fader ```bridgeIndex``` as defined by the config.
+Within the **Legacy** object, each router has two kinds of joins:
 
-Within the **Standalone** object, this join map represents a single control as defined by the key in the bridge.
+- The switcher slot (join 150 + offset, where offset = ((`bridgeIndex` − 1) × 2) + 1) carries the router's **first** output (the lowest number in `routerOutputs`), its label and a poll.
+- Per-output joins: output N of the router with `bridgeIndex` B is join **4001 + ((B − 1) × 64) + (N − 1)**. Each router holds up to 64 outputs, so bridgeIndex 1 uses 4001–4064, bridgeIndex 2 uses 4065–4128, and so on.
+
+Within the **Standalone** object, output N is analog **joinStart + N − 1** (route) and serial **joinStart + 100 + N − 1** (routed label), up to 64 outputs. Output 1 shares the old *Source Selection* join.
 
 >This control implements [Essentials](https://github.com/PepperDash/Essentials) interfaces **`IKeyed`** and **`IRoutingWithFeedback`**
 
 #### Digitals
 
-| Legacy Join | Standalone Join | Type (RW) | Description |
-| ----------- | --------------- | --------- | ----------- |
-| 150         | 1               | W         | Poll        |
-
+| Legacy Join | Standalone Join | Type (RW) | Description            |
+| ----------- | --------------- | --------- | ---------------------- |
+| 150         | 1               | W         | Poll every output      |
 
 #### Analogs
 
-| Legacy Join | Standalone Join | Type (RW) | Description      |
-| ----------- | --------------- | --------- | ---------------- |
-| 150         | 1               | RW        | Source Selection |
+| Legacy Join                      | Standalone Join | Type (RW) | Description                                                        |
+| -------------------------------- | --------------- | --------- | ------------------------------------------------------------------ |
+| 150                              | 1               | RW        | First output: input to route (0 clears) and routed-input feedback  |
+| 4001 + ((B − 1) × 64) + (N − 1)  | 1 + (N − 1)     | RW        | Output N: input to route (0 clears) and routed-input feedback      |
 
 #### Serials
 
-| Legacy Join | Standalone Join | Type (RW) | Description                                       |
-| ----------- | --------------- | --------- | ------------------------------------------------- |
-| 150         | 1               | R         | Control Label (Pass From Config)                  |
-| N/A         | 2               | R         | Source List XSIG (If Configured) or Routed Source |
+| Legacy Join                      | Standalone Join | Type (RW) | Description                                       |
+| -------------------------------- | --------------- | --------- | ------------------------------------------------- |
+| 150                              | 1               | R         | Control Label (Pass From Config)                  |
+| N/A                              | 2               | R         | Source List XSIG (If Configured) or Routed Source |
+| 4001 + ((B − 1) × 64) + (N − 1)  | 101 + (N − 1)   | R         | Output N: label of the routed input               |
 
 #### Config Example
 
-> All sourceSelector and router configs must be part of a dictionary called **routerControlBlocks**.
+> All router configs must be part of a dictionary called **routerControlBlocks**.
 
 ```json
 {
@@ -316,17 +320,16 @@ Within the **Standalone** object, this join map represents a single control as d
         "RouterControl01" : {
             "enabled" : true,
             "label" : "switcher01",
-            "index1" : 1,
             "routerInstanceTag" : "Router1",
             "bridgeIndex" : 1,
             "showRoutedStringFeedback": true,
-            "pollIntervalMs" : 90000,
             "routerInputs" : {
                 "1" : {"label": "Input1" },
-                "2" : {"label": "Input2" },
+                "2" : {"label": "Input2" }
             },
-            "routerOutput" : {
-                "label": "Output1" 
+            "routerOutputs" : {
+                "1" : {"label": "Output1" },
+                "2" : {"label": "Output2" }
             }
         }
     }
@@ -337,11 +340,12 @@ Within the **Standalone** object, this join map represents a single control as d
 
 > **enabled** - enables the control to be subscribed and controlled.
 **label** - Passed directly across the eisc as the *Label* value.
-**index1** - Index of the output number on the router that you wish to control.
-**routerInstanceTag** - Instance tag of the router input selection control
-**bridgeIndex** - The index of the control on a **Legacy** object
-**routerInputs** - This is a dictionary of labels for inputs of the router block.  The keys **must** be integers.
-**routerOutput** - This is an object defining the label of the associated output.  This is earmarked for future usage.
+**index1** - Not used by routers; outputs come from `routerOutputs`.
+**routerInstanceTag** - Instance tag of the router block
+**bridgeIndex** - The index of the control on a **Legacy** object (counts from 1)
+**routerInputs** - Labels for the router's inputs. The keys **must** be integers (Tesira input numbers). Only these inputs, and 0 (clear), can be routed.
+**routerOutputs** - Labels for the router's outputs. The keys **must** be integers (Tesira output numbers, from 1). Each one is subscribed, routable and bridged.
+**routerOutput** - Legacy single-output label; prefer `routerOutputs`.
 
 In the provided example config object, given a base object key of ```dsp-1```, this control would have a standalone key of ```dsp-1--RouterControl01```.
 
