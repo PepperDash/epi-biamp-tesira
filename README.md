@@ -340,12 +340,12 @@ Within the **Standalone** object, output N is analog **joinStart + N − 1** (ro
 
 > **enabled** - enables the control to be subscribed and controlled.
 **label** - Passed directly across the eisc as the *Label* value.
-**index1** - Not used by routers; outputs come from `routerOutputs`.
+**index1** - With the legacy `routerOutput` only: that output's Tesira number (default: the next number after `routerOutputs`).
 **routerInstanceTag** - Instance tag of the router block
 **bridgeIndex** - The index of the control on a **Legacy** object (counts from 1)
 **routerInputs** - Labels for the router's inputs. The keys **must** be integers (Tesira input numbers). Only these inputs, and 0 (clear), can be routed.
 **routerOutputs** - Labels for the router's outputs. The keys **must** be integers (Tesira output numbers, from 1). Each one is subscribed, routable and bridged.
-**routerOutput** - Legacy single-output label; prefer `routerOutputs`.
+**routerOutput** - Legacy single output (label only; its number is `index1`). It becomes an ordinary output alongside `routerOutputs`; prefer `routerOutputs`.
 
 In the provided example config object, given a base object key of ```dsp-1```, this control would have a standalone key of ```dsp-1--RouterControl01```.
 
