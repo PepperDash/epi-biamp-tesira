@@ -321,15 +321,16 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
 
             if (rangeChanged)
             {
-                // val is the attempted (out-of-range) level, not the actual DSP level.
-                // Clamp it to the new boundary before scaling to prevent ushort wrap.
-                var currentRaw = double.Parse(m.Groups["val"].Value);
-                var clampedRaw = Math.Max(MinLevel, Math.Min(MaxLevel, currentRaw));
-                rawOutVolumeLevelDb = clampedRaw;
-                hasOutLevel = true;
-                OutVolumeLevel = UseAbsoluteValue
-                    ? (ushort)clampedRaw
-                    : (ushort)clampedRaw.Scale(MinLevel, MaxLevel, 0, 65535, this);
+                // val is the attempted (rejected) level, not the DSP's: rescale the last known actual
+                // level against the new range, and read the actual level back.
+                if (hasOutLevel)
+                {
+                    var clampedRaw = Math.Max(MinLevel, Math.Min(MaxLevel, rawOutVolumeLevelDb));
+                    OutVolumeLevel = UseAbsoluteValue
+                        ? (ushort)clampedRaw
+                        : (ushort)clampedRaw.Scale(MinLevel, MaxLevel, 0, 65535, this);
+                }
+                GetVolume();
             }
 
             // Stop repeating in both directions; already-queued repeat callbacks see the cleared
@@ -439,9 +440,14 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
                         {
                             RoomGroup = int.Parse(value);
                             this.LogDebug("Room Group: {RoomGroup}", RoomGroup);
-                            pollTimer.Stop();
-                            pollTimer.Interval = 30000;
-                            pollTimer.Start();
+                            // Arm the poll only when it is idle: Subscribe() reads group too, and
+                            // watchdog probes call Subscribe() as often as every 10 s, which would
+                            // otherwise keep pushing the poll (and the muteOut read) back forever.
+                            if (!pollTimer.Enabled)
+                            {
+                                pollTimer.Interval = 30000;
+                                pollTimer.Start();
+                            }
                             break;
                         }
                     default:
