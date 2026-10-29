@@ -147,6 +147,10 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
         // IsSubscribed alone would drop components from the patrol after their first probe.
         private readonly HashSet<ISubscribedComponent> knownSubscribed = new HashSet<ISubscribedComponent>();
 
+        // Ticks the current probe batch has stayed open; at maxOpenProbeTicks the check counts as failed.
+        private int openProbeTicks;
+        private const int maxOpenProbeTicks = 4;
+
         public bool WatchdogSuspend { get; private set; }
 
         private readonly DeviceConfig dc;
@@ -837,6 +841,20 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
             lock (watchdogLock)
             {
                 probeBatch.Close();
+                openProbeTicks = 0;
+            }
+        }
+
+        /// <summary>
+        /// Called by the command queue when it discards queued commands: probes among them will never
+        /// be answered, so the check in flight is over.
+        /// </summary>
+        internal void NotifyQueueCleared()
+        {
+            lock (watchdogLock)
+            {
+                probeBatch.Close();
+                openProbeTicks = 0;
             }
         }
 
@@ -851,6 +869,7 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
                 probeBatch.Close();
                 knownSubscribed.Clear();
                 watchdogPatrol.ClearQuarantine();
+                openProbeTicks = 0;
             }
         }
 
@@ -900,7 +919,8 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
                 }
 
                 List<ISubscribedComponent> candidates;
-                bool previousTickUnanswered;
+                bool stillWaiting;
+                bool backstop = false;
                 lock (watchdogLock)
                 {
                     foreach (var c in ControlPointList.Where(c => c.Enabled && c.IsSubscribed))
@@ -912,16 +932,30 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
                         .Where(c => !(c is TesiraDspMeter meter) || meter.SubscriptionRequested)
                         .ToList();
 
-                    // Every probe reply either arrives, times out (NotifyCommandTimedOut) or is lost with
-                    // the queue. Still open a full tick later means the last: treat it as a failed check.
-                    previousTickUnanswered = probeBatch.IsOpen;
-                    probeBatch.Close();
+                    // A probe still open is queued or in flight behind other traffic: each reply either
+                    // arrives, times out on its own once sent (NotifyCommandTimedOut) or is discarded with
+                    // the queue (NotifyQueueCleared closes the batch). So wait, rather than treat a busy
+                    // queue as lost subscriptions. Only a batch open this many ticks is a failed check.
+                    stillWaiting = probeBatch.IsOpen;
+                    if (stillWaiting && ++openProbeTicks >= maxOpenProbeTicks)
+                    {
+                        probeBatch.Close();
+                        backstop = true;
+                    }
+                    if (!stillWaiting) openProbeTicks = 0;
                 }
 
-                if (previousTickUnanswered)
+                if (backstop)
                 {
-                    this.LogWarning("Watchdog: subscription probes from the last check were never answered; resubscribing all control points.");
+                    this.LogWarning("Watchdog: subscription probes still unanswered after {ticks} checks; resubscribing all control points.", maxOpenProbeTicks);
+                    lock (watchdogLock) openProbeTicks = 0;
                     Resubscribe();
+                    return;
+                }
+
+                if (stillWaiting)
+                {
+                    this.LogDebug("Watchdog: last check's probes are still queued or in flight; skipping this check.");
                     return;
                 }
 
@@ -1010,7 +1044,11 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
             lock (watchdogLock)
             {
                 reply = probeBatch.Record(command, response);
-                if (reply == ProbeReply.Healthy) knownSubscribed.Add(component);
+
+                // Any subscribe that succeeded or was already there means the component is subscribed,
+                // probe or not: a healthy reply publishes nothing to set IsSubscribed again.
+                var ack = ProbeReplies.Classify(response);
+                if (ack == ProbeReply.Healthy || ack == ProbeReply.Lost) knownSubscribed.Add(component);
                 if (reply == ProbeReply.ConfigError) newlyQuarantined = watchdogPatrol.Quarantine(component);
                 quarantined = watchdogPatrol.QuarantinedCount;
             }

@@ -239,6 +239,7 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Queue
                 if (LocalQueue == null) return;
                 LocalQueue.Clear();
                 pendingLevelChanges.Clear();
+                Parent.NotifyQueueCleared();
                 lastDequeued = null;
                 CommandQueueInProgress = false;
                 commandTimeoutTimer?.Dispose();
@@ -257,6 +258,7 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Queue
                 if (LocalQueue == null) return;
                 LocalQueue.Clear();
                 pendingLevelChanges.Clear();
+                Parent.NotifyQueueCleared();
                 if (lastDequeued == null) CommandQueueInProgress = false;
             }
         }
