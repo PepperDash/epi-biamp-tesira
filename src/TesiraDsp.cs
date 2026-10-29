@@ -181,7 +181,9 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
         {
             this.dc = dc;
 
-            CommandQueue = new TesiraQueue(2000, this);
+            // Large enough for a big design's startup: each component queues several commands (a fader
+            // four: two subscribes, min and max), and anything dropped at startup never subscribes.
+            CommandQueue = new TesiraQueue(10000, this);
 
             transmitQueue = new GenericQueue($"{Key}-tx-queue");
 

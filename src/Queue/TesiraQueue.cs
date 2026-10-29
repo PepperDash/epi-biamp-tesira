@@ -30,6 +30,7 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Queue
         // Log-once flags, guarded by lockObject.
         private bool droppingWhileDisconnected;
         private bool queueFullLogged;
+        private readonly int queueCapacity;
 
         // Level changes (set/increment/decrement) queued but not yet sent, per control point.
         // Updated with the queue under lockObject.
@@ -57,6 +58,7 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Queue
         /// <param name="parent">Parent TesiraDsp Class</param>
         public TesiraQueue(int queueSize, TesiraDsp parent)
         {
+            queueCapacity = queueSize;
             LocalQueue = new TwoLaneQueue<QueuedCommand>(queueSize);
             Parent = parent;
             CommandQueueInProgress = false;
@@ -136,7 +138,9 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Queue
                     || (backgroundScopeDepth > 0 && CommandLanes.IsReadOrSubscription(commandToEnqueue.Command));
                 if (LocalQueue.Enqueue(commandToEnqueue, isBackground))
                 {
-                    queueFullLogged = false;
+                    // Re-arm the warning only once the queue has drained well below full: at capacity
+                    // every sent command frees one slot, which would otherwise log again per drop.
+                    if (LocalQueue.Count <= queueCapacity / 2) queueFullLogged = false;
                 }
                 else if (!queueFullLogged)
                 {
