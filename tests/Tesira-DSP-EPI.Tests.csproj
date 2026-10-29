@@ -21,7 +21,7 @@
     <!-- For the linked pure-logic tests: the routing port types (RoutingPort/RoutingInputPort and
          RoutingPortCollection) live here and are Crestron-free, so they load and run in the test
          host even though the plugin itself cannot. -->
-    <PackageReference Include="PepperDash.Essentials.Core" Version="3.0.0-rc.19" />
+    <PackageReference Include="PepperDash.Essentials.Core" Version="3.0.0-rc.20" />
   </ItemGroup>
 
   <ItemGroup>
