@@ -96,6 +96,17 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
             SubscribedFeedback.FireUpdate();
         }
 
+        /// <summary>
+        /// Subscribes when true, unsubscribes when false. Used by the bridge subscribe join.
+        /// </summary>
+        public void SetSubscribed(bool subscribe)
+        {
+            if (subscribe)
+                Subscribe();
+            else
+                UnSubscribe();
+        }
+
         public override void ParseGetMessage(string attributeCode, string message)
         {
             this.LogVerbose("Parsing Message: {message}. AttributeCode: {attributeCode}", message, attributeCode);
@@ -134,8 +145,9 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
             NameFeedback.LinkInputSig(trilist.StringInput[joinMap.Label.JoinNumber]);
             SubscribedFeedback.LinkInputSig(trilist.BooleanInput[joinMap.Subscribe.JoinNumber]);
 
-            trilist.SetSigTrueAction(joinMap.Subscribe.JoinNumber, Subscribe);
-            trilist.SetSigFalseAction(joinMap.Subscribe.JoinNumber, UnSubscribe);
+            // One action for both edges: SetSigTrueAction and SetSigFalseAction share the sig's
+            // single action slot, so setting both left only the unsubscribe.
+            trilist.SetBoolSigAction(joinMap.Subscribe.JoinNumber, SetSubscribed);
 
             trilist.OnlineStatusChange += (d, args) =>
             {
