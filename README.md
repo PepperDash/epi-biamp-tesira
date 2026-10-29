@@ -300,7 +300,7 @@ Controls a Router block's `input` attribute, one route per output: output N can 
 Within the **Legacy** object, each router has two kinds of joins:
 
 - The switcher slot (join 150 + offset, where offset = ((`bridgeIndex` − 1) × 2) + 1) carries the router's **first** output (the lowest number in `routerOutputs`), its label and a poll.
-- Per-output joins: output N of the router with `bridgeIndex` B is join **4001 + ((B − 1) × 64) + (N − 1)**. Each router holds up to 64 outputs, so bridgeIndex 1 uses 4001–4064, bridgeIndex 2 uses 4065–4128, and so on.
+- Per-output joins: output N of the router with `bridgeIndex` B is join **2601 + ((B − 1) × 64) + (N − 1)**. Each router holds up to 64 outputs, so bridgeIndex 1 uses 2601–2664, bridgeIndex 2 uses 2665–2728, and so on up to bridgeIndex 7 (2985–3048); higher bridgeIndex routers are logged and not linked (use the standalone bridge). The block sits between the room combiners and the dialers, within an EISC's 4000 joins.
 
 Within the **Standalone** object, output N is analog **joinStart + N − 1** (route) and serial **joinStart + 100 + N − 1** (routed label), up to 64 outputs. Output 1 shares the old *Source Selection* join.
 
@@ -317,7 +317,7 @@ Within the **Standalone** object, output N is analog **joinStart + N − 1** (ro
 | Legacy Join                      | Standalone Join | Type (RW) | Description                                                        |
 | -------------------------------- | --------------- | --------- | ------------------------------------------------------------------ |
 | 150                              | 1               | RW        | First output: input to route (0 clears) and routed-input feedback  |
-| 4001 + ((B − 1) × 64) + (N − 1)  | 1 + (N − 1)     | RW        | Output N: input to route (0 clears) and routed-input feedback      |
+| 2601 + ((B − 1) × 64) + (N − 1)  | 1 + (N − 1)     | RW        | Output N: input to route (0 clears) and routed-input feedback      |
 
 #### Serials
 
@@ -325,7 +325,7 @@ Within the **Standalone** object, output N is analog **joinStart + N − 1** (ro
 | -------------------------------- | --------------- | --------- | ------------------------------------------------- |
 | 150                              | 1               | R         | Control Label (Pass From Config)                  |
 | N/A                              | 2               | R         | Source List XSIG (If Configured) or Routed Source |
-| 4001 + ((B − 1) × 64) + (N − 1)  | 101 + (N − 1)   | R         | Output N: label of the routed input               |
+| 2601 + ((B − 1) × 64) + (N − 1)  | 101 + (N − 1)   | R         | Output N: label of the routed input               |
 
 #### Config Example
 
@@ -825,7 +825,7 @@ Controls Biamp Tesira RoomCombiner objects.  Control of LevelOut, MuteOut, and g
 
 In order to keep the types of joins similar to a standard fader object, the choice was made to not provide direct control for wall states in this component.  If direct wall state control is required, utilize a `State Control` block.
 
-Within the **Legacy** object, this Join map represents a control that is part of an array of controls.  Each join number = Join Map Number + roomCombiner ```bridgeIndex``` as defined by the config.
+Within the **Legacy** object, this Join map represents a control that is part of an array of controls.  Each join number = Join Map Number + roomCombiner ```bridgeIndex``` as defined by the config. Each combiner takes six joins (offset ((`bridgeIndex` − 1) × 6)); `bridgeIndex` 1–66 fits before the router joins at 2601, and a higher one is logged and not linked.
 
 Within the **Standalone** object, this join map represents a single control as defined by the key in the bridge.
 
