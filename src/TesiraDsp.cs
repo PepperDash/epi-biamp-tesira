@@ -966,7 +966,24 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
                 // Subscribe to selected components to verify their subscription status
                 foreach (var component in componentsToCheckList)
                 {
-                    component.Subscribe();
+                    if (SubscribeAutomatically(component)) continue;
+
+                    // Opted out after it was picked (a meter whose join went low): no probe was
+                    // sent, so don't wait for its reply.
+                    lock (watchdogLock)
+                    {
+                        if (currentWatchDogBatch.Remove(component) && watchDogExpectedResponses > 0)
+                            watchDogExpectedResponses--;
+
+                        // Every reply still expected may already be in (or none was expected).
+                        if (WatchDogSniffer && watchDogReceivedResponses >= watchDogExpectedResponses)
+                        {
+                            WatchDogSniffer = false;
+                            watchDogExpectedResponses = 0;
+                            watchDogReceivedResponses = 0;
+                            currentWatchDogBatch.Clear();
+                        }
+                    }
                 }
 
             }
@@ -1500,17 +1517,37 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
                 component.GetMaxLevel();
             }
 
-            // Queue all component subscriptions
-            var subscribableComponents = ControlPointList.Where(c => c.Enabled).ToList();
+            // Queue all component subscriptions. Meters are opt-in: they publish every interval,
+            // so only the ones asked to stream (bridge join high or Subscribe()) are restored.
+            var subscribableComponents = ControlPointList
+                .Where(c => c.Enabled)
+                .Where(c => !(c is TesiraDspMeter meter) || meter.SubscriptionRequested)
+                .ToList();
             this.LogDebug("Queuing subscriptions for {count} components", subscribableComponents.Count);
 
             foreach (var component in subscribableComponents)
             {
-                component.Subscribe();
+                SubscribeAutomatically(component);
             }
 
             // Start monitoring for queue completion
             StartQueueCompletionMonitoring();
+        }
+
+        /// <summary>
+        /// Subscribe on the plugin's own behalf (session start, resubscribe, watchdog). Meters only
+        /// re-subscribe if they were asked for and never record a request, so this can't undo an opt-out.
+        /// </summary>
+        /// <returns>true if a subscribe was queued</returns>
+        private static bool SubscribeAutomatically(ISubscribedComponent component)
+        {
+            if (component is TesiraDspMeter meter)
+            {
+                return meter.RestoreSubscription();
+            }
+
+            component.Subscribe();
+            return true;
         }
 
         private void StartQueueCompletionMonitoring()
