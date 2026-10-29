@@ -57,6 +57,11 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
             Label = config.Label;
             Enabled = config.Enabled;
 
+            // Registered up front so a publish from a subscription this meter didn't make (one that
+            // outlived an Essentials restart on a serial link) still reaches the stray-publish cleanup.
+            MeterCustomName = string.Format("{0}__meter{1}", InstanceTag1, Index1);
+            AddCustomName(MeterCustomName);
+
             MeterFeedback = new IntFeedback(Key + "-MeterFeedback", () => currentMeter);
             SubscribedFeedback = new BoolFeedback(Key + "-SubscribedFeedback", () => IsSubscribed);
 
@@ -113,19 +118,19 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
         /// Re-subscribes only if metering was requested; never records a request. Used by session
         /// start, resubscribe and the watchdog so they can't undo an opt-out.
         /// </summary>
-        public void RestoreSubscription()
+        /// <returns>true if a subscribe was queued</returns>
+        public bool RestoreSubscription()
         {
             lock (requestLock)
             {
-                if (!SubscriptionRequested) return;
+                if (!SubscriptionRequested) return false;
                 SendMeterSubscription();
+                return true;
             }
         }
 
         private void SendMeterSubscription()
         {
-            MeterCustomName = string.Format("{0}__meter{1}", InstanceTag1, Index1);
-            AddCustomName(MeterCustomName);
             SendSubscriptionCommand(MeterCustomName, meterAttributeCode, defaultPollTime, 0);
         }
 
