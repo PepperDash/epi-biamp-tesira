@@ -77,6 +77,13 @@
             "$ref": "#/$defs/sourceSelectorControlBlock"
           }
         },
+        "logicSelectorControlBlocks": {
+          "type": "object",
+          "description": "Logic Selector blocks used as switchers (interlocked boolean channels).",
+          "additionalProperties": {
+            "$ref": "#/$defs/logicSelectorControlBlock"
+          }
+        },
         "presets": {
           "type": "object",
           "description": "Named DSP presets that can be recalled by key.",
@@ -129,6 +136,38 @@
         "resubscribeString": {
           "type": "string",
           "description": "String used to trigger a full resubscribe on the device, if configured."
+        },
+        "levelRangePollIntervalSecs": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Seconds between re-polls of every volume control's min/max range. 0 (default) disables it; 1-59 is raised to 60."
+        },
+        "watchdogIntervalSecs": {
+          "type": "integer",
+          "minimum": 10,
+          "default": 30,
+          "description": "Seconds between subscription watchdog checks. Each check re-subscribes the sentinels and the next watchdogPatrolSize components; a +OK reply means the DSP dropped subscriptions (design push, partition restart) and every subscription is restored. Values below 10 are raised to 10."
+        },
+        "watchdogPatrolSize": {
+          "type": "integer",
+          "minimum": 0,
+          "default": 2,
+          "description": "Components checked per watchdog check besides the sentinels, in rotation."
+        },
+        "watchdogSentinels": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Keys of components checked on every watchdog check, ideally one per partition (a design push drops a partition's subscriptions together). Block key (\"RmaRoom\") or device key (\"dsp-1--RmaRoom\"). Default: the first subscribed component."
+        },
+        "volumeHoldTimeoutMs": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Longest a volume up/down may be held before it is force-released (default 10000). 0 disables it. Faders and room combiners can override it."
+        },
+        "presetHoldTimeMs": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Milliseconds a bridge preset join must be held to save that preset. 0 (default) disables saving; the join recalls on press."
         }
       },
       "required": [
@@ -479,6 +518,45 @@
         },
         "sourceSelectorOutput": {
           "$ref": "#/$defs/routingPort"
+        },
+        "showSelectedStringFeedback": {
+          "type": "boolean"
+        },
+        "bridgeIndex": {
+          "type": [
+            "integer",
+            "null"
+          ]
+        }
+      }
+    },
+    "logicSelectorControlBlock": {
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "label": {
+          "type": "string"
+        },
+        "logicSelectorInstanceTag": {
+          "type": "string"
+        },
+        "logicSelectorInputs": {
+          "type": "object",
+          "description": "Channel labels; keys are channel numbers starting at 1.",
+          "additionalProperties": {
+            "$ref": "#/$defs/routingPort"
+          }
+        },
+        "sourceSelectorInstanceTag": {
+          "type": "string"
+        },
+        "sourceSelectorInputs": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/$defs/routingPort"
+          }
         },
         "showSelectedStringFeedback": {
           "type": "boolean"

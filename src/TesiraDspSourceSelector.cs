@@ -69,7 +69,10 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
             set
             {
                 _sourceIndex = value;
-                RoutedSourceName = SourceSelectorInputs[(uint)value] ?? "None";
+                // A selection the config doesn't list (e.g. channel 4 of 4 with 3 configured) is still shown
+                RoutedSourceName = value >= 0 && SourceSelectorInputs.TryGetValue((uint)value, out var name) && name != null
+                    ? name
+                    : value == 0 ? "None" : "Input " + value;
                 RoutedSourceNameFeedback.FireUpdate();
                 SourceIndexFeedback.FireUpdate();
                 UpdateCurrentRoutes();
@@ -80,6 +83,24 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
         /// 
         /// </summary>
         public IntFeedback SourceIndexFeedback { get; private set; }
+
+        /// <summary>The currently selected input, 0 for none.</summary>
+        protected int CurrentSourceIndex => _sourceIndex;
+
+        // Protocol hooks: a Source Selector selects with one integer attribute. TesiraDspLogicSelector
+        // overrides these for per-channel boolean states.
+
+        /// <summary>The attribute subscribed to and polled for the current selection.</summary>
+        protected virtual string SelectionAttribute => "sourceSelection";
+
+        /// <summary>Turns a published or polled selection value into the selected input (0 = none).</summary>
+        protected virtual int ParseSelection(string value) => int.Parse(value);
+
+        /// <summary>Sends the command that selects an input (0 = none).</summary>
+        protected virtual void SendSelection(int input)
+        {
+            SendFullCommand("set", "sourceSelection", input.ToString(), 1);
+        }
 
         /// <summary>
         /// Currently active routes on this device.
@@ -115,7 +136,7 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
             SourceSelectorInputs = new Dictionary<uint, string>();
 
             ShowRoutedString = config.ShowSelectedStringFeedback;
-            foreach (var input in config.SourceSelectorInputs)
+            foreach (var input in config.SourceSelectorInputs ?? new Dictionary<uint, RoutingPort>())
             {
                 SourceSelectorInputs.Add(input.Key, input.Value.Label);
             }
@@ -175,7 +196,7 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
         {
             SelectorCustomName = string.Format("{0}__Selector{1}", InstanceTag1, Index1).Replace(" ", string.Empty);
             AddCustomName(SelectorCustomName);
-            SendSubscriptionCommand(SelectorCustomName, "sourceSelection", 250, 1);
+            SendSubscriptionCommand(SelectorCustomName, SelectionAttribute, 250, 1);
         }
 
         /// <summary>
@@ -187,7 +208,7 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
 
             SelectorCustomName = string.Format("{0}__Selector{1}", InstanceTag1, Index1).Replace(" ", string.Empty);
 
-            SendUnSubscriptionCommand(SelectorCustomName, "sourceSelection", 1);
+            SendUnSubscriptionCommand(SelectorCustomName, SelectionAttribute, 1);
         }
 
         /// <summary>
@@ -201,7 +222,7 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
             // Check for valid subscription response
 
             if (customName != SelectorCustomName) return;
-            SourceIndex = int.Parse(value);
+            SourceIndex = ParseSelection(value);
 
             IsSubscribed = true;
         }
@@ -236,7 +257,7 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
                 }
 
                 if (message.IndexOf("+OK", StringComparison.Ordinal) <= -1) return;
-                SourceIndex = int.Parse(value);
+                SourceIndex = ParseSelection(value);
 
             }
             catch (Exception e)
@@ -287,7 +308,7 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
 
         public override void DoPoll()
         {
-            SendFullCommand("get", "sourceSelection", String.Empty, 1);
+            SendFullCommand("get", SelectionAttribute, String.Empty, 1);
         }
 
         #region IRouting Members
@@ -311,7 +332,7 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
                 return;
             }
 
-            SendFullCommand("set", "sourceSelection", input.ToString(), 1);
+            SendSelection((int)input);
         }
 
         /// <summary>

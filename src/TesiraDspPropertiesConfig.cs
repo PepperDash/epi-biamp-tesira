@@ -31,6 +31,9 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
         [JsonProperty("sourceSelectorControlBlocks")]
         public Dictionary<string, TesiraSourceSelectorControlBlockConfig> SourceSelectorControlBlocks { get; set; }
 
+        [JsonProperty("logicSelectorControlBlocks")]
+        public Dictionary<string, TesiraLogicSelectorControlBlockConfig> LogicSelectorControlBlocks { get; set; }
+
         [JsonProperty("presets")]
         public Dictionary<string, TesiraDspPresets> Presets { get; set; }
 
@@ -57,6 +60,52 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
 
         [JsonProperty("resubscribeString")]
         public string ResubscribeString { get; set; }
+
+        /// <summary>
+        /// Interval in seconds at which to re-poll min/max level ranges for all volume
+        /// components. Useful when an external program may change ranges at runtime.
+        /// Set to 0 (default) to disable. Minimum enforced value when enabled is 60 seconds.
+        /// </summary>
+        [JsonProperty("levelRangePollIntervalSecs")]
+        public int LevelRangePollIntervalSecs { get; set; } = 0;
+
+        /// <summary>
+        /// Seconds between subscription watchdog checks. Each check re-subscribes the sentinels and the
+        /// next watchdogPatrolSize components; a +OK reply means the DSP dropped subscriptions (design
+        /// push, partition restart) and everything is resubscribed. Default 30; minimum 10.
+        /// </summary>
+        [JsonProperty("watchdogIntervalSecs")]
+        public int? WatchdogIntervalSecs { get; set; }
+
+        /// <summary>
+        /// Components checked per watchdog check besides the sentinels, in rotation. Default 2.
+        /// </summary>
+        [JsonProperty("watchdogPatrolSize")]
+        public int? WatchdogPatrolSize { get; set; }
+
+        /// <summary>
+        /// Keys of the components checked on every watchdog check, ideally one per partition: a design
+        /// push drops a partition's subscriptions together. Block key ("RmaRoom") or device key
+        /// ("dsp-1--RmaRoom"). Default: the first subscribed component.
+        /// </summary>
+        [JsonProperty("watchdogSentinels")]
+        public List<string> WatchdogSentinels { get; set; }
+
+        /// <summary>
+        /// Global maximum time in milliseconds a volume button may be held before the repeat
+        /// is force-released. Can be overridden per fader/room combiner via volumeHoldTimeoutMs
+        /// on the individual block config. Defaults to 10 seconds.
+        /// </summary>
+        [JsonProperty("volumeHoldTimeoutMs")]
+        public int VolumeHoldTimeoutMs { get; set; } = 10000;
+
+        /// <summary>
+        /// Milliseconds a bridge preset join must be held to save the DSP's current state to that
+        /// preset. A shorter press recalls it on release. Set to 0 (default) to disable saving; the
+        /// join then recalls on press, as before.
+        /// </summary>
+        [JsonProperty("presetHoldTimeMs")]
+        public int PresetHoldTimeMs { get; set; } = 0;
     }
 
     public class TesiraExpanderBlockConfig
@@ -114,6 +163,14 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
 
         [JsonProperty("volumeRepeatRateMs")]
         public int VolumeRepeatRateMs { get; set; } = 100;
+
+        /// <summary>
+        /// Maximum time in milliseconds a volume button may be held before the repeat is
+        /// force-released. Overrides the global volumeHoldTimeoutMs when set.
+        /// Leave unset (null) to use the global value.
+        /// </summary>
+        [JsonProperty("volumeHoldTimeoutMs")]
+        public int? VolumeHoldTimeoutMs { get; set; } = null;
     }
 
 
@@ -288,6 +345,27 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
         [JsonProperty("bridgeIndex")]
         public uint? BridgeIndex { get; set; }
 
+    }
+
+    /// <summary>
+    /// A Logic Selector used as a switcher. Same settings as a Source Selector; the instance tag and
+    /// inputs can also be given as logicSelectorInstanceTag / logicSelectorInputs.
+    /// </summary>
+    public class TesiraLogicSelectorControlBlockConfig : TesiraSourceSelectorControlBlockConfig
+    {
+        [JsonProperty("logicSelectorInstanceTag")]
+        public string LogicSelectorInstanceTag
+        {
+            get => SourceSelectorInstanceTag;
+            set => SourceSelectorInstanceTag = value;
+        }
+
+        [JsonProperty("logicSelectorInputs")]
+        public Dictionary<uint, RoutingPort> LogicSelectorInputs
+        {
+            get => SourceSelectorInputs;
+            set => SourceSelectorInputs = value;
+        }
     }
 
     public class TesiraSourceSelectorControlBlockConfig
@@ -488,6 +566,14 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
 
         [JsonProperty("volumeRepeatRateMs")]
         public int VolumeRepeatRateMs { get; set; } = 250;
+
+        /// <summary>
+        /// Maximum time in milliseconds a volume button may be held before the repeat is
+        /// force-released. Overrides the global volumeHoldTimeoutMs when set.
+        /// Leave unset (null) to use the global value.
+        /// </summary>
+        [JsonProperty("volumeHoldTimeoutMs")]
+        public int? VolumeHoldTimeoutMs { get; set; } = null;
     }
 
     public class TesiraDtmfDecodeConfig

@@ -487,9 +487,19 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Dialer
         #region Subscriptions
 
         /// <summary>
-        /// Subscribe to all line data.
+        /// Subscribe to all line data, then apply the configured line settings and read the phonebook.
         /// </summary>
         public override void Subscribe()
+        {
+            SubscribeOnly();
+            ApplySetup();
+        }
+
+        /// <summary>
+        /// Re-send the line subscriptions only, without the one-time setup. Used by the subscription
+        /// watchdog, so a probe doesn't rewrite redial/auto-answer settings or re-read the phonebook.
+        /// </summary>
+        public void SubscribeOnly()
         {
             if (IsVoip)
             {
@@ -556,7 +566,10 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Dialer
 
                 SendFullCommand("get", "autoAnswer", null, 1);
             }
+        }
 
+        private void ApplySetup()
+        {
             ApplyConfiguredAttributes();
 
             // Poll the phonebook once on subscribe. Recurring polling is available via DoPoll but is

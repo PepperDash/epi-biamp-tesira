@@ -194,6 +194,8 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
             this.LogDebug("Adding Crosspoint State ControlPoint {key} | JoinStart:{joinStart}", Key, joinMap.Label.JoinNumber);
             CrosspointStateFeedback.LinkInputSig(trilist.BooleanInput[joinMap.Toggle.JoinNumber]);
             CrosspointStateFeedback.LinkInputSig(trilist.BooleanInput[joinMap.On.JoinNumber]);
+            CrosspointStateFeedback.LinkComplementInputSig(trilist.BooleanInput[joinMap.Off.JoinNumber]);
+            NameFeedback.LinkInputSig(trilist.StringInput[joinMap.Label.JoinNumber]);
 
             trilist.SetSigTrueAction(joinMap.Toggle.JoinNumber, StateToggle);
             trilist.SetSigTrueAction(joinMap.On.JoinNumber, StateOn);

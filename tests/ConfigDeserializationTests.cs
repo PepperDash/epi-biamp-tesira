@@ -29,6 +29,7 @@ public class ConfigDeserializationTests
     [InlineData("TesiraLogicMeterBlockConfig")]
     [InlineData("TesiraCrosspointStateBlockConfig")]
     [InlineData("TesiraRoomCombinerBlockConfig")]
+    [InlineData("TesiraLogicSelectorControlBlockConfig")]
     public void Config_Block_Class_Exists_And_Is_Constructible(string className)
     {
         var type = AssemblyFixture.PluginAssembly.GetType(Ns + className);
@@ -49,8 +50,12 @@ public class ConfigDeserializationTests
     [InlineData("logicMeterControlBlocks")]
     [InlineData("crosspointStateControlBlocks")]
     [InlineData("roomCombinerControlBlocks")]
+    [InlineData("logicSelectorControlBlocks")]
     [InlineData("tesiraExpanderBlocks")]
     [InlineData("resubscribeString")]
+    [InlineData("levelRangePollIntervalSecs")]
+    [InlineData("volumeHoldTimeoutMs")]
+    [InlineData("presetHoldTimeMs")]
     public void Config_Property_Has_JsonPropertyAttribute(string jsonName)
     {
         HasJsonProperty(ConfigType.Value!, jsonName).Should()

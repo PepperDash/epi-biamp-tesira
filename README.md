@@ -40,6 +40,24 @@ The only exception to this rule is for the Base **Standalone** object, which has
 "type": "eiscApiAdvanced"
 ```
 
+### Subscription watchdog
+
+The Tesira drops subscriptions without closing the session when a design is pushed or a partition restarts, often on blocks the push didn't touch. The plugin checks for this the way Biamp's own control modules do:
+
+- Every `watchdogIntervalSecs` (default 30), it re-subscribes the **sentinels** plus the next `watchdogPatrolSize` (default 2) components in rotation, so a check costs a few commands whatever the design size.
+- `-ERR ALREADY_SUBSCRIBED` means the subscription is still there. **`+OK` means the DSP had dropped it, so every subscription is restored at once**, without clearing the command queue or reconnecting.
+- A check whose subscribe can never succeed (missing instance tag, bad attribute or index, attribute that can't be subscribed) **quarantines** that component: it is logged once and not checked again until the next session.
+- No reply to a check still drops and re-opens the session, as before.
+- Subscriptions (startup, restores, checks) wait behind control commands in the plugin's command queue, so a restore burst never delays a button press.
+
+Set `watchdogSentinels` to one component per partition: a push drops a partition's subscriptions together, so a sentinel in each one catches every push within one check. Without it, the first subscribed component is the sentinel and other partitions are caught when the patrol reaches them.
+
+```json
+"watchdogIntervalSecs": 30,
+"watchdogPatrolSize": 2,
+"watchdogSentinels": [ "RmaRoom", "RmbRoom" ]
+```
+
 ## Installation
 
 This plugin is provided as a published [nuget package](https://www.nuget.org/packages/PepperDash.Essentials.Plugin.BiampTesira) for your convenience.  
@@ -155,7 +173,7 @@ Within the **Standalone** object, this join map represents a single control as d
 | Legacy Join | Standalone Join | Type (RW) | Description                                      |
 | ----------- | --------------- | --------- | ------------------------------------------------ |
 | 200         | 1               | R         | Control Label (Pass From Config)                 |
-| 300         | 2               | R         | Raw Level in dB (e.g., "-12 dB", "-50 dB")      |
+| 400         | 2               | R         | Raw Level in dB (e.g., "-12 dB", "-50 dB")      |
 
 #### Config Example
 
@@ -278,37 +296,41 @@ In the provided example config object, given a base object key of ```dsp-1```, t
 
 ### Router
 
-Controls objects with the attribute type of `input`.  No Subscriptions available on this control block
+Controls a Router block's `input` attribute, one route per output: output N can be set to any input M, and M = 0 clears it. Each output listed in `routerOutputs` is subscribed, so its feedback follows changes made anywhere (presets, Tesira software, other control systems). After every route the plugin reads that output back, because the DSP can merge changes made within one publish interval.
 
-Within the **Legacy** object, this Join map represents a control that is part of an array of controls.  Each join number = Join Map Number + fader ```bridgeIndex``` as defined by the config.
+Within the **Legacy** object, each router has two kinds of joins:
 
-Within the **Standalone** object, this join map represents a single control as defined by the key in the bridge.
+- The switcher slot (join 150 + offset, where offset = ((`bridgeIndex` − 1) × 2) + 1) carries the router's **first** output (the lowest number in `routerOutputs`), its label and a poll.
+- Per-output joins: output N of the router with `bridgeIndex` B is join **2601 + ((B − 1) × 64) + (N − 1)**. Each router holds up to 64 outputs, so bridgeIndex 1 uses 2601–2664, bridgeIndex 2 uses 2665–2728, and so on up to bridgeIndex 7 (2985–3048); higher bridgeIndex routers are logged and not linked (use the standalone bridge). The block sits between the room combiners and the dialers, within an EISC's 4000 joins.
+
+Within the **Standalone** object, output N is analog **joinStart + N − 1** (route) and serial **joinStart + 100 + N − 1** (routed label), up to 64 outputs. Output 1 shares the old *Source Selection* join.
 
 >This control implements [Essentials](https://github.com/PepperDash/Essentials) interfaces **`IKeyed`** and **`IRoutingWithFeedback`**
 
 #### Digitals
 
-| Legacy Join | Standalone Join | Type (RW) | Description |
-| ----------- | --------------- | --------- | ----------- |
-| 150         | 1               | W         | Poll        |
-
+| Legacy Join | Standalone Join | Type (RW) | Description            |
+| ----------- | --------------- | --------- | ---------------------- |
+| 150         | 1               | W         | Poll every output      |
 
 #### Analogs
 
-| Legacy Join | Standalone Join | Type (RW) | Description      |
-| ----------- | --------------- | --------- | ---------------- |
-| 150         | 1               | RW        | Source Selection |
+| Legacy Join                      | Standalone Join | Type (RW) | Description                                                        |
+| -------------------------------- | --------------- | --------- | ------------------------------------------------------------------ |
+| 150                              | 1               | RW        | First output: input to route (0 clears) and routed-input feedback  |
+| 2601 + ((B − 1) × 64) + (N − 1)  | 1 + (N − 1)     | RW        | Output N: input to route (0 clears) and routed-input feedback      |
 
 #### Serials
 
-| Legacy Join | Standalone Join | Type (RW) | Description                                       |
-| ----------- | --------------- | --------- | ------------------------------------------------- |
-| 150         | 1               | R         | Control Label (Pass From Config)                  |
-| N/A         | 2               | R         | Source List XSIG (If Configured) or Routed Source |
+| Legacy Join                      | Standalone Join | Type (RW) | Description                                       |
+| -------------------------------- | --------------- | --------- | ------------------------------------------------- |
+| 150                              | 1               | R         | Control Label (Pass From Config)                  |
+| N/A                              | 2               | R         | Source List XSIG (If Configured) or Routed Source |
+| 2601 + ((B − 1) × 64) + (N − 1)  | 101 + (N − 1)   | R         | Output N: label of the routed input               |
 
 #### Config Example
 
-> All sourceSelector and router configs must be part of a dictionary called **routerControlBlocks**.
+> All router configs must be part of a dictionary called **routerControlBlocks**.
 
 ```json
 {
@@ -316,17 +338,16 @@ Within the **Standalone** object, this join map represents a single control as d
         "RouterControl01" : {
             "enabled" : true,
             "label" : "switcher01",
-            "index1" : 1,
             "routerInstanceTag" : "Router1",
             "bridgeIndex" : 1,
             "showRoutedStringFeedback": true,
-            "pollIntervalMs" : 90000,
             "routerInputs" : {
                 "1" : {"label": "Input1" },
-                "2" : {"label": "Input2" },
+                "2" : {"label": "Input2" }
             },
-            "routerOutput" : {
-                "label": "Output1" 
+            "routerOutputs" : {
+                "1" : {"label": "Output1" },
+                "2" : {"label": "Output2" }
             }
         }
     }
@@ -337,11 +358,12 @@ Within the **Standalone** object, this join map represents a single control as d
 
 > **enabled** - enables the control to be subscribed and controlled.
 **label** - Passed directly across the eisc as the *Label* value.
-**index1** - Index of the output number on the router that you wish to control.
-**routerInstanceTag** - Instance tag of the router input selection control
-**bridgeIndex** - The index of the control on a **Legacy** object
-**routerInputs** - This is a dictionary of labels for inputs of the router block.  The keys **must** be integers.
-**routerOutput** - This is an object defining the label of the associated output.  This is earmarked for future usage.
+**index1** - With the legacy `routerOutput` only: that output's Tesira number (default: the next number after `routerOutputs`).
+**routerInstanceTag** - Instance tag of the router block
+**bridgeIndex** - The index of the control on a **Legacy** object (counts from 1)
+**routerInputs** - Labels for the router's inputs. The keys **must** be integers (Tesira input numbers). Only these inputs, and 0 (clear), can be routed.
+**routerOutputs** - Labels for the router's outputs. The keys **must** be integers (Tesira output numbers, from 1). Each one is subscribed, routable and bridged.
+**routerOutput** - Legacy single output (label only; its number is `index1`). It becomes an ordinary output alongside `routerOutputs`; prefer `routerOutputs`.
 
 In the provided example config object, given a base object key of ```dsp-1```, this control would have a standalone key of ```dsp-1--RouterControl01```.
 
@@ -414,11 +436,50 @@ In the provided example config object, given a base object key of ```dsp-1```, t
 
 ***
 
+### LogicSelector
+
+Controls a Tesira **Logic Selector** block as a switcher. A Logic Selector has interlocked boolean channels: selecting one turns the others off, and selecting none turns the active one off. It behaves exactly like a [SourceSelector](#sourceselector): the same interfaces (**`IKeyed`**, **`IRoutingWithFeedback`**), the same Legacy and Standalone joins, and the same routing and feedback. Selection `0` means no channel.
+
+Logic selectors share the DSP's switcher joins with source selectors, so give each a `bridgeIndex` that doesn't clash with a source selector's.
+
+The plugin subscribes once per block, to the `states` attribute, which the Tesira publishes as one line for all channels (`[false true false false]`). It selects a channel with `set state <channel> true`.
+
+#### Config Example
+
+> All logic selector configs must be part of a dictionary called **logicSelectorControlBlocks**.
+
+```json
+{
+    "logicSelectorControlBlocks" : {
+        "logicSelector01" : {
+            "enabled" : true,
+            "label" : "Logic Selector 1",
+            "logicSelectorInstanceTag" : "LogicSelector1",
+            "bridgeIndex" : 3,
+            "logicSelectorInputs" : {
+                "1" : {"label": "Channel 1" },
+                "2" : {"label": "Channel 2" },
+                "3" : {"label": "Channel 3" },
+                "4" : {"label": "Channel 4" }
+            }
+        }
+    }
+}
+```
+
+#### Config Notes
+
+> **logicSelectorInstanceTag** - instance tag of the Logic Selector block (`sourceSelectorInstanceTag` also works).
+**logicSelectorInputs** - labels for the block's channels; the keys **must** be channel numbers starting at 1 (`sourceSelectorInputs` also works). A selected channel without a label shows as "Input *n*".
+All other settings are as for a SourceSelector.
+
+***
+
 ### State
 
 Controls objects with the attribute type of "state" and subscribes to them as necessary.
 
-Within the **Legacy** object, this Join map represents a control that is part of an array of controls.  Each join number = Join Map Number + fader ```bridgeIndex``` as defined by the config.
+Within the **Legacy** object, this Join map represents a control that is part of an array of controls.  Each join number = Join Map Number + (```bridgeIndex``` − 1); `bridgeIndex` counts from 1, and a state with `bridgeIndex` 0 is logged and not linked.
 
 Within the **Standalone** object, this join map represents a single control as defined by the key in the bridge.
 
@@ -478,14 +539,17 @@ In the provided example config object, given a base object key of ```dsp-1```, t
 
 If you intend to ONLY do direct preset calling by string, this object is NOT required to recall presets. This activity is provided by the base level device object for the Tesira DSP. It is also provided by the **Standalone** object ```Presets```.  This config object is required regardless of control object if preset control iby index is required.
 
->This control implements [Essentials](https://github.com/PepperDash/Essentials) interfaces **`IHasDspPreset`** and **`IKeyed`**
+>This control implements [Essentials](https://github.com/PepperDash/Essentials) interfaces **`IHasDspPresetSave`** (which extends `IDspPresets`) and **`IKeyed`**
+
+By default, a preset's digital join recalls the preset on press. To save presets from the bridge, set `presetHoldTimeMs` on the DSP (see Config Notes). Then a short press recalls the preset on release, and holding the join for `presetHoldTimeMs` saves the DSP's current state to that preset. When the DSP confirms the save, the *Preset Saved* join pulses high for 2 seconds. A failed save (for example, `-ERR PRESET_NOT_FOUND`) is logged and does not pulse.
 
 #### Digitals
 
-| Legacy Join | Standalone Join | Type (RW) | Description                  |
-| ----------- | --------------- | --------- | ---------------------------- |
-| 100         | 1               | W         | Select Preset By Index       |
-| N/A         | 1               | R         | Preset is Available By Index |
+| Legacy Join | Standalone Join | Type (RW) | Description                                                        |
+| ----------- | --------------- | --------- | ------------------------------------------------------------------ |
+| 100         | 1               | W         | Select Preset By Index (with `presetHoldTimeMs`: press recalls, hold saves) |
+| N/A         | 1               | R         | Preset is Available By Index                                       |
+| 100         | 101             | R         | Preset Saved By Index: pulses high for 2 seconds when a save is confirmed |
 
 #### Analogs
 
@@ -505,6 +569,7 @@ None
 
 ```json
 {
+    "presetHoldTimeMs" : 3000,
     "presets" : {
         "SomeUniqueKey": {
             "label" : "Default",
@@ -524,6 +589,7 @@ In the provided example config object, given a base object key of ```dsp-1```, t
 **presetName** - the actual name of the preset as defined in biamp software
 **presetID** - the ID of the preset as defined in biamp software
 **presetIndex** - the index of the preset for the digital press recall
+**presetHoldTimeMs** - (optional, on the DSP, not per preset) milliseconds a preset join must be held to save that preset. `0` (the default) disables saving from the bridge, and the join recalls on press.
 
 > If a `presetName` is defined, you don't need a `presetId` and vice versa.  One or the other will be fine.
 > If you are utilizing the "select preset by name" methodology, no presets need be defined in config.
@@ -638,7 +704,9 @@ In the provided example config object, given a base object key of ```dsp-1```, t
 Enables metering on the sepecified meter.  
 Using this is a bad idea, please avoid unless specifically requested.  
 
-Within the **Legacy** object this Join map represents a control that is part of an array of controls.  Each join number = Join Map Number + ```bridgeIndex``` as defined by the config.
+Meters are opt-in: a meter streams only while something has asked for it. Raise the meter's subscribe join (or call `Subscribe()` on the meter device) to start it, and lower the join (or call `UnSubscribe()`) to stop it. A meter that was asked for is subscribed again after a reconnect, design push or resubscribe; one that wasn't stays off. Before v4, every meter was subscribed when the session started, whether or not anything used it. For level-threshold feedback, prefer a logic meter in the design, which publishes only when its state changes.  
+
+Within the **Legacy** object this Join map represents a control that is part of an array of controls.  Each join number = Join Map Number + (```bridgeIndex``` − 1); `bridgeIndex` counts from 1, and a meter with `bridgeIndex` 0 is logged and not linked.
 
 Within the **Standalone** object, this join map represents a single control as defined by the key in the bridge.
 
@@ -649,7 +717,7 @@ Within the **Standalone** object, this join map represents a single control as d
 
 | Legacy Join | Standalone Join | Type (RW) | Description  |
 | ----------- | --------------- | --------- | ------------ |
-| 3501        | 1               | RW        | Meter Toggle |
+| 3501        | 1               | RW        | Meter subscribe: high subscribes, low unsubscribes (one join per meter); feedback: subscribed |
 
 #### Analogs
 
@@ -695,18 +763,20 @@ In the provided example config object, given a base object key of ```dsp-1```, t
 
 Provides a control point for a single crosspoint on a MatrixMixer.  
 
-This Join map represents a control that is part of an array of controls.  Each join number = Join Map Number + State Index as defined by the config.
+Within the **Legacy** object, each crosspoint takes a block of 3 joins: join number = Join Map Number + (`bridgeIndex` − 1) × 3. `bridgeIndex` counts from 1; a crosspoint with `bridgeIndex` 0 is logged and not linked.
+
+Within the **Standalone** object, the joins are numbered differently from the Legacy object (On, Off, Toggle), as listed below.
 
 >This control implements [Essentials](https://github.com/PepperDash/Essentials) interface **`IKeyed`**
 
 
 #### Digitals
 
-| Legacy Join | Standalone Join | Type (RW) | Description       |
-| ----------- | --------------- | --------- | ----------------- |
-| 2001        | 1               | RW        | Crosspoint Toggle |
-| 2002        | 2               | W         | Crosspoint On     |
-| 2003        | 3               | W         | Crosspoint Off    |
+| Legacy Join | Standalone Join | Type (RW) | Description                                  |
+| ----------- | --------------- | --------- | -------------------------------------------- |
+| 2001        | 3               | RW        | Crosspoint Toggle (feedback: crosspoint on)  |
+| 2002        | 1               | RW        | Crosspoint On (feedback: crosspoint on)      |
+| 2003        | 2               | RW        | Crosspoint Off (feedback: crosspoint off)    |
 
 #### Analogs
 
@@ -756,7 +826,7 @@ Controls Biamp Tesira RoomCombiner objects.  Control of LevelOut, MuteOut, and g
 
 In order to keep the types of joins similar to a standard fader object, the choice was made to not provide direct control for wall states in this component.  If direct wall state control is required, utilize a `State Control` block.
 
-Within the **Legacy** object, this Join map represents a control that is part of an array of controls.  Each join number = Join Map Number + roomCombiner ```bridgeIndex``` as defined by the config.
+Within the **Legacy** object, this Join map represents a control that is part of an array of controls.  Each join number = Join Map Number + roomCombiner ```bridgeIndex``` as defined by the config. Each combiner takes six joins (offset ((`bridgeIndex` − 1) × 6)); `bridgeIndex` 1–66 fits before the router joins at 2601, and a higher one is logged and not linked.
 
 Within the **Standalone** object, this join map represents a single control as defined by the key in the bridge.
 

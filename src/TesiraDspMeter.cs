@@ -57,6 +57,11 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
             Label = config.Label;
             Enabled = config.Enabled;
 
+            // Registered up front so a publish from a subscription this meter didn't make (one that
+            // outlived an Essentials restart on a serial link) still reaches the stray-publish cleanup.
+            MeterCustomName = string.Format("{0}__meter{1}", InstanceTag1, Index1);
+            AddCustomName(MeterCustomName);
+
             MeterFeedback = new IntFeedback(Key + "-MeterFeedback", () => currentMeter);
             SubscribedFeedback = new BoolFeedback(Key + "-SubscribedFeedback", () => IsSubscribed);
 
@@ -81,19 +86,75 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
             }
         }
 
+        /// <summary>
+        /// True once something asked this meter to stream (bridge join high or <see cref="Subscribe"/>),
+        /// until <see cref="UnSubscribe"/>. Meters publish every interval, so session start and
+        /// resubscribe only restore the ones that were asked for.
+        /// </summary>
+        public bool SubscriptionRequested { get; private set; }
+
+        // Request state and the command it sends change together, so an opt-out can't land
+        // between an automatic restore's check and its subscribe.
+        private readonly object requestLock = new object();
+
+        // A stray publish (the unsubscribe was dropped, e.g. by Resubscribe clearing the queue)
+        // re-sends the unsubscribe, at most this often.
+        private static readonly TimeSpan strayUnsubscribeInterval = TimeSpan.FromSeconds(5);
+        private DateTime lastStrayUnsubscribe = DateTime.MinValue;
+
+        /// <summary>
+        /// Starts metering and records the request, so reconnects and resubscribes restore it.
+        /// </summary>
         public override void Subscribe()
         {
-            MeterCustomName = string.Format("{0}__meter{1}", InstanceTag1, Index1);
-            AddCustomName(MeterCustomName);
+            lock (requestLock)
+            {
+                SubscriptionRequested = true;
+                SendMeterSubscription();
+            }
+        }
+
+        /// <summary>
+        /// Re-subscribes only if metering was requested; never records a request. Used by session
+        /// start, resubscribe and the watchdog so they can't undo an opt-out.
+        /// </summary>
+        /// <returns>true if a subscribe was queued</returns>
+        public bool RestoreSubscription()
+        {
+            lock (requestLock)
+            {
+                if (!SubscriptionRequested) return false;
+                SendMeterSubscription();
+                return true;
+            }
+        }
+
+        private void SendMeterSubscription()
+        {
             SendSubscriptionCommand(MeterCustomName, meterAttributeCode, defaultPollTime, 0);
         }
 
         public void UnSubscribe()
         {
-            IsSubscribed = false;
+            lock (requestLock)
+            {
+                SubscriptionRequested = false;
+                IsSubscribed = false;
 
-            SendUnSubscriptionCommand(MeterCustomName, meterAttributeCode, 0);
+                SendUnSubscriptionCommand(MeterCustomName, meterAttributeCode, 0);
+            }
             SubscribedFeedback.FireUpdate();
+        }
+
+        /// <summary>
+        /// Subscribes when true, unsubscribes when false. Used by the bridge subscribe join.
+        /// </summary>
+        public void SetSubscribed(bool subscribe)
+        {
+            if (subscribe)
+                Subscribe();
+            else
+                UnSubscribe();
         }
 
         public override void ParseGetMessage(string attributeCode, string message)
@@ -103,7 +164,25 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
 
         public override void ParseSubscriptionMessage(string customName, string message)
         {
-            IsSubscribed = true;
+            lock (requestLock)
+            {
+                if (!SubscriptionRequested)
+                {
+                    // Not asked for: don't count it as subscribed (that would make it a watchdog
+                    // candidate) and stop it streaming.
+                    var now = DateTime.UtcNow;
+                    if (now - lastStrayUnsubscribe < strayUnsubscribeInterval) return;
+                    lastStrayUnsubscribe = now;
+                    this.LogDebug("Publish for unrequested meter {customName}; unsubscribing", customName);
+                    SendUnSubscriptionCommand(customName, meterAttributeCode, 0);
+                    return;
+                }
+
+                // Inside the lock: an UnSubscribe() between the check above and this line would
+                // otherwise be undone, leaving the subscribed join high on a stopped meter.
+                IsSubscribed = true;
+            }
+
             SubscribedFeedback.FireUpdate();
 
             this.LogVerbose("Parsing Message: {message}", message);
@@ -134,8 +213,9 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
             NameFeedback.LinkInputSig(trilist.StringInput[joinMap.Label.JoinNumber]);
             SubscribedFeedback.LinkInputSig(trilist.BooleanInput[joinMap.Subscribe.JoinNumber]);
 
-            trilist.SetSigTrueAction(joinMap.Subscribe.JoinNumber, Subscribe);
-            trilist.SetSigFalseAction(joinMap.Subscribe.JoinNumber, UnSubscribe);
+            // One action for both edges: SetSigTrueAction and SetSigFalseAction share the sig's
+            // single action slot, so setting both left only the unsubscribe.
+            trilist.SetBoolSigAction(joinMap.Subscribe.JoinNumber, SetSubscribed);
 
             trilist.OnlineStatusChange += (d, args) =>
             {
