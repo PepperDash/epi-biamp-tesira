@@ -214,6 +214,8 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
             pollTimer.Elapsed += (sender, e) => DoPoll();
             pollTimer.AutoReset = false;
             pollTimer.Enabled = false;
+
+            InitializeFeedbacks();
         }
 
         /// <summary>
