@@ -142,7 +142,13 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Queue
                     // every sent command frees one slot, which would otherwise log again per drop.
                     if (LocalQueue.Count <= queueCapacity / 2) queueFullLogged = false;
                 }
-                else if (!queueFullLogged)
+                else if (commandToEnqueue.RequestingComponent != null)
+                {
+                    // A rejected probe still counts as an attempt (see NotifySubscribeRejected).
+                    Parent.NotifySubscribeRejected(commandToEnqueue);
+                }
+
+                if (LocalQueue.Count == countBefore && !queueFullLogged)
                 {
                     // Once per episode, not once per dropped command.
                     queueFullLogged = true;
