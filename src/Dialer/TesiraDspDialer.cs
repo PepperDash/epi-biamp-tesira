@@ -495,6 +495,15 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Dialer
         /// </summary>
         public override void Subscribe()
         {
+            SubscribeOnly();
+        }
+
+        /// <summary>
+        /// The line subscriptions, which are all a watchdog probe re-sends. On this line Subscribe() has no
+        /// one-time setup beyond them.
+        /// </summary>
+        public void SubscribeOnly()
+        {
             if (IsVoip)
             {
                 DialerCustomName = string.Format("{0}__VoIPDialer{1}", InstanceTag1, Index1).Replace(" ", string.Empty);
@@ -533,8 +542,6 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Dialer
 
                 SendFullCommand("get", "autoAnswer", null, 1);
             }
-
-
         }
 
         /// <summary>
