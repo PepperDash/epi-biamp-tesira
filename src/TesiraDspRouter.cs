@@ -244,7 +244,8 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
 
             parent.Feedbacks.AddRange(Feedbacks);
 
-            SelectorCustomName = $"{InstanceTag1}__Router";
+            // No spaces: TTP takes the first word as the subscription name (a quoted instance tag may have spaces).
+            SelectorCustomName = $"{InstanceTag1}__Router".Replace(" ", string.Empty);
 
             Initialize(config);
 

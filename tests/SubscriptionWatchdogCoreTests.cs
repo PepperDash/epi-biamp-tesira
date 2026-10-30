@@ -204,6 +204,17 @@ public class ProbeBatchTests
     }
 
     [Fact]
+    public void Reports_Members_Whose_Probe_Queued_Nothing()
+    {
+        var batch = new ProbeBatch<string, Cmd>();
+        batch.Begin(new[] { "fader", "routerSwitcher" });
+        batch.ExpectReply("fader", C("fader level"));
+        // the router-type switcher's Subscribe() queues nothing
+
+        batch.MembersWithoutExpectedReplies().Should().Equal("routerSwitcher");
+    }
+
+    [Fact]
     public void Contains_Is_False_Once_Closed()
     {
         var batch = new ProbeBatch<string, Cmd>();

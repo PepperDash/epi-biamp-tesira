@@ -123,6 +123,9 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
     {
         private readonly HashSet<TComponent> members = new HashSet<TComponent>();
 
+        // Members that queued at least one probe command while capturing.
+        private readonly HashSet<TComponent> membersWithReplies = new HashSet<TComponent>();
+
         // The exact probe commands queued while capturing. Only their replies count, so a subscribe
         // a member had queued before the probe can't take a probe's place.
         private readonly HashSet<TCommand> outstanding = new HashSet<TCommand>();
@@ -140,6 +143,7 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
         public void Begin(IEnumerable<TComponent> components)
         {
             members.Clear();
+            membersWithReplies.Clear();
             outstanding.Clear();
             foreach (var c in components ?? Enumerable.Empty<TComponent>())
             {
@@ -154,7 +158,15 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
         {
             if (!Capturing || component == null || command == null || !members.Contains(component)) return;
             outstanding.Add(command);
+            membersWithReplies.Add(component);
         }
+
+        /// <summary>
+        /// Members that have queued no probe command. Call before <see cref="EndCapture"/>, which may close
+        /// the batch.
+        /// </summary>
+        public IReadOnlyList<TComponent> MembersWithoutExpectedReplies() =>
+            members.Where(m => !membersWithReplies.Contains(m)).ToList();
 
         /// <summary>
         /// Ends capture. If no member queued a probe (all opted out), the batch closes.
@@ -187,6 +199,7 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
             IsOpen = false;
             Capturing = false;
             members.Clear();
+            membersWithReplies.Clear();
             outstanding.Clear();
         }
     }

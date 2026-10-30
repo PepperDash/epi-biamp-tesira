@@ -147,6 +147,9 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
         // IsSubscribed alone would drop components from the patrol after their first probe.
         private readonly HashSet<ISubscribedComponent> knownSubscribed = new HashSet<ISubscribedComponent>();
 
+        // Components whose probe queued no subscribe this session; never the default sentinel.
+        private readonly HashSet<ISubscribedComponent> silentProbes = new HashSet<ISubscribedComponent>();
+
         // Ticks the current probe batch has stayed open; at maxOpenProbeTicks the check counts as failed.
         private int openProbeTicks;
         private const int maxOpenProbeTicks = 4;
@@ -870,6 +873,7 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
             {
                 probeBatch.Close();
                 knownSubscribed.Clear();
+                silentProbes.Clear();
                 watchdogPatrol.ClearQuarantine();
                 openProbeTicks = 0;
             }
@@ -986,11 +990,15 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
                 // NotifySubscribeEnqueued) and its reply is attributed back (NotifySubscribeReply).
                 foreach (var component in probe)
                 {
-                    SubscribeAutomatically(component);
+                    SubscribeAutomatically(component, subscriptionsOnly: true);
                 }
 
                 lock (watchdogLock)
                 {
+                    // A component whose probe queued nothing (a router-type switcher just sets
+                    // IsSubscribed) can't stand in as the default sentinel.
+                    foreach (var silent in probeBatch.MembersWithoutExpectedReplies())
+                        silentProbes.Add(silent);
                     probeBatch.EndCapture();
                 }
             }
@@ -1015,6 +1023,14 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
                     string.Equals(c.Key, key, StringComparison.OrdinalIgnoreCase) ||
                     string.Equals(c.Key, fullKey, StringComparison.OrdinalIgnoreCase));
                 if (match != null) sentinels.Add(match);
+            }
+
+            // None configured (or none usable): default to the first candidate whose probe actually
+            // sends a subscribe, rather than whatever happens to be first.
+            if (sentinels.Count == 0)
+            {
+                var fallback = candidates.FirstOrDefault(c => !silentProbes.Contains(c) && !watchdogPatrol.IsQuarantined(c));
+                if (fallback != null) sentinels.Add(fallback);
             }
             return sentinels;
         }
@@ -1074,7 +1090,7 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
                     break;
                 case ProbeReply.OtherError:
                     this.LogWarning("Watchdog: '{command}' failed: {response}. Resubscribing '{component}'.", command.Command, response, component.Key);
-                    System.Threading.Tasks.Task.Run(() => SubscribeAutomatically(component));
+                    System.Threading.Tasks.Task.Run(() => SubscribeAutomatically(component, subscriptionsOnly: true));
                     break;
             }
         }
@@ -1096,7 +1112,7 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
             this.LogInformation("Restoring subscriptions for {count} components", components.Count);
             foreach (var component in components)
             {
-                SubscribeAutomatically(component);
+                SubscribeAutomatically(component, subscriptionsOnly: true);
             }
         }
 
@@ -1269,7 +1285,11 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
 
                 if (args.Text.Contains("Welcome"))
                 {
-                    // Indicates a new TTP session
+                    // Indicates a new TTP session. Stop the watchdog too: after a quick reconnect its timer
+                    // is still running, and a probe that reached the new session ahead of the startup
+                    // subscribes would get +OK and trigger a second full burst. EndSubscriptionProcess
+                    // starts it again once this session's subscriptions are queued.
+                    StopWatchDog();
                     ResetWatchdogSession();
                     if (!isSerialComm)
                     {
@@ -1614,14 +1634,26 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
         /// Everything it queues (subscribes and the reads components send with them) waits behind
         /// user commands, so a startup, restore or watchdog burst can't delay a press.
         /// </summary>
+        /// <param name="component">The component to subscribe</param>
+        /// <param name="subscriptionsOnly">
+        /// True for watchdog probes, repairs and retries: re-send only the subscriptions, not one-time
+        /// setup (a dialer's configured redial/auto-answer writes and phonebook read), which would
+        /// otherwise be re-applied on every probe and revert changes made on the DSP.
+        /// </param>
         /// <returns>true if a subscribe was queued</returns>
-        private bool SubscribeAutomatically(ISubscribedComponent component)
+        private bool SubscribeAutomatically(ISubscribedComponent component, bool subscriptionsOnly = false)
         {
             using (CommandQueue.BackgroundScope())
             {
                 if (component is TesiraDspMeter meter)
                 {
                     return meter.RestoreSubscription();
+                }
+
+                if (subscriptionsOnly && component is TesiraDspDialer dialer)
+                {
+                    dialer.SubscribeOnly();
+                    return true;
                 }
 
                 component.Subscribe();
