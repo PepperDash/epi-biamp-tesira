@@ -1098,7 +1098,9 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
                     return;
                 }
 
-                if (args.Text.IndexOf("-ERR", StringComparison.Ordinal) >= 0)
+                // Start of line only, like +OK: an echoed command containing "-ERR" (a preset or tag
+                // name) must not complete the outstanding command.
+                if (args.Text.StartsWith("-ERR", StringComparison.Ordinal))
                 {
                     CommandQueue.HandleResponse(args.Text);
                     // Error response
