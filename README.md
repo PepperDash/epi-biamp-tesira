@@ -26,6 +26,43 @@ Provided under MIT license
 
 This plugin has been tested with both Crestron 3-Series and 4-Series processors.  It implements all available essentials interfaces relevant to a device of this type.  This includes but is not limited to `AudioCodecBase`, `IHasDspPresets`, `IBasicVolumeWithFeedback`, `IRoutingWithFeedback` and `IDeviceInfoProvider`.  Documentation for which controls implement each interface will be documented in each relevant controls section.  Additionally, every component implements `IKeyed` and all devices are added to the `DeviceManager` unpon instantiation.
 
+## Upgrading from v3.x to v4
+
+v4 runs on Essentials v3 (net8, 4-Series). v3.x (latest `v3.8.2`) is the Essentials v2 line. Most changes are fixes that make documented behaviour work. Check the items below against an existing system before upgrading.
+
+### Behaviour changes
+
+| Change | Who is affected | What to do |
+|---|---|---|
+| **Meters are opt-in.** A meter streams only while its subscribe join is high, or after `Subscribe()` is called on the meter device. v3.x subscribed every meter at startup. | Programs that read meter levels (bridge level join or `IMeterFeedback`) without raising the meter's subscribe join | Raise the subscribe join (Legacy d3501 + offset; Standalone d1) while the meter is shown, or call `Subscribe()`. For level-threshold feedback, prefer a logic meter in the design |
+| **Raw level (dB text) moved from serial 300 to serial 400** on the Legacy map, so it no longer overwrites fader labels at bridgeIndex 100+ (#151). It is also on the Standalone map at serial 2. | Programs reading s301+ for raw level | Move to s401 + offset |
+| **Room combiners link bridgeIndex 1–66 only** on the Legacy map. Higher indexes would overlap the router joins at 2601 and are logged and not linked. | Configs with a room combiner bridgeIndex above 66 | Renumber the combiner, or bridge it standalone |
+| **Subscription watchdog** checks every 30 s (was every 2 minutes): its sentinels, plus 2 components in rotation. A `+OK` reply (the DSP had dropped subscriptions, for example after a design push) restores every subscription at once, without a reconnect. Components that can never subscribe (missing tag, bad attribute or index) are quarantined and logged once. | Everyone; no action needed | Optional: set `watchdogSentinels` to one component per partition. See *Subscription watchdog* |
+| **Commands are dropped while the Tesira is disconnected,** with one log line per outage. When it reconnects, subscriptions report the DSP's actual state. Commands sent during an outage (a route, a level) are not replayed. | Programs that relied on queued commands reaching the DSP after a reconnect | Re-send after `IsOnline` goes high if that matters |
+| **Command queue:** capacity 10,000 (was 2,000). It never blocks when full: it drops, with one warning per episode. Subscriptions and the plugin's own reads wait behind user commands, and writes keep their order. | Nobody | None |
+
+### Joins and features that now work
+
+These were documented in v3.x but didn't work. Programs that worked around them may see a change.
+
+| Area | Now |
+|---|---|
+| Crosspoint On/Off joins | Set the crosspoint. They sent no value before, and the DSP rejected them |
+| Meter subscribe join | Subscribes on high and unsubscribes on low. Before, only the unsubscribe worked |
+| Preset recall by number (analog) | Recalls the preset. Before, it never matched |
+| Router (`routerControlBlocks`) | Routes and reports every output: new Legacy joins at a/s 2601 + ((bridgeIndex − 1) × 64) + (output − 1), standalone a(joinStart + N − 1). The existing switcher join routes the first output. Before, no route was sent and feedback was dropped |
+| Room combiner | Subscribes to `levelOut`; `group` and the level limits read the right room |
+| Crosspoint Off feedback and labels; meter offsets per bridgeIndex | Linked on both bridge maps |
+
+### New, opt-in
+
+| Feature | Config |
+|---|---|
+| Save presets from the bridge (hold a preset join) with a 2 s *Preset Saved* pulse | `presetHoldTimeMs` (default `0`: off) |
+| Logic Selector blocks as switchers | `logicSelectorControlBlocks` |
+| Watchdog tuning | `watchdogIntervalSecs` (30), `watchdogPatrolSize` (2), `watchdogSentinels` |
+| Periodic re-read of level limits | `levelRangePollIntervalSecs` (0: off) |
+
 ## Feature Notes
 
 Version 2.0.0+ now offers developers the opportunity to individually bridge each control rather than the entire DSP object.  This should lead to more flexibility in development.  In documentation below, all references to the original object type will be referred to as **Legacy**, while new object data will be referred to as **Standalone**
