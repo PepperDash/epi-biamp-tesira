@@ -215,6 +215,17 @@ public class ProbeBatchTests
     }
 
     [Fact]
+    public void A_Probe_Rejected_By_A_Full_Queue_Is_Not_Reported_As_Silent()
+    {
+        var batch = new ProbeBatch<string, Cmd>();
+        batch.Begin(new[] { "router", "routerSwitcher" });
+        batch.MarkAttempted("router"); // its subscribe was rejected: queue full
+
+        batch.MembersWithoutExpectedReplies().Should().Equal("routerSwitcher");
+        batch.Outstanding.Should().Be(0); // nothing to wait for
+    }
+
+    [Fact]
     public void Contains_Is_False_Once_Closed()
     {
         var batch = new ProbeBatch<string, Cmd>();

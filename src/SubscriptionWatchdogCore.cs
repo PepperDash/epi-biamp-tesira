@@ -162,8 +162,18 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
         }
 
         /// <summary>
-        /// Members that have queued no probe command. Call before <see cref="EndCapture"/>, which may close
-        /// the batch.
+        /// Records that a member tried to queue a probe command that the queue rejected (full). It is not
+        /// expected to reply, but it isn't a component that sends nothing either.
+        /// </summary>
+        public void MarkAttempted(TComponent component)
+        {
+            if (!Capturing || component == null || !members.Contains(component)) return;
+            membersWithReplies.Add(component);
+        }
+
+        /// <summary>
+        /// Members that tried to queue no probe command at all. Call before <see cref="EndCapture"/>,
+        /// which may close the batch.
         /// </summary>
         public IReadOnlyList<TComponent> MembersWithoutExpectedReplies() =>
             members.Where(m => !membersWithReplies.Contains(m)).ToList();

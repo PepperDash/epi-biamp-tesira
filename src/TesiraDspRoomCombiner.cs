@@ -35,8 +35,20 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
         // False until the DSP has reported a levelOut value; min/max replies don't rescale before then.
         private bool hasOutLevel;
 
-        // A levelOutMin/levelOutMax pair queued after an out-of-range publish and not yet answered.
-        private volatile bool rangePollPending;
+        // A levelOutMin/levelOutMax pair queued after an out-of-range publish and not yet answered (UTC ticks; 0 = none).
+        // It expires, so a read dropped by a full queue or lost to a timeout can't block retries.
+        private long rangePollStartedTicks;
+        private static readonly long rangePollExpiryTicks = TimeSpan.FromSeconds(10).Ticks;
+
+        private bool TryStartRangePoll()
+        {
+            var now = DateTime.UtcNow.Ticks;
+            var started = System.Threading.Interlocked.Read(ref rangePollStartedTicks);
+            if (started != 0 && now - started < rangePollExpiryTicks) return false;
+            return System.Threading.Interlocked.CompareExchange(ref rangePollStartedTicks, now, started) == started;
+        }
+
+        private void EndRangePoll() => System.Threading.Interlocked.Exchange(ref rangePollStartedTicks, 0);
         private int outVolumeLevel;
         protected int OutVolumeLevel
         {
@@ -229,7 +241,7 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
             LevelCustomName = string.Format("{0}__roomCombiner{1}", InstanceTag1, Index1);
             AddCustomName(LevelCustomName);
             // A range poll lost with a previous session's queue must not block the next one.
-            rangePollPending = false;
+            EndRangePoll();
             // Limits first: the queue is FIFO, so they arrive before the subscription's first publish
             SendFullCommand("get", "levelOutMin", null, 1);
             SendFullCommand("get", "levelOutMax", null, 1);
@@ -284,9 +296,8 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
                 var clamped = Math.Max(MinLevel, Math.Min(MaxLevel, value));
                 OutVolumeLevel = (ushort)clamped.Scale(MinLevel, MaxLevel, 0, 65535, this);
                 // One min/max pair in flight: publishes keep coming every 250 ms while the level moves.
-                if (!rangePollPending)
+                if (TryStartRangePoll())
                 {
-                    rangePollPending = true;
                     GetMinLevel();
                     GetMaxLevel();
                 }
@@ -384,7 +395,7 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
                 this.LogVerbose("Parsing Message: {message} attributeCode: {attributeCode}", message, attributeCode);
 
                 // The max read is queued after the min one: its reply, +OK or -ERR, ends the range poll.
-                if (attributeCode == "levelOutMax") rangePollPending = false;
+                if (attributeCode == "levelOutMax") EndRangePoll();
 
                 // Only level steps feed volume recovery; a rejected group (or other) value must not
                 // overwrite the level limits.

@@ -1051,6 +1051,22 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
         }
 
         /// <summary>
+        /// Called by the command queue, under its lock, when a subscribe command tagged with its component
+        /// is rejected (queue full). The component tried to probe, so it mustn't be taken for one whose
+        /// probe sends nothing; it stays eligible as the default sentinel.
+        /// </summary>
+        internal void NotifySubscribeRejected(QueuedCommand command)
+        {
+            var component = command?.RequestingComponent;
+            if (component == null || !ProbeReplies.IsSubscribeCommand(command.Command)) return;
+
+            lock (watchdogLock)
+            {
+                probeBatch.MarkAttempted(component);
+            }
+        }
+
+        /// <summary>
         /// Called by the command queue, under its lock, with the reply to a subscribe command tagged
         /// with its component. Replies to watchdog probes decide what happens next.
         /// </summary>
