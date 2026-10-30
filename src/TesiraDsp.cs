@@ -1098,20 +1098,9 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
                     return;
                 }
 
-                if (args.Text.IndexOf("DEVICE recallPresetByName", StringComparison.Ordinal) == 0)
-                {
-                    CommandQueue.HandleResponse(args.Text);
-                    return;
-                }
-
-                // TODO: Verify Tesira TTP save echo verb on hardware — assumed symmetric with recall.
-                if (args.Text.IndexOf("DEVICE savePreset", StringComparison.Ordinal) == 0)
-                {
-                    CommandQueue.HandleResponse(args.Text);
-                    return;
-                }
-
-                if (args.Text.IndexOf("-ERR", StringComparison.Ordinal) >= 0)
+                // Start of line only, like +OK: an echoed command containing "-ERR" (a preset or tag
+                // name) must not complete the outstanding command.
+                if (args.Text.StartsWith("-ERR", StringComparison.Ordinal))
                 {
                     CommandQueue.HandleResponse(args.Text);
                     // Error response
@@ -1173,7 +1162,7 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
         {
             this.LogVerbose("Attempting to run preset {0}", n);
 
-            foreach (var preset in Presets.OfType<TesiraPreset>().Where(preset => preset.Index == n))
+            foreach (var preset in TesiraPresets.Where(preset => preset.Index == n))
             {
                 this.LogVerbose("Found a matching Preset - {0}", preset.PresetId);
                 RecallPreset(preset.Key);
@@ -1203,9 +1192,12 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
 
         public void RecallPreset(string key)
         {
-            var preset = Presets[key] as TesiraPreset;
+            if (!Presets.TryGetValue(key, out var item) || !(item is TesiraPreset preset))
+            {
+                this.LogWarning("Preset {key} not found", key);
+                return;
+            }
             this.LogVerbose("Running preset {0}", preset.Name);
-            if (preset == null) return;
 
             this.LogVerbose("Checking Preset {0} | presetIndex {1} | presetId {2} | presetName {3}",
                 preset.Name, preset.PresetIndex, preset.PresetId, preset.PresetName);
@@ -1467,7 +1459,11 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
                     // Check for cancellation before sending commands
                     token.ThrowIfCancellationRequested();
 
-                    SendLine("SESSION set verbose false");
+                    // Route through the command queue so the DSP's "+OK" reply is
+                    // matched to this command. Sending directly (SendLine) bypasses the
+                    // queue, so its reply would be consumed by HandleResponse and stolen
+                    // from the next queued command, misaligning every subsequent response.
+                    CommandQueue.EnqueueCommand("SESSION set verbose false", priority: (int)CommandPriority.Low);
 
                     // Add delay with cancellation support
                     if (token.WaitHandle.WaitOne(250))
@@ -1644,18 +1640,14 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
             foreach (var item in CrosspointStates)
             {
                 var xpointState = item.Value;
-                var joinOffset = (xpointState.BridgeIndex - 1) * 3;
-                if (joinOffset == null) continue;
-
-
-                var channel = item.Value;
-                var data = channel.BridgeIndex;
-                if (data == null) continue;
-
+                if (!TryGetBridgeOffset(xpointState, out var index)) continue;
+                var joinOffset = index * 3;
 
                 this.LogVerbose("Adding Crosspoint State ControlPoint {0} | JoinStart:{1}", xpointState.Key, crosspointStateJoinMap.Toggle.JoinNumber + joinOffset);
                 xpointState.CrosspointStateFeedback.LinkInputSig(trilist.BooleanInput[(uint)(crosspointStateJoinMap.Toggle.JoinNumber + joinOffset)]);
                 xpointState.CrosspointStateFeedback.LinkInputSig(trilist.BooleanInput[(uint)(crosspointStateJoinMap.On.JoinNumber + joinOffset)]);
+                xpointState.CrosspointStateFeedback.LinkComplementInputSig(trilist.BooleanInput[(uint)(crosspointStateJoinMap.Off.JoinNumber + joinOffset)]);
+                xpointState.NameFeedback.LinkInputSig(trilist.StringInput[(uint)(crosspointStateJoinMap.Label.JoinNumber + joinOffset)]);
 
                 trilist.SetSigTrueAction((uint)(crosspointStateJoinMap.Toggle.JoinNumber + joinOffset), xpointState.StateToggle);
                 trilist.SetSigTrueAction((uint)(crosspointStateJoinMap.On.JoinNumber + joinOffset), xpointState.StateOn);
@@ -1665,25 +1657,43 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
             }
         }
 
+        /// <summary>
+        /// The zero-based join offset for a component whose bridgeIndex counts from 1 (states, meters,
+        /// crosspoints). False, with a warning for 0, when it has no usable bridgeIndex: 0 would wrap the
+        /// offset to uint.MaxValue, and the out-of-range join would abort the rest of the bridge linking.
+        /// </summary>
+        private bool TryGetBridgeOffset(TesiraDspControlPoint component, out uint offset)
+        {
+            offset = 0;
+            var index = component.BridgeIndex;
+            if (index == null) return false;
+            if (index.Value == 0)
+            {
+                this.LogWarning("{key} has bridgeIndex 0; these joins count from 1, so it is not linked to the bridge", component.Key);
+                return false;
+            }
+            offset = index.Value - 1;
+            return true;
+        }
+
         private void LinkMetersToApi(BasicTriList trilist, TesiraMeterJoinMapAdvanced meterJoinMap)
         {
             this.LogVerbose("There are {0} Meter Control Points", Meters.Count);
             foreach (var item in Meters)
             {
                 var meter = item.Value;
-                var data = meter.BridgeIndex;
-                if (data == null) continue;
-                var x = (uint)(data - 1);
+                if (!TryGetBridgeOffset(meter, out var x)) continue;
 
-
-                this.LogVerbose("AddingMeterBridge {0} | Join:{1}", meter.Key, meterJoinMap.Label.JoinNumber);
+                this.LogVerbose("AddingMeterBridge {0} | Join:{1}", meter.Key, meterJoinMap.Label.JoinNumber + x);
 
                 meter.MeterFeedback.LinkInputSig(trilist.UShortInput[meterJoinMap.Meter.JoinNumber + x]);
                 meter.NameFeedback.LinkInputSig(trilist.StringInput[meterJoinMap.Label.JoinNumber + x]);
                 meter.SubscribedFeedback.LinkInputSig(trilist.BooleanInput[meterJoinMap.Subscribe.JoinNumber + x]);
 
-                trilist.SetSigTrueAction(meterJoinMap.Subscribe.JoinNumber, meter.Subscribe);
-                trilist.SetSigFalseAction(meterJoinMap.Subscribe.JoinNumber, meter.UnSubscribe);
+                // Per meter: without the offset every meter's subscribe landed on one join, last linked wins.
+                // One action for both edges: SetSigTrueAction and SetSigFalseAction share the sig's
+                // single action slot, so setting both left only the unsubscribe.
+                trilist.SetBoolSigAction(meterJoinMap.Subscribe.JoinNumber + x, meter.SetSubscribed);
 
             }
         }
@@ -1889,10 +1899,7 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
             foreach (var item in States)
             {
                 var state = item.Value;
-                var data = state.BridgeIndex;
-                if (data == null) continue;
-
-                var x = (uint)data - 1;
+                if (!TryGetBridgeOffset(state, out var x)) continue;
                 this.LogVerbose("Tesira State {0} connect to {1}", state.Key, x);
 
                 if (!state.Enabled) continue;

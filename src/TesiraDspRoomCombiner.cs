@@ -214,6 +214,8 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
             pollTimer.Elapsed += (sender, e) => DoPoll();
             pollTimer.AutoReset = false;
             pollTimer.Enabled = false;
+
+            InitializeFeedbacks();
         }
 
         /// <summary>
@@ -242,6 +244,7 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
             Feedbacks.Add(VisibleFeedback);
             Feedbacks.Add(TypeFeedback);
             Feedbacks.Add(PermissionsFeedback);
+            Feedbacks.Add(RoomGroupFeedback);
 
             Parent.Feedbacks.AddRange(Feedbacks);
         }
@@ -283,11 +286,20 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
         /// </summary>
         public override void Subscribe()
         {
-            //Subsribe to Level
-            LevelCustomName = string.Format("{0}__roomCombiner{1}", InstanceTag1, Index1);
+            // No spaces: the subscription name is sent unquoted
+            LevelCustomName = string.Format("{0}__roomCombiner{1}", InstanceTag1, Index1).Replace(" ", string.Empty);
             AddCustomName(LevelCustomName);
+            // Limits first: the queue is FIFO, so they arrive before the subscription's first publish
             SendFullCommand("get", "levelOutMin", null, 1);
+            SendFullCommand("get", "levelOutMax", null, 1);
+            // The levelOut subscription is what marks this component subscribed (ParseSubscriptionMessage),
+            // which is also what the watchdog checks
+            SendSubscriptionCommand(LevelCustomName, "levelOut", 250, 1);
             SendFullCommand("get", "group", null, 1);
+
+            // Arm the mute/group poll here too: level publishes no longer restart it, so a failed
+            // group GET would otherwise leave it stopped.
+            ResetTimer(pollTimer, 30000);
         }
 
         /// <summary>
@@ -297,7 +309,8 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
         {
 
             levelIsSubscribed = false;
-            LevelCustomName = string.Format("{0}__roomCombiner{1}", InstanceTag1, Index1);
+            // No spaces: the subscription name is sent unquoted
+            LevelCustomName = string.Format("{0}__roomCombiner{1}", InstanceTag1, Index1).Replace(" ", string.Empty);
             SendUnSubscriptionCommand(LevelCustomName, "levelOut", 1);
         }
 
@@ -330,9 +343,9 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
                 OutVolumeLevel = UseAbsoluteValue ? (ushort)value : (ushort)value.Scale(MinLevel, MaxLevel, 0, 65535, this);
             }
 
+            // No poll-timer reset here: frequent level publishes would otherwise keep postponing the
+            // poll that refreshes mute and group. The GET reply handlers restart it.
             levelIsSubscribed = true;
-
-            ResetTimer(pollTimer, 30000);
         }
 
         const string parsePattern = "[^ ]* (.*)";

@@ -107,8 +107,9 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
                 attributeCode == "maxLevel" || attributeCode == "label" || attributeCode == "rampInterval" ||
                 attributeCode == "rampStep" || attributeCode == "autoAnswer" || attributeCode == "dndEnable" ||
                 attributeCode == "dtmf" || attributeCode == "state" || attributeCode == "levelOut" ||
-                attributeCode == "maxLevelOut" || attributeCode == "minLevelOut" || attributeCode == "muteOut" ||
-                attributeCode == "group" && command == "set")
+                attributeCode == "maxLevelOut" || attributeCode == "minLevelOut" ||
+                attributeCode == "levelOutMax" || attributeCode == "levelOutMin" || attributeCode == "muteOut" ||
+                attributeCode == "group")
             {
                 //Command requires Index
                 if (string.IsNullOrEmpty(value))
@@ -124,7 +125,10 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
             }
             else if (attributeCode == "crosspointLevelState")
             {
-                cmd = string.Format("\"{0}\" {1} {2} {3} {4}", instanceTagLocal, command, attributeCode, Index1, Index2);
+                // set needs the value after both indexes: "Matrix1" set crosspointLevelState 1 1 true
+                cmd = string.IsNullOrEmpty(value)
+                    ? string.Format("\"{0}\" {1} {2} {3} {4}", instanceTagLocal, command, attributeCode, Index1, Index2)
+                    : string.Format("\"{0}\" {1} {2} {3} {4} {5}", instanceTagLocal, command, attributeCode, Index1, Index2, value);
             }
             else if (attributeCode == "input")
             {

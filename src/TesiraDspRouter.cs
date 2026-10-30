@@ -43,14 +43,13 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
 
         public Dictionary<uint, string> SwitcherOutputs { get; private set; }
 
-        private readonly Timer pollTimer;
-
         private string SourceNamesXsig { get; set; }
 
         private string RoutedSourceName { get; set; }
 
         private bool ShowRoutedString { get; set; }
 
+        /// <summary>Unused; never configured. Kept for API compatibility.</summary>
         public readonly long PollIntervalMs;
 
         /// <summary>
@@ -339,9 +338,6 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
         public override void DoPoll()
         {
             SendFullCommand("get", "input", string.Empty, 1);
-            pollTimer.Stop();
-            pollTimer.Interval = PollIntervalMs;
-            pollTimer.Start();
         }
 
         #region IRouting Members
