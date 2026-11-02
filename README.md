@@ -418,7 +418,7 @@ In the provided example config object, given a base object key of ```dsp-1```, t
 
 Controls objects with the attribute type of "state" and subscribes to them as necessary.
 
-Within the **Legacy** object, this Join map represents a control that is part of an array of controls.  Each join number = Join Map Number + fader ```bridgeIndex``` as defined by the config.
+Within the **Legacy** object, this Join map represents a control that is part of an array of controls.  Each join number = Join Map Number + (```bridgeIndex``` − 1); `bridgeIndex` counts from 1, and a state with `bridgeIndex` 0 is logged and not linked.
 
 Within the **Standalone** object, this join map represents a single control as defined by the key in the bridge.
 
@@ -638,7 +638,7 @@ In the provided example config object, given a base object key of ```dsp-1```, t
 Enables metering on the sepecified meter.  
 Using this is a bad idea, please avoid unless specifically requested.  
 
-Within the **Legacy** object this Join map represents a control that is part of an array of controls.  Each join number = Join Map Number + ```bridgeIndex``` as defined by the config.
+Within the **Legacy** object this Join map represents a control that is part of an array of controls.  Each join number = Join Map Number + (```bridgeIndex``` − 1); `bridgeIndex` counts from 1, and a meter with `bridgeIndex` 0 is logged and not linked.
 
 Within the **Standalone** object, this join map represents a single control as defined by the key in the bridge.
 
@@ -649,7 +649,7 @@ Within the **Standalone** object, this join map represents a single control as d
 
 | Legacy Join | Standalone Join | Type (RW) | Description  |
 | ----------- | --------------- | --------- | ------------ |
-| 3501        | 1               | RW        | Meter Toggle |
+| 3501        | 1               | RW        | Meter subscribe: high subscribes, low unsubscribes (one join per meter); feedback: subscribed |
 
 #### Analogs
 
@@ -695,18 +695,20 @@ In the provided example config object, given a base object key of ```dsp-1```, t
 
 Provides a control point for a single crosspoint on a MatrixMixer.  
 
-This Join map represents a control that is part of an array of controls.  Each join number = Join Map Number + State Index as defined by the config.
+Within the **Legacy** object, each crosspoint takes a block of 3 joins: join number = Join Map Number + (`bridgeIndex` − 1) × 3. `bridgeIndex` counts from 1; a crosspoint with `bridgeIndex` 0 is logged and not linked.
+
+Within the **Standalone** object, the joins are numbered differently from the Legacy object (On, Off, Toggle), as listed below.
 
 >This control implements [Essentials](https://github.com/PepperDash/Essentials) interface **`IKeyed`**
 
 
 #### Digitals
 
-| Legacy Join | Standalone Join | Type (RW) | Description       |
-| ----------- | --------------- | --------- | ----------------- |
-| 2001        | 1               | RW        | Crosspoint Toggle |
-| 2002        | 2               | W         | Crosspoint On     |
-| 2003        | 3               | W         | Crosspoint Off    |
+| Legacy Join | Standalone Join | Type (RW) | Description                                  |
+| ----------- | --------------- | --------- | -------------------------------------------- |
+| 2001        | 3               | RW        | Crosspoint Toggle (feedback: crosspoint on)  |
+| 2002        | 1               | RW        | Crosspoint On (feedback: crosspoint on)      |
+| 2003        | 2               | RW        | Crosspoint Off (feedback: crosspoint off)    |
 
 #### Analogs
 

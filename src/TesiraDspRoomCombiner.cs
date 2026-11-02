@@ -210,20 +210,13 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
             volumeHoldTimeoutTimer.AutoReset = false;
             volumeHoldTimeoutTimer.Enabled = false;
 
-            pollTimer = new System.Timers.Timer();
+            // Mute and group aren't subscribed, so they're polled. Started in Subscribe, stopped in Unsubscribe.
+            pollTimer = new System.Timers.Timer(30000);
             pollTimer.Elapsed += (sender, e) => DoPoll();
-            pollTimer.AutoReset = false;
+            pollTimer.AutoReset = true;
             pollTimer.Enabled = false;
-        }
 
-        /// <summary>
-        /// Helper method to restart a timer with a new interval
-        /// </summary>
-        private void ResetTimer(System.Timers.Timer timer, double intervalMs)
-        {
-            timer.Stop();
-            timer.Interval = intervalMs;
-            timer.Start();
+            InitializeFeedbacks();
         }
 
         private void InitializeFeedbacks()
@@ -242,6 +235,7 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
             Feedbacks.Add(VisibleFeedback);
             Feedbacks.Add(TypeFeedback);
             Feedbacks.Add(PermissionsFeedback);
+            Feedbacks.Add(RoomGroupFeedback);
 
             Parent.Feedbacks.AddRange(Feedbacks);
         }
@@ -283,11 +277,19 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
         /// </summary>
         public override void Subscribe()
         {
-            //Subsribe to Level
-            LevelCustomName = string.Format("{0}__roomCombiner{1}", InstanceTag1, Index1);
+            LevelCustomName = BuildLevelCustomName();
             AddCustomName(LevelCustomName);
-            SendFullCommand("get", "levelOutMin", null, 1);
-            SendFullCommand("get", "group", null, 1);
+            // Min/max aren't read here: startup and the level range poll already queue them for every
+            // volume component, ahead of the subscriptions.
+            // The levelOut subscription is what marks this component subscribed (ParseSubscriptionMessage),
+            // which is also what the watchdog checks
+            SendSubscriptionCommand(LevelCustomName, "levelOut", 250, 1);
+            GetRoomGroup();
+            GetMute();
+
+            // Start the mute/group poll if it isn't running. Not a restart: the watchdog calls Subscribe()
+            // on the components it samples, and restarting would keep postponing the poll.
+            if (!pollTimer.Enabled) pollTimer.Start();
         }
 
         /// <summary>
@@ -295,10 +297,16 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
         /// </summary>
         public override void Unsubscribe()
         {
-
+            pollTimer.Stop();
             levelIsSubscribed = false;
-            LevelCustomName = string.Format("{0}__roomCombiner{1}", InstanceTag1, Index1);
+            LevelCustomName = BuildLevelCustomName();
             SendUnSubscriptionCommand(LevelCustomName, "levelOut", 1);
+        }
+
+        // No spaces: the subscription name is sent unquoted
+        private string BuildLevelCustomName()
+        {
+            return string.Format("{0}__roomCombiner{1}", InstanceTag1, Index1).Replace(" ", string.Empty);
         }
 
         /// <summary>
@@ -330,9 +338,9 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
                 OutVolumeLevel = UseAbsoluteValue ? (ushort)value : (ushort)value.Scale(MinLevel, MaxLevel, 0, 65535, this);
             }
 
+            // No poll-timer reset here: frequent level publishes would otherwise keep postponing the
+            // poll that refreshes mute and group.
             levelIsSubscribed = true;
-
-            ResetTimer(pollTimer, 30000);
         }
 
         const string parsePattern = "[^ ]* (.*)";
@@ -467,9 +475,6 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
                         {
                             OutIsMuted = bool.Parse(value);
                             this.LogDebug("MuteState is {value}", value);
-                            pollTimer.Stop();
-                            pollTimer.Interval = 30000;
-                            pollTimer.Start();
                             break;
                         }
 
@@ -477,9 +482,6 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
                         {
                             RoomGroup = int.Parse(value);
                             this.LogDebug("Room Group: {RoomGroup}", RoomGroup);
-                            pollTimer.Stop();
-                            pollTimer.Interval = 30000;
-                            pollTimer.Start();
                             break;
                         }
                     default:
@@ -546,6 +548,10 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
         /// </summary>
         public override void DoPoll()
         {
+            // Offline, the queue doesn't send, so GETs would only pile up in it. Subscribe() runs again
+            // after the reconnect.
+            if (!Parent.Communication.IsConnected) return;
+
             GetVolume();
             GetMute();
             GetRoomGroup();
