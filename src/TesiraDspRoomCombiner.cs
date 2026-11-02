@@ -219,16 +219,6 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
             InitializeFeedbacks();
         }
 
-        /// <summary>
-        /// Helper method to restart a timer with a new interval
-        /// </summary>
-        private void ResetTimer(System.Timers.Timer timer, double intervalMs)
-        {
-            timer.Stop();
-            timer.Interval = intervalMs;
-            timer.Start();
-        }
-
         private void InitializeFeedbacks()
         {
             MuteFeedback = new BoolFeedback(Key + "-MuteFeedback", () => OutIsMuted);
@@ -297,8 +287,9 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
             GetRoomGroup();
             GetMute();
 
-            // (Re)start the mute/group poll's 30 s countdown
-            ResetTimer(pollTimer, 30000);
+            // Start the mute/group poll if it isn't running. Not a restart: the watchdog calls Subscribe()
+            // on the components it samples, and restarting would keep postponing the poll.
+            if (!pollTimer.Enabled) pollTimer.Start();
         }
 
         /// <summary>
