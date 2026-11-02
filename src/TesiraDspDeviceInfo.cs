@@ -391,7 +391,16 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
             MacAddressFeedback.LinkInputSig(trilist.StringInput[joinMap.MacAddress.JoinNumber]);
 
 
-            trilist.SetStringSigAction(joinMap.CommandPassThru.JoinNumber, (s) => Parent.CommandQueue.EnqueueCommand(s, sendLineRaw: true, priority: (int)CommandPriority.High));
+            trilist.SetStringSigAction(joinMap.CommandPassThru.JoinNumber, (s) =>
+            {
+                // One queue entry per line: the queue matches each entry to exactly one reply.
+                // Empty lines are never sent, so queueing them would stall the queue until timeout.
+                foreach (var line in s.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries))
+                {
+                    if (string.IsNullOrWhiteSpace(line)) continue;
+                    Parent.CommandQueue.EnqueueCommand(line, priority: (int)CommandPriority.High);
+                }
+            });
 
             trilist.OnlineStatusChange += (d, args) =>
             {

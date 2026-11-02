@@ -296,6 +296,7 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
             // which is also what the watchdog checks
             SendSubscriptionCommand(LevelCustomName, "levelOut", 250, 1);
             SendFullCommand("get", "group", null, 1);
+            GetMute();
 
             // Arm the mute/group poll here too: level publishes no longer restart it, so a failed
             // group GET would otherwise leave it stopped.
@@ -562,6 +563,9 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
             GetVolume();
             GetMute();
             GetRoomGroup();
+
+            // Rearm here so a failed mute/group GET doesn't stop polling
+            ResetTimer(pollTimer, 30000);
         }
 
         /// <summary>
