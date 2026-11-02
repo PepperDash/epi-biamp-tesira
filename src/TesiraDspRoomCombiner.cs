@@ -194,22 +194,13 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
                 onUpPress: () => { if (AutomaticUnmuteOnVolumeUp && outIsMuted) MuteOff(); },
                 logWarning: message => this.LogWarning("{LevelControlPointTag}: {message}", LevelControlPointTag, message));
 
-            pollTimer = new System.Timers.Timer();
+            // Mute and group aren't subscribed, so they're polled. Started in Subscribe, stopped in Unsubscribe.
+            pollTimer = new System.Timers.Timer(30000);
             pollTimer.Elapsed += (sender, e) => DoPoll();
-            pollTimer.AutoReset = false;
+            pollTimer.AutoReset = true;
             pollTimer.Enabled = false;
 
             InitializeFeedbacks();
-        }
-
-        /// <summary>
-        /// Helper method to restart a timer with a new interval
-        /// </summary>
-        private void ResetTimer(System.Timers.Timer timer, double intervalMs)
-        {
-            timer.Stop();
-            timer.Interval = intervalMs;
-            timer.Start();
         }
 
         private void InitializeFeedbacks()
@@ -239,23 +230,21 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
         /// </summary>
         public override void Subscribe()
         {
-            // No spaces: the subscription name is sent unquoted
-            LevelCustomName = string.Format("{0}__roomCombiner{1}", InstanceTag1, Index1).Replace(" ", string.Empty);
+            LevelCustomName = BuildLevelCustomName();
             AddCustomName(LevelCustomName);
             // A range poll lost with a previous session's queue must not block the next one.
             EndRangePoll();
-            // Limits first: the queue is FIFO, so they arrive before the subscription's first publish
-            SendFullCommand("get", "levelOutMin", null, 1);
-            SendFullCommand("get", "levelOutMax", null, 1);
+            // Min/max aren't read here: startup and the level range poll already queue them for every
+            // volume component, and watchdog probes call Subscribe() as often as every 10 s.
             // The levelOut subscription is what marks this component subscribed (ParseSubscriptionMessage),
             // which is also what the watchdog checks
             SendSubscriptionCommand(LevelCustomName, "levelOut", 250, 1);
-            SendFullCommand("get", "group", null, 1);
+            GetRoomGroup();
             GetMute();
 
-            // Arm the mute/group poll here too: level publishes don't restart it, so a failed
-            // group GET would otherwise leave it stopped.
-            ResetTimer(pollTimer, 30000);
+            // Start the mute/group poll if it isn't running. Not a restart: watchdog probes call
+            // Subscribe() often enough that restarting would keep postponing the poll.
+            if (!pollTimer.Enabled) pollTimer.Start();
         }
 
         /// <summary>
@@ -263,11 +252,16 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
         /// </summary>
         public override void Unsubscribe()
         {
-
+            pollTimer.Stop();
             levelIsSubscribed = false;
-            // No spaces: the subscription name is sent unquoted
-            LevelCustomName = string.Format("{0}__roomCombiner{1}", InstanceTag1, Index1).Replace(" ", string.Empty);
+            LevelCustomName = BuildLevelCustomName();
             SendUnSubscriptionCommand(LevelCustomName, "levelOut", 1);
+        }
+
+        // No spaces: the subscription name is sent unquoted
+        private string BuildLevelCustomName()
+        {
+            return string.Format("{0}__roomCombiner{1}", InstanceTag1, Index1).Replace(" ", string.Empty);
         }
 
         /// <summary>
@@ -282,7 +276,7 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
             ApplyOutLevel(double.Parse(data));
 
             // No poll-timer reset here: frequent level publishes would otherwise keep postponing the
-            // poll that refreshes mute and group. The GET reply handlers restart it.
+            // poll that refreshes mute and group.
             levelIsSubscribed = true;
         }
 
@@ -455,16 +449,12 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
                     case "levelOut":
                         {
                             ApplyOutLevel(double.Parse(value));
-                            ResetTimer(pollTimer, 30000);
                             break;
                         }
                     case "muteOut":
                         {
                             OutIsMuted = bool.Parse(value);
                             this.LogDebug("MuteState is {value}", value);
-                            pollTimer.Stop();
-                            pollTimer.Interval = 30000;
-                            pollTimer.Start();
                             break;
                         }
 
@@ -472,14 +462,6 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
                         {
                             RoomGroup = int.Parse(value);
                             this.LogDebug("Room Group: {RoomGroup}", RoomGroup);
-                            // Arm the poll only when it is idle: Subscribe() reads group too, and
-                            // watchdog probes call Subscribe() as often as every 10 s, which would
-                            // otherwise keep pushing the poll (and the muteOut read) back forever.
-                            if (!pollTimer.Enabled)
-                            {
-                                pollTimer.Interval = 30000;
-                                pollTimer.Start();
-                            }
                             break;
                         }
                     default:
@@ -546,12 +528,13 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
         /// </summary>
         public override void DoPoll()
         {
+            // Offline, the queue doesn't send, so GETs would only pile up in it. Subscribe() runs again
+            // after the reconnect.
+            if (!Parent.Communication.IsConnected) return;
+
             GetVolume();
             GetMute();
             GetRoomGroup();
-
-            // Rearm here so a failed mute/group GET doesn't stop polling
-            ResetTimer(pollTimer, 30000);
         }
 
         /// <summary>

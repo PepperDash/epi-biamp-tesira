@@ -2002,8 +2002,9 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
 
         /// <summary>
         /// The zero-based join offset for a component whose bridgeIndex counts from 1 (states, meters,
-        /// crosspoints). False, with a warning for 0, when it has no usable bridgeIndex: 0 would wrap the
-        /// offset to uint.MaxValue, and the out-of-range join would abort the rest of the bridge linking.
+        /// crosspoints, switchers, routers, source selectors). False, with a warning for 0, when it has no
+        /// usable bridgeIndex: 0 would wrap the offset to uint.MaxValue, and the out-of-range join would
+        /// abort the rest of the bridge linking.
         /// </summary>
         private bool TryGetBridgeOffset(TesiraDspControlPoint component, out uint offset)
         {
@@ -2149,10 +2150,10 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
             foreach (var item in SourceSelectors)
             {
                 var switcher = item.Value;
-                var data = switcher.BridgeIndex;
-                if (data == null) continue;
-                var y = (uint)data;
-                var x = (ushort)(((y - 1) * 2) + 1);
+                if (!switcher.Enabled) continue;
+                if (!TryGetBridgeOffset(switcher, out var offset)) continue;
+                var y = offset + 1;
+                var x = (ushort)((offset * 2) + 1);
                 //3 switchers
                 //((1 - 1) * 2) + 1 = 1
                 //((2 - 1) * 2) + 1 = 3
@@ -2160,7 +2161,6 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
 
                 this.LogVerbose("Tesira Switcher {0} connect to {1}", switcher.Key, y);
 
-                if (!switcher.Enabled) continue;
 
 
                 this.LogVerbose("Tesira Switcher {0} is Enabled", x);
@@ -2210,10 +2210,10 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
             foreach (var item in Routers)
             {
                 var switcher = item.Value;
-                var data = switcher.BridgeIndex;
-                if (data == null) continue;
-                var y = (uint)data;
-                var x = (ushort)(((y - 1) * 2) + 1);
+                if (!switcher.Enabled) continue;
+                if (!TryGetBridgeOffset(switcher, out var offset)) continue;
+                var y = offset + 1;
+                var x = (ushort)((offset * 2) + 1);
                 //3 switchers
                 //((1 - 1) * 2) + 1 = 1
                 //((2 - 1) * 2) + 1 = 3
@@ -2221,7 +2221,6 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
 
                 this.LogVerbose("Tesira Switcher {0} connect to {1}", switcher.Key, y);
 
-                if (!switcher.Enabled) continue;
 
 
                 this.LogVerbose("Tesira Switcher {0} is Enabled", x);
@@ -2244,10 +2243,10 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
             foreach (var item in Switchers)
             {
                 var switcher = item.Value;
-                var data = switcher.BridgeIndex;
-                if (data == null) continue;
-                var y = (uint)data;
-                var x = (ushort)(((y - 1) * 2) + 1);
+                if (!switcher.Enabled) continue;
+                if (!TryGetBridgeOffset(switcher, out var offset)) continue;
+                var y = offset + 1;
+                var x = (ushort)((offset * 2) + 1);
                 //3 switchers
                 //((1 - 1) * 2) + 1 = 1
                 //((2 - 1) * 2) + 1 = 3
@@ -2255,7 +2254,6 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
 
                 this.LogVerbose("Tesira Switcher {0} connect to {1}", switcher.Key, y);
 
-                if (!switcher.Enabled) continue;
 
 
                 this.LogVerbose("Tesira Switcher {0} is Enabled", x);
@@ -2278,10 +2276,9 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
             foreach (var item in States)
             {
                 var state = item.Value;
+                if (!state.Enabled) continue;
                 if (!TryGetBridgeOffset(state, out var x)) continue;
                 this.LogVerbose("Tesira State {0} connect to {1}", state.Key, x);
-
-                if (!state.Enabled) continue;
 
                 this.LogVerbose("Tesira State {0} at {1} is Enabled", state.Key, x);
 
