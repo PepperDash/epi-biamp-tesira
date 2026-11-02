@@ -33,9 +33,9 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Queue
         private int _commandTimeoutMs = 8000;
 
         /// <summary>
-        /// How long to wait for a response to an outstanding command before giving up on it
-        /// and moving on to the next queued command. Without this, a single lost response
-        /// stalls the queue indefinitely, since nothing else ever calls SendNextQueuedCommand.
+        /// How long to wait for a response to an outstanding command before giving up on it and
+        /// handing recovery to the parent (see HandleCommandTimeout). Without this, a single lost
+        /// response stalls the queue indefinitely, since nothing else ever calls SendNextQueuedCommand.
         /// </summary>
         public int CommandTimeoutMs
         {
@@ -150,6 +150,13 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Queue
                     return;
                 }
 
+                // TTP replies carry no correlation id, so only one command may ever be outstanding.
+                if (lastDequeued != null)
+                {
+                    Parent.LogVerbose("[SendNextQueuedCommand] Command '{command}' is still awaiting a response. Not sending.", lastDequeued.Command);
+                    return;
+                }
+
                 Parent.LogVerbose("[SendNextQueuedCommand] Command Queue {state} in progress.", CommandQueueInProgress ? "is" : "is not");
 
                 if (!Parent.Communication.IsConnected)
@@ -189,8 +196,9 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Queue
 
         /// <summary>
         /// Fires when no response arrived for <paramref name="timedOutCommand"/> within
-        /// <see cref="CommandTimeoutMs"/> of it actually being sent. Discards it and continues
-        /// with the next queued command instead of leaving the queue stalled indefinitely.
+        /// <see cref="CommandTimeoutMs"/> of it actually being sent. The parent decides how to
+        /// recover before anything else is sent: its late reply would otherwise be consumed as the
+        /// next command's response. Only if the parent declines does the queue move on.
         /// </summary>
         private void HandleCommandTimeout(QueuedCommand timedOutCommand)
         {
@@ -200,19 +208,18 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Queue
                 // is now outstanding) - nothing to do.
                 if (lastDequeued != timedOutCommand) return;
 
-                Parent.LogWarning("[CommandTimeout] No response received for command '{command}' (ControlPoint: {controlPoint}) within {timeoutMs}ms. Discarding and continuing.",
+                Parent.LogWarning("[CommandTimeout] No response received for command '{command}' (ControlPoint: {controlPoint}) within {timeoutMs}ms.",
                     timedOutCommand.Command, timedOutCommand.ControlPoint?.Key ?? "no control point", CommandTimeoutMs);
 
                 lastDequeued = null;
                 commandTimeoutTimer = null;
-
-                SendNextQueuedCommand();
             }
 
-            // Outside the lock: lets the parent react (e.g. an immediate watchdog resubscribe)
-            // without nesting TesiraDsp's own locking inside this queue's lock. Only reached
-            // when the timeout above was genuine, not when it had already been resolved.
-            Parent.NotifyCommandTimedOut(timedOutCommand);
+            // Outside the lock: the parent's recovery clears this queue, which re-enters the lock.
+            if (Parent.NotifyCommandTimedOut(timedOutCommand)) return;
+
+            Parent.LogWarning("[CommandTimeout] Discarding '{command}' and continuing.", timedOutCommand.Command);
+            SendNextQueuedCommand();
         }
 
         /// <summary>
@@ -232,7 +239,20 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Queue
             }
         }
 
-
+        /// <summary>
+        /// Discards commands that have not been sent yet, but keeps tracking the outstanding one (and
+        /// its timeout) so its reply is still matched to it rather than to the next command sent.
+        /// </summary>
+        public void ClearPending()
+        {
+            lock (lockObject)
+            {
+                if (LocalQueue == null) return;
+                LocalQueue.Clear();
+                pendingLevelChanges.Clear();
+                if (lastDequeued == null) CommandQueueInProgress = false;
+            }
+        }
 
         /// <summary>
         /// True when a level change (set, increment or decrement) for <paramref name="controlPoint"/>
