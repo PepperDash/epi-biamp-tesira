@@ -1360,7 +1360,8 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
                     return;
                 }
 
-                if (args.Text.IndexOf("-ERR", StringComparison.Ordinal) >= 0)
+                // Only at the start: an echoed command containing "-ERR" (a preset name) isn't a reply
+                if (args.Text.StartsWith("-ERR", StringComparison.Ordinal))
                 {
                     // Watchdog probe replies are attributed to their command by the queue
                     // (NotifySubscribeReply), not counted here.
@@ -1411,6 +1412,23 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
                 RecallPreset(preset.Key);
             }
 
+        }
+
+        /// <summary>
+        /// Queues raw commands from a bridge pass-through join, one queue entry per line
+        /// </summary>
+        /// <param name="data">One or more TTP commands, separated by CR and/or LF</param>
+        public void EnqueuePassthru(string data)
+        {
+            if (string.IsNullOrEmpty(data)) return;
+
+            // The queue matches each entry to exactly one reply, so each line is its own entry.
+            // Empty lines are never sent, so queueing them would stall the queue until timeout.
+            foreach (var line in data.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries))
+            {
+                if (string.IsNullOrWhiteSpace(line)) continue;
+                CommandQueue.EnqueueCommand(line, priority: (int)CommandPriority.High);
+            }
         }
 
         /// <summary>
@@ -1835,7 +1853,7 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
             CommandPassthruFeedback.LinkInputSig(trilist.StringInput[deviceJoinMap.CommandPassThru.JoinNumber]);
             trilist.SetStringSigAction(presetJoinMap.PresetName.JoinNumber, RunPreset);
 
-            trilist.SetStringSigAction(deviceJoinMap.CommandPassThru.JoinNumber, (s) => CommandQueue.EnqueueCommand(s, sendLineRaw: true, priority: (int)CommandPriority.High));
+            trilist.SetStringSigAction(deviceJoinMap.CommandPassThru.JoinNumber, EnqueuePassthru);
 
             trilist.SetSigTrueAction(deviceJoinMap.Resubscribe.JoinNumber, Resubscribe);
 

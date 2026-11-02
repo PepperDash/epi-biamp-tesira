@@ -224,6 +224,7 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
 
             Feedbacks.Add(MuteFeedback);
             Feedbacks.Add(VolumeLevelFeedback);
+            Feedbacks.Add(RoomGroupFeedback);
             Feedbacks.Add(NameFeedback);
             Feedbacks.Add(VisibleFeedback);
             Feedbacks.Add(TypeFeedback);
@@ -238,7 +239,8 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
         /// </summary>
         public override void Subscribe()
         {
-            LevelCustomName = string.Format("{0}__roomCombiner{1}", InstanceTag1, Index1);
+            // No spaces: the subscription name is sent unquoted
+            LevelCustomName = string.Format("{0}__roomCombiner{1}", InstanceTag1, Index1).Replace(" ", string.Empty);
             AddCustomName(LevelCustomName);
             // A range poll lost with a previous session's queue must not block the next one.
             EndRangePoll();
@@ -249,6 +251,11 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
             // which is also what the watchdog checks
             SendSubscriptionCommand(LevelCustomName, "levelOut", 250, 1);
             SendFullCommand("get", "group", null, 1);
+            GetMute();
+
+            // Arm the mute/group poll here too: level publishes don't restart it, so a failed
+            // group GET would otherwise leave it stopped.
+            ResetTimer(pollTimer, 30000);
         }
 
         /// <summary>
@@ -258,7 +265,8 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
         {
 
             levelIsSubscribed = false;
-            LevelCustomName = string.Format("{0}__roomCombiner{1}", InstanceTag1, Index1);
+            // No spaces: the subscription name is sent unquoted
+            LevelCustomName = string.Format("{0}__roomCombiner{1}", InstanceTag1, Index1).Replace(" ", string.Empty);
             SendUnSubscriptionCommand(LevelCustomName, "levelOut", 1);
         }
 
@@ -541,6 +549,9 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
             GetVolume();
             GetMute();
             GetRoomGroup();
+
+            // Rearm here so a failed mute/group GET doesn't stop polling
+            ResetTimer(pollTimer, 30000);
         }
 
         /// <summary>
