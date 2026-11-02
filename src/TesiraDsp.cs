@@ -352,7 +352,8 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
                 this.LogInformation("levelRangePollIntervalSecs value {secs} is below minimum of 60 — clamping to 60.", pollSecs);
                 pollSecs = 60;
             }
-            levelRangePollIntervalMs = pollSecs * 1000;
+            // long math, capped at the timer's int maximum (~24.8 days): a large value must not wrap
+            levelRangePollIntervalMs = (int)Math.Min((long)pollSecs * 1000, int.MaxValue);
 
             // Lock the entire control point list creation process
             lock (watchdogLock)
@@ -1631,7 +1632,21 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
 
             trilist.OnlineStatusChange += (d, args) =>
             {
-                if (!args.DeviceOnLine) return;
+                if (!args.DeviceOnLine)
+                {
+                    // Bridge dropped: release any held volume ramp so it can't run until the hold timeout
+                    foreach (var fader in Faders.Values)
+                    {
+                        fader.VolumeUp(false);
+                        fader.VolumeDown(false);
+                    }
+                    foreach (var roomCombiner in RoomCombiners.Values)
+                    {
+                        roomCombiner.VolumeUp(false);
+                        roomCombiner.VolumeDown(false);
+                    }
+                    return;
+                }
 
                 foreach (var feedback in Feedbacks)
                 {
