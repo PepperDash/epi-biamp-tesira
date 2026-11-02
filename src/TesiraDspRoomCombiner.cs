@@ -343,14 +343,12 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
                 rangeChanged = true;
             }
 
-            if (rangeChanged)
+            if (rangeChanged && hasOutLevel)
             {
-                // val is the attempted (out-of-range) level, not the actual DSP level.
-                // Clamp it to the new boundary before scaling to prevent ushort wrap.
-                var currentRaw = double.Parse(m.Groups["val"].Value);
-                var clampedRaw = Math.Max(MinLevel, Math.Min(MaxLevel, currentRaw));
-                rawOutVolumeLevelDb = clampedRaw;
-                hasOutLevel = true;
+                // Rescale the last level the DSP reported. val is only the rejected request: the DSP
+                // kept its level, so caching val would leave feedback wrong if the correction below is
+                // skipped. Clamped so the ushort cast can't wrap.
+                var clampedRaw = Math.Max(MinLevel, Math.Min(MaxLevel, rawOutVolumeLevelDb));
                 OutVolumeLevel = UseAbsoluteValue
                     ? (ushort)clampedRaw
                     : (ushort)clampedRaw.Scale(MinLevel, MaxLevel, 0, 65535, this);
@@ -370,6 +368,9 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
             if (Parent.CommandQueue.HasPendingLevelChange(this))
             {
                 this.LogDebug("Skipping boundary correction for {LevelControlPointTag}: a newer level change is queued.", LevelControlPointTag);
+                // Read the level back after those writes: one that leaves the DSP where it was gets a
+                // bare +OK and no publish, so nothing else would refresh feedback.
+                GetVolume();
                 return;
             }
             if (val > MaxLevel)
