@@ -40,6 +40,24 @@ The only exception to this rule is for the Base **Standalone** object, which has
 "type": "eiscApiAdvanced"
 ```
 
+### Subscription watchdog
+
+The Tesira drops subscriptions without closing the session when a design is pushed or a partition restarts, often on blocks the push didn't touch. The plugin checks for this the way Biamp's own control modules do:
+
+- Every `watchdogIntervalSecs` (default 30), it re-subscribes the **sentinels** plus the next `watchdogPatrolSize` (default 2) components in rotation, so a check costs a few commands whatever the design size.
+- `-ERR ALREADY_SUBSCRIBED` means the subscription is still there. **`+OK` means the DSP had dropped it, so every subscription is restored at once**, without clearing the command queue or reconnecting.
+- A check whose subscribe can never succeed (missing instance tag, bad attribute or index, attribute that can't be subscribed) **quarantines** that component: it is logged once and not checked again until the next session.
+- No reply to a check still drops and re-opens the session, as before.
+- Subscriptions (startup, restores, checks) wait behind control commands in the plugin's command queue, so a restore burst never delays a button press.
+
+Set `watchdogSentinels` to one component per partition: a push drops a partition's subscriptions together, so a sentinel in each one catches every push within one check. Without it, the first subscribed component is the sentinel and other partitions are caught when the patrol reaches them.
+
+```json
+"watchdogIntervalSecs": 30,
+"watchdogPatrolSize": 2,
+"watchdogSentinels": [ "RmaRoom", "RmbRoom" ]
+```
+
 ## Installation
 
 This plugin is provided as a published [nuget package](https://www.nuget.org/packages/PepperDash.Essentials.Plugin.BiampTesira) for your convenience.  
@@ -685,6 +703,8 @@ In the provided example config object, given a base object key of ```dsp-1```, t
 
 Enables metering on the sepecified meter.  
 Using this is a bad idea, please avoid unless specifically requested.  
+
+Meters are opt-in: a meter streams only while something has asked for it. Raise the meter's subscribe join (or call `Subscribe()` on the meter device) to start it, and lower the join (or call `UnSubscribe()`) to stop it. A meter that was asked for is subscribed again after a reconnect, design push or resubscribe; one that wasn't stays off. Earlier versions subscribed every meter when the session started, whether or not anything used it. For level-threshold feedback, prefer a logic meter in the design, which publishes only when its state changes.  
 
 Within the **Legacy** object this Join map represents a control that is part of an array of controls.  Each join number = Join Map Number + (```bridgeIndex``` − 1); `bridgeIndex` counts from 1, and a meter with `bridgeIndex` 0 is logged and not linked.
 
