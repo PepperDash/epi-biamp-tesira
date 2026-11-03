@@ -911,7 +911,11 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
                 int quarantined;
                 lock (watchdogLock)
                 {
-                    probe = watchdogPatrol.NextProbeSet(candidates, ResolveSentinels(candidates));
+                    // Skip components whose probe queues nothing: re-subscribing a router-type switcher
+                    // only restarts its poll timer, and every 30 s would keep it from ever polling
+                    probe = watchdogPatrol.NextProbeSet(candidates, ResolveSentinels(candidates))
+                        .Where(c => !silentProbes.Contains(c))
+                        .ToList();
                     quarantined = watchdogPatrol.QuarantinedCount;
                     probeBatch.Begin(probe);
                 }
@@ -955,7 +959,9 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
                 var match = candidates.FirstOrDefault(c =>
                     string.Equals(c.Key, key, StringComparison.OrdinalIgnoreCase) ||
                     string.Equals(c.Key, fullKey, StringComparison.OrdinalIgnoreCase));
-                if (match != null) sentinels.Add(match);
+                // A quarantined or silent sentinel can't detect anything; let the fallback pick one that can
+                if (match != null && !watchdogPatrol.IsQuarantined(match) && !silentProbes.Contains(match))
+                    sentinels.Add(match);
             }
 
             // None configured (or none usable): default to the first candidate whose probe actually
@@ -1059,6 +1065,12 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
             }
 
             this.LogInformation("Restoring subscriptions for {count} components", components.Count);
+
+            // A design push can change level ranges while levels stay inside the old ones, which no
+            // out-of-range publish would reveal. Queued first, in the same background lane, so the
+            // ranges arrive ahead of the restored subscriptions' first publishes.
+            PollLevelRanges();
+
             foreach (var component in components)
             {
                 SubscribeAutomatically(component, subscriptionsOnly: true);
