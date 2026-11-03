@@ -296,37 +296,41 @@ In the provided example config object, given a base object key of ```dsp-1```, t
 
 ### Router
 
-Controls objects with the attribute type of `input`.  No Subscriptions available on this control block
+Controls a Router block's `input` attribute, one route per output: output N can be set to any input M, and M = 0 clears it. Each output listed in `routerOutputs` is subscribed, so its feedback follows changes made anywhere (presets, Tesira software, other control systems). After every route the plugin reads that output back, because the DSP can merge changes made within one publish interval.
 
-Within the **Legacy** object, this Join map represents a control that is part of an array of controls.  Each join number = Join Map Number + fader ```bridgeIndex``` as defined by the config.
+Within the **Legacy** object, each router has two kinds of joins:
 
-Within the **Standalone** object, this join map represents a single control as defined by the key in the bridge.
+- The switcher slot (join 150 + offset, where offset = ((`bridgeIndex` − 1) × 2) + 1) carries the router's **first** output (the lowest number in `routerOutputs`), its label and a poll.
+- Per-output joins: output N of the router with `bridgeIndex` B is join **2601 + ((B − 1) × 64) + (N − 1)**. Each router holds up to 64 outputs, so bridgeIndex 1 uses 2601–2664, bridgeIndex 2 uses 2665–2728, and so on up to bridgeIndex 7 (2985–3048); higher bridgeIndex routers are logged and not linked (use the standalone bridge). The block sits between the room combiners and the dialers, within an EISC's 4000 joins.
+
+Within the **Standalone** object, output N is analog **joinStart + N − 1** (route) and serial **joinStart + 100 + N − 1** (routed label), up to 64 outputs. Output 1 shares the old *Source Selection* join.
 
 >This control implements [Essentials](https://github.com/PepperDash/Essentials) interfaces **`IKeyed`** and **`IRoutingWithFeedback`**
 
 #### Digitals
 
-| Legacy Join | Standalone Join | Type (RW) | Description |
-| ----------- | --------------- | --------- | ----------- |
-| 150         | 1               | W         | Poll        |
-
+| Legacy Join | Standalone Join | Type (RW) | Description            |
+| ----------- | --------------- | --------- | ---------------------- |
+| 150         | 1               | W         | Poll every output      |
 
 #### Analogs
 
-| Legacy Join | Standalone Join | Type (RW) | Description      |
-| ----------- | --------------- | --------- | ---------------- |
-| 150         | 1               | RW        | Source Selection |
+| Legacy Join                      | Standalone Join | Type (RW) | Description                                                        |
+| -------------------------------- | --------------- | --------- | ------------------------------------------------------------------ |
+| 150                              | 1               | RW        | First output: input to route (0 clears) and routed-input feedback  |
+| 2601 + ((B − 1) × 64) + (N − 1)  | 1 + (N − 1)     | RW        | Output N: input to route (0 clears) and routed-input feedback      |
 
 #### Serials
 
-| Legacy Join | Standalone Join | Type (RW) | Description                                       |
-| ----------- | --------------- | --------- | ------------------------------------------------- |
-| 150         | 1               | R         | Control Label (Pass From Config)                  |
-| N/A         | 2               | R         | Source List XSIG (If Configured) or Routed Source |
+| Legacy Join                      | Standalone Join | Type (RW) | Description                                       |
+| -------------------------------- | --------------- | --------- | ------------------------------------------------- |
+| 150                              | 1               | R         | Control Label (Pass From Config)                  |
+| N/A                              | 2               | R         | Source List XSIG (If Configured) or Routed Source |
+| 2601 + ((B − 1) × 64) + (N − 1)  | 101 + (N − 1)   | R         | Output N: label of the routed input               |
 
 #### Config Example
 
-> All sourceSelector and router configs must be part of a dictionary called **routerControlBlocks**.
+> All router configs must be part of a dictionary called **routerControlBlocks**.
 
 ```json
 {
@@ -334,17 +338,16 @@ Within the **Standalone** object, this join map represents a single control as d
         "RouterControl01" : {
             "enabled" : true,
             "label" : "switcher01",
-            "index1" : 1,
             "routerInstanceTag" : "Router1",
             "bridgeIndex" : 1,
             "showRoutedStringFeedback": true,
-            "pollIntervalMs" : 90000,
             "routerInputs" : {
                 "1" : {"label": "Input1" },
-                "2" : {"label": "Input2" },
+                "2" : {"label": "Input2" }
             },
-            "routerOutput" : {
-                "label": "Output1" 
+            "routerOutputs" : {
+                "1" : {"label": "Output1" },
+                "2" : {"label": "Output2" }
             }
         }
     }
@@ -355,11 +358,12 @@ Within the **Standalone** object, this join map represents a single control as d
 
 > **enabled** - enables the control to be subscribed and controlled.
 **label** - Passed directly across the eisc as the *Label* value.
-**index1** - Index of the output number on the router that you wish to control.
-**routerInstanceTag** - Instance tag of the router input selection control
-**bridgeIndex** - The index of the control on a **Legacy** object
-**routerInputs** - This is a dictionary of labels for inputs of the router block.  The keys **must** be integers.
-**routerOutput** - This is an object defining the label of the associated output.  This is earmarked for future usage.
+**index1** - With the legacy `routerOutput` only: that output's Tesira number (default: the next number after `routerOutputs`).
+**routerInstanceTag** - Instance tag of the router block
+**bridgeIndex** - The index of the control on a **Legacy** object (counts from 1)
+**routerInputs** - Labels for the router's inputs. The keys **must** be integers (Tesira input numbers). Only these inputs, and 0 (clear), can be routed.
+**routerOutputs** - Labels for the router's outputs. The keys **must** be integers (Tesira output numbers, from 1). Each one is subscribed, routable and bridged.
+**routerOutput** - Legacy single output (label only; its number is `index1`). It becomes an ordinary output alongside `routerOutputs`; prefer `routerOutputs`.
 
 In the provided example config object, given a base object key of ```dsp-1```, this control would have a standalone key of ```dsp-1--RouterControl01```.
 
@@ -429,6 +433,45 @@ Within the **Standalone** object, this join map represents a single control as d
 **sourceSelectorInputs** - This is a dictionary of labels for inputs of the source selector block.  The keys **must** be integers.
 
 In the provided example config object, given a base object key of ```dsp-1```, this control would have a standalone key of ```dsp-1--sourceSelectorControl01```.
+
+***
+
+### LogicSelector
+
+Controls a Tesira **Logic Selector** block as a switcher. A Logic Selector has interlocked boolean channels: selecting one turns the others off, and selecting none turns the active one off. It behaves exactly like a [SourceSelector](#sourceselector): the same interfaces (**`IKeyed`**, **`IRoutingWithFeedback`**), the same Legacy and Standalone joins, and the same routing and feedback. Selection `0` means no channel.
+
+Logic selectors share the DSP's switcher joins with source selectors, so give each a `bridgeIndex` that doesn't clash with a source selector's.
+
+The plugin subscribes once per block, to the `states` attribute, which the Tesira publishes as one line for all channels (`[false true false false]`). It selects a channel with `set state <channel> true`.
+
+#### Config Example
+
+> All logic selector configs must be part of a dictionary called **logicSelectorControlBlocks**.
+
+```json
+{
+    "logicSelectorControlBlocks" : {
+        "logicSelector01" : {
+            "enabled" : true,
+            "label" : "Logic Selector 1",
+            "logicSelectorInstanceTag" : "LogicSelector1",
+            "bridgeIndex" : 3,
+            "logicSelectorInputs" : {
+                "1" : {"label": "Channel 1" },
+                "2" : {"label": "Channel 2" },
+                "3" : {"label": "Channel 3" },
+                "4" : {"label": "Channel 4" }
+            }
+        }
+    }
+}
+```
+
+#### Config Notes
+
+> **logicSelectorInstanceTag** - instance tag of the Logic Selector block (`sourceSelectorInstanceTag` also works).
+**logicSelectorInputs** - labels for the block's channels; the keys **must** be channel numbers starting at 1 (`sourceSelectorInputs` also works). A selected channel without a label shows as "Input *n*".
+All other settings are as for a SourceSelector.
 
 ***
 
@@ -783,7 +826,7 @@ Controls Biamp Tesira RoomCombiner objects.  Control of LevelOut, MuteOut, and g
 
 In order to keep the types of joins similar to a standard fader object, the choice was made to not provide direct control for wall states in this component.  If direct wall state control is required, utilize a `State Control` block.
 
-Within the **Legacy** object, this Join map represents a control that is part of an array of controls.  Each join number = Join Map Number + roomCombiner ```bridgeIndex``` as defined by the config.
+Within the **Legacy** object, this Join map represents a control that is part of an array of controls.  Each join number = Join Map Number + roomCombiner ```bridgeIndex``` as defined by the config. Each combiner takes six joins (offset ((`bridgeIndex` − 1) × 6)); `bridgeIndex` 1–66 fits before the router joins at 2601, and a higher one is logged and not linked.
 
 Within the **Standalone** object, this join map represents a single control as defined by the key in the bridge.
 

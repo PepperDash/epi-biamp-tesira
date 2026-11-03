@@ -394,6 +394,8 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
 
                 CreateSourceSelectors(props);
 
+                CreateLogicSelectors(props);
+
                 CreateDialers(props);
 
                 CreateStates(props);
@@ -667,6 +669,29 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
                 ControlPointList.Add(SourceSelectors[key]);
                 DeviceManager.AddDevice(SourceSelectors[key]);
 
+            }
+        }
+
+        // Logic Selectors are switchers too; they share SourceSelectors so the bridge, routing,
+        // watchdog and startup poll treat them like Source Selectors.
+        private void CreateLogicSelectors(TesiraDspPropertiesConfig props)
+        {
+            if (props.LogicSelectorControlBlocks == null) return;
+            foreach (var block in props.LogicSelectorControlBlocks)
+            {
+                var key = block.Key;
+                if (SourceSelectors.ContainsKey(key))
+                {
+                    this.LogError("Logic selector key {key} is already used by a source selector; skipping it", key);
+                    continue;
+                }
+
+                var selector = new TesiraDspLogicSelector(key, block.Value, this);
+                SourceSelectors.Add(key, selector);
+                this.LogVerbose("Added logic selector {key} InstanceTag {instanceTag}", key, block.Value.SourceSelectorInstanceTag);
+
+                ControlPointList.Add(selector);
+                DeviceManager.AddDevice(selector);
             }
         }
 
@@ -1776,9 +1801,11 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
             var meterJoinMap = new TesiraMeterJoinMapAdvanced(joinStart);
             var crosspointStateJoinMap = new TesiraCrosspointStateJoinMapAdvanced(joinStart);
             var roomCombinerJoinMap = new TesiraRoomCombinerJoinMapAdvanced(joinStart);
+            var routerJoinMap = new TesiraRouterJoinMapAdvanced(joinStart);
 
             if (bridge != null)
             {
+                bridge.AddJoinMap(string.Format("{0}--RouterJoinMap", Key), routerJoinMap);
                 bridge.AddJoinMap(string.Format("{0}--DeviceInfoJoinMap", Key), deviceJoinMap);
                 bridge.AddJoinMap(string.Format("{0}--DialerJoinMap", Key), dialerJoinMap);
                 bridge.AddJoinMap(string.Format("{0}--FaderJoinMap", Key), faderJoinMap);
@@ -1826,6 +1853,8 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
 
             LinkSwitchersToApi(trilist, switcherJoinMap);
 
+            LinkRouterOutputsToApi(trilist, routerJoinMap);
+
             LinkSourceSelectorsToApi(trilist, switcherJoinMap);
 
             LinkPresetsToApi(trilist, presetJoinMap);
@@ -1864,6 +1893,9 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
             };
         }
 
+        // 2201 + (66 - 1) * 6 + 5 = 2596, the last combiner join before the router block at 2601.
+        private const uint MaxBridgedRoomCombiners = 66;
+
         private void LinkRoomCombinersToApi(BasicTriList trilist, TesiraRoomCombinerJoinMapAdvanced roomCombinerJoinMap)
         {
             this.LogVerbose("There are {0} Room Combiner Control Points", RoomCombiners.Count);
@@ -1876,6 +1908,14 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
                 var y = (uint)data;
 
                 var x = y > 1 ? ((y - 1) * 6) : 0;
+
+                // Six joins per combiner from 2201; the router block starts at 2601.
+                if (y > MaxBridgedRoomCombiners)
+                {
+                    this.LogWarning("Room combiner {key} not bridged: bridgeIndex {index} would overlap the router joins (2601+); room combiners use bridgeIndex 1-{max}",
+                        roomCombiner.Key, y, MaxBridgedRoomCombiners);
+                    continue;
+                }
 
                 this.LogVerbose("Tesira Room Combiner {0} connect", x);
 
@@ -2098,6 +2138,33 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
                 switcher.NameFeedback.LinkInputSig(trilist.StringInput[switcherJoinMap.Label.JoinNumber + x]);
 
                 switcher.GetSourceNames();
+            }
+        }
+
+        /// <summary>
+        /// Each router's outputs on their own joins: output N of the router with bridgeIndex B is
+        /// OutputRoute + ((B - 1) * OutputsPerRouter) + (N - 1). The switcher slot still carries output 1.
+        /// </summary>
+        private void LinkRouterOutputsToApi(BasicTriList trilist, TesiraRouterJoinMapAdvanced routerJoinMap)
+        {
+            foreach (var router in Routers.Values)
+            {
+                if (!router.Enabled) continue;
+                if (!TryGetBridgeOffset(router, out var x)) continue;
+                if (x >= TesiraRouterJoinMapAdvanced.MaxRouters)
+                {
+                    this.LogWarning("Router {key} outputs not bridged: bridgeIndex {index} is past the router block (1-{max}); use the standalone bridge",
+                        router.Key, x + 1, TesiraRouterJoinMapAdvanced.MaxRouters);
+                    continue;
+                }
+
+                var routerOffset = x * TesiraRouterJoinMapAdvanced.OutputsPerRouter;
+                this.LogVerbose("Router {key} outputs start at join {join}", router.Key, routerJoinMap.OutputRoute.JoinNumber + routerOffset);
+
+                router.LinkOutputsToApi(trilist,
+                    routerJoinMap.OutputRoute.JoinNumber + routerOffset,
+                    routerJoinMap.OutputRouteName.JoinNumber + routerOffset,
+                    TesiraRouterJoinMapAdvanced.OutputsPerRouter);
             }
         }
 
