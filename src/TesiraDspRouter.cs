@@ -213,7 +213,10 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
             // It's an ordinary output from here on: routable, subscribed and reported.
             if (config.RouterOutput != null)
             {
-                var legacyOutput = config.Index1 > 0 ? (uint)config.Index1 : (uint)((config.RouterOutputs?.Count ?? 0) + 1);
+                // After the highest configured output, not the count: with only output 2 configured, the
+                // count would give 2 again
+                var highest = config.RouterOutputs == null || config.RouterOutputs.Count == 0 ? 0u : config.RouterOutputs.Keys.Max();
+                var legacyOutput = config.Index1 > 0 ? (uint)config.Index1 : highest + 1;
                 if (SwitcherOutputs.ContainsKey(legacyOutput))
                     this.LogWarning("routerOutput ignored: output {output} is already in routerOutputs", legacyOutput);
                 else
@@ -569,15 +572,27 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
 
                 var n = output;
                 var offset = n - 1;
+                // A high joinStart can push these past what an EISC carries; skip rather than throw, so the
+                // rest of the bridge still links
+                if (routeJoin + offset > MaxEiscJoin || nameJoin + offset > MaxEiscJoin)
+                {
+                    this.LogWarning("Router output {output} not bridged: its joins ({route}, {name}) are past {max}",
+                        output, routeJoin + offset, nameJoin + offset, MaxEiscJoin);
+                    continue;
+                }
                 OutputRouteFeedbacks[n].LinkInputSig(trilist.UShortInput[routeJoin + offset]);
                 OutputRouteNameFeedbacks[n].LinkInputSig(trilist.StringInput[nameJoin + offset]);
                 trilist.SetUShortSigAction(routeJoin + offset, u => RouteOutput(n, u));
             }
         }
 
+        // Highest join of each type a SIMPL EISC exposes
+        private const uint MaxEiscJoin = 4000;
+
         public override void LinkToApi(BasicTriList trilist, uint joinStart, string joinMapKey, EiscApiAdvanced bridge)
         {
-            var joinMap = new TesiraRouterJoinMapAdvancedStandalone(joinStart);
+            var defaultJoinMap = new TesiraRouterJoinMapAdvancedStandalone(joinStart);
+            var joinMap = defaultJoinMap;
 
             var joinMapSerialized = JoinMapHelper.GetSerializedJoinMapForDevice(joinMapKey);
 
@@ -592,9 +607,13 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
 
             // Per output: route set and feedback on OutputRoute + N - 1, so output 1 shares the old
             // Index join.
-            var routeJoin = joinMap.OutputRoute.JoinNumber;
+            // A custom join map saved before these joins existed leaves them at 0: use the defaults
+            var routeJoin = joinMap.OutputRoute != null && joinMap.OutputRoute.JoinNumber > 0
+                ? joinMap.OutputRoute.JoinNumber : defaultJoinMap.OutputRoute.JoinNumber;
+            var nameJoin = joinMap.OutputRouteName != null && joinMap.OutputRouteName.JoinNumber > 0
+                ? joinMap.OutputRouteName.JoinNumber : defaultJoinMap.OutputRouteName.JoinNumber;
             var maxOutputs = TesiraRouterJoinMapAdvancedStandalone.MaxOutputs;
-            LinkOutputsToApi(trilist, routeJoin, joinMap.OutputRouteName.JoinNumber, maxOutputs);
+            LinkOutputsToApi(trilist, routeJoin, nameJoin, maxOutputs);
 
             // Index (the first output) gets its own link only when it isn't some output's route join;
             // otherwise two outputs would share one analog.
