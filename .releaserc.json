@@ -1,4 +1,5 @@
 {
+  "tagFormat": "essentials-v1-v${version}",
   "plugins": [
     [
       "@semantic-release/commit-analyzer",
