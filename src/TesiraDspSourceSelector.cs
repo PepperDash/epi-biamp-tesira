@@ -302,7 +302,7 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
         {
             if (!signalType.HasFlag(eRoutingSignalType.Audio)) return;
 
-            SendFullCommand("set", "sourceSelection", Convert.ToString(inputSelector), 1);
+            SendSelection(inputSelector);
         }
 
         #endregion
