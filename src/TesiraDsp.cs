@@ -123,34 +123,31 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
         private bool initalSubscription = true;
 
         private readonly object watchdogLock = new object();
-        private bool watchDogSnifferValue;
-        private int watchDogExpectedResponses = 0;
-        private int watchDogReceivedResponses = 0;
-        private readonly HashSet<ISubscribedComponent> recentlyCheckedComponents = new HashSet<ISubscribedComponent>();
 
-        /// <summary>
-        /// The set of components sampled by the sniffer batch currently in flight (if any).
-        /// Used to recognize, when the queue actually transmits a command, whether that
-        /// command belongs to the outstanding watchdog check.
-        /// </summary>
-        private readonly HashSet<ISubscribedComponent> currentWatchDogBatch = new HashSet<ISubscribedComponent>();
-        private bool WatchDogSniffer
-        {
-            get
-            {
-                lock (watchdogLock)
-                {
-                    return watchDogSnifferValue;
-                }
-            }
-            set
-            {
-                lock (watchdogLock)
-                {
-                    watchDogSnifferValue = value;
-                }
-            }
-        }
+        // Subscription watchdog (#160), after Biamp's own modules: every tick re-subscribes the sentinels
+        // (one per partition, from config) plus the next few components of a rotating patrol. Each probe
+        // command's reply is attributed to its component: ALREADY_SUBSCRIBED is healthy, +OK means the DSP
+        // had dropped subscriptions (design push, partition restart) so everything is resubscribed at once,
+        // and configuration errors quarantine the component. Guarded by watchdogLock.
+        private const int defaultWatchdogIntervalSecs = 30;
+        private const int defaultWatchdogPatrolSize = 2;
+        private int watchDogIntervalMs = defaultWatchdogIntervalSecs * 1000;
+        private WatchdogPatrol<ISubscribedComponent> watchdogPatrol = new WatchdogPatrol<ISubscribedComponent>(defaultWatchdogPatrolSize);
+        private readonly ProbeBatch<ISubscribedComponent, QueuedCommand> probeBatch = new ProbeBatch<ISubscribedComponent, QueuedCommand>();
+        private List<string> watchdogSentinelKeys = new List<string>();
+
+        // Components seen subscribed this session. Subscribe() resets IsSubscribed on many components and
+        // only a publish sets it again, which a healthy (ALREADY_SUBSCRIBED) probe never produces, so
+        // IsSubscribed alone would drop components from the patrol after their first probe.
+        private readonly HashSet<ISubscribedComponent> knownSubscribed = new HashSet<ISubscribedComponent>();
+
+        // Components whose probe queued no subscribe this session; never the default sentinel.
+        private readonly HashSet<ISubscribedComponent> silentProbes = new HashSet<ISubscribedComponent>();
+
+        // Ticks the current probe batch has stayed open; at maxOpenProbeTicks the check counts as failed.
+        private int openProbeTicks;
+        private const int maxOpenProbeTicks = 4;
+
         public bool WatchdogSuspend { get; private set; }
 
         private readonly DeviceConfig dc;
@@ -181,7 +178,9 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
         {
             this.dc = dc;
 
-            CommandQueue = new TesiraQueue(2000, this);
+            // Large enough for a big design's startup: each component queues several commands (a fader
+            // four: two subscribes, min and max), and anything dropped at startup never subscribes.
+            CommandQueue = new TesiraQueue(10000, this);
 
             transmitQueue = new GenericQueue($"{Key}-tx-queue");
 
@@ -345,6 +344,9 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
                 ? props.ResubscribeString
                 : "resubscribeAll";
 
+            // 0 (default) = presets recall on press and can't be saved from the bridge
+            PresetHoldTimeMs = Math.Max(0, props.PresetHoldTimeMs);
+
             // Convert seconds to ms; 0 = disabled, anything 1-59 is clamped to the 60s minimum
             var pollSecs = props.LevelRangePollIntervalSecs;
             if (pollSecs > 0 && pollSecs < 60)
@@ -352,7 +354,24 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
                 this.LogInformation("levelRangePollIntervalSecs value {secs} is below minimum of 60 — clamping to 60.", pollSecs);
                 pollSecs = 60;
             }
-            levelRangePollIntervalMs = pollSecs * 1000;
+            // long math, capped at the timer's int maximum (~24.8 days): a large value must not wrap
+            levelRangePollIntervalMs = (int)Math.Min((long)pollSecs * 1000, int.MaxValue);
+
+            var watchdogSecs = props.WatchdogIntervalSecs ?? defaultWatchdogIntervalSecs;
+            if (watchdogSecs < 10)
+            {
+                this.LogInformation("watchdogIntervalSecs value {secs} is below minimum of 10 — clamping to 10.", watchdogSecs);
+                watchdogSecs = 10;
+            }
+            watchDogIntervalMs = (int)Math.Min((long)watchdogSecs * 1000, int.MaxValue);
+            var patrolSize = Math.Max(0, props.WatchdogPatrolSize ?? defaultWatchdogPatrolSize);
+            lock (watchdogLock)
+            {
+                watchdogPatrol = new WatchdogPatrol<ISubscribedComponent>(patrolSize);
+                watchdogSentinelKeys = (props.WatchdogSentinels ?? new List<string>()).Where(k => !string.IsNullOrWhiteSpace(k)).ToList();
+            }
+            this.LogDebug("Subscription watchdog: every {secs}s, sentinels [{sentinels}], patrol {patrol}",
+                watchdogSecs, string.Join(", ", watchdogSentinelKeys), patrolSize);
 
             // Lock the entire control point list creation process
             lock (watchdogLock)
@@ -374,6 +393,8 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
                 CreateRouters(props);
 
                 CreateSourceSelectors(props);
+
+                CreateLogicSelectors(props);
 
                 CreateDialers(props);
 
@@ -439,7 +460,7 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
                 this.LogVerbose("Added Preset {0} {1}", value.Label, value.PresetName);
             }
 
-            var presetDevice = new TesiraDspPresetDevice(this);
+            presetDevice = new TesiraDspPresetDevice(this);
             DeviceManager.AddDevice(presetDevice);
         }
 
@@ -651,6 +672,29 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
             }
         }
 
+        // Logic Selectors are switchers too; they share SourceSelectors so the bridge, routing,
+        // watchdog and startup poll treat them like Source Selectors.
+        private void CreateLogicSelectors(TesiraDspPropertiesConfig props)
+        {
+            if (props.LogicSelectorControlBlocks == null) return;
+            foreach (var block in props.LogicSelectorControlBlocks)
+            {
+                var key = block.Key;
+                if (SourceSelectors.ContainsKey(key))
+                {
+                    this.LogError("Logic selector key {key} is already used by a source selector; skipping it", key);
+                    continue;
+                }
+
+                var selector = new TesiraDspLogicSelector(key, block.Value, this);
+                SourceSelectors.Add(key, selector);
+                this.LogVerbose("Added logic selector {key} InstanceTag {instanceTag}", key, block.Value.SourceSelectorInstanceTag);
+
+                ControlPointList.Add(selector);
+                DeviceManager.AddDevice(selector);
+            }
+        }
+
         private void CreateRouters(TesiraDspPropertiesConfig props)
         {
             if (props.RouterControlBlocks == null) return;
@@ -730,10 +774,6 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
 
         private void StartWatchDog()
         {
-            // Use 2 minutes (120000ms) interval for random sampling approach
-            // Check 5-10 random components each interval to reduce network traffic
-            const int watchDogIntervalMs = 120000; // 2 minutes
-
             if (watchDogTimer == null)
             {
                 watchDogTimer = new System.Timers.Timer(watchDogIntervalMs);
@@ -758,14 +798,42 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
 
             StopLevelRangePollTimer();
 
-            // Reset watchdog state
+            // Only the probes in flight. Subscription history and quarantines last for the session
+            // (StopWatchDog also runs for a same-session Resubscribe or a comm monitor pause); a new
+            // session resets them (see ResetWatchdogSession).
             lock (watchdogLock)
             {
-                WatchDogSniffer = false;
-                watchDogExpectedResponses = 0;
-                watchDogReceivedResponses = 0;
-                recentlyCheckedComponents.Clear();
-                currentWatchDogBatch.Clear();
+                probeBatch.Close();
+                openProbeTicks = 0;
+            }
+        }
+
+        /// <summary>
+        /// Called by the command queue when it discards queued commands: probes among them will never
+        /// be answered, so the check in flight is over.
+        /// </summary>
+        internal void NotifyQueueCleared()
+        {
+            lock (watchdogLock)
+            {
+                probeBatch.Close();
+                openProbeTicks = 0;
+            }
+        }
+
+        /// <summary>
+        /// A new TTP session: forget which components were subscribed and release quarantines (the
+        /// design may have changed since).
+        /// </summary>
+        private void ResetWatchdogSession()
+        {
+            lock (watchdogLock)
+            {
+                probeBatch.Close();
+                knownSubscribed.Clear();
+                silentProbes.Clear();
+                watchdogPatrol.ClearQuarantine();
+                openProbeTicks = 0;
             }
         }
 
@@ -797,10 +865,13 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
         {
             var volumeComponents = ControlPointList.OfType<IVolumeComponent>().ToList();
             this.LogDebug("Level range poll: queuing min/max requests for {count} volume components.", volumeComponents.Count);
-            foreach (var component in volumeComponents)
+            using (CommandQueue.BackgroundScope())
             {
-                component.GetMinLevel();
-                component.GetMaxLevel();
+                foreach (var component in volumeComponents)
+                {
+                    component.GetMinLevel();
+                    component.GetMaxLevel();
+                }
             }
         }
 
@@ -808,95 +879,90 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
         {
             try
             {
-                // Create a snapshot of the ControlPointList to avoid collection modification issues
-                List<ISubscribedComponent> controlPointSnapshot;
-                lock (watchdogLock)
+                if (WatchdogSuspend)
                 {
-                    if (ControlPointList.Count == 0) return;
-                    controlPointSnapshot = new List<ISubscribedComponent>(ControlPointList);
+                    lock (watchdogLock) probeBatch.Close();
+                    return;
                 }
 
-                // Safety check - make sure subscription process is actually complete
-                var subscribedCount = controlPointSnapshot.Count(c => c.IsSubscribed);
-                if (subscribedCount == 0)
+                List<ISubscribedComponent> candidates;
+                bool stillWaiting;
+                bool backstop = false;
+                lock (watchdogLock)
+                {
+                    foreach (var c in ControlPointList.Where(c => c.Enabled && c.IsSubscribed))
+                        knownSubscribed.Add(c);
+
+                    // Probe-able: subscribed this session, and (for meters) still asked for.
+                    candidates = ControlPointList
+                        .Where(c => c.Enabled && knownSubscribed.Contains(c))
+                        .Where(c => !(c is TesiraDspMeter meter) || meter.SubscriptionRequested)
+                        .ToList();
+
+                    // A probe still open is queued or in flight behind other traffic: each reply either
+                    // arrives, times out on its own once sent (NotifyCommandTimedOut) or is discarded with
+                    // the queue (NotifyQueueCleared closes the batch). So wait, rather than treat a busy
+                    // queue as lost subscriptions. Only a batch open this many ticks is a failed check.
+                    stillWaiting = probeBatch.IsOpen;
+                    if (stillWaiting && ++openProbeTicks >= maxOpenProbeTicks)
+                    {
+                        probeBatch.Close();
+                        backstop = true;
+                    }
+                    if (!stillWaiting) openProbeTicks = 0;
+                }
+
+                if (backstop)
+                {
+                    this.LogWarning("Watchdog: subscription probes still unanswered after {ticks} checks; resubscribing all control points.", maxOpenProbeTicks);
+                    lock (watchdogLock) openProbeTicks = 0;
+                    Resubscribe();
+                    return;
+                }
+
+                if (stillWaiting)
+                {
+                    this.LogDebug("Watchdog: last check's probes are still queued or in flight; skipping this check.");
+                    return;
+                }
+
+                if (candidates.Count == 0)
                 {
                     this.LogDebug("Watchdog postponed - no components are subscribed yet.");
                     return;
                 }
 
-                if (WatchdogSuspend)
-                {
-                    WatchDogSniffer = false;
-                    return;
-                }
-
-                if (WatchDogSniffer)
-                {
-                    this.LogDebug("Resubscribing all control points.");
-                    Resubscribe();
-                    return;
-                }
-
-                // Get subscribed components that haven't been checked recently
-                var subscribedComponents = controlPointSnapshot.Where(c => c.IsSubscribed).ToList();
-                var availableToCheck = subscribedComponents.Where(c => !recentlyCheckedComponents.Contains(c)).ToList();
-
-                // If no unchecked components available, clear the recently checked list and use all subscribed
-                if (availableToCheck.Count == 0 && subscribedComponents.Count > 0)
-                {
-                    this.LogDebug("All components recently checked, clearing recent check history.");
-                    lock (watchdogLock)
-                    {
-                        recentlyCheckedComponents.Clear();
-                    }
-                    availableToCheck = subscribedComponents;
-                }
-
-                if (availableToCheck.Count == 0)
-                {
-                    this.LogDebug("No subscribed components to check.");
-                    return;
-                }
-
-                // Select 5-10 random components to check (scale with total component count)
-                int componentsToCheck = Math.Min(Math.Max(5, subscribedComponents.Count / 20), Math.Min(10, availableToCheck.Count));
-                var random = new Random();
-                var componentsToCheckList = availableToCheck.OrderBy(x => random.Next()).Take(componentsToCheck).ToList();
-
-                this.LogDebug("Watchdog checking {count} random components out of {total} subscribed.",
-                    componentsToCheckList.Count, subscribedComponents.Count);
-
-                // Initialize watchdog tracking
+                IReadOnlyList<ISubscribedComponent> probe;
+                int quarantined;
                 lock (watchdogLock)
                 {
-                    WatchDogSniffer = true;
-                    watchDogExpectedResponses = componentsToCheckList.Count;
-                    watchDogReceivedResponses = 0;
-
-                    // Track this batch so NotifyCommandTimedOut can recognize, if one of these
-                    // commands' own per-command timeout fires (see TesiraQueue), that it belongs
-                    // to this sniffer check rather than to ordinary unrelated traffic.
-                    currentWatchDogBatch.Clear();
-                    foreach (var component in componentsToCheckList)
-                    {
-                        recentlyCheckedComponents.Add(component);
-                        currentWatchDogBatch.Add(component);
-                    }
-
-                    // No timer armed here: success is driven entirely by ALREADY_SUBSCRIBED
-                    // responses arriving (handled where DSP responses are parsed), and failure
-                    // is driven by TesiraQueue's own per-command timeout calling back into
-                    // NotifyCommandTimedOut below. If the DSP is fully unreachable and none of
-                    // this batch's commands are ever even sent, the next watchdog cycle's
-                    // "WatchDogSniffer still true" check (top of this method) is the backstop.
+                    // Skip components whose probe queues nothing: re-subscribing a router-type switcher
+                    // only restarts its poll timer, and every 30 s would keep it from ever polling
+                    probe = watchdogPatrol.NextProbeSet(candidates, ResolveSentinels(candidates))
+                        .Where(c => !silentProbes.Contains(c))
+                        .ToList();
+                    quarantined = watchdogPatrol.QuarantinedCount;
+                    probeBatch.Begin(probe);
                 }
 
-                // Subscribe to selected components to verify their subscription status
-                foreach (var component in componentsToCheckList)
+                this.LogDebug("Watchdog probing {components} ({count} of {total} subscribed components; {quarantined} quarantined)",
+                    string.Join(", ", probe.Select(c => c.Key)), probe.Count, candidates.Count, quarantined);
+
+                // Each subscribe command these queue is counted as an expected reply (see
+                // NotifySubscribeEnqueued) and its reply is attributed back (NotifySubscribeReply).
+                foreach (var component in probe)
                 {
-                    component.Subscribe();
+                    SubscribeAutomatically(component, subscriptionsOnly: true);
                 }
 
+                lock (watchdogLock)
+                {
+                    // A component whose probe queued nothing (a router-type switcher just sets
+                    // IsSubscribed) can't stand in as the default sentinel.
+                    foreach (var silent in probeBatch.MembersWithoutExpectedReplies())
+                        silentProbes.Add(silent);
+                    probeBatch.EndCapture();
+                }
             }
             catch (Exception ex)
             {
@@ -906,14 +972,148 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
         }
 
         /// <summary>
-        /// Called by the command queue when a command's own per-command timeout fires (i.e. it
-        /// was actually sent but never got a response - see TesiraQueue.HandleCommandTimeout).
-        /// If that command belongs to the sniffer batch currently in flight, this is a real,
-        /// confirmed non-response - not a queue-backlog artifact, since the per-command timeout
-        /// is measured from actual transmission. There's no reason to wait for the rest of the
-        /// sample once we know we need to resubscribe, so react immediately.
+        /// Configured sentinels (watchdogSentinels) that are probe candidates. Keys may be the block key
+        /// ("RmaRoom") or the full device key ("dsp-1--RmaRoom").
         /// </summary>
-        internal void NotifyCommandTimedOut(QueuedCommand command)
+        private List<ISubscribedComponent> ResolveSentinels(List<ISubscribedComponent> candidates)
+        {
+            var sentinels = new List<ISubscribedComponent>();
+            foreach (var key in watchdogSentinelKeys)
+            {
+                var fullKey = string.Format(KeyFormatter, Key, key);
+                var match = candidates.FirstOrDefault(c =>
+                    string.Equals(c.Key, key, StringComparison.OrdinalIgnoreCase) ||
+                    string.Equals(c.Key, fullKey, StringComparison.OrdinalIgnoreCase));
+                // A quarantined or silent sentinel can't detect anything; let the fallback pick one that can
+                if (match != null && !watchdogPatrol.IsQuarantined(match) && !silentProbes.Contains(match))
+                    sentinels.Add(match);
+            }
+
+            // None configured (or none usable): default to the first candidate whose probe actually
+            // sends a subscribe, rather than whatever happens to be first.
+            if (sentinels.Count == 0)
+            {
+                var fallback = candidates.FirstOrDefault(c => !silentProbes.Contains(c) && !watchdogPatrol.IsQuarantined(c));
+                if (fallback != null) sentinels.Add(fallback);
+            }
+            return sentinels;
+        }
+
+        /// <summary>
+        /// Called by the command queue, under its lock, as a subscribe command tagged with its
+        /// component is queued. While a watchdog probe is being queued, it is counted as an expected reply.
+        /// </summary>
+        internal void NotifySubscribeEnqueued(QueuedCommand command)
+        {
+            var component = command?.RequestingComponent;
+            if (component == null || !ProbeReplies.IsSubscribeCommand(command.Command)) return;
+
+            lock (watchdogLock)
+            {
+                probeBatch.ExpectReply(component, command);
+            }
+        }
+
+        /// <summary>
+        /// Called by the command queue, under its lock, when a subscribe command tagged with its component
+        /// is rejected (queue full). The component tried to probe, so it mustn't be taken for one whose
+        /// probe sends nothing; it stays eligible as the default sentinel.
+        /// </summary>
+        internal void NotifySubscribeRejected(QueuedCommand command)
+        {
+            var component = command?.RequestingComponent;
+            if (component == null || !ProbeReplies.IsSubscribeCommand(command.Command)) return;
+
+            lock (watchdogLock)
+            {
+                probeBatch.MarkAttempted(component);
+            }
+        }
+
+        /// <summary>
+        /// Called by the command queue, under its lock, with the reply to a subscribe command tagged
+        /// with its component. Replies to watchdog probes decide what happens next.
+        /// </summary>
+        internal void NotifySubscribeReply(QueuedCommand command, string response)
+        {
+            var component = command?.RequestingComponent;
+            if (component == null || !ProbeReplies.IsSubscribeCommand(command.Command)) return;
+
+            ProbeReply? reply;
+            var newlyQuarantined = false;
+            int quarantined;
+            lock (watchdogLock)
+            {
+                reply = probeBatch.Record(command, response);
+
+                // Any subscribe that succeeded or was already there means the component is subscribed,
+                // probe or not: a healthy reply publishes nothing to set IsSubscribed again.
+                var ack = ProbeReplies.Classify(response);
+                if (ack == ProbeReply.Healthy || ack == ProbeReply.Lost) knownSubscribed.Add(component);
+                if (reply == ProbeReply.ConfigError) newlyQuarantined = watchdogPatrol.Quarantine(component);
+                quarantined = watchdogPatrol.QuarantinedCount;
+            }
+
+            switch (reply)
+            {
+                case ProbeReply.Lost:
+                    // The DSP had dropped this subscription. A design push or partition restart drops
+                    // many, so restore everything now (as Biamp's modules do) rather than a cycle later.
+                    // Off the queue's lock: this queues a subscribe per component.
+                    this.LogWarning("Watchdog: '{command}' was accepted as new (+OK), so the DSP had dropped subscriptions; restoring all subscriptions.", command.Command);
+                    System.Threading.Tasks.Task.Run(() => RepairSubscriptions());
+                    break;
+                case ProbeReply.ConfigError:
+                    if (newlyQuarantined)
+                        this.LogWarning("Watchdog: '{component}' quarantined, its subscription can't succeed: {response} ({count} quarantined). Check its config against the design.",
+                            component.Key, response, quarantined);
+                    break;
+                case ProbeReply.OtherError:
+                    this.LogWarning("Watchdog: '{command}' failed: {response}. Resubscribing '{component}'.", command.Command, response, component.Key);
+                    System.Threading.Tasks.Task.Run(() => SubscribeAutomatically(component, subscriptionsOnly: true));
+                    break;
+            }
+        }
+
+        /// <summary>
+        /// Re-sends every component's subscriptions without clearing the queue or re-reading device
+        /// info: the session is fine, only subscriptions were dropped. Quarantined components are skipped.
+        /// </summary>
+        private void RepairSubscriptions()
+        {
+            List<ISubscribedComponent> components;
+            lock (watchdogLock)
+            {
+                components = ControlPointList
+                    .Where(c => c.Enabled && !watchdogPatrol.IsQuarantined(c))
+                    .ToList();
+            }
+
+            this.LogInformation("Restoring subscriptions for {count} components", components.Count);
+
+            // A design push can change level ranges while levels stay inside the old ones, which no
+            // out-of-range publish would reveal. Queued first, in the same background lane, so the
+            // ranges arrive ahead of the restored subscriptions' first publishes.
+            PollLevelRanges();
+
+            foreach (var component in components)
+            {
+                SubscribeAutomatically(component, subscriptionsOnly: true);
+            }
+        }
+
+        /// <summary>
+        /// Called by the command queue when a command's own per-command timeout fires (i.e. it
+        /// was actually sent but never got a response - see TesiraQueue.HandleCommandTimeout),
+        /// before the queue sends anything else.
+        /// TTP replies carry no correlation id, so a reply that turns up late would be consumed as
+        /// the next command's response. On a network session the only safe recovery is a fresh
+        /// session, so drop and re-establish the connection; the new session's "Welcome" restarts
+        /// the subscription process. A serial port can't be reconnected, so there a watchdog
+        /// failure resubscribes and anything else lets the queue move on, as before.
+        /// </summary>
+        /// <returns>true if recovery is under way and the queue must not continue on its own</returns>
+        internal bool NotifyCommandTimedOut(QueuedCommand command)
         {
             // RequestingComponent, not ControlPoint: subscribe-check commands are enqueued with
             // ControlPoint left null (their -ERR ALREADY_SUBSCRIBED/+OK ack must not be routed to
@@ -921,31 +1121,58 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
             // path exists to catch. RequestingComponent is the separate, correlation-only field
             // SendSubscriptionCommand tags with the issuing component.
             var component = command?.RequestingComponent;
-            if (component == null) return;
 
-            bool needsResubscribe;
+            bool watchDogFailure;
             lock (watchdogLock)
             {
-                needsResubscribe = WatchDogSniffer && currentWatchDogBatch.Contains(component);
+                watchDogFailure = component != null && probeBatch.Contains(component);
 
-                if (needsResubscribe)
+                if (watchDogFailure)
                 {
-                    this.LogWarning("Watchdog: component '{component}' did not respond to subscription check in time. Resubscribing immediately.",
+                    this.LogWarning("Watchdog: component '{component}' did not respond to subscription check in time.",
                         component.Key);
 
-                    WatchDogSniffer = false;
-                    watchDogExpectedResponses = 0;
-                    watchDogReceivedResponses = 0;
-                    currentWatchDogBatch.Clear();
+                    probeBatch.Close();
                 }
             }
 
-            // Call outside watchdogLock: Resubscribe() clears the command queue, which re-enters
+            // Outside watchdogLock: both recoveries clear the command queue, which re-enters
             // TesiraQueue's own lock - no need to hold two locks across that call.
-            if (needsResubscribe)
+            if (!isSerialComm)
             {
-                Resubscribe();
+                ReconnectSession($"No response to '{command?.Command}'");
+                return true;
             }
+
+            if (!watchDogFailure) return false;
+
+            Resubscribe();
+            return true;
+        }
+
+        private int reconnectInProgress;
+
+        /// <summary>
+        /// Drops the TTP session and opens a new one, so no reply from the old session can be matched
+        /// to a command sent on the new one.
+        /// </summary>
+        private void ReconnectSession(string reason)
+        {
+            if (System.Threading.Interlocked.Exchange(ref reconnectInProgress, 1) == 1) return;
+
+            this.LogWarning("{reason}. Reconnecting to re-establish command/response alignment.", reason);
+
+            StopSubscriptionThread();
+            StopWatchDog();
+            CommandQueue.Clear();
+            Communication.Disconnect();
+
+            // Short delay so the old socket is fully closed before the new connection attempt.
+            CreateOneShotTimer(() =>
+            {
+                System.Threading.Interlocked.Exchange(ref reconnectInProgress, 0);
+                Communication.Connect();
+            }, 2000);
         }
 
         /// <summary>
@@ -1043,7 +1270,12 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
 
                 if (args.Text.Contains("Welcome"))
                 {
-                    // Indicates a new TTP session
+                    // Indicates a new TTP session. Stop the watchdog too: after a quick reconnect its timer
+                    // is still running, and a probe that reached the new session ahead of the startup
+                    // subscribes would get +OK and trigger a second full burst. EndSubscriptionProcess
+                    // starts it again once this session's subscriptions are queued.
+                    StopWatchDog();
+                    ResetWatchdogSession();
                     if (!isSerialComm)
                     {
                         CommunicationMonitor.Start();
@@ -1053,7 +1285,6 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
                 }
                 if (args.Text.Equals(ResubscriptionString, StringComparison.OrdinalIgnoreCase))
                 {
-                    CommandQueue.Clear();
                     Resubscribe();
                     return;
                 }
@@ -1098,61 +1329,16 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
                     return;
                 }
 
-                if (args.Text.IndexOf("DEVICE recallPresetByName", StringComparison.Ordinal) == 0)
+                // Start of line only, like +OK: an echoed command containing "-ERR" (a preset or tag
+                // name) must not complete the outstanding command.
+                if (args.Text.StartsWith("-ERR", StringComparison.Ordinal))
                 {
+                    // Watchdog probe replies are attributed to their command by the queue
+                    // (NotifySubscribeReply), not counted here.
                     CommandQueue.HandleResponse(args.Text);
-                    return;
-                }
 
-                // TODO: Verify Tesira TTP save echo verb on hardware — assumed symmetric with recall.
-                if (args.Text.IndexOf("DEVICE savePreset", StringComparison.Ordinal) == 0)
-                {
-                    CommandQueue.HandleResponse(args.Text);
-                    return;
-                }
-
-                if (args.Text.IndexOf("-ERR", StringComparison.Ordinal) >= 0)
-                {
-                    CommandQueue.HandleResponse(args.Text);
-                    // Error response
-                    if (args.Text.IndexOf("ALREADY_SUBSCRIBED", StringComparison.Ordinal) >= 0)
-                    {
-                        if (WatchDogSniffer)
-                        {
-                            lock (watchdogLock)
-                            {
-                                watchDogReceivedResponses++;
-                                this.LogVerbose("Watchdog response {received}/{expected} - Component already subscribed.",
-                                    watchDogReceivedResponses, watchDogExpectedResponses);
-
-                                // Clear sniffer flag when all responses received
-                                if (watchDogReceivedResponses >= watchDogExpectedResponses)
-                                {
-                                    this.LogDebug("All watchdog responses received. Subscriptions verified.");
-                                    WatchDogSniffer = false;
-                                    watchDogExpectedResponses = 0;
-                                    watchDogReceivedResponses = 0;
-                                    currentWatchDogBatch.Clear();
-                                }
-                            }
-                        }
-                    }
-                    else
-                    {
+                    if (args.Text.IndexOf("ALREADY_SUBSCRIBED", StringComparison.Ordinal) < 0)
                         this.LogDebug("Error From DSP: '{0}'", args.Text);
-
-                        // Any other error during watchdog check means we need to resubscribe
-                        if (WatchDogSniffer)
-                        {
-                            lock (watchdogLock)
-                            {
-                                WatchDogSniffer = false;
-                                watchDogExpectedResponses = 0;
-                                watchDogReceivedResponses = 0;
-                                currentWatchDogBatch.Clear();
-                            }
-                        }
-                    }
 
                     return;
                 }
@@ -1169,16 +1355,51 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
 
         #region Presets
 
+        // Receives the replies to preset saves (see SavePreset); null when no presets are configured
+        private TesiraDspPresetDevice presetDevice;
+
+        // One saved-feedback pulse per preset, shared by every bridge the DSP links to
+        private readonly Dictionary<string, PresetSavedPulse> presetSavedPulses = new Dictionary<string, PresetSavedPulse>();
+
+        /// <summary>
+        /// How long a bridge preset join must be held to save that preset. 0 disables saving from
+        /// the bridge, and the join recalls on press.
+        /// </summary>
+        public int PresetHoldTimeMs { get; private set; }
+
+        /// <summary>
+        /// Raised with the preset key when the DSP confirms a save (+OK).
+        /// </summary>
+        public event Action<string> PresetSaved;
+
         public void RunPresetNumber(ushort n)
         {
             this.LogVerbose("Attempting to run preset {0}", n);
 
-            foreach (var preset in Presets.OfType<TesiraPreset>().Where(preset => preset.Index == n))
+            foreach (var preset in TesiraPresets.Where(preset => preset.Index == n))
             {
                 this.LogVerbose("Found a matching Preset - {0}", preset.PresetId);
                 RecallPreset(preset.Key);
             }
 
+        }
+
+        /// <summary>
+        /// Queues raw commands from a bridge pass-through join, one queue entry per line
+        /// </summary>
+        /// <param name="data">One or more TTP commands, separated by CR and/or LF</param>
+        public void EnqueuePassthru(string data)
+        {
+            if (string.IsNullOrEmpty(data)) return;
+
+            // The queue matches each entry to exactly one reply, so each line is its own entry.
+            // Empty lines are never sent, so queueing them would stall the queue until timeout.
+            foreach (var line in data.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries))
+            {
+                if (string.IsNullOrWhiteSpace(line)) continue;
+                // Foreground whatever the verb, so a batch's subscribes and sets run in the order given
+                CommandQueue.EnqueueCommand(new QueuedCommand(line, null, null) { ForceForeground = true });
+            }
         }
 
         /// <summary>
@@ -1203,9 +1424,12 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
 
         public void RecallPreset(string key)
         {
-            var preset = Presets[key] as TesiraPreset;
+            if (!Presets.TryGetValue(key, out var item) || !(item is TesiraPreset preset))
+            {
+                this.LogWarning("Preset {key} not found", key);
+                return;
+            }
             this.LogVerbose("Running preset {0}", preset.Name);
-            if (preset == null) return;
 
             this.LogVerbose("Checking Preset {0} | presetIndex {1} | presetId {2} | presetName {3}",
                 preset.Name, preset.PresetIndex, preset.PresetId, preset.PresetName);
@@ -1226,51 +1450,62 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
         }
 
         /// <summary>
-        /// Saves the current DSP state to the preset identified by <paramref name="presetKey"/>.
-        /// Implements <see cref="IHasDspPresetSave.SavePreset"/>.
+        /// Saves the DSP's current state to the preset with the given config key, by preset name if it
+        /// has one, otherwise by preset id. <see cref="PresetSaved"/> is raised when the DSP confirms.
         /// </summary>
-        /// <remarks>
-        /// TODO: Verify Tesira TTP save command verbs on hardware before releasing.
-        /// Assumed by symmetry with recall:
-        ///   DEVICE recallPresetByName "{name}" → DEVICE savePresetByName "{name}"
-        ///   DEVICE recallPreset {id}           → DEVICE savePreset {id}
-        /// </remarks>
-        public void SavePreset(string presetKey)
+        public void SavePreset(string key)
         {
-            IKeyName presetObj;
-            if (!Presets.TryGetValue(presetKey, out presetObj))
+            if (!Presets.TryGetValue(key, out var item) || !(item is TesiraPreset preset))
             {
-                this.LogVerbose("SavePreset - no preset found for key '{presetKey}'", presetKey);
+                this.LogWarning("SavePreset - preset {key} not found", key);
                 return;
             }
 
-            var preset = presetObj as TesiraPreset;
-            if (preset == null)
-            {
-                this.LogVerbose("SavePreset - preset for key '{presetKey}' was unexpected type '{presetType}'", presetKey, presetObj.GetType().Name);
-                return;
-            }
-
-            this.LogVerbose("Saving preset '{presetName}' | presetId {presetId}", preset.PresetName, preset.PresetId);
-
+            string command;
             if (!string.IsNullOrEmpty(preset.PresetName))
             {
-                CommandQueue.EnqueueCommand($"DEVICE savePresetByName \"{preset.PresetName}\"", priority: (int)CommandPriority.Normal);
+                command = $"DEVICE savePresetByName \"{preset.PresetName}\"";
+            }
+            else if (preset.PresetId > 0)
+            {
+                command = $"DEVICE savePreset {preset.PresetId}";
             }
             else
             {
-                if (preset.PresetId == 0)
+                this.LogWarning("SavePreset - preset {key} has neither a presetName nor a valid presetId", key);
+                return;
+            }
+
+            this.LogVerbose("Saving preset {key}: {command}", key, command);
+
+            // The reply (+OK, or -ERR PRESET_NOT_FOUND) is routed to the preset device, which raises
+            // PresetSaved on success. The DSP echoes the command first; only +OK/-ERR complete it.
+            CommandQueue.EnqueueCommand(new QueuedCommand(command, TesiraDspPresetDevice.SaveAttributePrefix + key,
+                presetDevice, priority: (int)CommandPriority.Normal));
+        }
+
+        internal void OnPresetSaved(string key)
+        {
+            var handlers = PresetSaved;
+            if (handlers == null) return;
+
+            // Invoke each handler on its own, so one bridge's failure can't stop another's feedback
+            foreach (var handler in handlers.GetInvocationList())
+            {
+                try
                 {
-                    this.LogVerbose("SavePreset - preset '{presetName}' has invalid presetId {presetId}", preset.PresetName, preset.PresetId);
-                    return;
+                    ((Action<string>)handler)(key);
                 }
-                CommandQueue.EnqueueCommand($"DEVICE savePreset {preset.PresetId}", priority: (int)CommandPriority.Normal);
+                catch (Exception e)
+                {
+                    this.LogError(e, "Error in a preset-saved handler for {key}", key);
+                }
             }
         }
 
         #endregion
 
-        #region SubscriptionHandling        
+        #region SubscriptionHandling
 
         #region Unsubscribe
 
@@ -1366,28 +1601,69 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
             var volumeComponents = ControlPointList.OfType<IVolumeComponent>().ToList();
             this.LogDebug("Queuing min/max level requests for {count} volume components", volumeComponents.Count);
 
-            foreach (var component in volumeComponents)
+            // The plugin's own reads: they wait behind user commands (see TesiraQueue.BackgroundScope).
+            using (CommandQueue.BackgroundScope())
             {
-                component.GetMinLevel();
+                foreach (var component in volumeComponents)
+                {
+                    component.GetMinLevel();
+                }
+
+                // Queue all max level requests
+                foreach (var component in volumeComponents)
+                {
+                    component.GetMaxLevel();
+                }
             }
 
-            // Queue all max level requests  
-            foreach (var component in volumeComponents)
-            {
-                component.GetMaxLevel();
-            }
-
-            // Queue all component subscriptions
-            var subscribableComponents = ControlPointList.Where(c => c.Enabled).ToList();
+            // Queue all component subscriptions. Meters are opt-in: they publish every interval,
+            // so only the ones asked to stream (bridge join high or Subscribe()) are restored.
+            var subscribableComponents = ControlPointList
+                .Where(c => c.Enabled)
+                .Where(c => !(c is TesiraDspMeter meter) || meter.SubscriptionRequested)
+                .ToList();
             this.LogDebug("Queuing subscriptions for {count} components", subscribableComponents.Count);
 
             foreach (var component in subscribableComponents)
             {
-                component.Subscribe();
+                SubscribeAutomatically(component);
             }
 
             // Start monitoring for queue completion
             StartQueueCompletionMonitoring();
+        }
+
+        /// <summary>
+        /// Subscribe on the plugin's own behalf (session start, resubscribe, watchdog). Meters only
+        /// re-subscribe if they were asked for and never record a request, so this can't undo an opt-out.
+        /// Everything it queues (subscribes and the reads components send with them) waits behind
+        /// user commands, so a startup, restore or watchdog burst can't delay a press.
+        /// </summary>
+        /// <param name="component">The component to subscribe</param>
+        /// <param name="subscriptionsOnly">
+        /// True for watchdog probes, repairs and retries: re-send only the subscriptions, not one-time
+        /// setup (a dialer's configured redial/auto-answer writes and phonebook read), which would
+        /// otherwise be re-applied on every probe and revert changes made on the DSP.
+        /// </param>
+        /// <returns>true if a subscribe was queued</returns>
+        private bool SubscribeAutomatically(ISubscribedComponent component, bool subscriptionsOnly = false)
+        {
+            using (CommandQueue.BackgroundScope())
+            {
+                if (component is TesiraDspMeter meter)
+                {
+                    return meter.RestoreSubscription();
+                }
+
+                if (subscriptionsOnly && component is TesiraDspDialer dialer)
+                {
+                    dialer.SubscribeOnly();
+                    return true;
+                }
+
+                component.Subscribe();
+                return true;
+            }
         }
 
         private void StartQueueCompletionMonitoring()
@@ -1445,9 +1721,10 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
         {
             this.LogInformation("Issue Detected with device subscriptions - resubscribing to all controls");
 
-            // Discard any stale in-flight command/response so a straggler reply from before
-            // this resubscribe can't be misattributed to one of the commands queued below.
-            CommandQueue.Clear();
+            // Drop unsent commands but keep tracking the one awaiting a reply: forgetting it would let
+            // its reply be consumed by the first subscription command queued below. If that reply
+            // never comes, its timeout reconnects the session (see NotifyCommandTimedOut).
+            CommandQueue.ClearPending();
 
             StopWatchDog();
             StartSubscriptionThread();
@@ -1467,7 +1744,11 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
                     // Check for cancellation before sending commands
                     token.ThrowIfCancellationRequested();
 
-                    SendLine("SESSION set verbose false");
+                    // Route through the command queue so the DSP's "+OK" reply is
+                    // matched to this command. Sending directly (SendLine) bypasses the
+                    // queue, so its reply would be consumed by HandleResponse and stolen
+                    // from the next queued command, misaligning every subsequent response.
+                    CommandQueue.EnqueueCommand("SESSION set verbose false", priority: (int)CommandPriority.Low);
 
                     // Add delay with cancellation support
                     if (token.WaitHandle.WaitOne(250))
@@ -1520,9 +1801,11 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
             var meterJoinMap = new TesiraMeterJoinMapAdvanced(joinStart);
             var crosspointStateJoinMap = new TesiraCrosspointStateJoinMapAdvanced(joinStart);
             var roomCombinerJoinMap = new TesiraRoomCombinerJoinMapAdvanced(joinStart);
+            var routerJoinMap = new TesiraRouterJoinMapAdvanced(joinStart);
 
             if (bridge != null)
             {
+                bridge.AddJoinMap(string.Format("{0}--RouterJoinMap", Key), routerJoinMap);
                 bridge.AddJoinMap(string.Format("{0}--DeviceInfoJoinMap", Key), deviceJoinMap);
                 bridge.AddJoinMap(string.Format("{0}--DialerJoinMap", Key), dialerJoinMap);
                 bridge.AddJoinMap(string.Format("{0}--FaderJoinMap", Key), faderJoinMap);
@@ -1541,7 +1824,7 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
             CommandPassthruFeedback.LinkInputSig(trilist.StringInput[deviceJoinMap.CommandPassThru.JoinNumber]);
             trilist.SetStringSigAction(presetJoinMap.PresetName.JoinNumber, RunPreset);
 
-            trilist.SetStringSigAction(deviceJoinMap.CommandPassThru.JoinNumber, (s) => CommandQueue.EnqueueCommand(s, sendLineRaw: true, priority: (int)CommandPriority.High));
+            trilist.SetStringSigAction(deviceJoinMap.CommandPassThru.JoinNumber, EnqueuePassthru);
 
             trilist.SetSigTrueAction(deviceJoinMap.Resubscribe.JoinNumber, Resubscribe);
 
@@ -1570,6 +1853,8 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
 
             LinkSwitchersToApi(trilist, switcherJoinMap);
 
+            LinkRouterOutputsToApi(trilist, routerJoinMap);
+
             LinkSourceSelectorsToApi(trilist, switcherJoinMap);
 
             LinkPresetsToApi(trilist, presetJoinMap);
@@ -1584,7 +1869,21 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
 
             trilist.OnlineStatusChange += (d, args) =>
             {
-                if (!args.DeviceOnLine) return;
+                if (!args.DeviceOnLine)
+                {
+                    // Bridge dropped: release any held volume ramp so it can't run until the hold timeout
+                    foreach (var fader in Faders.Values)
+                    {
+                        fader.VolumeUp(false);
+                        fader.VolumeDown(false);
+                    }
+                    foreach (var roomCombiner in RoomCombiners.Values)
+                    {
+                        roomCombiner.VolumeUp(false);
+                        roomCombiner.VolumeDown(false);
+                    }
+                    return;
+                }
 
                 foreach (var feedback in Feedbacks)
                 {
@@ -1593,6 +1892,9 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
 
             };
         }
+
+        // 2201 + (66 - 1) * 6 + 5 = 2596, the last combiner join before the router block at 2601.
+        private const uint MaxBridgedRoomCombiners = 66;
 
         private void LinkRoomCombinersToApi(BasicTriList trilist, TesiraRoomCombinerJoinMapAdvanced roomCombinerJoinMap)
         {
@@ -1606,6 +1908,14 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
                 var y = (uint)data;
 
                 var x = y > 1 ? ((y - 1) * 6) : 0;
+
+                // Six joins per combiner from 2201; the router block starts at 2601.
+                if (y > MaxBridgedRoomCombiners)
+                {
+                    this.LogWarning("Room combiner {key} not bridged: bridgeIndex {index} would overlap the router joins (2601+); room combiners use bridgeIndex 1-{max}",
+                        roomCombiner.Key, y, MaxBridgedRoomCombiners);
+                    continue;
+                }
 
                 this.LogVerbose("Tesira Room Combiner {0} connect", x);
 
@@ -1644,18 +1954,14 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
             foreach (var item in CrosspointStates)
             {
                 var xpointState = item.Value;
-                var joinOffset = (xpointState.BridgeIndex - 1) * 3;
-                if (joinOffset == null) continue;
-
-
-                var channel = item.Value;
-                var data = channel.BridgeIndex;
-                if (data == null) continue;
-
+                if (!TryGetBridgeOffset(xpointState, out var index)) continue;
+                var joinOffset = index * 3;
 
                 this.LogVerbose("Adding Crosspoint State ControlPoint {0} | JoinStart:{1}", xpointState.Key, crosspointStateJoinMap.Toggle.JoinNumber + joinOffset);
                 xpointState.CrosspointStateFeedback.LinkInputSig(trilist.BooleanInput[(uint)(crosspointStateJoinMap.Toggle.JoinNumber + joinOffset)]);
                 xpointState.CrosspointStateFeedback.LinkInputSig(trilist.BooleanInput[(uint)(crosspointStateJoinMap.On.JoinNumber + joinOffset)]);
+                xpointState.CrosspointStateFeedback.LinkComplementInputSig(trilist.BooleanInput[(uint)(crosspointStateJoinMap.Off.JoinNumber + joinOffset)]);
+                xpointState.NameFeedback.LinkInputSig(trilist.StringInput[(uint)(crosspointStateJoinMap.Label.JoinNumber + joinOffset)]);
 
                 trilist.SetSigTrueAction((uint)(crosspointStateJoinMap.Toggle.JoinNumber + joinOffset), xpointState.StateToggle);
                 trilist.SetSigTrueAction((uint)(crosspointStateJoinMap.On.JoinNumber + joinOffset), xpointState.StateOn);
@@ -1665,25 +1971,44 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
             }
         }
 
+        /// <summary>
+        /// The zero-based join offset for a component whose bridgeIndex counts from 1 (states, meters,
+        /// crosspoints, switchers, routers, source selectors). False, with a warning for 0, when it has no
+        /// usable bridgeIndex: 0 would wrap the offset to uint.MaxValue, and the out-of-range join would
+        /// abort the rest of the bridge linking.
+        /// </summary>
+        private bool TryGetBridgeOffset(TesiraDspControlPoint component, out uint offset)
+        {
+            offset = 0;
+            var index = component.BridgeIndex;
+            if (index == null) return false;
+            if (index.Value == 0)
+            {
+                this.LogWarning("{key} has bridgeIndex 0; these joins count from 1, so it is not linked to the bridge", component.Key);
+                return false;
+            }
+            offset = index.Value - 1;
+            return true;
+        }
+
         private void LinkMetersToApi(BasicTriList trilist, TesiraMeterJoinMapAdvanced meterJoinMap)
         {
             this.LogVerbose("There are {0} Meter Control Points", Meters.Count);
             foreach (var item in Meters)
             {
                 var meter = item.Value;
-                var data = meter.BridgeIndex;
-                if (data == null) continue;
-                var x = (uint)(data - 1);
+                if (!TryGetBridgeOffset(meter, out var x)) continue;
 
-
-                this.LogVerbose("AddingMeterBridge {0} | Join:{1}", meter.Key, meterJoinMap.Label.JoinNumber);
+                this.LogVerbose("AddingMeterBridge {0} | Join:{1}", meter.Key, meterJoinMap.Label.JoinNumber + x);
 
                 meter.MeterFeedback.LinkInputSig(trilist.UShortInput[meterJoinMap.Meter.JoinNumber + x]);
                 meter.NameFeedback.LinkInputSig(trilist.StringInput[meterJoinMap.Label.JoinNumber + x]);
                 meter.SubscribedFeedback.LinkInputSig(trilist.BooleanInput[meterJoinMap.Subscribe.JoinNumber + x]);
 
-                trilist.SetSigTrueAction(meterJoinMap.Subscribe.JoinNumber, meter.Subscribe);
-                trilist.SetSigFalseAction(meterJoinMap.Subscribe.JoinNumber, meter.UnSubscribe);
+                // Per meter: without the offset every meter's subscribe landed on one join, last linked wins.
+                // One action for both edges: SetSigTrueAction and SetSigFalseAction share the sig's
+                // single action slot, so setting both left only the unsubscribe.
+                trilist.SetBoolSigAction(meterJoinMap.Subscribe.JoinNumber + x, meter.SetSubscribed);
 
             }
         }
@@ -1776,8 +2101,10 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
                 var runPresetIndex = p.PresetIndex;
                 var presetIndex = runPresetIndex;
                 trilist.StringInput[(uint)(presetJoinMap.PresetNameFeedback.JoinNumber + presetIndex)].StringValue = p.Label;
-                trilist.SetSigTrueAction((uint)(presetJoinMap.PresetSelection.JoinNumber + presetIndex),
-                    () => RecallPreset(p.Key));
+                TesiraDspPresetDevice.LinkPresetJoin(trilist, this, p.Key,
+                    (uint)(presetJoinMap.PresetSelection.JoinNumber + presetIndex),
+                    (uint)(presetJoinMap.PresetSavedFeedback.JoinNumber + presetIndex),
+                    Feedbacks, presetSavedPulses);
             }
         }
 
@@ -1787,10 +2114,10 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
             foreach (var item in SourceSelectors)
             {
                 var switcher = item.Value;
-                var data = switcher.BridgeIndex;
-                if (data == null) continue;
-                var y = (uint)data;
-                var x = (ushort)(((y - 1) * 2) + 1);
+                if (!switcher.Enabled) continue;
+                if (!TryGetBridgeOffset(switcher, out var offset)) continue;
+                var y = offset + 1;
+                var x = (ushort)((offset * 2) + 1);
                 //3 switchers
                 //((1 - 1) * 2) + 1 = 1
                 //((2 - 1) * 2) + 1 = 3
@@ -1798,7 +2125,6 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
 
                 this.LogVerbose("Tesira Switcher {0} connect to {1}", switcher.Key, y);
 
-                if (!switcher.Enabled) continue;
 
 
                 this.LogVerbose("Tesira Switcher {0} is Enabled", x);
@@ -1815,16 +2141,43 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
             }
         }
 
+        /// <summary>
+        /// Each router's outputs on their own joins: output N of the router with bridgeIndex B is
+        /// OutputRoute + ((B - 1) * OutputsPerRouter) + (N - 1). The switcher slot still carries output 1.
+        /// </summary>
+        private void LinkRouterOutputsToApi(BasicTriList trilist, TesiraRouterJoinMapAdvanced routerJoinMap)
+        {
+            foreach (var router in Routers.Values)
+            {
+                if (!router.Enabled) continue;
+                if (!TryGetBridgeOffset(router, out var x)) continue;
+                if (x >= TesiraRouterJoinMapAdvanced.MaxRouters)
+                {
+                    this.LogWarning("Router {key} outputs not bridged: bridgeIndex {index} is past the router block (1-{max}); use the standalone bridge",
+                        router.Key, x + 1, TesiraRouterJoinMapAdvanced.MaxRouters);
+                    continue;
+                }
+
+                var routerOffset = x * TesiraRouterJoinMapAdvanced.OutputsPerRouter;
+                this.LogVerbose("Router {key} outputs start at join {join}", router.Key, routerJoinMap.OutputRoute.JoinNumber + routerOffset);
+
+                router.LinkOutputsToApi(trilist,
+                    routerJoinMap.OutputRoute.JoinNumber + routerOffset,
+                    routerJoinMap.OutputRouteName.JoinNumber + routerOffset,
+                    TesiraRouterJoinMapAdvanced.OutputsPerRouter);
+            }
+        }
+
         private void LinkSwitchersToApi(BasicTriList trilist, TesiraSwitcherJoinMapAdvanced switcherJoinMap)
         {
             this.LogVerbose("There are {0} SourceSelector Control Points", Switchers.Count());
             foreach (var item in Routers)
             {
                 var switcher = item.Value;
-                var data = switcher.BridgeIndex;
-                if (data == null) continue;
-                var y = (uint)data;
-                var x = (ushort)(((y - 1) * 2) + 1);
+                if (!switcher.Enabled) continue;
+                if (!TryGetBridgeOffset(switcher, out var offset)) continue;
+                var y = offset + 1;
+                var x = (ushort)((offset * 2) + 1);
                 //3 switchers
                 //((1 - 1) * 2) + 1 = 1
                 //((2 - 1) * 2) + 1 = 3
@@ -1832,7 +2185,6 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
 
                 this.LogVerbose("Tesira Switcher {0} connect to {1}", switcher.Key, y);
 
-                if (!switcher.Enabled) continue;
 
 
                 this.LogVerbose("Tesira Switcher {0} is Enabled", x);
@@ -1855,10 +2207,10 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
             foreach (var item in Switchers)
             {
                 var switcher = item.Value;
-                var data = switcher.BridgeIndex;
-                if (data == null) continue;
-                var y = (uint)data;
-                var x = (ushort)(((y - 1) * 2) + 1);
+                if (!switcher.Enabled) continue;
+                if (!TryGetBridgeOffset(switcher, out var offset)) continue;
+                var y = offset + 1;
+                var x = (ushort)((offset * 2) + 1);
                 //3 switchers
                 //((1 - 1) * 2) + 1 = 1
                 //((2 - 1) * 2) + 1 = 3
@@ -1866,7 +2218,6 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
 
                 this.LogVerbose("Tesira Switcher {0} connect to {1}", switcher.Key, y);
 
-                if (!switcher.Enabled) continue;
 
 
                 this.LogVerbose("Tesira Switcher {0} is Enabled", x);
@@ -1889,13 +2240,9 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
             foreach (var item in States)
             {
                 var state = item.Value;
-                var data = state.BridgeIndex;
-                if (data == null) continue;
-
-                var x = (uint)data - 1;
-                this.LogVerbose("Tesira State {0} connect to {1}", state.Key, x);
-
                 if (!state.Enabled) continue;
+                if (!TryGetBridgeOffset(state, out var x)) continue;
+                this.LogVerbose("Tesira State {0} connect to {1}", state.Key, x);
 
                 this.LogVerbose("Tesira State {0} at {1} is Enabled", state.Key, x);
 

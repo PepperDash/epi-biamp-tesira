@@ -1,11 +1,13 @@
-﻿using Crestron.SimplSharp;
+﻿using Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Interfaces;
 using PepperDash.Core.Logging;
 
 namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Queue
 {
     public class TesiraQueue
     {
-        private CrestronQueue<QueuedCommand> LocalQueue { get; set; }
+        // Two lanes: subscriptions and session traffic wait behind user and program commands, so a
+        // startup, resubscribe or watchdog restore burst can't delay a button press (see CommandLanes).
+        private TwoLaneQueue<QueuedCommand> LocalQueue { get; set; }
 
         private TesiraDsp Parent { get; set; }
 
@@ -25,12 +27,21 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Queue
 
         private readonly object lockObject = new object();
 
+        // Log-once flags, guarded by lockObject.
+        private bool droppingWhileDisconnected;
+        private bool queueFullLogged;
+        private readonly int queueCapacity;
+
+        // Level changes (set/increment/decrement) queued but not yet sent, per control point.
+        // Updated with the queue under lockObject.
+        private readonly PendingCommandCounter pendingLevelChanges = new PendingCommandCounter();
+
         private int _commandTimeoutMs = 8000;
 
         /// <summary>
-        /// How long to wait for a response to an outstanding command before giving up on it
-        /// and moving on to the next queued command. Without this, a single lost response
-        /// stalls the queue indefinitely, since nothing else ever calls SendNextQueuedCommand.
+        /// How long to wait for a response to an outstanding command before giving up on it and
+        /// handing recovery to the parent (see HandleCommandTimeout). Without this, a single lost
+        /// response stalls the queue indefinitely, since nothing else ever calls SendNextQueuedCommand.
         /// </summary>
         public int CommandTimeoutMs
         {
@@ -46,7 +57,8 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Queue
         /// <param name="parent">Parent TesiraDsp Class</param>
         public TesiraQueue(int queueSize, TesiraDsp parent)
         {
-            LocalQueue = new CrestronQueue<QueuedCommand>(queueSize);
+            queueCapacity = queueSize;
+            LocalQueue = new TwoLaneQueue<QueuedCommand>(queueSize);
             Parent = parent;
             CommandQueueInProgress = false;
         }
@@ -77,6 +89,10 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Queue
                     Parent.LogVerbose("[HandleResponse] Incoming Response: '{response}'. No Controlpoint waiting for response", response);
                 }
 
+                // Subscribe replies go to the watchdog, attributed to the component that sent them.
+                if (lastDequeued?.RequestingComponent != null)
+                    Parent.NotifySubscribeReply(lastDequeued, response);
+
                 lastDequeued = null;
 
                 if (LocalQueue.IsEmpty)
@@ -98,10 +114,49 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Queue
         {
             lock (lockObject)
             {
+                // Nothing can be sent while the Tesira is disconnected, and the queue is cleared when it
+                // reconnects (whose Welcome restores every subscription and so the real state). Queuing
+                // meanwhile only grows the queue: hours offline filled it with stale routes and reads.
+                if (!Parent.Communication.IsConnected)
+                {
+                    if (!droppingWhileDisconnected)
+                    {
+                        droppingWhileDisconnected = true;
+                        Parent.LogInformation("[EnqueueCommand] Tesira disconnected: dropping commands until it reconnects, when subscriptions restore the current state. First dropped: '{command}'", commandToEnqueue.Command);
+                    }
+                    return;
+                }
+                droppingWhileDisconnected = false;
+
                 Parent.LogVerbose("[EnqueueCommand] Attempting to enqueue command for {controlPoint} with priority {priority}", commandToEnqueue.ControlPoint?.Key ?? "no control point", commandToEnqueue.Priority);
                 Parent.LogVerbose("[EnqueueCommand] Command Queue {state} in progress.", CommandQueueInProgress ? "is" : "is not");
 
-                LocalQueue.Enqueue(commandToEnqueue);
+                var countBefore = LocalQueue.Count;
+                // In a background scope, reads go to the background too; writes never do (see BackgroundScope).
+                var isBackground = !commandToEnqueue.ForceForeground && (CommandLanes.IsBackground(commandToEnqueue.Command)
+                    || (backgroundScopeDepth > 0 && CommandLanes.IsReadOrSubscription(commandToEnqueue.Command)));
+                if (LocalQueue.Enqueue(commandToEnqueue, isBackground))
+                {
+                    // Re-arm the warning only once the queue has drained well below full: at capacity
+                    // every sent command frees one slot, which would otherwise log again per drop.
+                    if (LocalQueue.Count <= queueCapacity / 2) queueFullLogged = false;
+                }
+                else if (commandToEnqueue.RequestingComponent != null)
+                {
+                    // A rejected probe still counts as an attempt (see NotifySubscribeRejected).
+                    Parent.NotifySubscribeRejected(commandToEnqueue);
+                }
+
+                if (LocalQueue.Count == countBefore && !queueFullLogged)
+                {
+                    // Once per episode, not once per dropped command.
+                    queueFullLogged = true;
+                    Parent.LogWarning("[EnqueueCommand] Queue full ({count}); dropping commands until it drains. First dropped: '{command}'", LocalQueue.Count, commandToEnqueue.Command);
+                }
+                if (LocalQueue.Count > countBefore && PendingKey(commandToEnqueue) is object pendingKey)
+                    pendingLevelChanges.Add(pendingKey);
+                if (LocalQueue.Count > countBefore && commandToEnqueue.RequestingComponent != null)
+                    Parent.NotifySubscribeEnqueued(commandToEnqueue);
 
                 Parent.LogVerbose("[EnqueueCommand] Command Enqueued: '{command}'.  CommandQueue has {count} items", commandToEnqueue.Command, LocalQueue.Count);
 
@@ -142,6 +197,13 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Queue
                     return;
                 }
 
+                // TTP replies carry no correlation id, so only one command may ever be outstanding.
+                if (lastDequeued != null)
+                {
+                    Parent.LogVerbose("[SendNextQueuedCommand] Command '{command}' is still awaiting a response. Not sending.", lastDequeued.Command);
+                    return;
+                }
+
                 Parent.LogVerbose("[SendNextQueuedCommand] Command Queue {state} in progress.", CommandQueueInProgress ? "is" : "is not");
 
                 if (!Parent.Communication.IsConnected)
@@ -152,12 +214,14 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Queue
 
                 CommandQueueInProgress = true;
 
-                if (!LocalQueue.Dequeue(out lastDequeued))
+                if (!LocalQueue.TryDequeue(out lastDequeued))
                 {
                     Parent.LogError("[SendNextQueuedCommand] Failed to dequeue command despite queue not being empty");
                     CommandQueueInProgress = false;
                     return;
                 }
+
+                if (PendingKey(lastDequeued) is object sentKey) pendingLevelChanges.Remove(sentKey);
 
                 Parent.LogVerbose("[SendNextQueuedCommand] Sending Line {line}. ControlPoint: {controlPoint}", lastDequeued.Command, lastDequeued.ControlPoint?.Key ?? "no control point");
 
@@ -179,8 +243,9 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Queue
 
         /// <summary>
         /// Fires when no response arrived for <paramref name="timedOutCommand"/> within
-        /// <see cref="CommandTimeoutMs"/> of it actually being sent. Discards it and continues
-        /// with the next queued command instead of leaving the queue stalled indefinitely.
+        /// <see cref="CommandTimeoutMs"/> of it actually being sent. The parent decides how to
+        /// recover before anything else is sent: its late reply would otherwise be consumed as the
+        /// next command's response. Only if the parent declines does the queue move on.
         /// </summary>
         private void HandleCommandTimeout(QueuedCommand timedOutCommand)
         {
@@ -190,19 +255,48 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Queue
                 // is now outstanding) - nothing to do.
                 if (lastDequeued != timedOutCommand) return;
 
-                Parent.LogWarning("[CommandTimeout] No response received for command '{command}' (ControlPoint: {controlPoint}) within {timeoutMs}ms. Discarding and continuing.",
+                Parent.LogWarning("[CommandTimeout] No response received for command '{command}' (ControlPoint: {controlPoint}) within {timeoutMs}ms.",
                     timedOutCommand.Command, timedOutCommand.ControlPoint?.Key ?? "no control point", CommandTimeoutMs);
 
                 lastDequeued = null;
                 commandTimeoutTimer = null;
-
-                SendNextQueuedCommand();
             }
 
-            // Outside the lock: lets the parent react (e.g. an immediate watchdog resubscribe)
-            // without nesting TesiraDsp's own locking inside this queue's lock. Only reached
-            // when the timeout above was genuine, not when it had already been resolved.
-            Parent.NotifyCommandTimedOut(timedOutCommand);
+            // Outside the lock: the parent's recovery clears this queue, which re-enters the lock.
+            if (Parent.NotifyCommandTimedOut(timedOutCommand)) return;
+
+            Parent.LogWarning("[CommandTimeout] Discarding '{command}' and continuing.", timedOutCommand.Command);
+            SendNextQueuedCommand();
+        }
+
+        // Per thread: the plugin's own bursts run on their own threads, so presses arriving on other
+        // threads stay in the foreground lane.
+        [System.ThreadStatic]
+        private static int backgroundScopeDepth;
+
+        /// <summary>
+        /// Until disposed, the reads and subscriptions this thread queues go in the background lane,
+        /// behind user and program commands. For work the plugin does on its own behalf: startup and
+        /// restore subscriptions with the reads that come with them, watchdog checks, range polls.
+        /// Writes (e.g. a dialer's configured redial/auto-answer settings) stay in the foreground, so an
+        /// older one can't land after a newer user write to the same attribute.
+        /// </summary>
+        public System.IDisposable BackgroundScope()
+        {
+            backgroundScopeDepth++;
+            return new ScopeExit();
+        }
+
+        private sealed class ScopeExit : System.IDisposable
+        {
+            private bool disposed;
+
+            public void Dispose()
+            {
+                if (disposed) return;
+                disposed = true;
+                backgroundScopeDepth--;
+            }
         }
 
         /// <summary>
@@ -214,12 +308,63 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Queue
             {
                 if (LocalQueue == null) return;
                 LocalQueue.Clear();
+                pendingLevelChanges.Clear();
+                Parent.NotifyQueueCleared();
                 lastDequeued = null;
                 CommandQueueInProgress = false;
                 commandTimeoutTimer?.Dispose();
                 commandTimeoutTimer = null;
             }
         }
+
+        /// <summary>
+        /// Discards commands that have not been sent yet, but keeps tracking the outstanding one (and
+        /// its timeout) so its reply is still matched to it rather than to the next command sent.
+        /// </summary>
+        public void ClearPending()
+        {
+            lock (lockObject)
+            {
+                if (LocalQueue == null) return;
+                LocalQueue.Clear();
+                pendingLevelChanges.Clear();
+                Parent.NotifyQueueCleared();
+                if (lastDequeued == null) CommandQueueInProgress = false;
+            }
+        }
+
+        /// <summary>
+        /// True when a level change (set, increment or decrement) for <paramref name="controlPoint"/>
+        /// is queued and not yet sent.
+        /// </summary>
+        public bool HasPendingLevelChange(ISubscribedComponent controlPoint)
+        {
+            lock (lockObject)
+            {
+                if (pendingLevelChanges.Has(controlPoint)) return true;
+
+                // Raw writes to this control's own channel. A tag is either a level block (level) or a
+                // room combiner (levelOut), so checking both attributes can't match another control.
+                if (!(controlPoint is TesiraDspControlPoint cp) || cp.InstanceTag1 == null) return false;
+                return pendingLevelChanges.Has(PendingCommandCounter.RawKey(cp.InstanceTag1, "level", cp.Index1))
+                    || pendingLevelChanges.Has(PendingCommandCounter.RawKey(cp.InstanceTag1, "levelOut", cp.Index1));
+            }
+        }
+
+        // What a queued level change counts against: its component, or for a raw pass-through line
+        // (no component) the instance tag it targets, so a ramp correction can't overwrite it either.
+        private static object PendingKey(QueuedCommand command)
+        {
+            if (IsLevelChange(command)) return command.ControlPoint;
+            if (command?.ControlPoint == null && PendingCommandCounter.TryGetRawLevelTarget(command?.Command, out var tag, out var attribute, out var index))
+                return PendingCommandCounter.RawKey(tag, attribute, index);
+            return null;
+        }
+
+        private static bool IsLevelChange(QueuedCommand command) =>
+            command?.ControlPoint != null &&
+            (command.AttributeCode == "level" || command.AttributeCode == "levelOut") &&
+            PendingCommandCounter.IsChangeCommand(command.Command);
 
     }
 

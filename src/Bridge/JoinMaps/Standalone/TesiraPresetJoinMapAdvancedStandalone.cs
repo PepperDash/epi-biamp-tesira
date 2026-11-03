@@ -28,6 +28,16 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Bridge.JoinMaps.Standal
                 JoinType = eJoinType.Digital
             });
 
+        [JoinName("PresetSavedFeedback")]
+        public JoinDataComplete PresetSavedFeedback =
+            new JoinDataComplete(new JoinData { JoinNumber = 101, JoinSpan = 1 },
+                new JoinMetadata
+                {
+                    Description = "Preset saved: pulses high for 2 seconds when the DSP confirms a save (per configured index)",
+                    JoinCapabilities = eJoinCapabilities.ToSIMPL,
+                    JoinType = eJoinType.Digital
+                });
+
         [JoinName("PresetName")]
         public JoinDataComplete PresetName =
             new JoinDataComplete(new JoinData { JoinNumber = 1, JoinSpan = 1 },
