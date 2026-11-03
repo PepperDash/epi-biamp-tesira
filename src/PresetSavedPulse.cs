@@ -19,7 +19,7 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
 
         public PresetSavedPulse(string key)
         {
-            Feedback = new BoolFeedback(key + "-savedFeedback", () => state);
+            Feedback = new SynchronizedBoolFeedback(key + "-savedFeedback", () => state, pulseLock);
             timer = new System.Timers.Timer(PulseMs) { AutoReset = false };
             timer.Elapsed += (sender, e) => Expire();
         }
@@ -28,7 +28,8 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
         public void Pulse()
         {
             // Publish inside the lock so a pulse and an expiry can't publish out of order. Feedback
-            // subscribers (linked sigs) don't call back into this class.
+            // subscribers (linked sigs) don't call back into this class. The lock is reentrant, so
+            // FireUpdate taking it again here is fine.
             lock (pulseLock)
             {
                 state = true;
@@ -51,5 +52,24 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
         }
 
         public void Dispose() => timer.Dispose();
+
+        // Every FireUpdate, including a bridge's reconnect refresh, takes the pulse lock. Otherwise a
+        // refresh could read true, then publish it after an expiry published false, leaving the saved
+        // join high.
+        private sealed class SynchronizedBoolFeedback : BoolFeedback
+        {
+            private readonly object sync;
+
+            public SynchronizedBoolFeedback(string key, Func<bool> valueFunc, object sync)
+                : base(key, valueFunc)
+            {
+                this.sync = sync;
+            }
+
+            public override void FireUpdate()
+            {
+                lock (sync) base.FireUpdate();
+            }
+        }
     }
 }
