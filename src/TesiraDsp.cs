@@ -1337,7 +1337,8 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
 
             // The queue matches each entry to exactly one reply, so each line is its own entry.
             // Empty lines are never sent, so queueing them would stall the queue until timeout.
-            // No priority: on this line the queue is first in, first out, so pass-through waits its turn.
+            // Ordering comes from CommandLanes, not a priority value: a pass-through line is foreground
+            // unless it is itself a subscribe or unsubscribe.
             foreach (var line in data.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries))
             {
                 if (string.IsNullOrWhiteSpace(line)) continue;
