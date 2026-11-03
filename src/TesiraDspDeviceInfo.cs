@@ -4,6 +4,7 @@ using System.Text.RegularExpressions;
 using Crestron.SimplSharpPro.DeviceSupport;
 using Newtonsoft.Json;
 using Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Bridge.JoinMaps.Standalone;
+using Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Queue;
 using PepperDash.Core;
 using PepperDash.Core.Logging;
 using PepperDash.Essentials.Core;

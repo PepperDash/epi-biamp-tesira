@@ -117,11 +117,6 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Extensions
 
             var dataArray = Encoding.GetEncoding(28591).GetBytes(data);
 
-            /*for (var i = 0; i < dataArray.Length; i++)
-            {
-                Debug.Console(2, "Incoming xSig Byte {1} is '{0:X2}'", dataArray[i], i);
-            }*/
-
             Debug.LogVerbose("Incoming xSig value is {value}", Convert.ToString(dataArray));
 
             var headerByte = (int)dataArray[0];

@@ -92,13 +92,13 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Expander
             }
         }
 
-        public override void Initialize()
+        protected override void Initialize()
         {
             CheckTracker();
         }
 
 
-        private void CheckTracker()
+        internal void CheckTracker()
         {
             this.LogVerbose("Getting DiscoveredExpanders");
 

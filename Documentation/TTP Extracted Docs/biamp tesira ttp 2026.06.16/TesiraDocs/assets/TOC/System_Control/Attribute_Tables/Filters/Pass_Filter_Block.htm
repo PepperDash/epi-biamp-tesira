@@ -1,0 +1,188 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml"><head>
+
+
+  <meta name="gRootRelPath" content="../../../../.."/>
+	<meta name="gCommonRootRelPath" content="../../../../.."/>
+  <meta name="gTopicId" content="4.2.10.0_1"/>
+  <script type="text/javascript" src="../../../../../template/scripts/rh.min.js"></script>
+  <script type="text/javascript" src="../../../../../template/scripts/common.min.js"></script>
+  <script type="text/javascript" src="../../../../../template/scripts/topic.min.js"></script>
+  <script type="text/javascript" src="../../../../../template/scripts/topicwidgets.min.js"></script>
+<script type="text/javascript" src="../../../../../whxdata/projectsettings.js"></script>
+  <link rel="stylesheet" type="text/css" href="../../../../../template/styles/topic.min.css"/>
+  <link rel="stylesheet" type="text/css" href="../../../../../template/Biamp_Grey_&amp;_Blue/topicheader.css"/>
+  <meta name="topic-status" content="Draft"/>
+<link rel="stylesheet" type="text/css" href="../../../../css/Tesira_Help.css"/>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+  <meta name="generator" content="Adobe RoboHelp 2022"/>
+  <title>Pass Filter Block</title>
+  <meta name="topic-status" content="Draft"/>
+  <meta name="template" content="../../../../layouts/TTP_Attributes.htt"/>
+  <link rel="stylesheet" type="text/css" href="../../../../css/Tesira_Help.css"/>
+  <!--[if gte mso 9]><xml>
+<mso:CustomDocumentProperties>
+<mso:_dlc_DocId msdt:dt="string">AP256XAP2PFD-163404756-75394</mso:_dlc_DocId>
+<mso:_dlc_DocIdItemGuid msdt:dt="string">b9f8e048-e003-44e5-a2ec-9db7967c9419</mso:_dlc_DocIdItemGuid>
+<mso:_dlc_DocIdUrl msdt:dt="string">https://biamp.sharepoint.com/customerexperience/documentation/TPubsHub/DocDev/_layouts/15/DocIdRedir.aspx?ID=AP256XAP2PFD-163404756-75394, AP256XAP2PFD-163404756-75394</mso:_dlc_DocIdUrl>
+</mso:CustomDocumentProperties>
+</xml><![endif]-->
+</head>
+
+<body>
+  <div class="topic-header rh-hide" id="rh-topic-header">
+    <div class="logo">
+    </div>
+    <div class="nav">
+      <div class="title" title="Tesira Software Help">
+        <span>Tesira Software Help</span>
+      </div>
+      <div class="gotohome" title="Click here to see this page in full context">
+        <a href="#" onclick="rh._.goToFullLayout()">Click here to see this page in full context</a>
+      </div>
+    </div>
+  </div>
+  <div class="topic-header-shadow rh-hide" id="rh-topic-header-shadow"></div>
+
+
+
+  <div>
+    <p></p>
+    <table border="1" cellpadding="1" cellspacing="1" class="TTP" style="background-color: rgb(255, 255, 255); font-family: &quot;Segoe UI&quot;; font-size: 14px; border-collapse: collapse; width: 100%;">
+      <colgroup>
+        <col style="width:50%"/>
+        <col style="width:50%"/>
+      </colgroup>
+    </table>
+    <h4>TTP Attribute Table | <span style="font-style:italic;">Generate command strings with: <a href="https://support.biamp.com/Tesira/Control/Tesira_command_string_calculator">Tesira Command String Calculator</a></span></h4>
+  </div>
+  <p></p>
+  <div>
+  <h1><span data-field="title" data-format="default">Pass Filter Block</span></h1>
+  <p>  </p>
+  <div data-conref="../../../../snippets/TTP_Status_Attributes.hts">
+  <p>Please refer to the<span> </span>TTP section of the <a href="../../Tesira_Software_System_Control_Overview.htm"><span data-keyref="TesiraSoftware">Tesira</span> Software System Control Overview</a><span> page</span> for more details on the controlling <span data-keyref="TesiraProduct">Tesira</span> devices using the TTP protocol. </p>
+  <p>Each element of the command instruction is delimited by one or more spaces. The commands are case sensitive and upper and lower case characters are used. </p>
+  <p>The TTP string to adjust a DSP object attribute is structured in the following order: </p>
+  <p><b>Instance_Tag Command Attribute [Index] [Value] LF </b></p>
+  <ul>
+    <li><span><span style="font-weight:bold;">Instance Tag</span>:<span> </span></span>Is always required. </li>
+    <li><span style="font-weight:bold;">Command</span>: Is always required. </li>
+    <li><span><span style="font-weight:bold;">Attribute</span>:</span><span> </span>Is always required. </li>
+    <li><span style="font-weight:bold;">[Index]</span>: Is shown in [Brackets] and may be required depending on the<span> </span>Attribute<span> </span>being referenced. If not required it should not be defined. Depending on the Attribute, it can be made up of one or more indexes. </li>
+    <li><span style="font-weight:bold;">[Value]</span>: Is shown in [Brackets] and may be required depending on the<span> </span>Command<span> </span>or<span> </span>Attribute<span> </span>being referenced. If not be required it should not be defined. The Value would not normally have spaces, if it does it can be defined in &quot;double quotes&quot;. It can also be a numerical value. </li>
+    <li><b>LF:</b><span> </span>A Line feed or Carriage Return is used to define the end of the command. </li>
+  </ul>
+  <p>For additional information on individual elements of a TTP string please review the <a href="../../Tesira_Text_Protocol/TTP_Syntax.htm">TTP Syntax</a> page.  </p>
+
+</div>
+  <p>  </p>
+  <table border="1" cellpadding="1" cellspacing="1" class="TTP" style="border-collapse: collapse; width: 804px;">
+    <thead>
+      <tr>
+        <th>Instance Tag</th>
+        <th>Command</th>
+        <th>Attribute Code</th>
+        <th>Value</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>PassFilter1</td>
+        <td>set</td>
+        <td>frequency</td>
+        <td>100</td>
+      </tr>
+    </tbody>
+  </table>
+  <p>  </p>
+  <h4>Example</h4>
+  <p><span>PassFilter1 set frequency 100 +OK</span></p>
+  <p>  </p>
+  <h4>Example - <span>Filter Type and Slope</span><span><span> </span>Values</span></h4>
+  <p><span>Values must be specified within square brackets -filter type must be specified before slope and both parameters MUST be included.</span></p>
+  <p><span>PassFilter1 set filterTypeSlope [LINKWITZ_RILEY 24] +OK</span></p>
+  <p>  </p>
+  <h5>Example - Alternate Format</h5>
+  <p><span>Since &quot;type&quot; and &quot;slope&quot; are clearly denoted within the {braces}, the [value] variables can be provided in either order.</span></p>
+  <p><span>PassFilter1 set filterTypeSlope {&quot;type&quot;:LINKWITZ_RILEY &quot;slope&quot;:24} +OK</span></p>
+  <p>  </p>
+  <table border="1" cellpadding="1" cellspacing="1" class="TTP" style="border-collapse:collapse; width:100%">
+    <colgroup>
+      <col style="width:20%"/>
+      <col style="width:20%"/>
+      <col style="width:20%"/>
+      <col style="width:20%"/>
+    </colgroup>
+    <thead>
+      <tr>
+        <th>Attribute</th>
+        <th>Attribute Code</th>
+        <th>Command</th>
+        <th>Value Range</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Bypass</td>
+        <td>bypass</td>
+        <td>get / set / toggle</td>
+        <td>false, true</td>
+      </tr>
+      <tr>
+        <td>Filter Type</td>
+        <td>filterType</td>
+        <td>get</td>
+        <td>BUTTERWORTH, LINKWITZ_RILEY, BESSEL</td>
+      </tr>
+      <tr>
+        <td>Filter Type &amp; Slope</td>
+        <td>filterTypeSlope</td>
+        <td>get / set</td>
+        <td>
+          <p>[Type, slope] or {&quot;type&quot;:Type &quot;slope&quot;:slope} </p>
+          <p>Type: BUTTERWORTH, Slope: 6, 12, 18, 24, 30, 36, 42, 48   </p>
+          <p>Type: LINKWITZ_RILEY, Slope: 12, 24, 36, 48  </p>
+          <p>Type: BESSEL, Slope: 6, 12, 18, 24, 30, 36, 42, 48</p>
+        </td>
+      </tr>
+      <tr>
+        <td>Cutoff Frequency</td>
+        <td>frequency</td>
+        <td>get / set / increment / decrement</td>
+        <td>20.0 - 20000.0 Hz</td>
+      </tr>
+      <tr>
+        <td>Max Slope</td>
+        <td>maxSlope</td>
+        <td>get</td>
+        <td>Always 48 dB/oct</td>
+      </tr>
+      <tr>
+        <td>Number of Channels</td>
+        <td>numChannels</td>
+        <td>get</td>
+        <td>1 - 32</td>
+      </tr>
+      <tr>
+        <td>Filter Slope</td>
+        <td>slope</td>
+        <td>get</td>
+        <td>
+          <p>Linkwitz/Riley: 12, 24, 36, 48</p>
+          <p>Butterworth: 6,12,18, 24, 30, 36, 42, 48</p>
+          <p>Bessel: 6, 12, 18, 24, 30, 36, 42, 48  </p>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+  <p>  </p>
+  <p>  </p>
+
+</div>
+  <div>
+    <p></p>
+  </div>
+
+</body></html>

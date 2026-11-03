@@ -1,0 +1,661 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml"><head>
+
+
+  <meta name="gRootRelPath" content="../../../../.."/>
+	<meta name="gCommonRootRelPath" content="../../../../.."/>
+  <meta name="gTopicId" content="4.2.4.0_9"/>
+  <script type="text/javascript" src="../../../../../template/scripts/rh.min.js"></script>
+  <script type="text/javascript" src="../../../../../template/scripts/common.min.js"></script>
+  <script type="text/javascript" src="../../../../../template/scripts/topic.min.js"></script>
+  <script type="text/javascript" src="../../../../../template/scripts/topicwidgets.min.js"></script>
+<script type="text/javascript" src="../../../../../whxdata/projectsettings.js"></script>
+  <link rel="stylesheet" type="text/css" href="../../../../../template/styles/topic.min.css"/>
+  <link rel="stylesheet" type="text/css" href="../../../../../template/Biamp_Grey_&amp;_Blue/topicheader.css"/>
+  <meta name="topic-status" content="Draft"/>
+<link rel="stylesheet" type="text/css" href="../../../../css/Tesira_Help.css"/>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+  <meta name="generator" content="Adobe RoboHelp 2022"/>
+  <title>VoIP Call State Commands</title>
+  <meta name="topic-status" content="Draft"/>
+  <meta name="template" content="../../../../layouts/TTP_Attributes.htt"/>
+  <link rel="stylesheet" type="text/css" href="../../../../css/Tesira_Help.css"/>
+  <!--[if gte mso 9]><xml>
+<mso:CustomDocumentProperties>
+<mso:_dlc_DocId msdt:dt="string">AP256XAP2PFD-163404756-75368</mso:_dlc_DocId>
+<mso:_dlc_DocIdItemGuid msdt:dt="string">0c53377a-f8a1-47a5-8b66-4a250d447191</mso:_dlc_DocIdItemGuid>
+<mso:_dlc_DocIdUrl msdt:dt="string">https://biamp.sharepoint.com/customerexperience/documentation/TPubsHub/DocDev/_layouts/15/DocIdRedir.aspx?ID=AP256XAP2PFD-163404756-75368, AP256XAP2PFD-163404756-75368</mso:_dlc_DocIdUrl>
+</mso:CustomDocumentProperties>
+</xml><![endif]-->
+</head>
+
+<body>
+  <div class="topic-header rh-hide" id="rh-topic-header">
+    <div class="logo">
+    </div>
+    <div class="nav">
+      <div class="title" title="Tesira Software Help">
+        <span>Tesira Software Help</span>
+      </div>
+      <div class="gotohome" title="Click here to see this page in full context">
+        <a href="#" onclick="rh._.goToFullLayout()">Click here to see this page in full context</a>
+      </div>
+    </div>
+  </div>
+  <div class="topic-header-shadow rh-hide" id="rh-topic-header-shadow"></div>
+
+
+
+  <div>
+    <p></p>
+    <table border="1" cellpadding="1" cellspacing="1" class="TTP" style="background-color: rgb(255, 255, 255); font-family: &quot;Segoe UI&quot;; font-size: 14px; border-collapse: collapse; width: 100%;">
+      <colgroup>
+        <col style="width:50%"/>
+        <col style="width:50%"/>
+      </colgroup>
+    </table>
+    <h4>TTP Attribute Table | <span style="font-style:italic;">Generate command strings with: <a href="https://support.biamp.com/Tesira/Control/Tesira_command_string_calculator">Tesira Command String Calculator</a></span></h4>
+  </div>
+  <p></p>
+  <div>
+  <h1><span data-field="title" data-format="default">VoIP Call State Commands</span></h1>
+  <p>  </p>
+  <p>  </p>
+  <h2>Using the TTP Call State Commands</h2>
+  <p><span>The VoIP Control Status Block supports the use of Call State monitoring in order to poll information about the current call state of the telephone card. The response will include multiple information fields for all lines and call appearances of the card. Call State is also available as a subscribed service to allow unsolicited feedback to a connected control system via TTP. A full call state subscription update will be sent if any single part of the call state has changed.<span> </span></span></p>
+  <p>  </p>
+  <h3>VoIP Definitions</h3>
+  <ul>
+    <li><span><span style="font-weight:bold;">Line</span>:</span> A single extension on the SVC-2 card.  A line will have a dedicated phone number and the voice signals for this line are available as an independent input and output in the <span data-keyref="TesiraSoftware">Tesira</span> system. Each SVC-2 card supports two lines and these lines may be used at the same time. </li>
+    <li><span><span style="font-weight:bold;">Call Appearance</span>:</span><span> </span>Each line supports up to 6 call appearances. A call appearance can be viewed as a voice connection point on a line. A call appearance can be used to open another call from the same line by placing an active call on hold. Call appearances also allow the SVC-2 card to support call waiting. </li>
+    <li><span style="font-weight:bold;">Conference</span>: The SVC card can create a local conference by joining two call appearances into a single active call. There is no support for a conference larger than a 3-way conference (two call appearances). It is possible to have an active 3-way conference on both lines of the SVC card at the same time. </li>
+  </ul>
+  <p>  </p>
+  <h3>VoIP X Definitions</h3>
+  <ul>
+    <li><span style="font-weight:bold;">Line</span>: A line will have a dedicated phone number and the voice signals for this line are available as an independent input and output in the <span data-keyref="TesiraSoftware">Tesira</span> system. Each VoIP X  supports one line. </li>
+    <li><span><span style="font-weight:bold;">Call Appearance</span>:</span><span> </span>Each line supports up to 2 call appearances. A call appearance can be viewed as a voice connection point on a line. A call appearance can be used to open another call from the same line by placing an active call on hold. Call appearances also allow the VoIP X to support call waiting. </li>
+    <li><span style="font-weight:bold;">Conference</span>: The VoIP X can create a local conference by joining two call appearances into a single active call. </li>
+  </ul>
+  <p>  </p>
+  <p>  </p>
+  <h2>Call State Requests</h2>
+  <p><span>This command will give a onetime indication of the current state of the VoIP phone. The<span> </span></span>Instance Tag<span><span> </span>is variable and needs to match what is running in the current configuration.</span>  </p>
+  <table border="1" cellpadding="1" cellspacing="1" class="TTP" style="border-collapse: collapse; width: 804px;">
+    <colgroup>
+      <col/>
+      <col/>
+      <col/>
+    </colgroup>
+    <thead>
+      <tr>
+        <th>Instance Tag</th>
+        <th>Command</th>
+        <th>Attribute Code</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>VoIPControlStatus1</td>
+        <td>get</td>
+        <td>callState</td>
+      </tr>
+    </tbody>
+  </table>
+  <p>  </p>
+  <p><span style="font-weight:bold;">Note</span>: <span>The following details and examples are specific to the SVC-2 VoIP implementation. VoIP X implementation will be limited according to its line and call appearance capability. </span></p>
+  <p>  </p>
+  <p>  </p>
+  <h2>Subscriptions</h2>
+  <h3>Subscribe to a Call State</h3>
+  <p>This command will set a subscription to a VoIP card’s current state. Please review the<span> </span>subscriptions<span> </span>section for more details. If any portion of the card’s call state changes, a subscription response will be provided indicating the current status of all call states.</p>
+  <p>The response of the subscription depends on the<span> </span>SESSION verbose<span> </span>State that was active at the time the subscription was setup. Examples will be given to show the response of a call state in both verbose and non-verbose formats.</p>
+  <table border="1" cellpadding="1" cellspacing="1" class="TTP" style="border-collapse: collapse; width: 804px;">
+    <colgroup>
+      <col/>
+      <col/>
+      <col/>
+      <col/>
+      <col/>
+    </colgroup>
+    <thead>
+      <tr>
+        <th>Instance Tag</th>
+        <th>Command</th>
+        <th>Attribute Code</th>
+        <th>Index</th>
+        <th>Value</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>VoIPControlStatus1</td>
+        <td>subscribe</td>
+        <td>callState</td>
+        <td>[CustomLabel]</td>
+        <td>[Time(ms)]</td>
+      </tr>
+    </tbody>
+  </table>
+  <ul class="Disc">
+    <li><span>Index</span><span> </span>can be used to assign a custom label to the subscription. This label is not required but is recommended, especially if there is more than one SVC-2 card in the system. The label would indicate to the control system which card is providing the state change. Instance Tags are not included in call state subscriptions responses.</li>
+    <li><span>Value</span><span> </span>can be used to throttle the rate of response to the control system. Since a call state subscription update is only provided after a state change there should be no need to place a value in this field. Placing a value, especially if it is too high, could introduce a missed update effectively getting the SVC card and the control system out of sync. By default the call state subscription has a 200ms delay, this ensures that the as many changed states as possible are included in a single call state response.  </li>
+    <li>Subscriptions are lost when the <span data-keyref="TesiraProduct">Tesira</span> server is rebooted.</li>
+    <li>Subscriptions can be re-validated by subscribing to the same block at regular intervals. If this is done ensure that the custom label used in<span> </span><span>Index</span><span> </span>is used in the re-subscription. If this label is not included it is possible to inadvertently open multiple subscriptions to the same call state.  </li>
+  </ul>
+  <p>  </p>
+  <h3>Unsubscribing from a Call State</h3>
+  <p><span>This command will cancel a previously set subscription. </span></p>
+  <table border="1" cellpadding="1" cellspacing="1" class="TTP" style="border-collapse: collapse; width: 804px;">
+    <colgroup>
+      <col/>
+      <col/>
+      <col/>
+      <col/>
+    </colgroup>
+    <thead>
+      <tr>
+        <th>Instance Tag</th>
+        <th>Command</th>
+        <th>Attribute Code</th>
+        <th>Index</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>VoIPControlStatus1</td>
+        <td>unsubscribe</td>
+        <td>callState</td>
+        <td>[CustomLabel]</td>
+      </tr>
+    </tbody>
+  </table>
+  <p>  </p>
+  <h3>Call State Indication Fields</h3>
+  <p><span>A Call State response will provide information for the entire SVC-2 card. The response will include both VoIP lines with 6 call appearances per line.  </span></p>
+  <h4>Example - Note Line Feeds are Shown to Aid Readability</h4>
+  <p><span>! &quot;publishToken&quot;:&quot; Room1&quot; &quot;value&quot;:{&quot;callStateInfo&quot;:[ {&quot;state&quot;:VOIP_CALL_STATE_RINGBACK &quot;lineId&quot;:0 &quot;callId&quot;:0 &quot;action&quot;:UI_DISPLAY_STATUS &quot;cid&quot;:&quot;\&quot;07131038\&quot;\&quot;146\&quot;\&quot;\&quot;&quot; &quot;prompt&quot;:VOIP_PROMPT_CONNECTING} {&quot;state&quot;:VOIP_CALL_STATE_IDLE &quot;lineId&quot;:0 &quot;callId&quot;:1 &quot;action&quot;: UI_CLEAR_STATUS &quot;cid&quot;:&quot;&quot; &quot;prompt&quot;:VOIP_PROMPT_NONE} {&quot;state&quot;:VOIP_CALL_STATE_IDLE &quot;lineId&quot;:0 &quot;callId&quot;:2 &quot;action&quot;:UI_CLEAR_STATUS &quot;cid&quot;:&quot;&quot; &quot;prompt&quot;:VOIP_PROMPT_NONE} {&quot;state&quot;:VOIP_CALL_STATE_IDLE &quot;lineId&quot;:0 &quot;callId&quot;:3 &quot;action&quot;:UI_CLEAR_STATUS &quot;cid&quot;:&quot;&quot; &quot;prompt&quot;:VOIP_PROMPT_NONE} {&quot;state&quot;:VOIP_CALL_STATE_IDLE &quot;lineId&quot;:0 &quot;callId&quot;:4 &quot;action&quot;:UI_CLEAR_STATUS &quot;cid&quot;:&quot;&quot; &quot;prompt&quot;:VOIP_PROMPT_NONE} {&quot;state&quot;:VOIP_CALL_STATE_IDLE &quot;lineId&quot;:0 &quot;callId&quot;:5 &quot;action&quot;:UI_CLEAR_STATUS &quot;cid&quot;:&quot;&quot; &quot;prompt&quot;:VOIP_PROMPT_NONE} {&quot;state&quot;:VOIP_CALL_STATE_INIT &quot;lineId&quot;:1 &quot;callId&quot;:0 &quot;action&quot;:UI_DISPLAY_STATUS &quot;cid&quot;:&quot;&quot; &quot;prompt&quot;:VOIP_PROMPT_SIP_USER_NOT_CONFIGURED} {&quot;state&quot;:VOIP_CALL_STATE_INIT &quot;lineId&quot;:1 &quot;callId&quot;:1 &quot;action&quot;:UI_CLEAR_STATUS &quot;cid&quot;:&quot;&quot; &quot;prompt&quot;:VOIP_PROMPT_SIP_USER_NOT_CONFIGURED} {&quot;state&quot;:VOIP_CALL_STATE_INIT &quot;lineId&quot;:1 &quot;callId&quot;:2 &quot;action&quot;:UI_CLEAR_STATUS &quot;cid&quot;:&quot;&quot; &quot;prompt&quot;:VOIP_PROMPT_SIP_USER_NOT_CONFIGURED} {&quot;state&quot;:VOIP_CALL_STATE_INIT &quot;lineId&quot;:1 &quot;callId&quot;:3 &quot;action&quot;:UI_CLEAR_STATUS&quot;cid&quot;:&quot;&quot; &quot;prompt&quot;:VOIP_PROMPT_SIP_USER_NOT_CONFIGURED} {&quot;state&quot;:VOIP_CALL_STATE_INIT &quot;lineId&quot;:1 &quot;callId&quot;:4 &quot;action&quot;:UI_CLEAR_STATUS &quot;cid&quot;:&quot;&quot; &quot;prompt&quot;:VOIP_PROMPT_SIP_USER_NOT_CONFIGURED} {&quot;state&quot;:VOIP_CALL_STATE_INIT &quot;lineId&quot;:1 &quot;callId&quot;:5 &quot;action&quot;:UI_CLEAR_STATUS &quot;cid&quot;:&quot;&quot; &quot;prompt&quot;:VOIP_PROMPT_SIP_USER_NOT_CONFIGURED}]}</span></p>
+  <p>  </p>
+  <h3>Call Appearance - Information Included in Call State Response</h3>
+  <p>Each call appearance provides the following information fields in the Call State response.  </p>
+  <h4>State</h4>
+  <ul>
+    <li>The State response gives the current operating conditions of the call appearance on the VoIP line.  </li>
+    <li>The verbose indicator for the State field is: “state”</li>
+    <li>Non-Verbose indicator responses will be numeric and are shown below.     </li>
+  </ul>
+  <table border="1" cellpadding="1" cellspacing="1" class="TTP" style="border-collapse: collapse; width: 804px;">
+    <colgroup>
+      <col/>
+      <col/>
+      <col/>
+    </colgroup>
+    <thead>
+      <tr>
+        <th>Verbose</th>
+        <th>Non-Verbose</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>VOIP_CALL_STATE_INIT</td>
+        <td>1</td>
+        <td>The call appearance is initializing indicating general setup is in place; DHCP in progress, registration is taking place, etc. This can also indicate that the line has not been configured. The SVC-2 card will not be able to dial when this state is displayed.</td>
+      </tr>
+      <tr>
+        <td>VOIP_CALL_STATE_FAULT</td>
+        <td>2</td>
+        <td>General Fault condition; Network link is down, IP address conflict in place. The SVC-2 card will not be able to dial when this state is displayed.</td>
+      </tr>
+      <tr>
+        <td>VOIP_CALL_STATE_IDLE</td>
+        <td>3</td>
+        <td>Call Appearance is part of a registered connection to a Proxy Server and is ready to make or receive a call.  </td>
+      </tr>
+      <tr>
+        <td>VOIP_CALL_STATE_DIALTONE</td>
+        <td>4</td>
+        <td>Call appearance is off hook and dial tone is present.</td>
+      </tr>
+      <tr>
+        <td>VOIP_CALL_STATE_SILENT</td>
+        <td>5</td>
+        <td>User has started dialing numbers but has yet to hit send</td>
+      </tr>
+      <tr>
+        <td>VOIP_CALL_STATE_DIALING</td>
+        <td>6</td>
+        <td>User has hit send on the call appearance and the card has sent an INVITE to the proxy or the called party. No response has been received at this point.  </td>
+      </tr>
+      <tr>
+        <td>VOIP_CALL_STATE_RINGBACK</td>
+        <td>7</td>
+        <td>The far end is ringing</td>
+      </tr>
+      <tr>
+        <td>VOIP_CALL_STATE_RINGING</td>
+        <td>8</td>
+        <td>The call appearance has an incoming call</td>
+      </tr>
+      <tr>
+        <td>VOIP_CALL_STATE_ANSWER_CALL</td>
+        <td>9</td>
+        <td>The call has been answered but the call isn&#39;t active yet</td>
+      </tr>
+      <tr>
+        <td>VOIP_CALL_STATE_BUSY</td>
+        <td>10</td>
+        <td>The far end is busy</td>
+      </tr>
+      <tr>
+        <td>VOIP_CALL_STATE_REJECT</td>
+        <td>11</td>
+        <td>User has rejected the incoming call</td>
+      </tr>
+      <tr>
+        <td>VOIP_CALL_STATE_INVALID_NUMBER</td>
+        <td>12</td>
+        <td>The user has dialed an invalid number on this call appearance</td>
+      </tr>
+      <tr>
+        <td>VOIP_CALL_STATE_ACTIVE</td>
+        <td>13</td>
+        <td>A call has been connected to the call appearance</td>
+      </tr>
+      <tr>
+        <td>VOIP_CALL_STATE_ACTIVE_MUTED</td>
+        <td>14</td>
+        <td>A call is established but audio is muted in the VoIP Receive block</td>
+      </tr>
+      <tr>
+        <td>VOIP_CALL_STATE_ON_HOLD</td>
+        <td>15</td>
+        <td>The near end has placed the call appearance on hold</td>
+      </tr>
+      <tr>
+        <td>VOIP_CALL_STATE_WAITING_RING</td>
+        <td>16</td>
+        <td>The call appearance has received a call waiting indication</td>
+      </tr>
+      <tr>
+        <td>VOIP_CALL_STATE_CONF_ACTIVE</td>
+        <td>17</td>
+        <td>The call appearance has been placed in a local conference</td>
+      </tr>
+      <tr>
+        <td>VOIP_CALL_STATE_CONF_HOLD</td>
+        <td>18</td>
+        <td>The call appearance is part of a local conference that has been placed on hold</td>
+      </tr>
+      <tr>
+        <td>VOIP_CALL_STATE_XFER_INIT</td>
+        <td>19</td>
+        <td>The call appearance is initializing</td>
+      </tr>
+      <tr>
+        <td>VOIP_CALL_STATE_XFER_SILENT</td>
+        <td>20</td>
+        <td>The call appearance is silent</td>
+      </tr>
+      <tr>
+        <td>VOIP_CALL_STATE_XFER_REQ_DIALING</td>
+        <td>21</td>
+        <td>The call appearance is awaiting number to be dialed</td>
+      </tr>
+      <tr>
+        <td>VOIP_CALL_STATE_XFER_PROCESS</td>
+        <td>22</td>
+        <td>The call appearance is in a process of transferring</td>
+      </tr>
+      <tr>
+        <td>VOIP_CALL_STATE_XFER_REPLACES_PROCESS</td>
+        <td>23</td>
+        <td>The call appearance is updating the transfer process</td>
+      </tr>
+      <tr>
+        <td>VOIP_CALL_STATE_XFER_ACTIVE</td>
+        <td>24</td>
+        <td>The call appearance transfer is active</td>
+      </tr>
+      <tr>
+        <td>VOIP_CALL_STATE_XFER_RINGBACK</td>
+        <td>25</td>
+        <td>The call appearance is seeing DTMF tones from the proxy server</td>
+      </tr>
+      <tr>
+        <td>VOIP_CALL_STATE_XFER_ON_HOLD</td>
+        <td>26</td>
+        <td>The call appearance is on hold</td>
+      </tr>
+      <tr>
+        <td>VOIP_CALL_STATE_XFER_DECISION</td>
+        <td>27</td>
+        <td>The call appearance is awaiting confirmation to transfer</td>
+      </tr>
+      <tr>
+        <td>VOIP_CALL_STATE_XFER_INIT_ERROR</td>
+        <td>28</td>
+        <td>The call appearance has experienced an error initializing the transfer process</td>
+      </tr>
+      <tr>
+        <td>VOIP_CALL_STATE_XFER_WAIT</td>
+        <td>29</td>
+        <td>The call appearance is waiting</td>
+      </tr>
+    </tbody>
+  </table>
+  <p>  </p>
+  <p><span style="font-weight:bold;">Note</span>: <span>The following details and examples are specific to the SVC-2 VoIP implementation. VoIP X implementation will be limited according to its line and call appearance capability.</span></p>
+  <p>  </p>
+  <h3>Line ID</h3>
+  <ul>
+    <li>Each SVC-2 card supports two phone lines. A line is indicated as a unique extension on the VoIP system. The Line ID field indicates which line the particular Call State response is located on.  </li>
+    <li>The first line is indicated as Line ID 0 and the second line is Line ID 1.</li>
+    <li>The verbose indicator for Line ID is: “lineId”. Note the upper case “I” in this indicator.  </li>
+  </ul>
+  <p>  </p>
+  <h3>Call ID</h3>
+  <ul>
+    <li>Each line of the SVC-2 card supports six call appearances. A call appearance is defined as a separate phone connection point of a single phone extension. The Call ID field indicates which call appearance the particular Call State response is reporting.  </li>
+    <li>The first call appearance of a line is indicated as Call ID 0 and the last call appearance of a line is indicated as Call ID 5.</li>
+    <li>The verbose indicator for Call ID is: “callId”. Note the upper case “I” in this indicator.</li>
+  </ul>
+  <p>  </p>
+  <h3>Action</h3>
+  <ul>
+    <li>The <span data-keyref="TesiraSoftware">Tesira</span> user interface supports the shifting of focus of a call appearance selection. For example if a call is in place on call appearance 1 and call appearance 2 rings, the user can shift focus in the UI to call appearance 2 to check Caller ID. This action would shift the focus from appearance 1 to 2.  </li>
+    <li>The Call State response will indicate which call appearance is the point of focus for each line in the Action field. A control system program could track this action if multiple devices are providing VoIP dialer control.  </li>
+    <li>There can only be a single focused call appearance per line.  </li>
+    <li>The verbose indicator for Action is: “action”   </li>
+  </ul>
+  <table border="1" cellpadding="1" cellspacing="1" class="TTP" style="border-collapse: collapse; width: 804px;">
+    <thead>
+      <tr>
+        <th>Verbose</th>
+        <th>Non-Verbose</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>UI_CLEAR_STATUS</td>
+        <td>1</td>
+        <td>This call appearance is not the current point of focus in the user interface.</td>
+      </tr>
+      <tr>
+        <td>UI_DISPLAY_STATUS</td>
+        <td>2</td>
+        <td>This call appearance is the current point of focus in the user interface.</td>
+      </tr>
+    </tbody>
+  </table>
+  <p>  </p>
+  <h3>Caller ID</h3>
+  <p><span>If caller ID information is available it will be included in the Call State response.</span></p>
+  <h4>Format</h4>
+  <p><span>&quot;\&quot;MMDDHHmm\&quot;\&quot;incoming_number\&quot;\&quot;caller_Name\&quot;&quot;</span></p>
+  <ul>
+    <li>If no caller ID is available the Call State response for this field will be &quot;&quot;</li>
+    <li>The first set of quotes contains the date and time in the format MMDDHHmm.</li>
+    <li>The second set of quotes represents the incoming phone number in the format 5036417287.</li>
+    <li>The third set of quotes contains the name of the caller. If there are quotes contained within the name, there will be a backslash preceding the quotes within the name, i.e. “John \&quot;Johnny\&quot; Doe&quot;</li>
+    <li>A Backslash ( \ ) is used as a separator in the caller ID string</li>
+  </ul>
+  <p>  </p>
+  <h4>Example - Caller ID Response with All Information Provided</h4>
+  <p><span>&quot;\&quot;07131134\&quot;\&quot;15036260281\&quot;\&quot;Biamp Systems\&quot;&quot;</span></p>
+  <p>  </p>
+  <h4>Example - Caller ID Response without All Information Provided</h4>
+  <p><span>&quot;\&quot;07131134\&quot;\&quot;15036260281\&quot;\&quot;\&quot;&quot;</span></p>
+  <p>  </p>
+  <p><span>The verbose indicator for Caller ID is: “cid”</span></p>
+  <p>  </p>
+  <h3>Prompt</h3>
+  <p>The <span data-keyref="TesiraSoftware">Tesira</span> user interface provides prompting indications of the state of the call appearance that is currently in focus. This prompting information is also included in the Call State response. A control system can use the prompt indications to provide users information about the individual call appearance states. Note that a prompt is provided for each call appearance in the Call State response.  </p>
+  <p>The verbose indicator for Prompt is: &quot;prompt&quot; </p>
+  <table border="1" cellpadding="1" cellspacing="1" class="TTP" style="border-collapse: collapse; width: 804px;">
+    <thead>
+      <tr>
+        <th>Verbose</th>
+        <th>Non-Verbose</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>VOIP_PROMPT_NONE</td>
+        <td>1</td>
+        <td>Nothing to display in prompt field</td>
+      </tr>
+      <tr>
+        <td>VOIP_PROMPT_STARTING</td>
+        <td>2</td>
+        <td>SVC-2 card is booting. The SVC-2 card will not be able to dial when this prompt is displayed.</td>
+      </tr>
+      <tr>
+        <td>VOIP_PROMPT_REGISTERING</td>
+        <td>3</td>
+        <td>SVC-2 is registering to a Proxy Server. The SVC-2 card will not be able to dial when this prompt is displayed.</td>
+      </tr>
+      <tr>
+        <td>VOIP_PROMPT_SIP_USER_NOT_CONFIGURED</td>
+        <td>6</td>
+        <td>SIP User field has not been configured on the line properties page. The SVC-2 card will not be able to dial when this prompt is displayed.</td>
+      </tr>
+      <tr>
+        <td>VOIP_PROMPT_ENTER_NUMBER</td>
+        <td>7</td>
+        <td>SVC-2 card is off hook and waiting for a number entry</td>
+      </tr>
+      <tr>
+        <td>VOIP_PROMPT_CONNECTING</td>
+        <td>8</td>
+        <td>Connecting to the number dialed</td>
+      </tr>
+      <tr>
+        <td>VOIP_PROMPT_INCOMING_CALL_FROM</td>
+        <td>9</td>
+        <td>Incoming call from a far end</td>
+      </tr>
+      <tr>
+        <td>VOIP_PROMPT_PEER_BUSY</td>
+        <td>10</td>
+        <td>The far end device is busy</td>
+      </tr>
+      <tr>
+        <td>VOIP_PROMPT_CALL_CANNOT_BE_COMPLETED</td>
+        <td>11</td>
+        <td>The number called from the SVC-2 card cannot be completed</td>
+      </tr>
+      <tr>
+        <td>VOIP_PROMPT_ON_HOLD</td>
+        <td>12</td>
+        <td>The SVC-2 card has placed the call on hold</td>
+      </tr>
+      <tr>
+        <td>VOIP_PROMPT_CALL_ON_HELD</td>
+        <td>13</td>
+        <td>The far end device has placed the call on hold</td>
+      </tr>
+      <tr>
+        <td>VOIP_PROMPT_CONFERENCE</td>
+        <td>14</td>
+        <td>The SVC-2 card has placed this call appearances into a conference</td>
+      </tr>
+      <tr>
+        <td>VOIP_PROMPT_CONFERENCE_ON_HOLD</td>
+        <td>15</td>
+        <td>The SVC-2 card has placed a conference on hold</td>
+      </tr>
+      <tr>
+        <td>VOIP_PROMPT_CONNECTED</td>
+        <td>16</td>
+        <td>The call appearance is connected to a far end device</td>
+      </tr>
+      <tr>
+        <td>VOIP_PROMPT_CONNECTED_MUTED</td>
+        <td>17</td>
+        <td>The call appearance is connected to a far end device but the VoIP Receive block has been muted</td>
+      </tr>
+      <tr>
+        <td>VOIP_PROMPT_AUTH_FAILURE</td>
+        <td>18</td>
+        <td>Authentication to Proxy Server has failed</td>
+      </tr>
+      <tr>
+        <td>VOIP_PROMPT_PROXY_NOT_CONFIGURED</td>
+        <td>19</td>
+        <td>A Proxy Address has not been entered in the SVC line properties page</td>
+      </tr>
+      <tr>
+        <td>VOIP_PROMPT_NETWORK_INIT</td>
+        <td>20</td>
+        <td>The SVC-2 card is setting up network communications. The SVC-2 card will not be able to dial when this prompt is displayed.</td>
+      </tr>
+      <tr>
+        <td>VOIP_PROMPT_DHCP_IN_PROGRESS</td>
+        <td>21</td>
+        <td>The SVC-2 card is requesting an IP address via DHCP. The SVC-2 card will not be able to dial when this prompt is displayed.</td>
+      </tr>
+      <tr>
+        <td>VOIP_PROMPT_NETWORK_LINK_DOWN</td>
+        <td>22</td>
+        <td>The SVC-2 network link sees no connection. The SVC-2 card will not be able to dial when this prompt is displayed.</td>
+      </tr>
+      <tr>
+        <td>VOIP_PROMPT_NETWORK_LINK_UP</td>
+        <td>23</td>
+        <td>The SVC-2 network port sees a connection point but cannot make use of it due to its current IP settings. The SVC-2 card will not be able to dial when this prompt is displayed.</td>
+      </tr>
+      <tr>
+        <td>VOIP_PROMPT_IPADDR_CONFLICT</td>
+        <td>24</td>
+        <td>An IP Address is conflict has been detected. The SVC-2 card will not be able to dial when this prompt is displayed.</td>
+      </tr>
+      <tr>
+        <td>VOIP_PROMPT_NETWORK_CONFIGURED</td>
+        <td>25</td>
+        <td>The SVC network interface has been configured. The SVC-2 card will not be able to dial when this prompt is displayed.</td>
+      </tr>
+      <tr>
+        <td>VOIP_PROMPT_CODEC_NEGOTIATION_FAILURE</td>
+        <td>26</td>
+        <td>Codec negotiation between the endpoints has failed</td>
+      </tr>
+      <tr>
+        <td>VOIP_PROMPT_UNEXPECTED_ERROR</td>
+        <td>27</td>
+        <td>The SVC card has encountered an unexpected error</td>
+      </tr>
+      <tr>
+        <td>VOIP_PROMPT_AUTH_USER_NOT_CONFIGURED</td>
+        <td>28</td>
+        <td>Authentication Username has not been configured in the SVC line properties page</td>
+      </tr>
+      <tr>
+        <td>VOIP_PROMPT_AUTH_PASSWORD_NOT_CONFIGURED</td>
+        <td>29</td>
+        <td>Authentication Password has not been configured in the SVC line properties page</td>
+      </tr>
+      <tr>
+        <td>VOIP_PROMPT_DND</td>
+        <td>
+          <p>30</p>
+        </td>
+        <td>Do Not Disturb</td>
+      </tr>
+      <tr>
+        <td>VOIP_PROMPT_INVALID_NUMBER</td>
+        <td>31</td>
+        <td>Invalid Dialed Number (Number not routable by proxy server)</td>
+      </tr>
+      <tr>
+        <td>VOIP_PROMPT_TEMP_UNAVAILABLE</td>
+        <td>32</td>
+        <td>Temporary Not Available (The caller is temporarily unavailable such as DND is on)</td>
+      </tr>
+      <tr>
+        <td>VOIP_PROMPT_DECLINED</td>
+        <td>33</td>
+        <td>Call is Declined (the call is declined by the far end or the server)</td>
+      </tr>
+      <tr>
+        <td>VOIP_PROMPT_SERVICE_UNAVAILABLE</td>
+        <td>34</td>
+        <td>Service Unavailable (such as a PSTN call but PSTN gateway isn’t configured or no rule to get there)</td>
+      </tr>
+      <tr>
+        <td>VOIP_PROMPT_FORBIDDEN</td>
+        <td>35</td>
+        <td>Call Forbidden (The call is prohibited because of policy)</td>
+      </tr>
+      <tr>
+        <td>VOIP_PROMPT_BEING_XFER_TO</td>
+        <td>36</td>
+        <td>Call is Being Transfer to</td>
+      </tr>
+      <tr>
+        <td>VOIP_PROMPT_XFER_IN_PROCESS</td>
+        <td>37</td>
+        <td>Transfer in Process</td>
+      </tr>
+      <tr>
+        <td>VOIP_PROMPT_XFER_TIME_OUT</td>
+        <td>
+          <p>38</p>
+        </td>
+        <td>Transfer Timeout (Transfer not finished in a designated time)</td>
+      </tr>
+      <tr>
+        <td>VOIP_PROMPT_PROXY_UNAVAILABLE</td>
+        <td>39</td>
+        <td>Proxy Unavailable (such as the configurable proxy is down)</td>
+      </tr>
+    </tbody>
+  </table>
+  <p>  </p>
+  <h3>Syntax of the Call State Response</h3>
+  <p>Call State response information order:</p>
+  <p>The Call State response will present the information listed above for each line and call appearance of the VoIP instance. If a subscription to a Call State response is setup, the subscription will update if a change is detected in any of the information fields. Call State is available in both verbose and non-verbose responses. Below is an example of the order of information in a Call State response. Note that the “{….}” field indicates the additional lines and call appearances on the VoIP instance.  </p>
+  <p>HEADER_TOKEN:[{STATE: LINE_ID: CALL_ID: ACTION: CALLER_ID: PROMPT} {….} {….}]</p>
+  <p>  </p>
+  <h3>Call State Subscription Header Examples</h3>
+  <p>All subscription responses will start with the “!” character for easy recognition. The response will also include token information in the form of the custom label associated with the subscription. Custom labels are defined in the Index command when the subscription is setup. Below is an example or the subscription header of a Call State response in both verbose and non-verbose formats. In each case the custom label was defines as “Room_1” and the “{…}” symbol indicates the additional responses from the specific call appearances. </p>
+  <p>  </p>
+  <p><span><span style="font-weight:bold;">Note</span>:</span><span> </span>The following details and examples are specific to the SVC-2 VoIP implementation. VoIP X implementation will be limited according to its line and call appearance capability. </p>
+  <p>  </p>
+  <h4>Verbose Format</h4>
+  <p><span>! &quot;publishToken&quot;:&quot; Room_1&quot; &quot;value&quot;:{&quot;callStateInfo&quot;:[{….} {….}]} </span></p>
+  <p>  </p>
+  <h4>Non-Verbose Format</h4>
+  <p><span>! &quot;Room_1&quot; [[….] [….]] </span></p>
+  <p>  </p>
+  <h3>Single Call Appearance Response Examples</h3>
+  <p>Below is an example of a response from a single call appearance in both verbose and non-verbose formats. This information is intended to show a clear example of the response order of a single appearance. </p>
+  <p>The call in each example shows the call state after a call was placed on line 0, call appearance 3, with the far end currently ringing. Caller ID information is also included. </p>
+  <p>  </p>
+  <h4>Verbose Format</h4>
+  <p><span><span>{&quot;state&quot;:VOIP_CALL_STATE_RINGBACK &quot;lineId&quot;:0 &quot;callId&quot;:3 &quot;action&quot;:UI_DISPLAY_STATUS &quot;cid&quot;:&quot;\&quot;07131124\”\”146\”\”John Smith\”” &quot;prompt&quot;:VOIP_PROMPT_CONNECTING}</span></span></p>
+  <p>  </p>
+  <h4>Non-Verbose Format</h4>
+  <p><span><span>[7 0 3 2 &quot;\&quot;07131124\”\”146\”\”John Smith\”” 8]</span></span></p>
+  <p>  </p>
+  <h3>Call State Full Command Examples</h3>
+  <p><span>An actual Call State response will include two separate lines, each with 6 call appearances. An example of a full response is provided below in both verbose and non-verbose formats. The following responses show a ring-back on line 0, call appearance 0. All other call appearances on line 0 are idle. Line 1 has not been configured.  </span></p>
+  <p>  </p>
+  <h4>Verbose Format</h4>
+  <p><span><span>! &quot;publishToken&quot;:&quot; Room 1&quot; &quot;value&quot;:{&quot;callStateInfo&quot;:[{&quot;state&quot;:VOIP_CALL_STATE_RINGBACK &quot;lineId&quot;:0 &quot;callId&quot;:0 &quot;action&quot;:UI_DISPLAY_STATUS &quot;cid&quot;:&quot;\&quot;07131038\&quot;\&quot;146\&quot;\&quot;\&quot;&quot; &quot;prompt&quot;:VOIP_PROMPT_CONNECTING} {&quot;state&quot;:VOIP_CALL_STATE_IDLE &quot;lineId&quot;:0 &quot;callId&quot;:1 &quot;action&quot;: UI_CLEAR_STATUS &quot;cid&quot;:&quot;&quot; &quot;prompt&quot;:VOIP_PROMPT_NONE} {&quot;state&quot;:VOIP_CALL_STATE_IDLE &quot;lineId&quot;:0 &quot;callId&quot;:2 &quot;action&quot;:UI_CLEAR_STATUS &quot;cid&quot;:&quot;&quot; &quot;prompt&quot;:VOIP_PROMPT_NONE} {&quot;state&quot;:VOIP_CALL_STATE_IDLE &quot;lineId&quot;:0 &quot;callId&quot;:3 &quot;action&quot;:UI_CLEAR_STATUS &quot;cid&quot;:&quot;&quot; &quot;prompt&quot;:VOIP_PROMPT_NONE} {&quot;state&quot;:VOIP_CALL_STATE_IDLE &quot;lineId&quot;:0 &quot;callId&quot;:4 &quot;action&quot;:UI_CLEAR_STATUS &quot;cid&quot;:&quot;&quot; &quot;prompt&quot;:VOIP_PROMPT_NONE} {&quot;state&quot;:VOIP_CALL_STATE_IDLE &quot;lineId&quot;:0 &quot;callId&quot;:5 &quot;action&quot;:UI_CLEAR_STATUS &quot;cid&quot;:&quot;&quot; &quot;prompt&quot;:VOIP_PROMPT_NONE} {&quot;state&quot;:VOIP_CALL_STATE_INIT &quot;lineId&quot;:1 &quot;callId&quot;:0 &quot;action&quot;:UI_DISPLAY_STATUS &quot;cid&quot;:&quot;&quot; &quot;prompt&quot;:VOIP_PROMPT_SIP_USER_NOT_CONFIGURED} {&quot;state&quot;:VOIP_CALL_STATE_INIT &quot;lineId&quot;:1 &quot;callId&quot;:1 &quot;action&quot;:UI_CLEAR_STATUS &quot;cid&quot;:&quot;&quot; &quot;prompt&quot;:VOIP_PROMPT_SIP_USER_NOT_CONFIGURED} {&quot;state&quot;:VOIP_CALL_STATE_INIT &quot;lineId&quot;:1 &quot;callId&quot;:2 &quot;action&quot;:UI_CLEAR_STATUS &quot;cid&quot;:&quot;&quot; &quot;prompt&quot;:VOIP_PROMPT_SIP_USER_NOT_CONFIGURED} {&quot;state&quot;:VOIP_CALL_STATE_INIT &quot;lineId&quot;:1 &quot;callId&quot;:3 &quot;action&quot;:UI_CLEAR_STATUS&quot;cid&quot;:&quot;&quot; &quot;prompt&quot;:VOIP_PROMPT_SIP_USER_NOT_CONFIGURED} {&quot;state&quot;:VOIP_CALL_STATE_INIT &quot;lineId&quot;:1 &quot;callId&quot;:4 &quot;action&quot;:UI_CLEAR_STATUS &quot;cid&quot;:&quot;&quot; &quot;prompt&quot;:VOIP_PROMPT_SIP_USER_NOT_CONFIGURED} {&quot;state&quot;:VOIP_CALL_STATE_INIT &quot;lineId&quot;:1 &quot;callId&quot;:5&quot;action&quot;:UI_CLEAR_STATUS &quot;cid&quot;:&quot;&quot; &quot;prompt&quot;:VOIP_PROMPT_SIP_USER_NOT_CONFIGURED}]}</span></span></p>
+  <p>  </p>
+  <h4>Non-Verbose Format</h4>
+  <p><span><span>! &quot;Room_1&quot; [[[7 0 0 2 &quot;\&quot;07131038\&quot;\&quot;146\&quot;\&quot;\&quot;&quot; 8] [3 0 1 1 “” 1] [3 0 2 1 “” 1] [3 0 3 1 &quot;&quot; 1] [3 0 4 1 &quot;&quot; 1] [3 0 5 1 &quot;&quot; 1] [1 1 0 2 &quot;&quot; 6] [1 1 1 1 “” 6] [1 1 2 1 “” 6] [1 1 3 1 &quot;&quot; 6] [1 1 4 1 &quot;&quot; 6] [1 1 5 1 &quot;&quot; 6]]]</span></span></p>
+  <p>  </p>
+  <p>  </p>
+
+</div>
+  <div>
+    <p></p>
+  </div>
+
+</body></html>

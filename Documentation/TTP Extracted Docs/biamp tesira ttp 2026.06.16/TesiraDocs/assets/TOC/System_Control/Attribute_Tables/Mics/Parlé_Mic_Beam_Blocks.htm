@@ -1,0 +1,394 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml"><head>
+
+
+  <meta name="gRootRelPath" content="../../../../.."/>
+	<meta name="gCommonRootRelPath" content="../../../../.."/>
+  <meta name="gTopicId" content="4.2.5.0_1"/>
+  <script type="text/javascript" src="../../../../../template/scripts/rh.min.js"></script>
+  <script type="text/javascript" src="../../../../../template/scripts/common.min.js"></script>
+  <script type="text/javascript" src="../../../../../template/scripts/topic.min.js"></script>
+  <script type="text/javascript" src="../../../../../template/scripts/topicwidgets.min.js"></script>
+<script type="text/javascript" src="../../../../../whxdata/projectsettings.js"></script>
+  <link rel="stylesheet" type="text/css" href="../../../../../template/styles/topic.min.css"/>
+  <link rel="stylesheet" type="text/css" href="../../../../../template/Biamp_Grey_&amp;_Blue/topicheader.css"/>
+  <meta name="topic-status" content="Draft"/>
+<link rel="stylesheet" type="text/css" href="../../../../css/Tesira_Help.css"/>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+  <meta name="generator" content="Adobe RoboHelp 2022"/>
+  <title>Parlé Mic Beam Blocks</title>
+  <meta name="topic-status" content="Draft"/>
+  <meta name="template" content="../../../../layouts/TTP_Attributes.htt"/>
+  <link rel="stylesheet" type="text/css" href="../../../../css/Tesira_Help.css"/>
+  <!--[if gte mso 9]><xml>
+<mso:CustomDocumentProperties>
+<mso:_dlc_DocId msdt:dt="string">AP256XAP2PFD-163404756-81003</mso:_dlc_DocId>
+<mso:_dlc_DocIdItemGuid msdt:dt="string">ac28b417-9293-4154-8adb-3081f74826be</mso:_dlc_DocIdItemGuid>
+<mso:_dlc_DocIdUrl msdt:dt="string">https://biamp.sharepoint.com/customerexperience/documentation/TPubsHub/DocDev/_layouts/15/DocIdRedir.aspx?ID=AP256XAP2PFD-163404756-81003, AP256XAP2PFD-163404756-81003</mso:_dlc_DocIdUrl>
+</mso:CustomDocumentProperties>
+</xml><![endif]-->
+</head>
+
+<body>
+  <div class="topic-header rh-hide" id="rh-topic-header">
+    <div class="logo">
+    </div>
+    <div class="nav">
+      <div class="title" title="Tesira Software Help">
+        <span>Tesira Software Help</span>
+      </div>
+      <div class="gotohome" title="Click here to see this page in full context">
+        <a href="#" onclick="rh._.goToFullLayout()">Click here to see this page in full context</a>
+      </div>
+    </div>
+  </div>
+  <div class="topic-header-shadow rh-hide" id="rh-topic-header-shadow"></div>
+
+
+
+  <div>
+    <p></p>
+    <table border="1" cellpadding="1" cellspacing="1" class="TTP" style="background-color: rgb(255, 255, 255); font-family: &quot;Segoe UI&quot;; font-size: 14px; border-collapse: collapse; width: 100%;">
+      <colgroup>
+        <col style="width:50%"/>
+        <col style="width:50%"/>
+      </colgroup>
+    </table>
+    <h4>TTP Attribute Table | <span style="font-style:italic;">Generate command strings with: <a href="https://support.biamp.com/Tesira/Control/Tesira_command_string_calculator">Tesira Command String Calculator</a></span></h4>
+  </div>
+  <p></p>
+  <div>
+  <h1><span data-field="title" data-format="default">Parlé Mic Beam Blocks</span></h1>
+  <p>  </p>
+  <div data-conref="../../../../snippets/TTP_Status_Attributes.hts">
+  <p>Please refer to the<span> </span>TTP section of the <a href="../../Tesira_Software_System_Control_Overview.htm"><span data-keyref="TesiraSoftware">Tesira</span> Software System Control Overview</a><span> page</span> for more details on the controlling <span data-keyref="TesiraProduct">Tesira</span> devices using the TTP protocol. </p>
+  <p>Each element of the command instruction is delimited by one or more spaces. The commands are case sensitive and upper and lower case characters are used. </p>
+  <p>The TTP string to adjust a DSP object attribute is structured in the following order: </p>
+  <p><b>Instance_Tag Command Attribute [Index] [Value] LF </b></p>
+  <ul>
+    <li><span><span style="font-weight:bold;">Instance Tag</span>:<span> </span></span>Is always required. </li>
+    <li><span style="font-weight:bold;">Command</span>: Is always required. </li>
+    <li><span><span style="font-weight:bold;">Attribute</span>:</span><span> </span>Is always required. </li>
+    <li><span style="font-weight:bold;">[Index]</span>: Is shown in [Brackets] and may be required depending on the<span> </span>Attribute<span> </span>being referenced. If not required it should not be defined. Depending on the Attribute, it can be made up of one or more indexes. </li>
+    <li><span style="font-weight:bold;">[Value]</span>: Is shown in [Brackets] and may be required depending on the<span> </span>Command<span> </span>or<span> </span>Attribute<span> </span>being referenced. If not be required it should not be defined. The Value would not normally have spaces, if it does it can be defined in &quot;double quotes&quot;. It can also be a numerical value. </li>
+    <li><b>LF:</b><span> </span>A Line feed or Carriage Return is used to define the end of the command. </li>
+  </ul>
+  <p>For additional information on individual elements of a TTP string please review the <a href="../../Tesira_Text_Protocol/TTP_Syntax.htm">TTP Syntax</a> page.  </p>
+
+</div>
+  <p>  </p>
+  <h2><span data-keyref="Parle">Parlé</span> Microphone Status Attributes</h2>
+  <p>  </p>
+  <table border="1" cellpadding="1" cellspacing="1" class="TTP" style="border-collapse: collapse; width: 804px;">
+    <thead>
+      <tr>
+        <th>Instance Tag</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>ParleMic1</td>
+      </tr>
+    </tbody>
+  </table>
+  <p>  </p>
+  <table border="1" cellpadding="1" cellspacing="1" class="TTP" style="border-collapse:collapse; width:100%">
+    <colgroup>
+      <col style="width:20%"/>
+      <col style="width:20%"/>
+      <col style="width:20%"/>
+      <col style="width:20%"/>
+      <col style="width:20%"/>
+    </colgroup>
+    <thead>
+      <tr>
+        <th>Reason Code</th>
+        <th>Attribute Code</th>
+        <th>Command</th>
+        <th>Indexes</th>
+        <th>Value Range</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Mic Audio Sources</td>
+        <td>audioSources</td>
+        <td>get / subscribe / unsubscribe</td>
+        <td>channel</td>
+        <td><span>Vector of intensity and angle pairs for the beams in a single microphone. Intensity of 0.0 indicates off.</span></td>
+      </tr>
+      <tr>
+        <td>Mic Beam Setup Mode</td>
+        <td>beamSetup</td>
+        <td>get / set / subscribe / unsubscribe</td>
+        <td> </td>
+        <td>NO_DEMO, ACTIVE_SEGMENTS, BEAM_TRACKING, SHOW_MIC_ORIENTATION</td>
+      </tr>
+      <tr>
+        <td>Mic Enable Logic Outputs</td>
+        <td>enableLogicOutputs</td>
+        <td>get</td>
+        <td> </td>
+        <td>false, true</td>
+      </tr>
+      <tr>
+        <td>Mic Has Mute Button</td>
+        <td>hasMuteButtonOnMic</td>
+        <td>get</td>
+        <td> </td>
+        <td>false, true</td>
+      </tr>
+      <tr>
+        <td>Mic Height is Adjustable</td>
+        <td>heightIsAdjustable</td>
+        <td>get</td>
+        <td> </td>
+        <td>false, true</td>
+      </tr>
+      <tr>
+        <td>Mic Input Level</td>
+        <td>inputLevel</td>
+        <td>get / subscribe / unsubscribe</td>
+        <td>channel</td>
+        <td>-100.0 - 36.0</td>
+      </tr>
+      <tr>
+        <td>Mic LED Logic</td>
+        <td>ledLogic</td>
+        <td>get</td>
+        <td> </td>
+        <td>NONE, LOGIC_INPUTS_CONTROL_LEDS</td>
+      </tr>
+      <tr>
+        <td>Mic Level</td>
+        <td>level</td>
+        <td>get / set / increment / decrement / subscribe / unsubscribe</td>
+        <td>channel</td>
+        <td>minLevel - maxLevel dB</td>
+      </tr>
+      <tr>
+        <td>Mic Levels</td>
+        <td>levels</td>
+        <td>get / subscribe / unsubscribe</td>
+        <td> </td>
+        <td> </td>
+      </tr>
+      <tr>
+        <td>Mic Lobe data</td>
+        <td>lobeData</td>
+        <td>get / subscribe / unsubscribe</td>
+        <td>channel</td>
+        <td> </td>
+      </tr>
+      <tr>
+        <td>Mic Segment Peaks</td>
+        <td>lobePeaks</td>
+        <td>get / subscribe / unsubscribe</td>
+        <td>channel</td>
+        <td> </td>
+      </tr>
+      <tr>
+        <td>Mic Max Level</td>
+        <td>maxLevel</td>
+        <td>get / set / increment / decrement</td>
+        <td>channel</td>
+        <td>minLevel - 12.0 dB</td>
+      </tr>
+      <tr>
+        <td>Mic button states</td>
+        <td>micButtons</td>
+        <td>get / subscribe / unsubscribe</td>
+        <td>channel</td>
+        <td>false, true</td>
+      </tr>
+      <tr>
+        <td>Mic Min Level</td>
+        <td>minLevel</td>
+        <td>get / set / increment / decrement</td>
+        <td>channel</td>
+        <td>-100.0 - maxLevel dB</td>
+      </tr>
+      <tr>
+        <td>Mic Mute</td>
+        <td>mute</td>
+        <td>get / set / toggle / subscribe / unsubscribe</td>
+        <td>channel</td>
+        <td>false, true</td>
+      </tr>
+      <tr>
+        <td>Mic Mute as Group</td>
+        <td>muteAsGroup</td>
+        <td>get</td>
+        <td> </td>
+        <td>false, true</td>
+      </tr>
+      <tr>
+        <td>Mic Mute Button Disabled</td>
+        <td>muteButtonOnMicDisabled</td>
+        <td>get / set / toggle / subscribe / unsubscribe</td>
+        <td>channel</td>
+        <td>false, true</td>
+      </tr>
+      <tr>
+        <td>Mic Mutes</td>
+        <td>mutes</td>
+        <td>get / subscribe / unsubscribe</td>
+        <td> </td>
+        <td> </td>
+      </tr>
+      <tr>
+        <td>Mic Channel Count</td>
+        <td>numChannels</td>
+        <td>get</td>
+        <td> </td>
+        <td>1 - 3</td>
+      </tr>
+      <tr>
+        <td>Mic Segment Count</td>
+        <td>numSegments</td>
+        <td>get</td>
+        <td> </td>
+        <td>3 - 4</td>
+      </tr>
+      <tr>
+        <td>Mic Peak Occurring</td>
+        <td>peak</td>
+        <td>get / subscribe / unsubscribe</td>
+        <td>channel</td>
+        <td>false, true</td>
+      </tr>
+      <tr>
+        <td>Mic All Peaks</td>
+        <td>peaks</td>
+        <td>get / subscribe / unsubscribe</td>
+        <td> </td>
+        <td> </td>
+      </tr>
+      <tr>
+        <td>Mic Segments Active</td>
+        <td>segmentsActive</td>
+        <td>get / subscribe / unsubscribe</td>
+        <td>channel</td>
+        <td> </td>
+      </tr>
+      <tr>
+        <td>Mic Supports BeamOut</td>
+        <td>supportsBeamOuts</td>
+        <td>get</td>
+        <td> </td>
+        <td>false, true</td>
+      </tr>
+      <tr>
+        <td>Mic Has Tracking Limits</td>
+        <td>supportsTrackingLimits</td>
+        <td>get</td>
+        <td> </td>
+        <td>false, true</td>
+      </tr>
+    </tbody>
+  </table>
+  <p>  </p>
+  <p>  </p>
+  <h2><span data-keyref="Parle">Parlé</span> Beam Block Attributes</h2>
+  <p>  </p>
+  <table border="1" cellpadding="1" cellspacing="1" class="TTP" style="border-collapse: collapse; width: 804px;">
+    <thead>
+      <tr>
+        <th>Instance Tag</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>ParleBeam1</td>
+      </tr>
+    </tbody>
+  </table>
+  <p>  </p>
+  <table border="1" cellpadding="1" cellspacing="1" class="TTP" style="border-collapse:collapse; width:100%">
+    <colgroup>
+      <col style="width: 208px;"/>
+      <col style="width: 212px;"/>
+      <col style="width: 213px;"/>
+      <col style="width: 209px;"/>
+      <col style="width: 209px;"/>
+    </colgroup>
+    <thead>
+      <tr>
+        <th style="">Reason Code</th>
+        <th>Attribute Code</th>
+        <th>Command</th>
+        <th style="">Indexes</th>
+        <th style="">Value Range</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td style="">Level</td>
+        <td>level</td>
+        <td>get / set / subscribe / unsubscribe</td>
+        <td style="">channel</td>
+        <td style="">minLevel - maxLevel dB</td>
+      </tr>
+      <tr>
+        <td style="">All Levels</td>
+        <td>levels</td>
+        <td>get / subscribe / unsubscribe</td>
+        <td> </td>
+        <td style="">minLevel - maxLevel dB</td>
+      </tr>
+      <tr>
+        <td style="">Max Level</td>
+        <td>maxLevel</td>
+        <td>get / set / increment / decrement</td>
+        <td>channel</td>
+        <td style="">
+          <p>minLevel - 0.0 dB</p>
+        </td>
+      </tr>
+      <tr>
+        <td style="">Min Level</td>
+        <td>minLevel</td>
+        <td>get / set / increment / decrement</td>
+        <td>channel</td>
+        <td style="">-100 -maxLevel dB</td>
+      </tr>
+      <tr>
+        <td style="">Mute</td>
+        <td>mute</td>
+        <td>get / set / toggle / subscribe / unsubscribe</td>
+        <td>channel</td>
+        <td style="">false, true</td>
+      </tr>
+      <tr>
+        <td style="">All Mute States</td>
+        <td>mutes</td>
+        <td>get / subscribe / unsubscribe</td>
+        <td> </td>
+        <td style="">Array of booleans</td>
+      </tr>
+      <tr>
+        <td style="">Peak Occurring</td>
+        <td>peak</td>
+        <td>get / subscribe / unsubscribe</td>
+        <td>channel</td>
+        <td style="">false, true</td>
+      </tr>
+      <tr>
+        <td style="">All Peak States</td>
+        <td>peaks</td>
+        <td>get / subscribe / unsubscribe</td>
+        <td> </td>
+        <td style="">Array of booleans</td>
+      </tr>
+    </tbody>
+  </table>
+  <p>  </p>
+  <p>  </p>
+
+</div>
+  <div>
+    <p></p>
+  </div>
+
+</body></html>

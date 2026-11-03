@@ -215,11 +215,11 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
 
             Feedbacks.Add(MuteFeedback);
             Feedbacks.Add(VolumeLevelFeedback);
+            Feedbacks.Add(RoomGroupFeedback);
             Feedbacks.Add(NameFeedback);
             Feedbacks.Add(VisibleFeedback);
             Feedbacks.Add(TypeFeedback);
             Feedbacks.Add(PermissionsFeedback);
-            Feedbacks.Add(RoomGroupFeedback);
 
             Parent.Feedbacks.AddRange(Feedbacks);
         }
@@ -230,21 +230,20 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
         /// </summary>
         public override void Subscribe()
         {
-            // A range poll lost with a previous session's queue must not block the next one.
-            EndRangePoll();
-
             LevelCustomName = BuildLevelCustomName();
             AddCustomName(LevelCustomName);
+            // A range poll lost with a previous session's queue must not block the next one.
+            EndRangePoll();
             // Min/max aren't read here: startup and the level range poll already queue them for every
-            // volume component, ahead of the subscriptions.
+            // volume component, and watchdog probes call Subscribe() as often as every 10 s.
             // The levelOut subscription is what marks this component subscribed (ParseSubscriptionMessage),
             // which is also what the watchdog checks
             SendSubscriptionCommand(LevelCustomName, "levelOut", 250, 1);
             GetRoomGroup();
             GetMute();
 
-            // Start the mute/group poll if it isn't running. Not a restart: the watchdog calls Subscribe()
-            // on the components it samples, and restarting would keep postponing the poll.
+            // Start the mute/group poll if it isn't running. Not a restart: watchdog probes call
+            // Subscribe() often enough that restarting would keep postponing the poll.
             if (!pollTimer.Enabled) pollTimer.Start();
         }
 

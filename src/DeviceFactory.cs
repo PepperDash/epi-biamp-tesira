@@ -12,7 +12,7 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
         /// </summary>
         public TesiraFactory()
         {
-            MinimumEssentialsFrameworkVersion = "2.17.0";
+            MinimumEssentialsFrameworkVersion = "3.0.0";
 
             TypeNames = new List<string> { "tesira", "tesiraforte", "tesiraserver", "tesira-dsp", "tesiradsp" };
         }

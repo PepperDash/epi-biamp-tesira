@@ -45,7 +45,7 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Mock
             MuteFeedback        = _typedMuteFeedback;
         }
 
-        public override bool CustomActivate()
+        protected override bool CustomActivate()
         {
             // Do NOT fire feedbacks here. Leaving IntFeedback._IntValue at 0 means
             // the first ForcePublishState() call from TesiraDspMock's bootstrap timer

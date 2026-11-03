@@ -1,0 +1,432 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml"><head>
+
+
+  <meta name="gRootRelPath" content="../../../../.."/>
+	<meta name="gCommonRootRelPath" content="../../../../.."/>
+  <meta name="gTopicId" content="4.2.2.0_3"/>
+  <script type="text/javascript" src="../../../../../template/scripts/rh.min.js"></script>
+  <script type="text/javascript" src="../../../../../template/scripts/common.min.js"></script>
+  <script type="text/javascript" src="../../../../../template/scripts/topic.min.js"></script>
+  <script type="text/javascript" src="../../../../../template/scripts/topicwidgets.min.js"></script>
+<script type="text/javascript" src="../../../../../whxdata/projectsettings.js"></script>
+  <link rel="stylesheet" type="text/css" href="../../../../../template/styles/topic.min.css"/>
+  <link rel="stylesheet" type="text/css" href="../../../../../template/Biamp_Grey_&amp;_Blue/topicheader.css"/>
+  <meta name="topic-status" content="Draft"/>
+<link rel="stylesheet" type="text/css" href="../../../../css/Tesira_Help.css"/>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+  <meta name="generator" content="Adobe RoboHelp 2022"/>
+  <title>AEC Input &amp; Processing Blocks</title>
+  <meta name="topic-status" content="Draft"/>
+  <meta name="template" content="../../../../layouts/TTP_Attributes.htt"/>
+  <link rel="stylesheet" type="text/css" href="../../../../css/Tesira_Help.css"/>
+  <!--[if gte mso 9]><xml>
+<mso:CustomDocumentProperties>
+<mso:_dlc_DocId msdt:dt="string">AP256XAP2PFD-163404756-75412</mso:_dlc_DocId>
+<mso:_dlc_DocIdItemGuid msdt:dt="string">ce36e18b-af6e-4ae4-b006-d1d5c4b04b61</mso:_dlc_DocIdItemGuid>
+<mso:_dlc_DocIdUrl msdt:dt="string">https://biamp.sharepoint.com/customerexperience/documentation/TPubsHub/DocDev/_layouts/15/DocIdRedir.aspx?ID=AP256XAP2PFD-163404756-75412, AP256XAP2PFD-163404756-75412</mso:_dlc_DocIdUrl>
+</mso:CustomDocumentProperties>
+</xml><![endif]-->
+</head>
+
+<body>
+  <div class="topic-header rh-hide" id="rh-topic-header">
+    <div class="logo">
+    </div>
+    <div class="nav">
+      <div class="title" title="Tesira Software Help">
+        <span>Tesira Software Help</span>
+      </div>
+      <div class="gotohome" title="Click here to see this page in full context">
+        <a href="#" onclick="rh._.goToFullLayout()">Click here to see this page in full context</a>
+      </div>
+    </div>
+  </div>
+  <div class="topic-header-shadow rh-hide" id="rh-topic-header-shadow"></div>
+
+
+
+  <div>
+    <p></p>
+    <table border="1" cellpadding="1" cellspacing="1" class="TTP" style="background-color: rgb(255, 255, 255); font-family: &quot;Segoe UI&quot;; font-size: 14px; border-collapse: collapse; width: 100%;">
+      <colgroup>
+        <col style="width:50%"/>
+        <col style="width:50%"/>
+      </colgroup>
+    </table>
+    <h4>TTP Attribute Table | <span style="font-style:italic;">Generate command strings with: <a href="https://support.biamp.com/Tesira/Control/Tesira_command_string_calculator">Tesira Command String Calculator</a></span></h4>
+  </div>
+  <p></p>
+  <div>
+  <h1><span data-field="title" data-format="default">AEC Input &amp; Processing Blocks</span></h1>
+  <p>  </p>
+  <div data-conref="../../../../snippets/TTP_Status_Attributes.hts">
+  <p>Please refer to the<span> </span>TTP section of the <a href="../../Tesira_Software_System_Control_Overview.htm"><span data-keyref="TesiraSoftware">Tesira</span> Software System Control Overview</a><span> page</span> for more details on the controlling <span data-keyref="TesiraProduct">Tesira</span> devices using the TTP protocol. </p>
+  <p>Each element of the command instruction is delimited by one or more spaces. The commands are case sensitive and upper and lower case characters are used. </p>
+  <p>The TTP string to adjust a DSP object attribute is structured in the following order: </p>
+  <p><b>Instance_Tag Command Attribute [Index] [Value] LF </b></p>
+  <ul>
+    <li><span><span style="font-weight:bold;">Instance Tag</span>:<span> </span></span>Is always required. </li>
+    <li><span style="font-weight:bold;">Command</span>: Is always required. </li>
+    <li><span><span style="font-weight:bold;">Attribute</span>:</span><span> </span>Is always required. </li>
+    <li><span style="font-weight:bold;">[Index]</span>: Is shown in [Brackets] and may be required depending on the<span> </span>Attribute<span> </span>being referenced. If not required it should not be defined. Depending on the Attribute, it can be made up of one or more indexes. </li>
+    <li><span style="font-weight:bold;">[Value]</span>: Is shown in [Brackets] and may be required depending on the<span> </span>Command<span> </span>or<span> </span>Attribute<span> </span>being referenced. If not be required it should not be defined. The Value would not normally have spaces, if it does it can be defined in &quot;double quotes&quot;. It can also be a numerical value. </li>
+    <li><b>LF:</b><span> </span>A Line feed or Carriage Return is used to define the end of the command. </li>
+  </ul>
+  <p>For additional information on individual elements of a TTP string please review the <a href="../../Tesira_Text_Protocol/TTP_Syntax.htm">TTP Syntax</a> page.  </p>
+
+</div>
+  <p>  </p>
+  <h2>AEC Input Block</h2>
+  <table border="1" cellpadding="1" cellspacing="1" class="TTP" style="border-collapse: collapse; width: 804px;">
+    <thead>
+      <tr>
+        <th>Instance Tag</th>
+        <th>Command</th>
+        <th>Attribute Code</th>
+        <th>Index</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td> AecInput1</td>
+        <td> get</td>
+        <td> aecEnable</td>
+        <td> 1</td>
+      </tr>
+    </tbody>
+  </table>
+  <p>  </p>
+  <h4>Example - Confirm number of channels and set Input gain on Channel 1</h4>
+  <p><span><span><span>AecInput1 get numChannels +OK &quot;value&quot;:2   </span></span></span></p>
+  <p><span><span><span>AecInput1 get gain 1 +OK &quot;value&quot;:0.000000   </span></span></span></p>
+  <p><span><span><span>AecInput1 set gain 1 48 +OK</span></span> </span></p>
+  <p>  </p>
+  <table border="1" cellpadding="1" cellspacing="1" class="TTP" style="border-collapse:collapse; width:100%">
+    <colgroup>
+      <col style="width:20%"/>
+      <col style="width:20%"/>
+      <col style="width:20%"/>
+      <col style="width:20%"/>
+      <col style="width:20%"/>
+    </colgroup>
+    <thead>
+      <tr>
+        <th>Attribute</th>
+        <th>Attribute Code</th>
+        <th>Command</th>
+        <th>Indexes</th>
+        <th>Value Range</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Gain</td>
+        <td>gain</td>
+        <td>get / set / increment / decrement</td>
+        <td>channel</td>
+        <td>0 - 66 dB in 6 dB increments</td>
+      </tr>
+      <tr>
+        <td>Channel Count</td>
+        <td>numChannels</td>
+        <td>get</td>
+        <td> </td>
+        <td>1 - 24</td>
+      </tr>
+      <tr>
+        <td>Peak Occurring</td>
+        <td>peak</td>
+        <td>get / subscribe / unsubscribe</td>
+        <td>channel</td>
+        <td>false, true</td>
+      </tr>
+      <tr>
+        <td>All Peaks</td>
+        <td>peaks</td>
+        <td>get / subscribe / unsubscribe</td>
+        <td> </td>
+        <td> </td>
+      </tr>
+      <tr>
+        <td>Phantom Power On</td>
+        <td>phantomPower</td>
+        <td>get / set / toggle / subscribe /  unsubscribe</td>
+        <td>channel</td>
+        <td>false, true</td>
+      </tr>
+      <tr>
+        <td>All Phantom Power States</td>
+        <td>phantomPowers</td>
+        <td>get / subscribe / unsubscribe</td>
+        <td> </td>
+        <td> </td>
+      </tr>
+    </tbody>
+  </table>
+  <p>  </p>
+  <p>  </p>
+  <h2>AEC Processing Block</h2>
+  <table border="1" cellpadding="1" cellspacing="1" class="TTP" style="border-collapse: collapse; width: 804px;">
+    <thead>
+      <tr>
+        <th>Instance Tag</th>
+        <th>Command</th>
+        <th>Attribute Code</th>
+        <th>Index</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td> Aec1</td>
+        <td> get</td>
+        <td> aecEnable</td>
+        <td> 1</td>
+      </tr>
+    </tbody>
+  </table>
+  <p>  </p>
+  <h4>Example - <span>Confirm processing on Aec1 Instance tag is enabled </span></h4>
+  <p><span><span><span></span></span><span>Aec1 get aecEnable 1 +OK &quot;value&quot;:true</span></span></p>
+  <p>  </p>
+  <table border="1" cellpadding="1" cellspacing="1" class="TTP" style="border-collapse:collapse; width:100%">
+    <colgroup>
+      <col style="width: 207px;"/>
+      <col style="width: 212px;"/>
+      <col style="width: 212px;"/>
+      <col style="width: 211px;"/>
+      <col style="width: 209px;"/>
+    </colgroup>
+    <thead>
+      <tr>
+        <th style="">Attribute</th>
+        <th>Attribute Code</th>
+        <th>Command</th>
+        <th>Indexes</th>
+        <th style="">Value Range</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td style="">AEC Enabled</td>
+        <td>aecEnable</td>
+        <td>get / set / toggle</td>
+        <td>channel</td>
+        <td style="">false, true</td>
+      </tr>
+      <tr>
+        <td style="">Reset AEC</td>
+        <td>aecReset</td>
+        <td>get / set / toggle</td>
+        <td>channel</td>
+        <td style="">false, true</td>
+      </tr>
+      <tr>
+        <td style="">Bypass AGC</td>
+        <td>agcBypass</td>
+        <td>get / set / toggle</td>
+        <td>channel</td>
+        <td style="">false, true</td>
+      </tr>
+      <tr>
+        <td style="">Hold Time</td>
+        <td>holdTime</td>
+        <td>get / set / increment / decrement</td>
+        <td>channel</td>
+        <td style="">0 - 350000 s</td>
+      </tr>
+      <tr>
+        <td style="">HPF Bypass</td>
+        <td>hpfBypass</td>
+        <td>get / set / toggle</td>
+        <td>channel</td>
+        <td style="">false, true</td>
+      </tr>
+      <tr>
+        <td style="">HPF Center Freq.</td>
+        <td>hpfCutoff</td>
+        <td>get / set / increment / decrement</td>
+        <td>channel</td>
+        <td style="">20.0 - 500.0 Hz</td>
+      </tr>
+      <tr>
+        <td style="">Invert</td>
+        <td>invert</td>
+        <td>get / set / toggle</td>
+        <td>channel</td>
+        <td style="">false, true</td>
+      </tr>
+      <tr>
+        <td style="">Level</td>
+        <td>level</td>
+        <td>get / set / increment / decrement / subscribe / unsubscribe</td>
+        <td>channel</td>
+        <td style="">minLevel - maxLevel dB</td>
+      </tr>
+      <tr>
+        <td style="">All Levels</td>
+        <td>levels</td>
+        <td>get / subscribe / unsubscribe</td>
+        <td> </td>
+        <td style=""> </td>
+      </tr>
+      <tr>
+        <td style="">Limiter Enabled</td>
+        <td>limiterEnable</td>
+        <td>get / set / toggle</td>
+        <td>channel</td>
+        <td style="">false, true</td>
+      </tr>
+      <tr>
+        <td style="">Max Attenuation</td>
+        <td>maxAttenuation</td>
+        <td>get / set / increment / decrement</td>
+        <td>channel</td>
+        <td style="">0.0 - 12.0 dB</td>
+      </tr>
+      <tr>
+        <td style="">Max Gain</td>
+        <td>maxGain</td>
+        <td>get / set / increment / decrement</td>
+        <td>channel</td>
+        <td style="">0.0 - 12.0 dB</td>
+      </tr>
+      <tr>
+        <td style="">Max Gain Adj. Rate</td>
+        <td>maxGainAdjRate</td>
+        <td>get / set / increment / decrement</td>
+        <td>channel</td>
+        <td style="">0.0 - 5.0 dB/s</td>
+      </tr>
+      <tr>
+        <td style="">Max Level</td>
+        <td>maxLevel</td>
+        <td>get / set / increment / decrement</td>
+        <td>channel</td>
+        <td style="">minLevel - 12.0 dB</td>
+      </tr>
+      <tr>
+        <td style="">All Meter States</td>
+        <td>meters</td>
+        <td>get / subscribe / unsubscribe</td>
+        <td>channel</td>
+        <td style=""> </td>
+      </tr>
+      <tr>
+        <td style="">Min Level</td>
+        <td>minLevel</td>
+        <td>get / set / increment / decrement</td>
+        <td>channel</td>
+        <td style="">-100.0 - maxLevel dB</td>
+      </tr>
+      <tr>
+        <td style="">Min SNR</td>
+        <td>minSnr</td>
+        <td>get / set / increment / decrement</td>
+        <td>channel</td>
+        <td style="">10.0 - 50.0 dB</td>
+      </tr>
+      <tr>
+        <td style="">Min Threshold</td>
+        <td>minThreshold</td>
+        <td>get / set / increment / decrement</td>
+        <td>channel</td>
+        <td style="">-30.0 - 10.0 dBu</td>
+      </tr>
+      <tr>
+        <td style="">Mute</td>
+        <td>mute</td>
+        <td>get / set / toggle / subscribe / unsubscribe</td>
+        <td>channel</td>
+        <td style="">false, true</td>
+      </tr>
+      <tr>
+        <td style="">All Mute States</td>
+        <td>mutes</td>
+        <td>get / subscribe / unsubscribe</td>
+        <td> </td>
+        <td style=""> </td>
+      </tr>
+      <tr>
+        <td style="">Nonlinear Processing Mode</td>
+        <td>nlpMode</td>
+        <td>get / set</td>
+        <td>channel</td>
+        <td style="">NLPMODE_NONE, NLPMODE_LOW, NLPMODE_MEDIUM, NLPMODE_HIGH</td>
+      </tr>
+      <tr>
+        <td style="">Noise Reduction</td>
+        <td>nrdMode</td>
+        <td>get / set</td>
+        <td>channel</td>
+        <td style="">OFF, LOW, MED, HIGH, NOISE_RED_MODE_CUSTOM</td>
+      </tr>
+      <tr>
+        <td style="">Channel Count</td>
+        <td>numChannels</td>
+        <td>get</td>
+        <td> </td>
+        <td style="">1 - 24</td>
+      </tr>
+      <tr>
+        <td style="">Pre-Emphasis Slope</td>
+        <td>preEmphasisSlope</td>
+        <td>get / set</td>
+        <td>channel</td>
+        <td style="">Slope_0, Slope_1, Slope_2, Slope_3</td>
+      </tr>
+      <tr>
+        <td style="">Speech Mode</td>
+        <td>speechMode</td>
+        <td>get / set / toggle</td>
+        <td>channel</td>
+        <td style="">false, true</td>
+      </tr>
+      <tr>
+        <td style="">Target Level</td>
+        <td>targetLevel</td>
+        <td>get / set / increment / decrement</td>
+        <td>channel</td>
+        <td style="">-10.0 - 10.0 dB</td>
+      </tr>
+    </tbody>
+  </table>
+  <p>  </p>
+  <h3>AEC Reference</h3>
+  <table border="1" cellpadding="1" cellspacing="1" class="TTP" style="border-collapse:collapse; width:100%">
+    <colgroup>
+      <col style="width: 204px;"/>
+      <col style="width: 211px;"/>
+      <col style="width: 213px;"/>
+      <col style="width: 215px;"/>
+      <col style="width: 208px;"/>
+    </colgroup>
+    <thead>
+      <tr>
+        <th>Attribute</th>
+        <th>Attribute Code</th>
+        <th>Command</th>
+        <th>Indexes</th>
+        <th>Value Range</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td style="">Channel Count</td>
+        <td>numChannels</td>
+        <td>get</td>
+        <td> </td>
+        <td style="">1 - 24</td>
+      </tr>
+    </tbody>
+  </table>
+  <p>  </p>
+  <p>  </p>
+
+</div>
+  <div>
+    <p></p>
+  </div>
+
+</body></html>

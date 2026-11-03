@@ -169,9 +169,22 @@
 						"dialerInstanceTag" : "Dialer1",
 						"controlStatusInstanceTag" : "VoIPControlStatus1",
 						"index" : 1,
-						"callAppearance" : 1,
 						"clearOnHangup" : true,
-						"appendDtmf" : false
+						"appendDtmf" : false,
+						"phonebook" : {
+							"enabled" : true,
+							"entryCount" : 16
+						},
+						"callAppearances" : {
+							"1" : {
+								"label" : "Call Appearance 1",
+								"bridgeIndex" : 1
+							},
+							"2" : {
+								"label" : "Call Appearance 2",
+								"bridgeIndex" : 2
+							}
+						}
 					}
 				}
 			},

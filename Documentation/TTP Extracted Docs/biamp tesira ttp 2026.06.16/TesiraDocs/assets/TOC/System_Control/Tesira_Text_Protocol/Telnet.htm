@@ -1,0 +1,468 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml"><head>
+
+
+  <meta name="gRootRelPath" content="../../../.."/>
+	<meta name="gCommonRootRelPath" content="../../../.."/>
+  <meta name="gTopicId" content="4.1.0_7"/>
+  <script type="text/javascript" src="../../../../template/scripts/rh.min.js"></script>
+  <script type="text/javascript" src="../../../../template/scripts/common.min.js"></script>
+  <script type="text/javascript" src="../../../../template/scripts/topic.min.js"></script>
+  <script type="text/javascript" src="../../../../template/scripts/topicwidgets.min.js"></script>
+<script type="text/javascript" src="../../../../whxdata/projectsettings.js"></script>
+  <link rel="stylesheet" type="text/css" href="../../../../template/styles/topic.min.css"/>
+  <link rel="stylesheet" type="text/css" href="../../../../template/Biamp_Grey_&amp;_Blue/topicheader.css"/>
+  <meta name="topic-status" content="Draft"/>
+<link rel="stylesheet" type="text/css" href="../../../css/Tesira_Help.css"/>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+  <meta name="generator" content="Adobe RoboHelp 2022"/>
+  <title>Telnet</title>
+  <meta name="topic-status" content="Draft"/>
+  <meta name="template" content="../../../layouts/Tesira_General.htt"/>
+  <link rel="stylesheet" type="text/css" href="../../../css/Tesira_Help.css"/>
+  <!--[if gte mso 9]><xml>
+<mso:CustomDocumentProperties>
+<mso:_dlc_DocId msdt:dt="string">AP256XAP2PFD-163404756-75465</mso:_dlc_DocId>
+<mso:_dlc_DocIdItemGuid msdt:dt="string">0bc3ba14-0956-423d-baee-267a001a8df6</mso:_dlc_DocIdItemGuid>
+<mso:_dlc_DocIdUrl msdt:dt="string">https://biamp.sharepoint.com/customerexperience/documentation/TPubsHub/DocDev/_layouts/15/DocIdRedir.aspx?ID=AP256XAP2PFD-163404756-75465, AP256XAP2PFD-163404756-75465</mso:_dlc_DocIdUrl>
+</mso:CustomDocumentProperties>
+</xml><![endif]-->
+</head>
+
+<body>
+  <div class="topic-header rh-hide" id="rh-topic-header">
+    <div class="logo">
+    </div>
+    <div class="nav">
+      <div class="title" title="Tesira Software Help">
+        <span>Tesira Software Help</span>
+      </div>
+      <div class="gotohome" title="Click here to see this page in full context">
+        <a href="#" onclick="rh._.goToFullLayout()">Click here to see this page in full context</a>
+      </div>
+    </div>
+  </div>
+  <div class="topic-header-shadow rh-hide" id="rh-topic-header-shadow"></div>
+
+
+
+  <div></div>
+  <div>
+  <h1><span data-field="title" data-format="default">Telnet</span></h1>
+  <p>Please also review the<span> </span>Troubleshooting TTP<span> </span>which gives information on configuring a PC to connect to a <span data-keyref="TesiraProduct">Tesira</span> system for testing purposes. </p>
+  <p>Telnet is configured by specifying the IP address of the <span data-keyref="TesiraProduct">Tesira</span> Server and connecting via port 23. A maximum of 32 Telnet connections per server are supported. The ability for <span data-keyref="TesiraProduct">Tesira</span> <span data-keyref="TesiraSERVER">SERVER</span>, <span data-keyref="TesiraSERVERIO">SERVER I/O</span>, <span data-keyref="TesiraProduct">Tesira</span> Amplifiers, or <span data-keyref="TesiraForte">TesiraFORTÉ</span> devices to use Telnet can be enabled or disabled via a<span> </span>DEVICE TTP command<span> </span>or in the<span> </span>Device Maintenance Settings<span> </span><span>Network Settings</span><span> </span>dialog. </p>
+  <p>When controlling multiple <span data-keyref="TesiraProduct">Tesira</span> units that are not part of the same TMF file, each <span data-keyref="TesiraProduct">Tesira</span> Server unit will need to be addressed via its own Telnet Session. Commands sent via Telnet are not encrypted. </p>
+  <p>  </p>
+  <h3>VoIP Telnet</h3>
+  <p><span>The option to disable Telnet connections (port 23) on the VoIP enabled <span data-keyref="Forte">FORTÉ</span> and Server devices is available from within the<span> </span>VoIP Property Sheet.<span> </span></span><span>This is an engineering diagnostic interface only however for installations with security concerns about this port being open, it can be disabled. Also refer to the<span> </span></span>VoIP Property Sheet<span><span> </span>to disable HTTP or HTTPs access to the VoIP management webpage. </span></p>
+  <p>  </p>
+  <p>  </p>
+  <h2>Negotiation Required to Establish a Telnet Control Session</h2>
+  <p>  </p>
+  <h3>Session Options</h3>
+  <p><span data-keyref="TesiraProduct">Tesira</span> implements a Telnet server on port 23. When the request from the control system to open a session is received, the<span> </span><span><span data-keyref="TesiraProduct">Tesira</span> Telnet server attempts to negotiate the session’s options, following specifications described in the Telnet standard document RFC 854 as well as document RFC 855, Telnet Option Specifications. </span></p>
+  <p>A standard Telnet client would be able to negotiate the session options without problem, but several third party<span> </span><span>controllers do not implement a Telnet client by default. Instead, they implement control over TCP/IP using what’s commonly known as a ‘RAW’ connection. If the Control System does not respond to the Telnet session options negotiations, the session will not go ahead. As such, the control system will have to be programmed to negotiate the Telnet options with <span data-keyref="TesiraProduct">Tesira</span>’s Telnet server. Many of the available options can be useful during a control session and indeed a programmer may choose to enable some of them, but if the desire is to continue using a ‘RAW’ connection, the simplest way to initiate a control session is for the control system to respond with a rejection to any option negotiation request from the server. </span></p>
+  <p>  </p>
+  <h3>Negotiation</h3>
+  <p>The best way to understand the Telnet options negotiation procedure is by looking at the data in Hex format. Notation will be “0xFF” for Hex character FF.</p>
+  <p>The Telnet commands we are concerned with are always three bytes long. The first is the<span> </span><span>Interpret As Command</span><span> </span>(IAC) character, and it is always 0xFF. The second character is the<span> </span><span>Command</span><span> </span>and the last character is the<span> </span><span>Option</span><span> </span>being<span> </span><span>negotiated. </span></p>
+  <p>Commands can be: </p>
+  <ul>
+    <li>WILL, or 0xFB </li>
+    <li>DO, or 0xFD </li>
+    <li>DON’T, or 0xFE </li>
+    <li>WON’T, or 0xFC </li>
+  </ul>
+  <p>Negotiated options can be (but not limited to*): </p>
+  <ul>
+    <li>Binary Transmission, 0x00 </li>
+    <li>Echo, 0x01 </li>
+    <li>Suppress Go Ahead, 0x03 </li>
+    <li>Status, 0x05 </li>
+    <li>Terminal Type, 0x18 </li>
+  </ul>
+  <p>* There are many different Telnet options in existence; a list is maintained by IANA <a href="https://www.iana.org/assignments/telnet-options/telnet-options.xhtml" target="_blank">http://www.iana.org/assignments/telnet-options</a> </p>
+  <p>The control system needs to react to any incoming string that begins with 0xFF, and decide whether the option is desired<span> </span><span>or not. If the intent is to control <span data-keyref="TesiraProduct">Tesira</span> using a ‘raw’ connection, all that’s required is to always reject the option negotiation. If <span data-keyref="TesiraProduct">Tesira</span> sends a “WILL” Command, the control system shall respond with “DON’T”, and if <span data-keyref="TesiraProduct">Tesira</span> sends a “DO”, the response should be “WON’T”. The Option byte needs to be returned as received. </span></p>
+  <p>In essence, the mechanism is as follows:  </p>
+  <table border="1" cellpadding="1" cellspacing="1" class="TTP" style="border-collapse: collapse; width: 804px;">
+    <colgroup>
+      <col/>
+      <col/>
+      <col/>
+      <col/>
+    </colgroup>
+    <tbody>
+      <tr>
+        <td> When the server sends </td>
+        <td> 0xFF</td>
+        <td> WILL</td>
+        <td> &lt;byte X&gt;</td>
+      </tr>
+      <tr>
+        <td> The control system responds with </td>
+        <td> 0xFF</td>
+        <td> DON&#39;T</td>
+        <td> &lt;byte X&gt;</td>
+      </tr>
+      <tr>
+        <td> When the server sends </td>
+        <td> 0xFF</td>
+        <td> WILL</td>
+        <td> &lt;byte X&gt;</td>
+      </tr>
+      <tr>
+        <td> The control system responds with </td>
+        <td> 0xFF</td>
+        <td> DON&#39;T</td>
+        <td> &lt;byte X&gt;</td>
+      </tr>
+    </tbody>
+  </table>
+  <p>  </p>
+  <h3>Examples</h3>
+  <table border="1" cellpadding="1" cellspacing="1" class="TTP" style="border-collapse:collapse; width:100%">
+    <colgroup>
+      <col style="width: 185px;"/>
+      <col style="width: 76px;"/>
+      <col style="width: 184px;"/>
+      <col style="width: 126px;"/>
+      <col style="width: 601px;"/>
+    </colgroup>
+    <thead>
+      <tr>
+        <th>Source</th>
+        <th style="">IAC</th>
+        <th>Command</th>
+        <th style="">Option</th>
+        <th>Notes</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td> <span data-keyref="TesiraProduct">Tesira</span> Server</td>
+        <td style=""> 0xFF</td>
+        <td> 0xFD</td>
+        <td style=""> 0x01</td>
+        <td> Do Echo</td>
+      </tr>
+      <tr>
+        <td> Control System / Client</td>
+        <td style=""> 0xFF</td>
+        <td> 0xFC</td>
+        <td style=""> 0x01</td>
+        <td> Won&#39;t Echo</td>
+      </tr>
+    </tbody>
+  </table>
+  <p>  </p>
+  <table border="1" cellpadding="1" cellspacing="1" class="TTP" style="border-collapse:collapse; width:100%">
+    <colgroup>
+      <col style="width: 190px;"/>
+      <col style="width: 76px;"/>
+      <col style="width: 184px;"/>
+      <col style="width: 126px;"/>
+      <col style="width: 598px;"/>
+    </colgroup>
+    <thead>
+      <tr>
+        <th style="">Source</th>
+        <th>IAC</th>
+        <th>Command</th>
+        <th style="">Option</th>
+        <th style="">Notes</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td style=""> <span data-keyref="TesiraProduct">Tesira</span> Server</td>
+        <td> 0xFF</td>
+        <td> 0xFB</td>
+        <td style=""> 0x03</td>
+        <td style=""> Will Suppress Go Ahead</td>
+      </tr>
+      <tr>
+        <td style=""> Control System / Client</td>
+        <td> 0xFF</td>
+        <td style=""> 0xFE</td>
+        <td style=""> 0x03</td>
+        <td style=""> Don&#39;t Suppress Go Ahead</td>
+      </tr>
+    </tbody>
+  </table>
+  <p>  </p>
+  <p><span>Once all options are negotiated, the <span data-keyref="TesiraProduct">Tesira</span> server will send the message “Welcome to the <span data-keyref="TesiraProduct">Tesira</span> Text Protocol Server”, preceded and followed by 0x0D and 0x0A. The control system is now free to send TTP commands. </span></p>
+  <p>  </p>
+  <p>  </p>
+  <h2>Other Considerations</h2>
+  <p>Please note that the <span data-keyref="TesiraProduct">Tesira</span> server will usually end any string with either 0x0D (CR character) followed by 0x0A (LF<span> </span><span>character), but as per Telnet RCF it may also use 0x0D (CR character) followed by 0x00 (NUL character). As such, the third party control system must be able to read one more character after it sees a 0x0D, which will always be either 0x0A or 0x00, and handle them appropriately. </span></p>
+  <p>In addition, and while in practice most of the negotiations will always take place at the beginning of a session, Telnet allows for them to happen at any point during the session. </p>
+  <p>  </p>
+  <p>  </p>
+  <h2>Example Negotiation</h2>
+  <p><span>Below is an example session options negotiation at the beginning of a Telnet session between <span data-keyref="TesiraProduct">Tesira</span> and a TCP Client which<span> </span></span><span>was programmed to reject all options offered by the server. Please note this is for illustrations purposes only and the order and quantity of options negotiated may vary depending on firmware release. Strings have been organized below for clarity; however multiple Telnet strings may arrive from the Server in one Ethernet frame. Responses can be sent one at the time, or multiple responses in a single frame.  </span></p>
+  <table border="1" cellpadding="1" cellspacing="1" class="TTP" style="border-collapse:collapse; width:100%">
+    <colgroup>
+      <col/>
+      <col/>
+      <col/>
+      <col/>
+      <col/>
+    </colgroup>
+    <thead>
+      <tr>
+        <th>Source</th>
+        <th>IAC</th>
+        <th>Command</th>
+        <th>Option</th>
+        <th>Notes</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span><span data-keyref="TesiraProduct">Tesira</span> Server</span></td>
+        <td>0xFF</td>
+        <td>0xFD</td>
+        <td>0x18</td>
+        <td><span>Do Terminal Type</span></td>
+      </tr>
+      <tr>
+        <td><span>Client</span></td>
+        <td>0xFF</td>
+        <td>0xFC</td>
+        <td>0x18</td>
+        <td><span>Won&#39;t Terminal Type</span></td>
+      </tr>
+      <tr>
+        <td><span><span data-keyref="TesiraProduct">Tesira</span> Server</span></td>
+        <td>0xFF</td>
+        <td>0xFD</td>
+        <td>0x20</td>
+        <td><span>Do Terminal Speed</span></td>
+      </tr>
+      <tr>
+        <td><span>Client</span></td>
+        <td>0xFF</td>
+        <td>0xFC</td>
+        <td>0x20</td>
+        <td><span>Won&#39;t Terminal Speed</span></td>
+      </tr>
+      <tr>
+        <td><span>Tesira Server</span></td>
+        <td>0xFF</td>
+        <td>0xFD</td>
+        <td>0x23</td>
+        <td><span>Display Location</span></td>
+      </tr>
+      <tr>
+        <td><span>Client</span></td>
+        <td>0xFF</td>
+        <td>0xFC</td>
+        <td>0x23</td>
+        <td><span>Won’t X Display Location</span></td>
+      </tr>
+      <tr>
+        <td><span>Tesira Server</span></td>
+        <td>0xFF</td>
+        <td>0xFD</td>
+        <td>0x27</td>
+        <td><span>Do New Environment Option</span></td>
+      </tr>
+      <tr>
+        <td><span>Client</span></td>
+        <td>0xFF</td>
+        <td>0xFC</td>
+        <td>0x27</td>
+        <td><span>Won&#39;t New Environment Option</span></td>
+      </tr>
+      <tr>
+        <td><span>Tesira Server</span></td>
+        <td>0xFF</td>
+        <td>0xFD</td>
+        <td>0x24</td>
+        <td><span>Do Environment Option</span></td>
+      </tr>
+      <tr>
+        <td><span>Client</span></td>
+        <td>0xFF</td>
+        <td>0xFC</td>
+        <td>0x24</td>
+        <td><span>Won&#39;t Environment Option</span></td>
+      </tr>
+      <tr>
+        <td><span>Tesira Server</span></td>
+        <td>0xFF</td>
+        <td>0xFB</td>
+        <td>0x03</td>
+        <td><span>Will Suppress Go Ahead</span></td>
+      </tr>
+      <tr>
+        <td><span>Client</span></td>
+        <td>0xFF</td>
+        <td>0xFE</td>
+        <td>0x03</td>
+        <td><span>Don’t Suppress Go Ahead</span></td>
+      </tr>
+      <tr>
+        <td><span>Tesira Server</span></td>
+        <td>0xFF</td>
+        <td>0xFD</td>
+        <td>0x01</td>
+        <td><span>Do Echo</span></td>
+      </tr>
+      <tr>
+        <td><span>Client</span></td>
+        <td>0xFF</td>
+        <td>0xFC</td>
+        <td>0x01</td>
+        <td><span>Won’t Echo</span></td>
+      </tr>
+      <tr>
+        <td><span>Tesira Server</span></td>
+        <td>0xFF</td>
+        <td>0xFD</td>
+        <td>0x22</td>
+        <td><span>Do Linemode</span></td>
+      </tr>
+      <tr>
+        <td><span>Client</span></td>
+        <td>0xFF</td>
+        <td>0xFC</td>
+        <td>0x22</td>
+        <td><span>Won’t Linemode</span></td>
+      </tr>
+      <tr>
+        <td><span>Tesira Server</span></td>
+        <td>0xFF</td>
+        <td>0xFD</td>
+        <td>0x1F</td>
+        <td><span>Do Negotiate About Window Size</span></td>
+      </tr>
+      <tr>
+        <td><span>Client</span></td>
+        <td>0xFF</td>
+        <td>0xFC</td>
+        <td>0x1F</td>
+        <td><span>Won&#39;t Negotiate About Window Size</span></td>
+      </tr>
+      <tr>
+        <td><span>Tesira Server</span></td>
+        <td>0xFF</td>
+        <td>0xFB</td>
+        <td>0x05</td>
+        <td><span>Will Status</span></td>
+      </tr>
+      <tr>
+        <td><span>Client</span></td>
+        <td>0xFF</td>
+        <td>0xFE</td>
+        <td>0x05</td>
+        <td><span>Don&#39;t Status</span></td>
+      </tr>
+      <tr>
+        <td><span>Tesira Server</span></td>
+        <td>0xFF</td>
+        <td>0xFD</td>
+        <td>0x21</td>
+        <td><span>Do Remote Flow Control</span></td>
+      </tr>
+      <tr>
+        <td><span>Client</span></td>
+        <td>0xFF</td>
+        <td>0xFC</td>
+        <td>0x21</td>
+        <td><span>Won&#39;t Remote Flow Control</span></td>
+      </tr>
+      <tr>
+        <td><span>Tesira Server</span></td>
+        <td>0xFF</td>
+        <td>0xFB</td>
+        <td>0x01</td>
+        <td><span>Will Echo</span></td>
+      </tr>
+      <tr>
+        <td><span>Client</span></td>
+        <td>0xFF</td>
+        <td>0xFE</td>
+        <td>0x01</td>
+        <td><span>Don’t Echo</span></td>
+      </tr>
+      <tr>
+        <td><span>Tesira Server</span></td>
+        <td>0xFF</td>
+        <td>0xFD</td>
+        <td>0x06</td>
+        <td><span>Do Timing Mark</span></td>
+      </tr>
+      <tr>
+        <td><span>Client</span></td>
+        <td>0xFF</td>
+        <td>0xFC</td>
+        <td>0x06</td>
+        <td><span>Won&#39;t Timing Mark</span></td>
+      </tr>
+      <tr>
+        <td><span>Tesira Server</span></td>
+        <td>0xFF</td>
+        <td>0xFD</td>
+        <td>0x00</td>
+        <td><span>Do Binary Transmission</span></td>
+      </tr>
+      <tr>
+        <td><span>Client</span></td>
+        <td>0xFF</td>
+        <td>0xFC</td>
+        <td>0x00</td>
+        <td><span>Won&#39;t Binary Transmission</span></td>
+      </tr>
+      <tr>
+        <td><span>Tesira Server</span></td>
+        <td>0xFF</td>
+        <td>0xFB</td>
+        <td>0x03</td>
+        <td><span>Will Suppress Go Ahead</span></td>
+      </tr>
+      <tr>
+        <td><span>Client</span></td>
+        <td>0xFF</td>
+        <td>0xFE</td>
+        <td>0x03</td>
+        <td><span>Don’t Suppress Go Ahead</span></td>
+      </tr>
+      <tr>
+        <td><span>Tesira Server</span></td>
+        <td>0xFF</td>
+        <td>0xFB</td>
+        <td>0x01</td>
+        <td><span>Will Echo</span></td>
+      </tr>
+      <tr>
+        <td><span>Client</span></td>
+        <td>0xFF</td>
+        <td>0xFE</td>
+        <td>0x01</td>
+        <td><span>Don’t Echo</span></td>
+      </tr>
+      <tr>
+        <td><span>Tesira Server</span></td>
+        <td>0xFF</td>
+        <td>0xFD</td>
+        <td>0x0A</td>
+        <td> </td>
+      </tr>
+      <tr>
+        <td><span>Tesira Server</span></td>
+        <td colspan="4"><span>0x0D 0x0A</span><span> </span>Welcome to the <span data-keyref="TesiraProduct">Tesira</span> Text Protocol Server 0x0D 0x0A</td>
+      </tr>
+    </tbody>
+  </table>
+  <p>  </p>
+  <p>  </p>
+  <p>  </p>
+
+</div>
+  <div>
+    <p></p>
+  </div>
+
+</body></html>

@@ -52,6 +52,9 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
         [JsonProperty("roomCombinerControlBlocks")]
         public Dictionary<string, TesiraRoomCombinerBlockConfig> RoomCombinerControlBlocks { get; set; }
 
+        [JsonProperty("dtmfDecodeControlBlocks")]
+        public Dictionary<string, TesiraDtmfDecodeConfig> DtmfDecodeControlBlocks { get; set; }
+
         [JsonProperty("tesiraExpanderBlocks")]
         public Dictionary<string, TesiraExpanderBlockConfig> ExpanderBlocks { get; set; }
 
@@ -171,6 +174,10 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
     }
 
 
+    /// <summary>
+    /// Configuration for a single Tesira dialer LINE. A line owns one phonebook (speed-dial list)
+    /// and one or more call appearances. This replaces the legacy per-(line,appearance) block.
+    /// </summary>
     public class TesiraDialerControlBlockConfig
     {
         [JsonProperty("enabled")]
@@ -191,11 +198,11 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
         [JsonProperty("controlStatusInstanceTag")]
         public string ControlStatusInstanceTag { get; set; }
 
+        /// <summary>
+        /// Line number on the device (1-based).
+        /// </summary>
         [JsonProperty("index")]
         public int Index { get; set; }
-
-        [JsonProperty("callAppearance")]
-        public int CallAppearance { get; set; }
 
         [JsonProperty("clearOnHangup")]
         public bool ClearOnHangup { get; set; }
@@ -203,8 +210,75 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
         [JsonProperty("appendDtmf")]
         public bool AppendDtmf { get; set; }
 
+        /// <summary>
+        /// Optional. When set, enables (true) or disables (false) the redial feature on a VoIP line.
+        /// Sent to the device on subscribe. VoIP only.
+        /// </summary>
+        [JsonProperty("redialEnable")]
+        public bool? RedialEnable { get; set; }
+
+        /// <summary>
+        /// Optional. Number of rings before auto-answer engages, sent to the device on subscribe.
+        /// VoIP values: AA_IMMEDIATELY, AA_ONE_RING, AA_TWO_RINGS, AA_THREE_RINGS.
+        /// POTS/TI values: AA_ONE_RING..AA_FIVE_RINGS.
+        /// </summary>
+        [JsonProperty("autoAnswerRingCount")]
+        public string AutoAnswerRingCount { get; set; }
+
+        /// <summary>
+        /// Optional line-level bridge index for line-level joins.
+        /// </summary>
         [JsonProperty("bridgeIndex")]
         public uint? BridgeIndex { get; set; }
+
+        /// <summary>
+        /// Per-line phonebook (speed-dial) configuration.
+        /// </summary>
+        [JsonProperty("phonebook")]
+        public TesiraDialerPhonebookConfig Phonebook { get; set; }
+
+        /// <summary>
+        /// Call appearances belonging to this line, keyed by appearance number (1-based).
+        /// </summary>
+        [JsonProperty("callAppearances")]
+        public Dictionary<int, TesiraDialerCallAppearanceConfig> CallAppearances { get; set; }
+    }
+
+    /// <summary>
+    /// Configuration for a single call appearance on a dialer line.
+    /// </summary>
+    public class TesiraDialerCallAppearanceConfig
+    {
+        /// <summary>
+        /// Friendly label for this call appearance.
+        /// </summary>
+        [JsonProperty("label")]
+        public string Label { get; set; }
+
+        /// <summary>
+        /// Bridge index used to offset this appearance's joins on the holistic bridge.
+        /// </summary>
+        [JsonProperty("bridgeIndex")]
+        public uint? BridgeIndex { get; set; }
+    }
+
+    /// <summary>
+    /// Per-line phonebook (speed-dial) configuration.
+    /// </summary>
+    public class TesiraDialerPhonebookConfig
+    {
+        /// <summary>
+        /// When true, the line will poll the device for its speed-dial entries.
+        /// </summary>
+        [JsonProperty("enabled")]
+        public bool Enabled { get; set; }
+
+        /// <summary>
+        /// Optional override for the number of speed-dial entries to expose for this line.
+        /// When null, the line's default (TesiraDspDialer.MaxSpeedDialEntries) is used.
+        /// </summary>
+        [JsonProperty("entryCount")]
+        public int? EntryCount { get; set; }
     }
 
     public class TesiraSwitcherControlBlockConfig
@@ -500,6 +574,39 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
         /// </summary>
         [JsonProperty("volumeHoldTimeoutMs")]
         public int? VolumeHoldTimeoutMs { get; set; } = null;
+    }
+
+    public class TesiraDtmfDecodeConfig
+    {
+        /// <summary>
+        /// When true, the DTMF decode block will be enabled and monitored.
+        /// </summary>
+        [JsonProperty("enabled")]
+        public bool Enabled { get; set; }
+
+        /// <summary>
+        /// Label for the DTMF decode block (used in UI and logging).
+        /// </summary>
+        [JsonProperty("label")]
+        public string Label { get; set; }
+
+        /// <summary>
+        /// Instance tag for the DTMF Decode block (e.g., "DtmfDecode").
+        /// </summary>
+        [JsonProperty("dtmfDecodeInstanceTag")]
+        public string DtmfDecodeInstanceTag { get; set; }
+
+        /// <summary>
+        /// Optional index for the DTMF block (defaults to 1).
+        /// </summary>
+        [JsonProperty("index")]
+        public int Index { get; set; } = 1;
+
+        /// <summary>
+        /// Bridge index for SIMPL+ bridge integration.
+        /// </summary>
+        [JsonProperty("bridgeIndex")]
+        public uint? BridgeIndex { get; set; }
     }
 
     public class RoutingPort

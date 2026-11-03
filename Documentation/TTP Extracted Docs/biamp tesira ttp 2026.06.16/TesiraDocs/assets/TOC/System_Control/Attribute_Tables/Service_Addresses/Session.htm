@@ -1,0 +1,190 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml"><head>
+
+
+  <meta name="gRootRelPath" content="../../../../.."/>
+	<meta name="gCommonRootRelPath" content="../../../../.."/>
+  <meta name="gTopicId" content="4.2.1.0_2"/>
+  <script type="text/javascript" src="../../../../../template/scripts/rh.min.js"></script>
+  <script type="text/javascript" src="../../../../../template/scripts/common.min.js"></script>
+  <script type="text/javascript" src="../../../../../template/scripts/topic.min.js"></script>
+  <script type="text/javascript" src="../../../../../template/scripts/topicwidgets.min.js"></script>
+<script type="text/javascript" src="../../../../../whxdata/projectsettings.js"></script>
+  <link rel="stylesheet" type="text/css" href="../../../../../template/styles/topic.min.css"/>
+  <link rel="stylesheet" type="text/css" href="../../../../../template/Biamp_Grey_&amp;_Blue/topicheader.css"/>
+  <meta name="topic-status" content="Draft"/>
+<link rel="stylesheet" type="text/css" href="../../../../css/Tesira_Help.css"/>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+  <meta name="generator" content="Adobe RoboHelp 2022"/>
+  <title>Session</title>
+  <meta name="topic-status" content="Draft"/>
+  <meta name="template" content="../../../../layouts/TTP_Attributes.htt"/>
+  <link rel="stylesheet" type="text/css" href="../../../../css/Tesira_Help.css"/>
+  <!--[if gte mso 9]><xml>
+<mso:CustomDocumentProperties>
+<mso:_dlc_DocId msdt:dt="string">AP256XAP2PFD-163404756-75450</mso:_dlc_DocId>
+<mso:_dlc_DocIdItemGuid msdt:dt="string">71c05456-ef4d-4f4a-8fcb-4b2a212503f2</mso:_dlc_DocIdItemGuid>
+<mso:_dlc_DocIdUrl msdt:dt="string">https://biamp.sharepoint.com/customerexperience/documentation/TPubsHub/DocDev/_layouts/15/DocIdRedir.aspx?ID=AP256XAP2PFD-163404756-75450, AP256XAP2PFD-163404756-75450</mso:_dlc_DocIdUrl>
+</mso:CustomDocumentProperties>
+</xml><![endif]-->
+</head>
+
+<body>
+  <div class="topic-header rh-hide" id="rh-topic-header">
+    <div class="logo">
+    </div>
+    <div class="nav">
+      <div class="title" title="Tesira Software Help">
+        <span>Tesira Software Help</span>
+      </div>
+      <div class="gotohome" title="Click here to see this page in full context">
+        <a href="#" onclick="rh._.goToFullLayout()">Click here to see this page in full context</a>
+      </div>
+    </div>
+  </div>
+  <div class="topic-header-shadow rh-hide" id="rh-topic-header-shadow"></div>
+
+
+
+  <div>
+    <p></p>
+    <table border="1" cellpadding="1" cellspacing="1" class="TTP" style="background-color: rgb(255, 255, 255); font-family: &quot;Segoe UI&quot;; font-size: 14px; border-collapse: collapse; width: 100%;">
+      <colgroup>
+        <col style="width:50%"/>
+        <col style="width:50%"/>
+      </colgroup>
+    </table>
+    <h4>TTP Attribute Table | <span style="font-style:italic;">Generate command strings with: <a href="https://support.biamp.com/Tesira/Control/Tesira_command_string_calculator">Tesira Command String Calculator</a></span></h4>
+  </div>
+  <p></p>
+  <div>
+  <h1><span data-field="title" data-format="default">Session</span></h1>
+  <p><span>The SESSION Instance Tag is case sensitive and must be in capital letters. It is used to send session specific Attributes and Commands. This includes the response method and can be used to query the commands. </span></p>
+  <p>  </p>
+  <div data-conref="../../../../snippets/TTP_Status_Attributes.hts">
+  <p>Please refer to the<span> </span>TTP section of the <a href="../../Tesira_Software_System_Control_Overview.htm"><span data-keyref="TesiraSoftware">Tesira</span> Software System Control Overview</a><span> page</span> for more details on the controlling <span data-keyref="TesiraProduct">Tesira</span> devices using the TTP protocol. </p>
+  <p>Each element of the command instruction is delimited by one or more spaces. The commands are case sensitive and upper and lower case characters are used. </p>
+  <p>The TTP string to adjust a DSP object attribute is structured in the following order: </p>
+  <p><b>Instance_Tag Command Attribute [Index] [Value] LF </b></p>
+  <ul>
+    <li><span><span style="font-weight:bold;">Instance Tag</span>:<span> </span></span>Is always required. </li>
+    <li><span style="font-weight:bold;">Command</span>: Is always required. </li>
+    <li><span><span style="font-weight:bold;">Attribute</span>:</span><span> </span>Is always required. </li>
+    <li><span style="font-weight:bold;">[Index]</span>: Is shown in [Brackets] and may be required depending on the<span> </span>Attribute<span> </span>being referenced. If not required it should not be defined. Depending on the Attribute, it can be made up of one or more indexes. </li>
+    <li><span style="font-weight:bold;">[Value]</span>: Is shown in [Brackets] and may be required depending on the<span> </span>Command<span> </span>or<span> </span>Attribute<span> </span>being referenced. If not be required it should not be defined. The Value would not normally have spaces, if it does it can be defined in &quot;double quotes&quot;. It can also be a numerical value. </li>
+    <li><b>LF:</b><span> </span>A Line feed or Carriage Return is used to define the end of the command. </li>
+  </ul>
+  <p>For additional information on individual elements of a TTP string please review the <a href="../../Tesira_Text_Protocol/TTP_Syntax.htm">TTP Syntax</a> page.  </p>
+
+</div>
+  <p>  </p>
+  <table border="1" cellpadding="1" cellspacing="1" class="TTP" style="border-collapse: collapse; width: 804px;">
+    <colgroup>
+      <col style="width:25%"/>
+      <col style="width:25%"/>
+      <col style="width:25%"/>
+    </colgroup>
+    <thead>
+      <tr>
+        <th>Instance Tag</th>
+        <th>Command</th>
+        <th>Attribute Code</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td> SESSION</td>
+        <td> get</td>
+        <td> aliases</td>
+      </tr>
+    </tbody>
+  </table>
+  <h4>Example  </h4>
+  <p><span>SESSION get aliases +OK &quot;list&quot;:[&quot;123&quot; &quot;AudioMeter1&quot; &quot;AudioMeter2&quot; &quot;AudioMeter3&quot; &quot;DEVICE&quot; &quot;Input1&quot; &quot;Mixer1&quot; &quot;Mute1&quot; &quot;Level1&quot; &quot;Output1&quot;]</span>  </p>
+  <p>  </p>
+  <table border="1" cellpadding="1" cellspacing="1" class="TTP" style="border-collapse:collapse; width:100%">
+    <colgroup>
+      <col style="width:20%"/>
+      <col style="width:20%"/>
+      <col style="width:20%"/>
+      <col style="width:20%"/>
+      <col style="width:20%"/>
+    </colgroup>
+    <thead>
+      <tr>
+        <th>Attribute</th>
+        <th>Attribute Code</th>
+        <th>Command</th>
+        <th>Indexes</th>
+        <th>Value Range</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Alias</td>
+        <td>alias</td>
+        <td>get</td>
+        <td>name</td>
+        <td> </td>
+      </tr>
+      <tr>
+        <td>Aliases</td>
+        <td>aliases</td>
+        <td>get</td>
+        <td> </td>
+        <td> </td>
+      </tr>
+      <tr>
+        <td>Detailed Responses Enabled</td>
+        <td>detailedResponse</td>
+        <td>get / set / toggle</td>
+        <td> </td>
+        <td>false, true</td>
+      </tr>
+      <tr>
+        <td>Get TTP session ID</td>
+        <td>sessionID</td>
+        <td>get</td>
+        <td> </td>
+        <td> </td>
+      </tr>
+      <tr>
+        <td>Enable/Disable TTP logging</td>
+        <td>ttpLoggingEnable</td>
+        <td>get / set / toggle</td>
+        <td> </td>
+        <td>false, true</td>
+      </tr>
+      <tr>
+        <td>Verbose Output Enabled</td>
+        <td>verbose</td>
+        <td>get / set / toggle</td>
+        <td> </td>
+        <td>false, true</td>
+      </tr>
+    </tbody>
+  </table>
+  <p>  </p>
+  <p>  </p>
+  <h2>Output Styles</h2>
+  <p>A Verbose or concise response can be configured as part of the Session type.</p>
+  <ul>
+    <li><span><span style="font-weight:bold;">Verbose</span>:</span><span> </span>+OK “time”:”12:00” “number”:”503-367-3568” “line”:”2”</li>
+    <li><span><span style="font-weight:bold;">Concise</span>:</span><span> </span>+OK ”12:00” ”503-367-3568” ”2”</li>
+  </ul>
+  <p>  </p>
+  <h4>Example</h4>
+  <p><span>SESSION set verbose true Mute1 get numChannels +OK &quot;value&quot;:2 </span></p>
+  <p><span>SESSION set verbose false +OK </span></p>
+  <p><span>Mute1 get numChannels +OK 2  </span></p>
+  <h4>  </h4>
+  <p>  </p>
+  <p>  </p>
+
+</div>
+  <div>
+    <p></p>
+  </div>
+
+</body></html>

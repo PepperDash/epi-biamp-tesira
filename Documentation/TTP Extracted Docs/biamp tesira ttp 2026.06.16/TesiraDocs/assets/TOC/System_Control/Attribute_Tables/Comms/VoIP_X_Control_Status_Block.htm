@@ -1,0 +1,331 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml"><head>
+
+
+  <meta name="gRootRelPath" content="../../../../.."/>
+	<meta name="gCommonRootRelPath" content="../../../../.."/>
+  <meta name="gTopicId" content="4.2.4.0_7"/>
+  <script type="text/javascript" src="../../../../../template/scripts/rh.min.js"></script>
+  <script type="text/javascript" src="../../../../../template/scripts/common.min.js"></script>
+  <script type="text/javascript" src="../../../../../template/scripts/topic.min.js"></script>
+  <script type="text/javascript" src="../../../../../template/scripts/topicwidgets.min.js"></script>
+<script type="text/javascript" src="../../../../../whxdata/projectsettings.js"></script>
+  <link rel="stylesheet" type="text/css" href="../../../../../template/styles/topic.min.css"/>
+  <link rel="stylesheet" type="text/css" href="../../../../../template/Biamp_Grey_&amp;_Blue/topicheader.css"/>
+  <meta name="topic-status" content="Draft"/>
+<link rel="stylesheet" type="text/css" href="../../../../css/Tesira_Help.css"/>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+  <meta name="generator" content="Adobe RoboHelp 2022"/>
+  <title>VoIP X Control Status Block</title>
+  <meta name="topic-status" content="Draft"/>
+  <meta name="template" content="../../../../layouts/TTP_Attributes.htt"/>
+  <link rel="stylesheet" type="text/css" href="../../../../css/Tesira_Help.css"/>
+  <!--[if gte mso 9]><xml>
+<mso:CustomDocumentProperties>
+<mso:_dlc_DocId msdt:dt="string">AP256XAP2PFD-163404756-80999</mso:_dlc_DocId>
+<mso:_dlc_DocIdItemGuid msdt:dt="string">3cb6fe2c-a6ba-4b1a-a638-95a667bc352e</mso:_dlc_DocIdItemGuid>
+<mso:_dlc_DocIdUrl msdt:dt="string">https://biamp.sharepoint.com/customerexperience/documentation/TPubsHub/DocDev/_layouts/15/DocIdRedir.aspx?ID=AP256XAP2PFD-163404756-80999, AP256XAP2PFD-163404756-80999</mso:_dlc_DocIdUrl>
+</mso:CustomDocumentProperties>
+</xml><![endif]-->
+</head>
+
+<body>
+  <div class="topic-header rh-hide" id="rh-topic-header">
+    <div class="logo">
+    </div>
+    <div class="nav">
+      <div class="title" title="Tesira Software Help">
+        <span>Tesira Software Help</span>
+      </div>
+      <div class="gotohome" title="Click here to see this page in full context">
+        <a href="#" onclick="rh._.goToFullLayout()">Click here to see this page in full context</a>
+      </div>
+    </div>
+  </div>
+  <div class="topic-header-shadow rh-hide" id="rh-topic-header-shadow"></div>
+
+
+
+  <div>
+    <p></p>
+    <table border="1" cellpadding="1" cellspacing="1" class="TTP" style="background-color: rgb(255, 255, 255); font-family: &quot;Segoe UI&quot;; font-size: 14px; border-collapse: collapse; width: 100%;">
+      <colgroup>
+        <col style="width:50%"/>
+        <col style="width:50%"/>
+      </colgroup>
+    </table>
+    <h4>TTP Attribute Table | <span style="font-style:italic;">Generate command strings with: <a href="https://support.biamp.com/Tesira/Control/Tesira_command_string_calculator">Tesira Command String Calculator</a></span></h4>
+  </div>
+  <p></p>
+  <div>
+  <h1><span data-field="title" data-format="default">VoIP X Control Status Block</span></h1>
+  <p>The VoIP X Control/Status blocks allows TTP control of a number of<span> </span>Dialer Service Codes<span> </span>that can be used for call based functions. It also enables a number of<span> </span>VoIP X Call State Commands<span> </span>that allows monitoring and feedback to a control system as well as<span> </span>VoIP X Control Status attributes<span> </span>for controlling general VoIP X functions. See below for details.</p>
+  <p>When a Dialer is added and associated with the respective VoIP X Control/Status block there are also a number of dialer specific attributes. Please refer to the<span> </span><a href="../Control_Blocks/Dialer_Block.htm">Dialer</a><span> </span>section for more information. </p>
+  <p>If there are 2 calls on hold the user may choose any one of those to become an active call. If 2 calls are in conference, any attempt to have a 3rd call appearance dial in will result in a busy tone, redirect to voicemail etc. since the system is already fully engaged. </p>
+  <p>Each element of the Service Code instruction in delimited by a single space. The commands are case sensitive and upper and lower case characters are used. The TTP string is structured in the in the order below. </p>
+  <p>  </p>
+  <p>  </p>
+  <h2>Dialer Service Codes</h2>
+  <p><span>The<span> </span></span><span data-keyref="TesiraForte">TesiraFORTÉ</span><span> </span><span>X can support a single phone line, with up to 2 call appearances. Each call appearance can be a call to a different far end. However, there are limitations on active call appearances. When a call is active, the other call appearance must be on hold, unless involved in a conference call. </span></p>
+  <p>  </p>
+  <div data-conref="../../../../snippets/TTP_Service_Codes.hts">
+  <p>Each element of the command instruction is delimited by one or more spaces. The commands are case sensitive and upper and lower case characters are used. </p>
+  <p><b>Instance_Tag Service [Index] [Value] LF </b></p>
+  <ul>
+    <li><span><span style="font-weight:bold;">Instance Tag</span>:<span> </span></span>Is always required. </li>
+    <li><span style="font-weight:bold;">Service</span>: Is always required. </li>
+    <li><span style="font-weight:bold;">[Index]</span>: Is shown in [Brackets] and may be required depending on the<span> </span>Attribute<span> </span>being referenced. If not required it should not be defined. Depending on the Attribute, it can be made up of one or more indexes. </li>
+    <li><span style="font-weight:bold;">[Value]</span>: Is shown in [Brackets] and may be required depending on the<span> </span>Command<span> </span>or<span> </span>Attribute<span> </span>being referenced. If not be required it should not be defined. The Value would not normally have spaces, if it does it can be defined in &quot;double quotes&quot;. It can also be a numerical value. </li>
+    <li><b>LF:</b><span> </span>A Line feed or Carriage Return is used to define the end of the command. </li>
+  </ul>
+  <p>For additional information on individual elements of a TTP string please review the <a href="../../Tesira_Text_Protocol/TTP_Syntax.htm">TTP Syntax</a> page. </p>
+
+</div>
+  <p>  </p>
+  <table border="1" cellpadding="1" cellspacing="1" class="TTP" style="border-collapse: collapse; width: 804px;">
+    <thead>
+      <tr>
+        <th>Instance Tag</th>
+        <th>Service</th>
+        <th>Index</th>
+        <th>Index</th>
+        <th>Value</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>VoIPXControlStatus1</td>
+        <td>dial</td>
+        <td>1</td>
+        <td>1</td>
+        <td>15036417287</td>
+      </tr>
+    </tbody>
+  </table>
+  <p>  </p>
+  <table border="1" cellpadding="1" cellspacing="1" class="TTP" style="border-collapse: collapse; width: 804px;">
+    <thead>
+      <tr>
+        <th>Instance Tag</th>
+        <th>Service</th>
+        <th>Index</th>
+        <th>Value</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Redial</td>
+        <td>redial</td>
+        <td>Line,Call Appearance</td>
+        <td> </td>
+      </tr>
+      <tr>
+        <td>End</td>
+        <td>end</td>
+        <td>Line,Call Appearance</td>
+        <td> </td>
+      </tr>
+      <tr>
+        <td>Send</td>
+        <td>send</td>
+        <td>Line,Call Appearance</td>
+        <td> </td>
+      </tr>
+      <tr>
+        <td>Dial</td>
+        <td>send</td>
+        <td>Line, Call Appearance</td>
+        <td> </td>
+      </tr>
+      <tr>
+        <td>DTMF (Used when Off Hook only)</td>
+        <td>dtmf</td>
+        <td>Line</td>
+        <td>One number between 0 - 9, * or #</td>
+      </tr>
+      <tr>
+        <td>Answer</td>
+        <td>answer</td>
+        <td>Line,Call Appearance</td>
+        <td> </td>
+      </tr>
+      <tr>
+        <td>Conference</td>
+        <td>lconf</td>
+        <td>Line,Call Appearance</td>
+        <td> </td>
+      </tr>
+      <tr>
+        <td>Resume</td>
+        <td>resume</td>
+        <td>Line, Call Appearance</td>
+        <td> </td>
+      </tr>
+      <tr>
+        <td>Leave Conference</td>
+        <td>leaveConf</td>
+        <td>Line, Call Appearance</td>
+        <td> </td>
+      </tr>
+      <tr>
+        <td>Hold</td>
+        <td>hold</td>
+        <td>Line,Call Appearance</td>
+        <td> </td>
+      </tr>
+      <tr>
+        <td>Go Off Hook</td>
+        <td>offHook</td>
+        <td>Line,Call Appearance</td>
+        <td> </td>
+      </tr>
+      <tr>
+        <td>Go On Hook</td>
+        <td>onHook</td>
+        <td>Line,Call Appearance</td>
+        <td> </td>
+      </tr>
+      <tr>
+        <td>Transfer</td>
+        <td>transfer</td>
+        <td>Line,Call Appearance</td>
+        <td><span> </span><span>Refer to the<span> </span>VoIP Transfer Commands</span><span><span> </span>section</span></td>
+      </tr>
+    </tbody>
+  </table>
+  <p>  </p>
+  <p>  </p>
+  <h2>VoIP X Call State Commands</h2>
+  <p>The VoIP X Control Status Block supports the use of Call State monitoring in order to poll information about the current call state of the telephone card. The response will include multiple information fields for all lines and call appearances of the card. Call State response includes several fields of information including Caller ID which may be useful. Call State is also available as a subscribed service to allow unsolicited feedback to a connected control system via TTP. A full call state subscription update will be sent if any single part of the call state has changed. </p>
+  <p>Please refer to the <a href="VoIP_Call_State_Commands.htm">VoIP/VoIP X<span> </span>Call State Commands</a><span> </span>for more information. </p>
+  <p>  </p>
+  <p>  </p>
+  <h2>VoIP X Control &amp; Status Attributes</h2>
+  <p>  </p>
+  <div data-conref="../../../../snippets/TTP_Status_Attributes.hts">
+  <p>Please refer to the<span> </span>TTP section of the <a href="../../Tesira_Software_System_Control_Overview.htm"><span data-keyref="TesiraSoftware">Tesira</span> Software System Control Overview</a><span> page</span> for more details on the controlling <span data-keyref="TesiraProduct">Tesira</span> devices using the TTP protocol. </p>
+  <p>Each element of the command instruction is delimited by one or more spaces. The commands are case sensitive and upper and lower case characters are used. </p>
+  <p>The TTP string to adjust a DSP object attribute is structured in the following order: </p>
+  <p><b>Instance_Tag Command Attribute [Index] [Value] LF </b></p>
+  <ul>
+    <li><span><span style="font-weight:bold;">Instance Tag</span>:<span> </span></span>Is always required. </li>
+    <li><span style="font-weight:bold;">Command</span>: Is always required. </li>
+    <li><span><span style="font-weight:bold;">Attribute</span>:</span><span> </span>Is always required. </li>
+    <li><span style="font-weight:bold;">[Index]</span>: Is shown in [Brackets] and may be required depending on the<span> </span>Attribute<span> </span>being referenced. If not required it should not be defined. Depending on the Attribute, it can be made up of one or more indexes. </li>
+    <li><span style="font-weight:bold;">[Value]</span>: Is shown in [Brackets] and may be required depending on the<span> </span>Command<span> </span>or<span> </span>Attribute<span> </span>being referenced. If not be required it should not be defined. The Value would not normally have spaces, if it does it can be defined in &quot;double quotes&quot;. It can also be a numerical value. </li>
+    <li><b>LF:</b><span> </span>A Line feed or Carriage Return is used to define the end of the command. </li>
+  </ul>
+  <p>For additional information on individual elements of a TTP string please review the <a href="../../Tesira_Text_Protocol/TTP_Syntax.htm">TTP Syntax</a> page.  </p>
+
+</div>
+  <p>  </p>
+  <table border="1" cellpadding="1" cellspacing="1" class="TTP" style="border-collapse: collapse; width: 804px;">
+    <thead>
+      <tr>
+        <th>Instance Tag</th>
+        <th>Command</th>
+        <th>Attribute Code</th>
+        <th>Index</th>
+        <th>Index</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>VoIPXControlStatus1</td>
+        <td>get</td>
+        <td>lineInUse</td>
+        <td>1</td>
+        <td>1</td>
+      </tr>
+    </tbody>
+  </table>
+  <p>  </p>
+  <table border="1" cellpadding="1" cellspacing="1" class="TTP" style="border-collapse:collapse; width:100%">
+    <colgroup>
+      <col style="width:20%"/>
+      <col style="width:20%"/>
+      <col style="width:20%"/>
+      <col style="width:20%"/>
+      <col style="width:20%"/>
+    </colgroup>
+    <thead>
+      <tr>
+        <th>Reason Code</th>
+        <th>Attribute Code</th>
+        <th>Command</th>
+        <th>Indexes</th>
+        <th>Value Range</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Auto Answer</td>
+        <td>autoAnswer</td>
+        <td>get / set / toggle</td>
+        <td>line (1)</td>
+        <td>false, true</td>
+      </tr>
+      <tr>
+        <td>Auto Answer Ring Count</td>
+        <td>autoAnswerRingCount</td>
+        <td>get / set</td>
+        <td>line (1)</td>
+        <td>AA_IMMEDIATELY, AA_ONE_RING, AA_TWO_RINGS, AA_THREE_RINGS</td>
+      </tr>
+      <tr>
+        <td>Call State</td>
+        <td>callState</td>
+        <td>get / subscribe / unsubscribe</td>
+        <td> </td>
+        <td><span>Refer to the<span> </span>VoIP Call State Commands<span> </span>section</span></td>
+      </tr>
+      <tr>
+        <td>Do Not Disturb Enabled</td>
+        <td>dndEnable</td>
+        <td>get / set / toggle</td>
+        <td>line (1)</td>
+        <td>false, true  </td>
+      </tr>
+      <tr>
+        <td>Last Number Dialed</td>
+        <td>lastNum</td>
+        <td>get / subscribe / unsubscribe</td>
+        <td>line (1)</td>
+        <td>
+          <p> </p>
+        </td>
+      </tr>
+      <tr>
+        <td>Line In Use</td>
+        <td>lineInUse</td>
+        <td>get / subscribe / unsubscribe</td>
+        <td>line (1), call appearance index (1-2)</td>
+        <td>false, true</td>
+      </tr>
+      <tr>
+        <td>Line Ready</td>
+        <td>lineReady</td>
+        <td>get / subscribe / unsubscribe</td>
+        <td>line (1)</td>
+        <td>false, true</td>
+      </tr>
+      <tr>
+        <td>Ringing</td>
+        <td>ringing</td>
+        <td>get / subscribe / unsubscribe</td>
+        <td>line (1), call appearance index (1-2)</td>
+        <td>false, true</td>
+      </tr>
+    </tbody>
+  </table>
+  <p>  </p>
+  <p>  </p>
+  <p>  </p>
+
+</div>
+  <div>
+    <p></p>
+  </div>
+
+</body></html>

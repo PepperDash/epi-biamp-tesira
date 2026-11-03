@@ -1,0 +1,334 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml"><head>
+
+
+  <meta name="gRootRelPath" content="../../../../.."/>
+	<meta name="gCommonRootRelPath" content="../../../../.."/>
+  <meta name="gTopicId" content="4.2.2.0_6"/>
+  <script type="text/javascript" src="../../../../../template/scripts/rh.min.js"></script>
+  <script type="text/javascript" src="../../../../../template/scripts/common.min.js"></script>
+  <script type="text/javascript" src="../../../../../template/scripts/topic.min.js"></script>
+  <script type="text/javascript" src="../../../../../template/scripts/topicwidgets.min.js"></script>
+<script type="text/javascript" src="../../../../../whxdata/projectsettings.js"></script>
+  <link rel="stylesheet" type="text/css" href="../../../../../template/styles/topic.min.css"/>
+  <link rel="stylesheet" type="text/css" href="../../../../../template/Biamp_Grey_&amp;_Blue/topicheader.css"/>
+  <meta name="topic-status" content="Draft"/>
+<link rel="stylesheet" type="text/css" href="../../../../css/Tesira_Help.css"/>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+  <meta name="generator" content="Adobe RoboHelp 2022"/>
+  <title>AV Output Block</title>
+  <meta name="topic-status" content="Draft"/>
+  <meta name="template" content="../../../../layouts/TTP_Attributes.htt"/>
+  <link rel="stylesheet" type="text/css" href="../../../../css/Tesira_Help.css"/>
+  <!--[if gte mso 9]><xml>
+<mso:CustomDocumentProperties>
+<mso:_dlc_DocId msdt:dt="string">AP256XAP2PFD-163404756-75415</mso:_dlc_DocId>
+<mso:_dlc_DocIdItemGuid msdt:dt="string">c816814a-08b5-4cec-9026-636e68c3b365</mso:_dlc_DocIdItemGuid>
+<mso:_dlc_DocIdUrl msdt:dt="string">https://biamp.sharepoint.com/customerexperience/documentation/TPubsHub/DocDev/_layouts/15/DocIdRedir.aspx?ID=AP256XAP2PFD-163404756-75415, AP256XAP2PFD-163404756-75415</mso:_dlc_DocIdUrl>
+</mso:CustomDocumentProperties>
+</xml><![endif]-->
+</head>
+
+<body>
+  <div class="topic-header rh-hide" id="rh-topic-header">
+    <div class="logo">
+    </div>
+    <div class="nav">
+      <div class="title" title="Tesira Software Help">
+        <span>Tesira Software Help</span>
+      </div>
+      <div class="gotohome" title="Click here to see this page in full context">
+        <a href="#" onclick="rh._.goToFullLayout()">Click here to see this page in full context</a>
+      </div>
+    </div>
+  </div>
+  <div class="topic-header-shadow rh-hide" id="rh-topic-header-shadow"></div>
+
+
+
+  <div>
+    <p></p>
+    <table border="1" cellpadding="1" cellspacing="1" class="TTP" style="background-color: rgb(255, 255, 255); font-family: &quot;Segoe UI&quot;; font-size: 14px; border-collapse: collapse; width: 100%;">
+      <colgroup>
+        <col style="width:50%"/>
+        <col style="width:50%"/>
+      </colgroup>
+    </table>
+    <h4>TTP Attribute Table | <span style="font-style:italic;">Generate command strings with: <a href="https://support.biamp.com/Tesira/Control/Tesira_command_string_calculator">Tesira Command String Calculator</a></span></h4>
+  </div>
+  <p></p>
+  <div>
+  <h1><span data-field="title" data-format="default">AV Output Block</span></h1>
+  <p>  </p>
+  <div data-conref="../../../../snippets/TTP_Status_Attributes.hts">
+  <p>Please refer to the<span> </span>TTP section of the <a href="../../Tesira_Software_System_Control_Overview.htm"><span data-keyref="TesiraSoftware">Tesira</span> Software System Control Overview</a><span> page</span> for more details on the controlling <span data-keyref="TesiraProduct">Tesira</span> devices using the TTP protocol. </p>
+  <p>Each element of the command instruction is delimited by one or more spaces. The commands are case sensitive and upper and lower case characters are used. </p>
+  <p>The TTP string to adjust a DSP object attribute is structured in the following order: </p>
+  <p><b>Instance_Tag Command Attribute [Index] [Value] LF </b></p>
+  <ul>
+    <li><span><span style="font-weight:bold;">Instance Tag</span>:<span> </span></span>Is always required. </li>
+    <li><span style="font-weight:bold;">Command</span>: Is always required. </li>
+    <li><span><span style="font-weight:bold;">Attribute</span>:</span><span> </span>Is always required. </li>
+    <li><span style="font-weight:bold;">[Index]</span>: Is shown in [Brackets] and may be required depending on the<span> </span>Attribute<span> </span>being referenced. If not required it should not be defined. Depending on the Attribute, it can be made up of one or more indexes. </li>
+    <li><span style="font-weight:bold;">[Value]</span>: Is shown in [Brackets] and may be required depending on the<span> </span>Command<span> </span>or<span> </span>Attribute<span> </span>being referenced. If not be required it should not be defined. The Value would not normally have spaces, if it does it can be defined in &quot;double quotes&quot;. It can also be a numerical value. </li>
+    <li><b>LF:</b><span> </span>A Line feed or Carriage Return is used to define the end of the command. </li>
+  </ul>
+  <p>For additional information on individual elements of a TTP string please review the <a href="../../Tesira_Text_Protocol/TTP_Syntax.htm">TTP Syntax</a> page.  </p>
+
+</div>
+  <p>  </p>
+  <table border="1" cellpadding="1" cellspacing="1" class="TTP" style="border-collapse: collapse; width: 804px;">
+    <thead>
+      <tr>
+        <th>Instance Tag</th>
+        <th>Command</th>
+        <th>Attribute Code</th>
+        <th>Index</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td> AVOutput1</td>
+        <td> get</td>
+        <td> embeddedAudioPresents</td>
+        <td>1</td>
+      </tr>
+    </tbody>
+  </table>
+  <p>  </p>
+  <h4>Example</h4>
+  <p>AVOutput1 get embeddedAudioPresents 1+OK &quot;value&quot;:[false false false false false false false false]</p>
+  <p>  </p>
+  <table border="1" cellpadding="1" cellspacing="1" class="TTP" style="border-collapse:collapse; width:100%">
+    <colgroup>
+      <col style="width:20%"/>
+      <col style="width:20%"/>
+      <col style="width:20%"/>
+      <col style="width:20%"/>
+      <col style="width:20%"/>
+    </colgroup>
+    <thead>
+      <tr>
+        <th>Attribute</th>
+        <th>Attribute Code</th>
+        <th>Command</th>
+        <th>Indexes</th>
+        <th>Value Range</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Total bandwidth allocated for all existing (connected) audio and video talker streams</td>
+        <td>allocatedBandwidth</td>
+        <td>get / subscribe / unsubscribe</td>
+        <td>AV channel index</td>
+        <td>0-10.0Gbps</td>
+      </tr>
+      <tr>
+        <td>Auxiliary Audio Delay</td>
+        <td>auxDelay</td>
+        <td>get  /set / increment / decrement</td>
+        <td>AV channel index</td>
+        <td>0 - 64 ms</td>
+      </tr>
+      <tr>
+        <td>Auxiliary Audio Full Scale</td>
+        <td>auxFullScale</td>
+        <td>get / set / increment / decrement</td>
+        <td>AV channel index, AV auxiliary port index</td>
+        <td>-31 or 0 - 24 dB in 6 dB increments</td>
+      </tr>
+      <tr>
+        <td>Auxiliary Audio Invert</td>
+        <td>auxInvert</td>
+        <td>get / set / toggle</td>
+        <td>AV channel index, AV auxiliary port index</td>
+        <td>false, true</td>
+      </tr>
+      <tr>
+        <td>Auxiliary Audio Level</td>
+        <td>auxLevel</td>
+        <td>get / set / increment / decrement</td>
+        <td>AV channel index, AV auxiliary port index</td>
+        <td>auxMinLevel - auxMaxLevel dB</td>
+      </tr>
+      <tr>
+        <td>Auxiliary Audio Max Level</td>
+        <td>auxMaxLevel</td>
+        <td>get / set / increment / decrement</td>
+        <td>AV channel index, AV auxiliary port index</td>
+        <td>auxMinLevel - 0.0 dB</td>
+      </tr>
+      <tr>
+        <td>Auxiliary Audio Min Level</td>
+        <td>auxMinLevel</td>
+        <td>get / set / increment / decrement</td>
+        <td>AV channel index, AV auxiliary port index</td>
+        <td>-100.0 - auxMaxLevel dB</td>
+      </tr>
+      <tr>
+        <td>Auxiliary Audio Mute</td>
+        <td>auxMute</td>
+        <td>get / set / toggle</td>
+        <td>AV channel index, AV auxiliary port index</td>
+        <td>false, true</td>
+      </tr>
+      <tr>
+        <td>Auxiliary Audio Port Type</td>
+        <td>auxPortType</td>
+        <td>get</td>
+        <td>AV channel index</td>
+        <td>MONO_PORT, STEREO_PORT</td>
+      </tr>
+      <tr>
+        <td>Total Bandwidth used by all currently listened-to talker streams</td>
+        <td>currentBandwidth</td>
+        <td>get / subscribe / unsubscribe</td>
+        <td>AV channel index</td>
+        <td>0-10Gbps</td>
+      </tr>
+      <tr>
+        <td>Embedded Audio Mute</td>
+        <td>embeddedAudioMute</td>
+        <td>get / set / toggle / subscribe / unsubscribe</td>
+        <td>AV channel index</td>
+        <td>false, true</td>
+      </tr>
+      <tr>
+        <td>Embedded Audio Present Meters</td>
+        <td>embeddedAudioPresents</td>
+        <td>get / subscribe / unsubscribe</td>
+        <td>AV channel index</td>
+        <td> </td>
+      </tr>
+      <tr>
+        <td>Signal Presence Threshold for Embedded Audio Signal Present Meters</td>
+        <td>embeddedAudioThreshold</td>
+        <td>get / set / increment / decrement</td>
+        <td>AV channel index</td>
+        <td>-64-24.0dBu</td>
+      </tr>
+      <tr>
+        <td>Video Fill Color</td>
+        <td>fillColor</td>
+        <td>get / set / increment / decrement</td>
+        <td>AV channel index</td>
+        <td>0 - 4294967295</td>
+      </tr>
+      <tr>
+        <td>HDCP state</td>
+        <td>hdcpEnable</td>
+        <td>get / set</td>
+        <td>AV channel</td>
+        <td>false, true</td>
+      </tr>
+      <tr>
+        <td>Incoming Frame Rate</td>
+        <td>incomingFrameRate</td>
+        <td>get / subscribe / unsubscribe</td>
+        <td>AV channel index</td>
+        <td>0-60Hz</td>
+      </tr>
+      <tr>
+        <td>Incoming Resolution</td>
+        <td>incomingResolution</td>
+        <td>get / subscribe / unsubscribe</td>
+        <td>AV channel index</td>
+        <td>[0,0]-[4096,2160]</td>
+      </tr>
+      <tr>
+        <td>Negotiated Output Frame Rate</td>
+        <td>negotiatedOutputFrameRate</td>
+        <td>get / subscribe / unsubscribe</td>
+        <td>AV channel index</td>
+        <td>0-60Hz</td>
+      </tr>
+      <tr>
+        <td>Negotiated Output Resolution</td>
+        <td>negotiatedOutputResolution</td>
+        <td>get / subscribe / unsubscribe</td>
+        <td>AV channel index</td>
+        <td>[0,0]-[4096,2160]</td>
+      </tr>
+      <tr>
+        <td>Network Interface Bandwidth</td>
+        <td>networkInterfaceType</td>
+        <td>get / subscribe / unsubscribe</td>
+        <td>AV channel index</td>
+        <td>0-10.0Gbps</td>
+      </tr>
+      <tr>
+        <td>Auxiliary Audio Port Count</td>
+        <td>numAuxPorts</td>
+        <td>get</td>
+        <td>AV channel index</td>
+        <td>2 - 2</td>
+      </tr>
+      <tr>
+        <td>AV Channel Count</td>
+        <td>numAVChannels</td>
+        <td>get</td>
+        <td> </td>
+        <td>1 - 1</td>
+      </tr>
+      <tr>
+        <td>On Screen Display Message Duration</td>
+        <td>osdDuration</td>
+        <td>get / set / subscribe / unsubscribe</td>
+        <td>AV channel index</td>
+        <td>OSDOff, OSD5seconds, OSD15seconds, OSDOn</td>
+      </tr>
+      <tr>
+        <td>Output Device Connection State</td>
+        <td>outputDeviceConnected</td>
+        <td>get / subscribe / unsubscribe</td>
+        <td>AV channel index</td>
+        <td>DEVICE_CONNECTED_NONE, DEVICE_CONNECTED_HDMI, DEVICE_CONNECTED_DISPLAYPORT, DEVICE_CONNECTED_BOTH</td>
+      </tr>
+      <tr>
+        <td>Test Pattern Selection</td>
+        <td>testPattern</td>
+        <td>get / set / subscribe / unsubscribe</td>
+        <td>AV channel index</td>
+        <td>Off, ColorBar, Grid, HDMI420, JpegSafe</td>
+      </tr>
+      <tr>
+        <td>On Screen Display Message Transition Mode</td>
+        <td>transition</td>
+        <td>get / set</td>
+        <td>AV channel index</td>
+        <td>FreezeAndFade, OSD, Instant</td>
+      </tr>
+      <tr>
+        <td>Video Freeze</td>
+        <td>videoFreeze</td>
+        <td>get / set / toggle / subscribe / unsubscribe</td>
+        <td>AV channel index</td>
+        <td>false, true</td>
+      </tr>
+      <tr>
+        <td>Video Mute</td>
+        <td>videoMute</td>
+        <td>get / set / toggle / subscribe / unsubscribe</td>
+        <td>AV channel index</td>
+        <td>false, true</td>
+      </tr>
+      <tr>
+        <td>Video Output Format</td>
+        <td>videoOutputFormat</td>
+        <td>get / set</td>
+        <td>AV channel index</td>
+        <td>vfEDIDPreferred, vf4096x2160p60, vf4096x2160p30, vf3840x2160p60, vf3840x2160p30, vf2560x1600p60, vf1920x1200p60, vf1920x1080p60, vf1920x1080p30, vf1280x720p60, vf800x600p60, vf4096x2160p50, vf4096x2160p25, vf3840x2160p50, vf3840x2160p25, deprecated1, deprecated2, vf1920x1080p50, vf1920x1080p25, vf1280x720p50, deprecated3, vf1280x800p60, deprecated4</td>
+      </tr>
+    </tbody>
+  </table>
+  <p>  </p>
+  <p>  </p>
+
+</div>
+  <div>
+    <p></p>
+  </div>
+
+</body></html>

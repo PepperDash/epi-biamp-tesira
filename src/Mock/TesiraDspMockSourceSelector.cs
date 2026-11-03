@@ -44,7 +44,7 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Mock
             Inputs = inputs;
         }
 
-        public override bool CustomActivate()
+        protected override bool CustomActivate()
         {
             this.LogVerbose(
                 "Activated with {count} source(s): {keys}",

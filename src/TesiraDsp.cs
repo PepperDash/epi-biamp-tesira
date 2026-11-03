@@ -24,7 +24,8 @@ using IRoutingWithFeedback = Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Inte
 namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
 {
     public class TesiraDsp : EssentialsBridgeableDevice,
-        IHasDspPresetSave, // extends IDspPresets (RecallPreset + Presets dict implicitly satisfied)
+        IHasDspPresetSave, // extends IDspPresets
+        IDspPresetsDirectRecall,
         ICommunicationMonitor,
         IDeviceInfoProvider,
         IHasFeedback
@@ -83,6 +84,10 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
 
         private System.Timers.Timer watchDogTimer;
 
+        // Set when a comm monitor warning/error stops a running watchdog, so it restarts once the monitor
+        // recovers on the same connection (a reconnect restarts it through the subscription process instead).
+        private bool watchDogStoppedByMonitor;
+
         private System.Timers.Timer unsubscribeTimer;
         private System.Timers.Timer queueCheckTimer;
         private System.Timers.Timer levelRangePollTimer;
@@ -114,6 +119,7 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
         private Dictionary<string, TesiraDspLogicMeter> LogicMeters { get; set; }
         private Dictionary<string, TesiraDspCrosspointState> CrosspointStates { get; set; }
         private Dictionary<string, TesiraDspRoomCombiner> RoomCombiners { get; set; }
+        private Dictionary<string, TesiraDtmfDecode> DtmfDecodes { get; set; }
         public List<TesiraPreset> TesiraPresets { get; private set; }
         private List<ISubscribedComponent> ControlPointList { get; set; }
         public Dictionary<string, IKeyName> Presets { get; private set; }
@@ -240,6 +246,7 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
             LogicMeters = new Dictionary<string, TesiraDspLogicMeter>();
             CrosspointStates = new Dictionary<string, TesiraDspCrosspointState>();
             RoomCombiners = new Dictionary<string, TesiraDspRoomCombiner>();
+            DtmfDecodes = new Dictionary<string, TesiraDtmfDecode>();
             Routers = new Dictionary<string, TesiraDspRouter>();
             SourceSelectors = new Dictionary<string, TesiraDspSourceSelector>();
 
@@ -269,7 +276,7 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
             if (isSerialComm) this.LogVerbose("CheckSerialSendStatus NOT READY");
         }
 
-        public override void Initialize()
+        protected override void Initialize()
         {
             Communication.Connect();
 
@@ -385,6 +392,7 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
                 Meters.Clear();
                 LogicMeters.Clear();
                 RoomCombiners.Clear();
+                DtmfDecodes.Clear();
 
                 CreateFaders(props);
 
@@ -409,6 +417,8 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
                 CreateCrosspoints(props);
 
                 CreateRoomCombiners(props);
+
+                CreateDtmfDecodes(props);
             }
 
             CreateDevInfo();
@@ -427,6 +437,10 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
             if (DevInfo == null) return;
 
             DeviceManager.AddDevice(DevInfo);
+
+            // Forward the child's change event so IDeviceInfoProvider consumers subscribed to the
+            // DSP itself (e.g. Mobile Control) are notified too. Must be wired before seeding.
+            DevInfo.DeviceInfoChanged += (sender, args) => DeviceInfoChanged?.Invoke(this, args);
 
             // Seed from the configured comm hostname so the bridge reports something useful
             // before the DSP answers 'DEVICE get networkStatus'.
@@ -512,6 +526,24 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
                 }
                 DeviceManager.AddDevice(RoomCombiners[key]);
 
+            }
+        }
+
+        private void CreateDtmfDecodes(TesiraDspPropertiesConfig props)
+        {
+            if (props.DtmfDecodeControlBlocks == null) return;
+            this.LogVerbose("DtmfDecodeControlBlocks is not null - There are {0} of them",
+                props.DtmfDecodeControlBlocks.Count());
+            foreach (var block in props.DtmfDecodeControlBlocks)
+            {
+                var key = block.Key;
+                var value = block.Value;
+                DtmfDecodes.Add(key, new TesiraDtmfDecode(key, value, this));
+                this.LogVerbose("Added DTMF Decode {0} InstanceTag: {1}", key, value.DtmfDecodeInstanceTag);
+
+                if (block.Value.Enabled)
+                    ControlPointList.Add(DtmfDecodes[key]);
+                DeviceManager.AddDevice(DtmfDecodes[key]);
             }
         }
 
@@ -734,9 +766,18 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
             if (e.Status == MonitorStatus.IsOk)
             {
                 //StartSubsciptionThread();
+                if (watchDogStoppedByMonitor)
+                {
+                    watchDogStoppedByMonitor = false;
+                    this.LogInformation("Communication recovered; restarting the subscription watchdog");
+                    StartWatchDog();
+                    // StopWatchDog also stopped level range polling
+                    StartLevelRangePollTimer();
+                }
             }
             else if (e.Status != MonitorStatus.IsOk)
             {
+                if (watchDogTimer != null) watchDogStoppedByMonitor = true;
                 StopWatchDog();
             }
         }
@@ -754,6 +795,7 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
             if (!e.Client.IsConnected)
             {
                 SuspendWatchdog(true);
+                watchDogStoppedByMonitor = false;
             }
             else
             {
@@ -1164,6 +1206,7 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
 
             StopSubscriptionThread();
             StopWatchDog();
+            watchDogStoppedByMonitor = false;
             CommandQueue.Clear();
             Communication.Disconnect();
 
@@ -1329,8 +1372,7 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
                     return;
                 }
 
-                // Start of line only, like +OK: an echoed command containing "-ERR" (a preset or tag
-                // name) must not complete the outstanding command.
+                // Only at the start: an echoed command containing "-ERR" (a preset name) isn't a reply
                 if (args.Text.StartsWith("-ERR", StringComparison.Ordinal))
                 {
                     // Watchdog probe replies are attributed to their command by the queue
@@ -1398,7 +1440,7 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
             {
                 if (string.IsNullOrWhiteSpace(line)) continue;
                 // Foreground whatever the verb, so a batch's subscribes and sets run in the order given
-                CommandQueue.EnqueueCommand(new QueuedCommand(line, null, null) { ForceForeground = true });
+                CommandQueue.EnqueueCommand(new QueuedCommand(line, null, null, priority: (int)CommandPriority.High) { ForceForeground = true });
             }
         }
 
@@ -1595,7 +1637,7 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
             DevInfo.GetDeviceInfo();
 
             // Queue expander initialization if available
-            ExpanderTracker?.Initialize();
+            ExpanderTracker?.CheckTracker();
 
             // Queue all min level requests
             var volumeComponents = ControlPointList.OfType<IVolumeComponent>().ToList();
@@ -2026,66 +2068,73 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
                     continue;
                 }
 
-                var dialerLineOffset = lineOffset;
-                this.LogVerbose("AddingDialerBridge {0} {1} Offset", dialer.Key, dialerLineOffset);
-                for (var i = 0; i < dialerJoinMap.KeyPadNumeric.JoinSpan; i++)
+                // Each call appearance on the line gets its own 50-join block. Line-level state
+                // (do-not-disturb, auto-answer, name, display number, last dialed) is mirrored into
+                // every appearance block so each appearance presents a complete dialer surface.
+                foreach (var appearance in dialer.Appearances)
                 {
-                    var tempi = i;
-                    trilist.SetSigTrueAction(dialerJoinMap.KeyPadNumeric.JoinNumber + (uint)i + dialerLineOffset, () => dialer.SendKeypad((TesiraDspDialer.EKeypadKeys)tempi));
+                    var dialerLineOffset = lineOffset;
+                    var callAppearance = appearance;
+                    this.LogVerbose("AddingDialerBridge {0} appearance {1} at {2} offset", dialer.Key, callAppearance.AppearanceNumber, dialerLineOffset);
+
+                    for (var i = 0; i < dialerJoinMap.KeyPadNumeric.JoinSpan; i++)
+                    {
+                        var tempi = i;
+                        trilist.SetSigTrueAction(dialerJoinMap.KeyPadNumeric.JoinNumber + (uint)i + dialerLineOffset, () => callAppearance.SendKeypad((TesiraDspDialer.EKeypadKeys)tempi));
+                    }
+
+                    trilist.SetSigTrueAction(dialerJoinMap.KeyPadStar.JoinNumber + dialerLineOffset, () => callAppearance.SendKeypad(TesiraDspDialer.EKeypadKeys.Star));
+                    trilist.SetSigTrueAction(dialerJoinMap.KeyPadPound.JoinNumber + dialerLineOffset, () => callAppearance.SendKeypad(TesiraDspDialer.EKeypadKeys.Pound));
+                    trilist.SetSigTrueAction(dialerJoinMap.KeyPadClear.JoinNumber + dialerLineOffset, () => callAppearance.SendKeypad(TesiraDspDialer.EKeypadKeys.Clear));
+                    trilist.SetSigTrueAction(dialerJoinMap.KeyPadBackspace.JoinNumber + dialerLineOffset, () => callAppearance.SendKeypad(TesiraDspDialer.EKeypadKeys.Backspace));
+
+                    trilist.SetSigTrueAction(dialerJoinMap.KeyPadDial.JoinNumber + dialerLineOffset, callAppearance.Dial);
+                    trilist.SetSigTrueAction(dialerJoinMap.DoNotDisturbToggle.JoinNumber + dialerLineOffset, dialer.DoNotDisturbToggle);
+                    trilist.SetSigTrueAction(dialerJoinMap.DoNotDisturbOn.JoinNumber + dialerLineOffset, dialer.DoNotDisturbOn);
+                    trilist.SetSigTrueAction(dialerJoinMap.DoNotDisturbOff.JoinNumber + dialerLineOffset, dialer.DoNotDisturbOff);
+                    trilist.SetSigTrueAction(dialerJoinMap.AutoAnswerToggle.JoinNumber + dialerLineOffset, dialer.AutoAnswerToggle);
+                    trilist.SetSigTrueAction(dialerJoinMap.AutoAnswerOn.JoinNumber + dialerLineOffset, dialer.AutoAnswerOn);
+                    trilist.SetSigTrueAction(dialerJoinMap.AutoAnswerOff.JoinNumber + dialerLineOffset, dialer.AutoAnswerOff);
+                    trilist.SetSigTrueAction(dialerJoinMap.Answer.JoinNumber + dialerLineOffset, callAppearance.Answer);
+                    trilist.SetSigTrueAction(dialerJoinMap.EndCall.JoinNumber + dialerLineOffset, callAppearance.End);
+                    trilist.SetSigTrueAction(dialerJoinMap.OnHook.JoinNumber + dialerLineOffset, callAppearance.OnHook);
+                    trilist.SetSigTrueAction(dialerJoinMap.OffHook.JoinNumber + dialerLineOffset, callAppearance.OffHook);
+
+                    trilist.SetSigTrueAction(dialerJoinMap.HoldCall.JoinNumber + dialerLineOffset, callAppearance.HoldCall);
+                    trilist.SetSigTrueAction(dialerJoinMap.ResumeCall.JoinNumber + dialerLineOffset, callAppearance.ResumeCall);
+                    trilist.SetSigTrueAction(dialerJoinMap.HoldToggle.JoinNumber + dialerLineOffset, callAppearance.HoldToggle);
+
+                    trilist.SetStringSigAction(dialerJoinMap.DialString.JoinNumber + dialerLineOffset, callAppearance.SetDialString);
+
+                    dialer.DoNotDisturbFeedback.LinkInputSig(trilist.BooleanInput[dialerJoinMap.DoNotDisturbToggle.JoinNumber + dialerLineOffset]);
+                    dialer.DoNotDisturbFeedback.LinkInputSig(trilist.BooleanInput[dialerJoinMap.DoNotDisturbOn.JoinNumber + dialerLineOffset]);
+                    dialer.DoNotDisturbFeedback.LinkComplementInputSig(trilist.BooleanInput[dialerJoinMap.DoNotDisturbOff.JoinNumber + dialerLineOffset]);
+
+                    callAppearance.OffHookFeedback.LinkInputSig(trilist.BooleanInput[dialerJoinMap.KeyPadDial.JoinNumber + dialerLineOffset]);
+                    callAppearance.OffHookFeedback.LinkInputSig(trilist.BooleanInput[dialerJoinMap.OffHook.JoinNumber + dialerLineOffset]);
+                    callAppearance.OffHookFeedback.LinkComplementInputSig(trilist.BooleanInput[dialerJoinMap.OnHook.JoinNumber + dialerLineOffset]);
+                    callAppearance.IncomingCallFeedback.LinkInputSig(trilist.BooleanInput[dialerJoinMap.IncomingCall.JoinNumber + dialerLineOffset]);
+
+                    dialer.AutoAnswerFeedback.LinkInputSig(trilist.BooleanInput[dialerJoinMap.AutoAnswerToggle.JoinNumber + dialerLineOffset]);
+                    dialer.AutoAnswerFeedback.LinkInputSig(trilist.BooleanInput[dialerJoinMap.AutoAnswerOn.JoinNumber + dialerLineOffset]);
+                    dialer.AutoAnswerFeedback.LinkComplementInputSig(trilist.BooleanInput[dialerJoinMap.AutoAnswerOff.JoinNumber + dialerLineOffset]);
+
+                    dialer.NameFeedback.LinkInputSig(trilist.StringInput[dialerJoinMap.Label.JoinNumber + dialerLineOffset]);
+                    dialer.DisplayNumberFeedback.LinkInputSig(trilist.StringInput[dialerJoinMap.DisplayNumber.JoinNumber + dialerLineOffset]);
+
+                    callAppearance.DialStringFeedback.LinkInputSig(trilist.StringInput[dialerJoinMap.DialString.JoinNumber + dialerLineOffset]);
+                    callAppearance.CallerIdNumberFeedback.LinkInputSig(trilist.StringInput[dialerJoinMap.CallerIdNumberFb.JoinNumber + dialerLineOffset]);
+                    callAppearance.CallerIdNameFeedback.LinkInputSig(trilist.StringInput[dialerJoinMap.CallerIdNameFb.JoinNumber + dialerLineOffset]);
+                    dialer.LastDialedFeedback.LinkInputSig(trilist.StringInput[dialerJoinMap.LastNumberDialerFb.JoinNumber + dialerLineOffset]);
+
+                    callAppearance.HoldCallFeedback.LinkInputSig(trilist.BooleanInput[dialerJoinMap.HoldCall.JoinNumber + dialerLineOffset]);
+                    callAppearance.HoldCallFeedback.LinkComplementInputSig(trilist.BooleanInput[dialerJoinMap.ResumeCall.JoinNumber + dialerLineOffset]);
+                    callAppearance.HoldCallFeedback.LinkInputSig(trilist.BooleanInput[dialerJoinMap.HoldToggle.JoinNumber + dialerLineOffset]);
+
+                    callAppearance.CallStateFeedback.LinkInputSig(trilist.UShortInput[dialerJoinMap.CallState.JoinNumber + dialerLineOffset]);
+
+                    lineOffset += 50;
                 }
-
-                trilist.SetSigTrueAction(dialerJoinMap.KeyPadStar.JoinNumber + dialerLineOffset, () => dialer.SendKeypad(TesiraDspDialer.EKeypadKeys.Star));
-                trilist.SetSigTrueAction(dialerJoinMap.KeyPadPound.JoinNumber + dialerLineOffset, () => dialer.SendKeypad(TesiraDspDialer.EKeypadKeys.Pound));
-                trilist.SetSigTrueAction(dialerJoinMap.KeyPadClear.JoinNumber + dialerLineOffset, () => dialer.SendKeypad(TesiraDspDialer.EKeypadKeys.Clear));
-                trilist.SetSigTrueAction(dialerJoinMap.KeyPadBackspace.JoinNumber + dialerLineOffset, () => dialer.SendKeypad(TesiraDspDialer.EKeypadKeys.Backspace));
-
-                trilist.SetSigTrueAction(dialerJoinMap.KeyPadDial.JoinNumber + dialerLineOffset, dialer.Dial);
-                trilist.SetSigTrueAction(dialerJoinMap.DoNotDisturbToggle.JoinNumber + dialerLineOffset, dialer.DoNotDisturbToggle);
-                trilist.SetSigTrueAction(dialerJoinMap.DoNotDisturbOn.JoinNumber + dialerLineOffset, dialer.DoNotDisturbOn);
-                trilist.SetSigTrueAction(dialerJoinMap.DoNotDisturbOff.JoinNumber + dialerLineOffset, dialer.DoNotDisturbOff);
-                trilist.SetSigTrueAction(dialerJoinMap.AutoAnswerToggle.JoinNumber + dialerLineOffset, dialer.AutoAnswerToggle);
-                trilist.SetSigTrueAction(dialerJoinMap.AutoAnswerOn.JoinNumber + dialerLineOffset, dialer.AutoAnswerOn);
-                trilist.SetSigTrueAction(dialerJoinMap.AutoAnswerOff.JoinNumber + dialerLineOffset, dialer.AutoAnswerOff);
-                trilist.SetSigTrueAction(dialerJoinMap.Answer.JoinNumber + dialerLineOffset, dialer.Answer);
-                trilist.SetSigTrueAction(dialerJoinMap.EndCall.JoinNumber + dialerLineOffset, dialer.OnHook);
-                trilist.SetSigTrueAction(dialerJoinMap.OnHook.JoinNumber + dialerLineOffset, dialer.OnHook);
-                trilist.SetSigTrueAction(dialerJoinMap.OffHook.JoinNumber + dialerLineOffset, dialer.OffHook);
-
-                trilist.SetSigTrueAction(dialerJoinMap.HoldCall.JoinNumber + dialerLineOffset, dialer.HoldCall);
-                trilist.SetSigTrueAction(dialerJoinMap.ResumeCall.JoinNumber + dialerLineOffset, dialer.ResumeCall);
-                trilist.SetSigTrueAction(dialerJoinMap.HoldToggle.JoinNumber + dialerLineOffset, dialer.HoldToggle);
-
-                trilist.SetStringSigAction(dialerJoinMap.DialString.JoinNumber + dialerLineOffset, dialer.SetDialString);
-
-                dialer.DoNotDisturbFeedback.LinkInputSig(trilist.BooleanInput[dialerJoinMap.DoNotDisturbToggle.JoinNumber + dialerLineOffset]);
-                dialer.DoNotDisturbFeedback.LinkInputSig(trilist.BooleanInput[dialerJoinMap.DoNotDisturbOn.JoinNumber + dialerLineOffset]);
-                dialer.DoNotDisturbFeedback.LinkComplementInputSig(trilist.BooleanInput[dialerJoinMap.DoNotDisturbOff.JoinNumber + dialerLineOffset]);
-
-                dialer.OffHookFeedback.LinkInputSig(trilist.BooleanInput[dialerJoinMap.KeyPadDial.JoinNumber + dialerLineOffset]);
-                dialer.OffHookFeedback.LinkInputSig(trilist.BooleanInput[dialerJoinMap.OffHook.JoinNumber + dialerLineOffset]);
-                dialer.OffHookFeedback.LinkComplementInputSig(trilist.BooleanInput[dialerJoinMap.OnHook.JoinNumber + dialerLineOffset]);
-                dialer.IncomingCallFeedback.LinkInputSig(trilist.BooleanInput[dialerJoinMap.IncomingCall.JoinNumber + dialerLineOffset]);
-
-                dialer.AutoAnswerFeedback.LinkInputSig(trilist.BooleanInput[dialerJoinMap.AutoAnswerToggle.JoinNumber + dialerLineOffset]);
-                dialer.AutoAnswerFeedback.LinkInputSig(trilist.BooleanInput[dialerJoinMap.AutoAnswerOn.JoinNumber + dialerLineOffset]);
-                dialer.AutoAnswerFeedback.LinkComplementInputSig(trilist.BooleanInput[dialerJoinMap.AutoAnswerOff.JoinNumber + dialerLineOffset]);
-
-                dialer.NameFeedback.LinkInputSig(trilist.StringInput[dialerJoinMap.Label.JoinNumber + dialerLineOffset]);
-                dialer.DisplayNumberFeedback.LinkInputSig(trilist.StringInput[dialerJoinMap.DisplayNumber.JoinNumber + dialerLineOffset]);
-
-                dialer.DialStringFeedback.LinkInputSig(trilist.StringInput[dialerJoinMap.DialString.JoinNumber + dialerLineOffset]);
-                dialer.CallerIdNumberFeedback.LinkInputSig(trilist.StringInput[dialerJoinMap.CallerIdNumberFb.JoinNumber + dialerLineOffset]);
-                dialer.CallerIdNameFeedback.LinkInputSig(trilist.StringInput[dialerJoinMap.CallerIdNameFb.JoinNumber + dialerLineOffset]);
-                dialer.LastDialedFeedback.LinkInputSig(trilist.StringInput[dialerJoinMap.LastNumberDialerFb.JoinNumber + dialerLineOffset]);
-
-                dialer.HoldCallFeedback.LinkInputSig(trilist.BooleanInput[dialerJoinMap.HoldCall.JoinNumber]);
-                dialer.HoldCallFeedback.LinkComplementInputSig(trilist.BooleanInput[dialerJoinMap.ResumeCall.JoinNumber]);
-                dialer.HoldCallFeedback.LinkInputSig(trilist.BooleanInput[dialerJoinMap.HoldToggle.JoinNumber]);
-
-
-                dialer.CallStateFeedback.LinkInputSig(trilist.UShortInput[dialerJoinMap.CallState.JoinNumber + dialerLineOffset]);
-
-                lineOffset += 50;
             }
         }
 

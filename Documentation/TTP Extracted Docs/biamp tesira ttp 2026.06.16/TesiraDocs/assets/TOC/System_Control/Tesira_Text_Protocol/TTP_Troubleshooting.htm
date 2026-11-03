@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml"><head>
+
+
+  <meta name="gRootRelPath" content="../../../.."/>
+	<meta name="gCommonRootRelPath" content="../../../.."/>
+  <meta name="gTopicId" content="4.1.0_4"/>
+  <script type="text/javascript" src="../../../../template/scripts/rh.min.js"></script>
+  <script type="text/javascript" src="../../../../template/scripts/common.min.js"></script>
+  <script type="text/javascript" src="../../../../template/scripts/topic.min.js"></script>
+  <script type="text/javascript" src="../../../../template/scripts/topicwidgets.min.js"></script>
+<script type="text/javascript" src="../../../../whxdata/projectsettings.js"></script>
+  <link rel="stylesheet" type="text/css" href="../../../../template/styles/topic.min.css"/>
+  <link rel="stylesheet" type="text/css" href="../../../../template/Biamp_Grey_&amp;_Blue/topicheader.css"/>
+  <meta name="topic-status" content="Draft"/>
+<link rel="stylesheet" type="text/css" href="../../../css/Tesira_Help.css"/>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+  <meta name="generator" content="Adobe RoboHelp 2022"/>
+  <title>TTP Troubleshooting</title>
+  <meta name="topic-status" content="Draft"/>
+  <meta name="template" content="../../../layouts/Tesira_General.htt"/>
+  <link rel="stylesheet" type="text/css" href="../../../css/Tesira_Help.css"/>
+  <!--[if gte mso 9]><xml>
+<mso:CustomDocumentProperties>
+<mso:_dlc_DocId msdt:dt="string">AP256XAP2PFD-163404756-75453</mso:_dlc_DocId>
+<mso:_dlc_DocIdItemGuid msdt:dt="string">386336c8-827d-4dd4-825c-5690d8eaaf41</mso:_dlc_DocIdItemGuid>
+<mso:_dlc_DocIdUrl msdt:dt="string">https://biamp.sharepoint.com/customerexperience/documentation/TPubsHub/DocDev/_layouts/15/DocIdRedir.aspx?ID=AP256XAP2PFD-163404756-75453, AP256XAP2PFD-163404756-75453</mso:_dlc_DocIdUrl>
+</mso:CustomDocumentProperties>
+</xml><![endif]-->
+</head>
+
+<body>
+  <div class="topic-header rh-hide" id="rh-topic-header">
+    <div class="logo">
+    </div>
+    <div class="nav">
+      <div class="title" title="Tesira Software Help">
+        <span>Tesira Software Help</span>
+      </div>
+      <div class="gotohome" title="Click here to see this page in full context">
+        <a href="#" onclick="rh._.goToFullLayout()">Click here to see this page in full context</a>
+      </div>
+    </div>
+  </div>
+  <div class="topic-header-shadow rh-hide" id="rh-topic-header-shadow"></div>
+
+
+
+  <div></div>
+  <div>
+  <h1><span data-field="title" data-format="default">TTP Troubleshooting</span></h1>
+  <p>Brief overview of <span data-keyref="TesiraProduct">Tesira</span> Text Protocol troubleshooting steps. </p>
+  <p>  </p>
+  <p>  </p>
+  <h2>Configuring a PC to connect to <span data-keyref="TesiraProduct">Tesira</span></h2>
+  <p>Connecting a PC to a <span data-keyref="TesiraProduct">Tesira</span> System to troubleshoot may be required. Using a PC allows testing of the strings and responses in real time to prove valid commands are being used. A terminal Emulator program is recommended to connect to the system. Suggested programs include TerraTerm or PuTTY. </p>
+  <p>Putty is used throughout this document in any examples given this allows connections using<span> </span>RS-232,<span> </span>Telnet<span> </span>or<span> </span>SSH. </p>
+  <p>If using Telnet<span> </span>or<span> </span>SSH, ensure these services are enabled in<span> </span><a href="../../Tabs/System/Device_Maintenance/Device_Maintenance_Network_Settings.htm">Device Maintenance<span> </span></a><span><a href="../../Tabs/System/Device_Maintenance/Device_Maintenance_Network_Settings.htm">Network Settings</a><span> </span></span>or via the<span><span> </span></span>Device<span> </span>TTP command. </p>
+  <p>Opening a<span> </span>Telnet<span> </span>or<span> </span>SSH<span> </span>session to a <span data-keyref="TesiraProduct">Tesira</span> Server results in a login prompt.<span> </span>Valid credentials must be provided to access the system in any way. One must be logged in as controller or higher level to make any changes to the system, while an observer can only query the system for levels and other current parameters. </p>
+  <p>The SSH Login requires case sensitive User and Password authentication. In an unprotected system, the Username and Password are ‘default’ and ‘default’ respectively. In a protected system, the credentials configured in the system must be provided. </p>
+  <p>PuTTY is a free implementation of Telnet and SSH for Windows and Unix platforms, along with an xterm terminal emulator. This software can be downloaded from the following link:<span> </span><a href="https://www.chiark.greenend.org.uk/~sgtatham/putty/latest.html">http://www.chiark.greenend.org.uk/~sgtatham/putty/download.html</a> </p>
+  <p>Instructions on its use can be found here: <a href="https://www.chiark.greenend.org.uk/~sgtatham/putty/docs.html" target="_blank">http://www.chiark.greenend.org.uk/~sgtatham/putty/docs.html</a> </p>
+  <p><img src="../../../images/System_Control/PuTTY_Configuration.png" style="border-style: solid; border-color: rgb(192, 192, 192); border-width: 1px; border-radius: 8px;"/> </p>
+  <p>  </p>
+  <p>  </p>
+  <h2>Configuring a PC to connect to <span data-keyref="TesiraProduct">Tesira</span> using Telnet</h2>
+  <p>If you require a secure method to connect to a <span data-keyref="TesiraProduct">Tesira</span> Server, please refer to<span> </span>connecting via SSH. </p>
+  <p>The use of a terminal emulation program such as PuTTY is recommended in order to establish a command session to a <span data-keyref="TesiraProduct">Tesira</span> Server. </p>
+  <p>If the convenience of using the Windows command prompt to initiate a Telnet session is required, you can use Windows Programs and Features to enable the Telnet Client. </p>
+  <ul>
+    <li>To enable Telnet navigate to:<span> </span><span>Start &gt; Control Panel &gt; Programs &amp; Features &gt; Turn Windows Features on and off </span></li>
+    <li>Find the entry for<span> </span><span>Telnet Client </span></li>
+    <li>Select the tick box </li>
+    <li>Select<span> </span><span>OK </span></li>
+    <li>To Initiate a TELNET session with a <span data-keyref="TesiraProduct">Tesira</span> Server: </li>
+    <li>Select<span> </span><span>Start&gt;programs&gt;accessories&gt; Command Prompt </span></li>
+    <li>At the command prompt type<span> </span><span>telnet xxx.xxx.xxx.xxx</span><span> </span>(xxx.xxx.xxx.xxx is the IP address of the <span data-keyref="TesiraProduct">Tesira</span> Server.) </li>
+  </ul>
+  <p><img src="../../../images/System_Control/PuTTY_CommandPrompt.png" style="border-style: solid; border-color: rgb(192, 192, 192); border-width: 1px; border-radius: 8px; cursor: nesw-resize;"/> </p>
+  <p>  </p>
+  <p><span><span data-keyref="TesiraProduct">Tesira</span> Text Protocol will provide user feedback if a command is incorrect. The response will vary depending on the command, please review the<span> </span></span>Responses<span><span> </span>section for more details. </span></p>
+  <p>  </p>
+  <p>  </p>
+  <p>  </p>
+
+</div>
+  <div>
+    <p></p>
+  </div>
+
+</body></html>

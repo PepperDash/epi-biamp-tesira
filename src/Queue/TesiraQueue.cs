@@ -50,6 +50,7 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Queue
         }
 
         private System.Timers.Timer commandTimeoutTimer;
+
         /// <summary>
         /// Constructor for Tesira Queue
         /// </summary>

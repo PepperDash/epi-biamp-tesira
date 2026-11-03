@@ -20,3 +20,23 @@ jobs:
       version: ${{ needs.getVersion.outputs.version }}
       tag: ${{ needs.getVersion.outputs.tag }}
       channel: ${{ needs.getVersion.outputs.channel }}
+
+  # Unit tests on every push. Runs on Windows like the build; independent of it, so it never
+  # holds back a package.
+  test:
+    runs-on: windows-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: 8.0.x
+      - name: Unit tests
+        shell: pwsh
+        run: dotnet test tests/Tesira-DSP-EPI.Tests.csproj --configuration Release --logger "trx;LogFileName=test-results.trx" --results-directory test-results
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path: test-results

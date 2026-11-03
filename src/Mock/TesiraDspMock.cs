@@ -19,7 +19,7 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Mock
     {
         public TesiraDspMockFactory()
         {
-            MinimumEssentialsFrameworkVersion = "2.38.0";
+            MinimumEssentialsFrameworkVersion = "3.0.0";
             TypeNames = new List<string> { "tesiradspmock" };
         }
 
@@ -45,11 +45,11 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Mock
     /// Intended for bench-testing frontend/backend round-trips when no physical DSP
     /// is available. Not for production use.
     /// </remarks>
-    public class TesiraDspMock : EssentialsDevice, IHasDspPresetSave, ICommunicationMonitor
+    public class TesiraDspMock : EssentialsDevice, IHasDspPresetSave, IDspPresetsDirectRecall, ICommunicationMonitor
     {
         private const string ChildKeyFormat = "{0}--{1}";
 
-        // IHasDspPresetSave -> IDspPresets requires a Presets dictionary; populated at ctor.
+        // IDspPresets requires a Presets dictionary keyed by config key, as TesiraDsp does; populated at ctor.
         public Dictionary<string, IKeyName> Presets { get; }
             = new Dictionary<string, IKeyName>();
 
@@ -84,7 +84,13 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Mock
                 props.SwitcherControlBlocks?.Count ?? 0);
         }
 
-        // ── IDspPresets / IHasDspPresetSave ──────────────────────────────────
+        // ── IDspPresets / IDspPresetsDirectRecall ────────────────────────────
+
+        /// <summary>Recall by DSP preset name, as TesiraDsp sends "DEVICE recallPresetByName". Logs only.</summary>
+        public void RunPreset(string name)
+        {
+            this.LogInformation("RunPreset (mock) — name '{presetName}'", name);
+        }
 
         public void RecallPreset(string key)
         {
@@ -110,7 +116,7 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Mock
 
         // ── Setup helpers ────────────────────────────────────────────────────
 
-        public override bool CustomActivate()
+        protected override bool CustomActivate()
         {
             // Start the always-online communication monitor (no polling required for the mock).
             CommunicationMonitor.Start();
@@ -215,34 +221,50 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Mock
             public MockPreset(string key, string name) { Key = key; Name = name; }
         }
 
+        // Mobile Control: no override needed. Essentials v3 auto-attaches ICommunicationMonitorMessenger to every
+        // ICommunicationMonitor device (registering one here too logged "Messenger ... already exists"), and the
+        // child faders get their volume messengers the same way.
+
+        // ── Bench control of the communication status ────────────────────────
+
         /// <summary>
-        /// Registers the mock DSP device with Mobile Control so it appears in
-        /// <c>/devlist</c> and broadcasts its <see cref="ICommunicationMonitor"/> state.
-        /// Child devices (faders, source selector) are auto-registered separately
-        /// because they expose <c>IBasicVolumeWithFeedback</c> / <c>IHasInputs&lt;T&gt;</c>.
+        /// Bench control, from the console:
+        /// <c>devjson {"deviceKey":"dsp-01","methodName":"SetIsOnline","params":[false]}</c>.
+        /// Offline reports the communication monitor in error; online reports it OK.
         /// </summary>
-        protected override void CreateMobileControlMessengers()
+        public void SetIsOnline(bool online) => SetCommStatus(online ? "ok" : "error");
+
+        /// <summary>
+        /// Bench control, from the console:
+        /// <c>devjson {"deviceKey":"dsp-01","methodName":"SetCommStatus","params":["warning"]}</c>.
+        /// Takes ok / warning / error / unknown (or the MonitorStatus names).
+        /// </summary>
+        public void SetCommStatus(string status)
         {
-            var mc = DeviceManager.AllDevices.OfType<IMobileControl>().FirstOrDefault();
-            if (mc == null)
+            MonitorStatus parsed;
+            switch ((status ?? string.Empty).Trim().ToLowerInvariant())
             {
-                this.LogInformation("Mobile Control not found — skipping TesiraDspMock messenger registration");
-                return;
+                case "ok": case "isok": case "online": parsed = MonitorStatus.IsOk; break;
+                case "warning": case "inwarning": parsed = MonitorStatus.InWarning; break;
+                case "error": case "inerror": case "offline": parsed = MonitorStatus.InError; break;
+                case "unknown": case "statusunknown": parsed = MonitorStatus.StatusUnknown; break;
+                default:
+                    this.LogWarning("SetCommStatus: '{status}' is not ok, warning, error or unknown", status);
+                    return;
             }
 
-            mc.AddDeviceMessenger(new ICommunicationMonitorMessenger($"{Key}-commMonitor", $"/device/{Key}", this));
-            base.CreateMobileControlMessengers();
+            this.LogInformation("MOCK comm status {status}", parsed);
+            ((AlwaysOnMonitor)CommunicationMonitor).SetStatus(parsed);
         }
 
-        // ── Communication monitor — always online (no real hardware) ─────────
-
         /// <summary>
-        /// Minimal <see cref="StatusMonitorBase"/> implementation that permanently
-        /// reports <see cref="MonitorStatus.IsOk"/>. The mock has no comm port to
-        /// poll, so there is nothing to monitor — it is always "online".
+        /// Minimal <see cref="StatusMonitorBase"/> for the mock: no comm port to poll. Reports
+        /// <see cref="MonitorStatus.IsOk"/> unless set otherwise from the console (SetIsOnline / SetCommStatus).
         /// </summary>
         private sealed class AlwaysOnMonitor : StatusMonitorBase
         {
+            private MonitorStatus _current = MonitorStatus.IsOk;
+
             public AlwaysOnMonitor(IKeyed parent)
                 // StatusMonitorBase requires warningTime < errorTime and both >= 5000 ms.
                 // Values are never used because Start/Stop are no-ops.
@@ -255,16 +277,22 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Mock
             public override void Start() { /* no-op — no poll needed */ }
             public override void Stop()  { /* no-op — no poll needed */ }
 
+            public void SetStatus(MonitorStatus status)
+            {
+                _current = status;
+                Status = status;
+            }
+
             /// <summary>
             /// Force a fresh StatusChange event even though the value never actually
             /// changes. The Status setter is a no-op when the new value equals the
             /// current value, so a real transition is required to get a second event
-            /// out — flip to StatusUnknown then immediately back to IsOk.
+            /// out — flip to a different value then immediately back to the current one.
             /// </summary>
             public void Refresh()
             {
-                Status = MonitorStatus.StatusUnknown;
-                Status = MonitorStatus.IsOk;
+                Status = _current == MonitorStatus.StatusUnknown ? MonitorStatus.IsOk : MonitorStatus.StatusUnknown;
+                Status = _current;
             }
         }
     }

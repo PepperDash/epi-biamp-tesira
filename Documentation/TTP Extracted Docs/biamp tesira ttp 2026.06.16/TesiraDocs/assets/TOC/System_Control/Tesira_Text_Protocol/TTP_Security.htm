@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml"><head>
+
+
+  <meta name="gRootRelPath" content="../../../.."/>
+	<meta name="gCommonRootRelPath" content="../../../.."/>
+  <meta name="gTopicId" content="4.1.0_5"/>
+  <script type="text/javascript" src="../../../../template/scripts/rh.min.js"></script>
+  <script type="text/javascript" src="../../../../template/scripts/common.min.js"></script>
+  <script type="text/javascript" src="../../../../template/scripts/topic.min.js"></script>
+  <script type="text/javascript" src="../../../../template/scripts/topicwidgets.min.js"></script>
+<script type="text/javascript" src="../../../../whxdata/projectsettings.js"></script>
+  <link rel="stylesheet" type="text/css" href="../../../../template/styles/topic.min.css"/>
+  <link rel="stylesheet" type="text/css" href="../../../../template/Biamp_Grey_&amp;_Blue/topicheader.css"/>
+  <meta name="topic-status" content="Draft"/>
+<link rel="stylesheet" type="text/css" href="../../../css/Tesira_Help.css"/>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+  <meta name="generator" content="Adobe RoboHelp 2022"/>
+  <title>TTP Security</title>
+  <meta name="topic-status" content="Draft"/>
+  <meta name="template" content="../../../layouts/Tesira_General.htt"/>
+  <link rel="stylesheet" type="text/css" href="../../../css/Tesira_Help.css"/>
+  <!--[if gte mso 9]><xml>
+<mso:CustomDocumentProperties>
+<mso:_dlc_DocId msdt:dt="string">AP256XAP2PFD-163404756-75454</mso:_dlc_DocId>
+<mso:_dlc_DocIdItemGuid msdt:dt="string">37228bb8-f8f2-48be-97bb-32a02a49c905</mso:_dlc_DocIdItemGuid>
+<mso:_dlc_DocIdUrl msdt:dt="string">https://biamp.sharepoint.com/customerexperience/documentation/TPubsHub/DocDev/_layouts/15/DocIdRedir.aspx?ID=AP256XAP2PFD-163404756-75454, AP256XAP2PFD-163404756-75454</mso:_dlc_DocIdUrl>
+</mso:CustomDocumentProperties>
+</xml><![endif]-->
+</head>
+
+<body>
+  <div class="topic-header rh-hide" id="rh-topic-header">
+    <div class="logo">
+    </div>
+    <div class="nav">
+      <div class="title" title="Tesira Software Help">
+        <span>Tesira Software Help</span>
+      </div>
+      <div class="gotohome" title="Click here to see this page in full context">
+        <a href="#" onclick="rh._.goToFullLayout()">Click here to see this page in full context</a>
+      </div>
+    </div>
+  </div>
+  <div class="topic-header-shadow rh-hide" id="rh-topic-header-shadow"></div>
+
+
+
+  <div></div>
+  <div>
+  <h1><span data-field="title" data-format="default">TTP Security</span></h1>
+  <p>Establishing an SSH connection to the TTP server requires<span> </span>login credentials by definition. </p>
+  <p>In a protected <span data-keyref="TesiraProduct">Tesira</span> system, the same password access levels apply to all connections to the <span data-keyref="TesiraProduct">Tesira</span> Text Protocol (TTP) Server. Please review the<span> </span>System Security settings<span> </span>that can be configured on the <span data-keyref="TesiraProduct">Tesira</span> Servers. </p>
+  <p>  </p>
+  <p>Opening a<span> </span><a href="Telnet.htm">Telnet</a><span> </span>or<span> </span><a href="SSH.htm">SSH</a><span> </span>session to a <span data-keyref="TesiraProduct">Tesira</span> Server results in a login prompt. Valid credentials must be provided to access the system in any way.<span> </span>One must be logged in as controller or higher level to make any changes to the system, while an observer can only query the system for levels and other current parameters. </p>
+  <p>In an unprotected system, the username and password are ‘default’ and ‘default’ respectively. In a protected system, the credentials configured in the system must be provided, excepting that the &quot;default&quot; user is downgraded to a system access level of &quot;observer&quot;. </p>
+  <p>  </p>
+  <p><a href="RS-232.htm">RS-232</a><span> </span>Serial connections to the TTP servers also require authentication in protected systems.<span> </span>Making the serial connection and sending a line feed will reveal the login prompt. </p>
+  <p>If a system has security enabled the RS-232 will not require authentication until the connection is fully terminated using a &#39;exit&#39; command. There will then be a requirement to authenticate at the next log on. </p>
+  <p>  </p>
+  <p><span>Once logged in to the TTP server via RS-232, this user has access until a &#39;exit&#39; command is sent, even if the serial connection is removed and restored. </span></p>
+  <p>  </p>
+  <p>  </p>
+  <p>  </p>
+
+</div>
+  <div>
+    <p></p>
+  </div>
+
+</body></html>

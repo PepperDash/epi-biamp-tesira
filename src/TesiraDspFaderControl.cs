@@ -158,6 +158,11 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
             }
         }
 
+        public int MaxVolumeLevel
+        {
+            get { return (int)MaxLevel; }
+        }
+
 
         /// <summary>
         /// Constructor for Component
@@ -680,6 +685,7 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
             this.LogDebug("TesiraChannel {Key} Is Enabled", Key);
 
             NameFeedback.LinkInputSig(trilist.StringInput[joinMap.Label.JoinNumber]);
+            RawLevelFeedback.LinkInputSig(trilist.StringInput[joinMap.RawLevel.JoinNumber]);
             TypeFeedback.LinkInputSig(trilist.UShortInput[joinMap.Type.JoinNumber]);
             ControlTypeFeedback.LinkInputSig(trilist.UShortInput[joinMap.Status.JoinNumber]);
             PermissionsFeedback.LinkInputSig(trilist.UShortInput[joinMap.Permissions.JoinNumber]);

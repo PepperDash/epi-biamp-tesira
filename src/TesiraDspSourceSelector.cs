@@ -9,11 +9,12 @@ using Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Extensions;
 using PepperDash.Core.Logging;
 using PepperDash.Essentials.Core;
 using PepperDash.Essentials.Core.Bridges;
+using Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Routing;
 using IRoutingWithFeedback = Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Interfaces.IRoutingWithFeedback;
 
 namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
 {
-    public class TesiraDspSourceSelector : TesiraDspControlPoint, IRoutingWithFeedback
+    public class TesiraDspSourceSelector : TesiraDspControlPoint, IRoutingWithFeedback, IHasNamedRoutingSlots
     {
         private int _sourceIndex;
 
@@ -28,6 +29,15 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
         /// Collection of IRouting Output Ports
         /// </summary>
         public RoutingPortCollection<RoutingOutputPort> OutputPorts { get; private set; }
+
+        // Named-slot view over InputPorts/OutputPorts for IHasNamedRoutingSlots, fed from the same
+        // route feedback as CurrentRoutes.
+        private RoutingPortNamedSlots _namedSlots;
+
+        IReadOnlyDictionary<string, IRoutingSlotInfo> IHasNamedRoutingSlots.InputSlots =>
+            _namedSlots?.InputSlots ?? new Dictionary<string, IRoutingSlotInfo>();
+        IReadOnlyDictionary<string, IRoutingOutputSlotInfo> IHasNamedRoutingSlots.OutputSlots =>
+            _namedSlots?.OutputSlots ?? new Dictionary<string, IRoutingOutputSlotInfo>();
 
         /// <summary>
         /// XSig of all Feedback Names
@@ -65,6 +75,7 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
                     : value == 0 ? "None" : "Input " + value;
                 RoutedSourceNameFeedback.FireUpdate();
                 SourceIndexFeedback.FireUpdate();
+                UpdateCurrentRoutes();
             }
         }
 
@@ -89,6 +100,28 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
         protected virtual void SendSelection(int input)
         {
             SendFullCommand("set", "sourceSelection", input.ToString(), 1);
+        }
+
+        /// <summary>
+        /// Currently active routes on this device.
+        /// </summary>
+        public List<RouteSwitchDescriptor> CurrentRoutes { get; private set; } = new List<RouteSwitchDescriptor>();
+
+        /// <summary>
+        /// Raised when the active route on this device changes.
+        /// </summary>
+        public event RouteChangedEventHandler RouteChanged;
+
+        private void UpdateCurrentRoutes()
+        {
+            var routes = new List<RouteSwitchDescriptor>();
+            var inputPort = InputPorts.FirstOrDefault(p => p.Selector != null && Convert.ToInt32(p.Selector) == SourceIndex);
+            var outputPort = OutputPorts.FirstOrDefault();
+            if (inputPort != null && outputPort != null)
+                routes.Add(new RouteSwitchDescriptor(outputPort, inputPort));
+            CurrentRoutes = routes;
+            _namedSlots?.HandleRouteChange(outputPort, inputPort, eRoutingSignalType.Audio);
+            RouteChanged?.Invoke(this, routes.FirstOrDefault());
         }
 
         /// <summary>
@@ -120,6 +153,7 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
 
             InputPorts = new RoutingPortCollection<RoutingInputPort>();
             OutputPorts = new RoutingPortCollection<RoutingOutputPort>();
+            _namedSlots = new RoutingPortNamedSlots(InputPorts, OutputPorts);
 
             Feedbacks.Add(SourceIndexFeedback);
             Feedbacks.Add(NameFeedback);
@@ -287,22 +321,28 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
         /// <param name="signalType">Signal Type to Route</param>
         public void ExecuteSwitch(object inputSelector, object outputSelector, eRoutingSignalType signalType)
         {
-            if (!signalType.HasFlag(eRoutingSignalType.Audio) && !signalType.HasFlag(eRoutingSignalType.SecondaryAudio)) return;
+            if (!signalType.HasFlag(eRoutingSignalType.Audio)) return;
 
-            SendSelection(Convert.ToInt32(inputSelector));
+            // Selector may be the port's own Selector (the source index) or, from mobile control's
+            // matrix routing, the named slot key - which for these ports is the source's name, not
+            // its index. See RoutingSelectorResolver.
+            if (!RoutingSelectorResolver.TryResolveInputIndex(inputSelector, InputPorts, out var input))
+            {
+                this.LogWarning("Unable to execute switch: {inputSelector} is not a known input", inputSelector);
+                return;
+            }
+
+            SendSelection((int)input);
         }
 
         /// <summary>
-        /// Execute Numeric Switch with Essentials Magic Routing
+        /// Clears the route to the specified output by selecting input 0 (None).
         /// </summary>
-        /// <param name="inputSelector">Numeric Input Selector</param>
-        /// <param name="outputSelector">Numeric Output Selector</param>
-        /// <param name="signalType">Signal Type to Route</param>
-        public void ExecuteNumericSwitch(ushort inputSelector, ushort outputSelector, eRoutingSignalType signalType)
+        /// <param name="outputSelector">Output Object Data</param>
+        /// <param name="signalType">Signal Type to clear</param>
+        public void ClearRoute(object outputSelector, eRoutingSignalType signalType)
         {
-            if (!signalType.HasFlag(eRoutingSignalType.Audio)) return;
-
-            SendSelection(inputSelector);
+            ExecuteSwitch((uint)0, outputSelector, signalType);
         }
 
         #endregion
