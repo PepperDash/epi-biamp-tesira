@@ -33,6 +33,10 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
         // turns off anything it turned on
         private int highestRequested;
 
+        // Held while a selection's commands are queued, so a clear's per-channel commands and a new
+        // selection can't interleave (a clear's later "false" would cancel the new selection)
+        private readonly object selectionLock = new object();
+
         protected override int ParseSelection(string value)
         {
             var count = LogicSelectorStates.ChannelCount(value);
@@ -41,6 +45,20 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
         }
 
         protected override void SendSelection(int input)
+        {
+            if (input < 0)
+            {
+                this.LogWarning("Logic selector {key}: channel {input} is out of range; ignored", Key, input);
+                return;
+            }
+
+            lock (selectionLock)
+            {
+                SendSelectionLocked(input);
+            }
+        }
+
+        private void SendSelectionLocked(int input)
         {
             if (input > 0)
             {
