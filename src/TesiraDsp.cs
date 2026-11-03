@@ -1439,7 +1439,8 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
             foreach (var line in data.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries))
             {
                 if (string.IsNullOrWhiteSpace(line)) continue;
-                CommandQueue.EnqueueCommand(line, priority: (int)CommandPriority.High);
+                // Foreground whatever the verb, so a batch's subscribes and sets run in the order given
+                CommandQueue.EnqueueCommand(new QueuedCommand(line, null, null, priority: (int)CommandPriority.High) { ForceForeground = true });
             }
         }
 
