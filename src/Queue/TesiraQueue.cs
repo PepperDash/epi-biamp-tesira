@@ -133,8 +133,8 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Queue
 
                 var countBefore = LocalQueue.Count;
                 // In a background scope, reads go to the background too; writes never do (see BackgroundScope).
-                var isBackground = CommandLanes.IsBackground(commandToEnqueue.Command)
-                    || (backgroundScopeDepth > 0 && CommandLanes.IsReadOrSubscription(commandToEnqueue.Command));
+                var isBackground = !commandToEnqueue.ForceForeground && (CommandLanes.IsBackground(commandToEnqueue.Command)
+                    || (backgroundScopeDepth > 0 && CommandLanes.IsReadOrSubscription(commandToEnqueue.Command)));
                 if (LocalQueue.Enqueue(commandToEnqueue, isBackground))
                 {
                     // Re-arm the warning only once the queue has drained well below full: at capacity
