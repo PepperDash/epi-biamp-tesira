@@ -24,7 +24,7 @@
     ]
   ],  
   "branches": [
-    "main",
+    "maintenance-essentials-v1",
     {
       "name": "replace-me-feature-branch",
       "prerelease": "replace-me-prerelease",
