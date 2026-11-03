@@ -73,6 +73,14 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
         /// </summary>
         [JsonProperty("volumeHoldTimeoutMs")]
         public int VolumeHoldTimeoutMs { get; set; } = 10000;
+
+        /// <summary>
+        /// Milliseconds a bridge preset join must be held to save the DSP's current state to that
+        /// preset. A shorter press recalls it on release. Set to 0 (default) to disable saving; the
+        /// join then recalls on press, as before.
+        /// </summary>
+        [JsonProperty("presetHoldTimeMs")]
+        public int PresetHoldTimeMs { get; set; } = 0;
     }
 
     public class TesiraExpanderBlockConfig
