@@ -61,6 +61,12 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Queue
     }
 
     /// <summary>
+    /// Keeps this command in the foreground lane even if it is a subscribe or unsubscribe, so a
+    /// batch of commands (pass-through) runs in the order given.
+    /// </summary>
+    public bool ForceForeground { get; set; }
+
+    /// <summary>
     /// Command String to send
     /// </summary>
     public readonly string Command;

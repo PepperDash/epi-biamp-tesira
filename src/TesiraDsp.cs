@@ -978,7 +978,11 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
                 int quarantined;
                 lock (watchdogLock)
                 {
-                    probe = watchdogPatrol.NextProbeSet(candidates, ResolveSentinels(candidates));
+                    // Skip components whose probe queues nothing: re-subscribing a router-type switcher
+                    // only restarts its poll timer, and every 30 s would keep it from ever polling
+                    probe = watchdogPatrol.NextProbeSet(candidates, ResolveSentinels(candidates))
+                        .Where(c => !silentProbes.Contains(c))
+                        .ToList();
                     quarantined = watchdogPatrol.QuarantinedCount;
                     probeBatch.Begin(probe);
                 }
@@ -1022,7 +1026,9 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
                 var match = candidates.FirstOrDefault(c =>
                     string.Equals(c.Key, key, StringComparison.OrdinalIgnoreCase) ||
                     string.Equals(c.Key, fullKey, StringComparison.OrdinalIgnoreCase));
-                if (match != null) sentinels.Add(match);
+                // A quarantined or silent sentinel can't detect anything; let the fallback pick one that can
+                if (match != null && !watchdogPatrol.IsQuarantined(match) && !silentProbes.Contains(match))
+                    sentinels.Add(match);
             }
 
             // None configured (or none usable): default to the first candidate whose probe actually
@@ -1126,6 +1132,12 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
             }
 
             this.LogInformation("Restoring subscriptions for {count} components", components.Count);
+
+            // A design push can change level ranges while levels stay inside the old ones, which no
+            // out-of-range publish would reveal. Queued first, in the same background lane, so the
+            // ranges arrive ahead of the restored subscriptions' first publishes.
+            PollLevelRanges();
+
             foreach (var component in components)
             {
                 SubscribeAutomatically(component, subscriptionsOnly: true);
@@ -1360,7 +1372,8 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
                     return;
                 }
 
-                if (args.Text.IndexOf("-ERR", StringComparison.Ordinal) >= 0)
+                // Only at the start: an echoed command containing "-ERR" (a preset name) isn't a reply
+                if (args.Text.StartsWith("-ERR", StringComparison.Ordinal))
                 {
                     // Watchdog probe replies are attributed to their command by the queue
                     // (NotifySubscribeReply), not counted here.
@@ -1411,6 +1424,24 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
                 RecallPreset(preset.Key);
             }
 
+        }
+
+        /// <summary>
+        /// Queues raw commands from a bridge pass-through join, one queue entry per line
+        /// </summary>
+        /// <param name="data">One or more TTP commands, separated by CR and/or LF</param>
+        public void EnqueuePassthru(string data)
+        {
+            if (string.IsNullOrEmpty(data)) return;
+
+            // The queue matches each entry to exactly one reply, so each line is its own entry.
+            // Empty lines are never sent, so queueing them would stall the queue until timeout.
+            foreach (var line in data.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries))
+            {
+                if (string.IsNullOrWhiteSpace(line)) continue;
+                // Foreground whatever the verb, so a batch's subscribes and sets run in the order given
+                CommandQueue.EnqueueCommand(new QueuedCommand(line, null, null, priority: (int)CommandPriority.High) { ForceForeground = true });
+            }
         }
 
         /// <summary>
@@ -1835,7 +1866,7 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
             CommandPassthruFeedback.LinkInputSig(trilist.StringInput[deviceJoinMap.CommandPassThru.JoinNumber]);
             trilist.SetStringSigAction(presetJoinMap.PresetName.JoinNumber, RunPreset);
 
-            trilist.SetStringSigAction(deviceJoinMap.CommandPassThru.JoinNumber, (s) => CommandQueue.EnqueueCommand(s, sendLineRaw: true, priority: (int)CommandPriority.High));
+            trilist.SetStringSigAction(deviceJoinMap.CommandPassThru.JoinNumber, EnqueuePassthru);
 
             trilist.SetSigTrueAction(deviceJoinMap.Resubscribe.JoinNumber, Resubscribe);
 
@@ -1984,8 +2015,9 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
 
         /// <summary>
         /// The zero-based join offset for a component whose bridgeIndex counts from 1 (states, meters,
-        /// crosspoints). False, with a warning for 0, when it has no usable bridgeIndex: 0 would wrap the
-        /// offset to uint.MaxValue, and the out-of-range join would abort the rest of the bridge linking.
+        /// crosspoints, switchers, routers, source selectors). False, with a warning for 0, when it has no
+        /// usable bridgeIndex: 0 would wrap the offset to uint.MaxValue, and the out-of-range join would
+        /// abort the rest of the bridge linking.
         /// </summary>
         private bool TryGetBridgeOffset(TesiraDspControlPoint component, out uint offset)
         {
@@ -2131,10 +2163,10 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
             foreach (var item in SourceSelectors)
             {
                 var switcher = item.Value;
-                var data = switcher.BridgeIndex;
-                if (data == null) continue;
-                var y = (uint)data;
-                var x = (ushort)(((y - 1) * 2) + 1);
+                if (!switcher.Enabled) continue;
+                if (!TryGetBridgeOffset(switcher, out var offset)) continue;
+                var y = offset + 1;
+                var x = (ushort)((offset * 2) + 1);
                 //3 switchers
                 //((1 - 1) * 2) + 1 = 1
                 //((2 - 1) * 2) + 1 = 3
@@ -2142,7 +2174,6 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
 
                 this.LogVerbose("Tesira Switcher {0} connect to {1}", switcher.Key, y);
 
-                if (!switcher.Enabled) continue;
 
 
                 this.LogVerbose("Tesira Switcher {0} is Enabled", x);
@@ -2192,10 +2223,10 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
             foreach (var item in Routers)
             {
                 var switcher = item.Value;
-                var data = switcher.BridgeIndex;
-                if (data == null) continue;
-                var y = (uint)data;
-                var x = (ushort)(((y - 1) * 2) + 1);
+                if (!switcher.Enabled) continue;
+                if (!TryGetBridgeOffset(switcher, out var offset)) continue;
+                var y = offset + 1;
+                var x = (ushort)((offset * 2) + 1);
                 //3 switchers
                 //((1 - 1) * 2) + 1 = 1
                 //((2 - 1) * 2) + 1 = 3
@@ -2203,7 +2234,6 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
 
                 this.LogVerbose("Tesira Switcher {0} connect to {1}", switcher.Key, y);
 
-                if (!switcher.Enabled) continue;
 
 
                 this.LogVerbose("Tesira Switcher {0} is Enabled", x);
@@ -2226,10 +2256,10 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
             foreach (var item in Switchers)
             {
                 var switcher = item.Value;
-                var data = switcher.BridgeIndex;
-                if (data == null) continue;
-                var y = (uint)data;
-                var x = (ushort)(((y - 1) * 2) + 1);
+                if (!switcher.Enabled) continue;
+                if (!TryGetBridgeOffset(switcher, out var offset)) continue;
+                var y = offset + 1;
+                var x = (ushort)((offset * 2) + 1);
                 //3 switchers
                 //((1 - 1) * 2) + 1 = 1
                 //((2 - 1) * 2) + 1 = 3
@@ -2237,7 +2267,6 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
 
                 this.LogVerbose("Tesira Switcher {0} connect to {1}", switcher.Key, y);
 
-                if (!switcher.Enabled) continue;
 
 
                 this.LogVerbose("Tesira Switcher {0} is Enabled", x);
@@ -2260,10 +2289,9 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
             foreach (var item in States)
             {
                 var state = item.Value;
+                if (!state.Enabled) continue;
                 if (!TryGetBridgeOffset(state, out var x)) continue;
                 this.LogVerbose("Tesira State {0} connect to {1}", state.Key, x);
-
-                if (!state.Enabled) continue;
 
                 this.LogVerbose("Tesira State {0} at {1} is Enabled", state.Key, x);
 
