@@ -29,6 +29,11 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
         private string lastSignature;
         private bool errorLogged;
 
+        // While polling is off, only the reply to an explicit PollNow() is applied: a reply to a poll
+        // queued before polling was turned off must not restore the values that turning it off cleared.
+        private readonly object stateLock = new object();
+        private bool oneShotPending;
+
         /// <summary>The interval from config (0 = off), used when the bridge join turns polling on.</summary>
         public int ConfiguredIntervalSecs { get; }
 
@@ -110,8 +115,13 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
             if (intervalSecs > 0 && secs != intervalSecs)
                 this.LogInformation("Fault poll interval {secs}s is below the minimum; using {min}s", intervalSecs, secs);
 
-            var wasEnabled = PollingEnabled;
-            IntervalSecs = secs;
+            bool wasEnabled;
+            lock (stateLock)
+            {
+                wasEnabled = PollingEnabled;
+                IntervalSecs = secs;
+                if (secs == 0) oneShotPending = false; // drop replies to polls queued before this
+            }
 
             if (secs > 0)
             {
@@ -123,7 +133,7 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
             {
                 StopTimer();
                 if (wasEnabled) this.LogInformation("Fault monitoring off");
-                Apply(new TesiraFaultList(), logChange: false);
+                lock (stateLock) Apply(new TesiraFaultList(), logChange: false);
             }
 
             PollingEnabledFeedback.FireUpdate();
@@ -139,6 +149,11 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
             {
                 this.LogVerbose("Fault poll skipped: DSP offline");
                 return;
+            }
+
+            lock (stateLock)
+            {
+                if (!PollingEnabled) oneShotPending = true;
             }
 
             using (Parent.CommandQueue.BackgroundScope())
@@ -166,7 +181,21 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
             if (parsed == null) return; // the echo, or a reply that isn't a value list
 
             errorLogged = false;
-            Apply(parsed, logChange: true);
+
+            lock (stateLock)
+            {
+                if (!PollingEnabled)
+                {
+                    // Off: apply only the answer to an explicit one-shot poll, never a stale periodic one.
+                    if (!oneShotPending)
+                    {
+                        this.LogVerbose("Fault poll reply discarded: monitoring was turned off");
+                        return;
+                    }
+                    oneShotPending = false;
+                }
+                Apply(parsed, logChange: true);
+            }
         }
 
         private void Apply(TesiraFaultList parsed, bool logChange)
@@ -245,6 +274,14 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
             FaultIdFeedback.LinkInputSig(trilist.StringInput[faultId.JoinNumber]);
             FaultNameFeedback.LinkInputSig(trilist.StringInput[faultName.JoinNumber]);
             FaultListFeedback.LinkInputSig(trilist.StringInput[faultList.JoinNumber]);
+
+            // Re-send current values when SIMPL reconnects. The standalone DeviceInfo object only
+            // re-fires its own feedbacks, so this is needed for both bridge modes to stay in sync.
+            trilist.OnlineStatusChange += (d, args) =>
+            {
+                if (!args.DeviceOnLine) return;
+                foreach (var feedback in Feedbacks) feedback.FireUpdate();
+            };
 
             foreach (var feedback in Feedbacks) feedback.FireUpdate();
         }
