@@ -393,6 +393,10 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
 
             trilist.SetStringSigAction(joinMap.CommandPassThru.JoinNumber, Parent.EnqueuePassthru);
 
+            Parent.FaultMonitor?.LinkFaultJoins(trilist, joinMap.FaultPollingEnable, joinMap.HasFault,
+                joinMap.FaultPollNow, joinMap.ActiveFaultCount, joinMap.FaultSeverity,
+                joinMap.FaultId, joinMap.FaultName, joinMap.FaultList);
+
             trilist.OnlineStatusChange += (d, args) =>
             {
                 if (!args.DeviceOnLine) return;

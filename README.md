@@ -62,6 +62,7 @@ These were documented in v3.x but didn't work. Programs that worked around them 
 | Logic Selector blocks as switchers | `logicSelectorControlBlocks` |
 | Watchdog tuning | `watchdogIntervalSecs` (30), `watchdogPatrolSize` (2), `watchdogSentinels` |
 | Periodic re-read of level limits | `levelRangePollIntervalSecs` (0: off) |
+| Fault monitoring (active fault list, count, severity) | `faultPollIntervalSecs` (0: off), the FaultPollingEnable join, or `SetFaultPolling` (see [Fault monitoring](#fault-monitoring)) |
 
 ## Feature Notes
 
@@ -95,6 +96,22 @@ Set `watchdogSentinels` to one component per partition: a push drops a partition
 "watchdogSentinels": [ "RmaRoom", "RmbRoom" ]
 ```
 
+### Fault monitoring
+
+The plugin can report the Tesira's active faults, the same information Biamp's software and device management show: for example `INDICATOR_MAJOR_IN_DEVICE` / "one or more Dante flows inactive". It's off by default. The Tesira can't subscribe to faults, so when it's on, the plugin polls `DEVICE get activeFaultList`. Polls wait behind control commands in the queue and are skipped while the DSP is offline.
+
+Ways to turn it on:
+
+| How | Example | Lasts |
+|---|---|---|
+| Config (the default at startup) | `"faultPollIntervalSecs": 60` in the DSP's `properties`. 0 or missing means off; 1-9 is raised to 10 | Always |
+| Bridge join FaultPollingEnable (d11) | Rising edge: on, at the config interval or 60 s. Falling edge: off | Until the program restarts. The join never changes the config |
+| Console | `devjson {"deviceKey":"dsp-1","methodName":"SetFaultPolling","params":[60]}`. Use 0 to turn it off | Until the program restarts. To keep it, set `faultPollIntervalSecs` in the config |
+
+The enable join acts only on a change, so a SIMPL program that leaves it low doesn't turn off monitoring the config turned on. `devjson {"deviceKey":"dsp-1","methodName":"PollFaults"}` (or a pulse on d13) polls once.
+
+The joins are on the device join map (both the **Legacy** and the **Standalone** `DeviceInfo` object): see [DeviceInfo](#deviceinfo). From code, use `FaultMonitor` on the DSP device: its feedbacks, `Current` (the parsed list) and the `FaultsChanged` event. A fault appearing, changing or clearing is also logged.
+
 ## Installation
 
 This plugin is provided as a published [nuget package](https://www.nuget.org/packages/PepperDash.Essentials.Plugin.BiampTesira) for your convenience.  
@@ -124,10 +141,16 @@ If you do not choose to bridge a **Standalone** object, limited data is availabl
 | ----------- | --------------- | --------- | -------------------- |
 | 1           | 1               | R         | Device Online        |
 | N/A         | 1               | W         | Resubscribe Controls |
+| 11          | 11              | RW        | Fault monitoring enable: rising edge on, falling edge off. Feedback: polling active |
+| 12          | 12              | R         | Has fault            |
+| 13          | 13              | W         | Poll faults now      |
 
 #### Analogs
 
-None
+| Legacy Join | Standalone Join | Type (RW) | Description |
+| ----------- | --------------- | --------- | ----------- |
+| 11          | 11              | R         | Active fault count |
+| 12          | 12              | R         | Fault severity: 0 none, 1 minor, 2 major, 3 critical |
 
 #### Serials
 
@@ -140,6 +163,11 @@ None
 | N/A         | 5               | R         | Hostname            |
 | N/A         | 6               | R         | IP Address          |
 | N/A         | 7               | R         | MAC Address         |
+| 11          | 11              | R         | Fault ID: the most severe indicator, e.g. `INDICATOR_MAJOR_IN_DEVICE` |
+| 12          | 12              | R         | Fault name, e.g. "Major Fault in Device" |
+| 13          | 13              | R         | Active faults' names, comma-separated |
+
+The fault joins report only while [fault monitoring](#fault-monitoring) is on.
 
 #### Config Notes
 

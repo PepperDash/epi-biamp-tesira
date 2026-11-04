@@ -142,6 +142,11 @@
           "minimum": 0,
           "description": "Seconds between re-polls of every volume control's min/max range. 0 (default) disables it; 1-59 is raised to 60."
         },
+        "faultPollIntervalSecs": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Seconds between polls of the DSP's active fault list (the Tesira can't subscribe to faults). 0 (default) turns fault monitoring off; 1-9 is raised to 10."
+        },
         "watchdogIntervalSecs": {
           "type": "integer",
           "minimum": 10,
