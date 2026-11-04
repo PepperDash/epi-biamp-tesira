@@ -469,6 +469,14 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
 
         [JsonProperty("bridgeIndex")]
         public uint? BridgeIndex { get; set; }
+
+        /// <summary>
+        /// Stream this meter from session start without a bridge join or a Subscribe() call, for
+        /// standalone (non-SIMPL) programs. Default false: meters are opt-in. Lowering the bridge
+        /// subscribe join or calling UnSubscribe() still stops it.
+        /// </summary>
+        [JsonProperty("subscribeOnStart")]
+        public bool SubscribeOnStart { get; set; }
     }
 
     public class TesiraLogicMeterBlockConfig

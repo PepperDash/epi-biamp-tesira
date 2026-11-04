@@ -34,7 +34,7 @@ v4 runs on Essentials v3 (net8, 4-Series). v3.x (latest `v3.8.2`) is the Essenti
 
 | Change | Who is affected | What to do |
 |---|---|---|
-| **Meters are opt-in.** A meter streams only while its subscribe join is high, or after `Subscribe()` is called on the meter device. v3.x subscribed every meter at startup. | Programs that read meter levels (bridge level join or `IMeterFeedback`) without raising the meter's subscribe join | Raise the subscribe join (Legacy d3501 + offset; Standalone d1) while the meter is shown, or call `Subscribe()`. For level-threshold feedback, prefer a logic meter in the design |
+| **Meters are opt-in.** A meter streams only while its subscribe join is high, or after `Subscribe()` is called on the meter device. v3.x subscribed every meter at startup. | Programs that read meter levels (bridge level join or `IMeterFeedback`) without raising the meter's subscribe join | Raise the subscribe join (Legacy d3501 + offset; Standalone d1) while the meter is shown, or call `Subscribe()`. Without a SIMPL bridge, set `"subscribeOnStart": true` on the meter. For level-threshold feedback, prefer a logic meter in the design |
 | **Raw level (dB text) moved from serial 300 to serial 400** on the Legacy map, so it no longer overwrites fader labels at bridgeIndex 100+ (#151). It is also on the Standalone map at serial 2. | Programs reading s301+ for raw level | Move to s401 + offset |
 | **Room combiners link bridgeIndex 1–66 only** on the Legacy map. Higher indexes would overlap the router joins at 2601 and are logged and not linked. | Configs with a room combiner bridgeIndex above 66 | Renumber the combiner, or bridge it standalone |
 | **Subscription watchdog** checks every 30 s (was every 2 minutes): its sentinels, plus 2 components in rotation. A `+OK` reply (the DSP had dropped subscriptions, for example after a design push) restores every subscription at once, without a reconnect. Components that can never subscribe (missing tag, bad attribute or index) are quarantined and logged once. | Everyone; no action needed | Optional: set `watchdogSentinels` to one component per partition. See *Subscription watchdog* |
@@ -741,7 +741,7 @@ In the provided example config object, given a base object key of ```dsp-1```, t
 Enables metering on the sepecified meter.  
 Using this is a bad idea, please avoid unless specifically requested.  
 
-Meters are opt-in: a meter streams only while something has asked for it. Raise the meter's subscribe join (or call `Subscribe()` on the meter device) to start it, and lower the join (or call `UnSubscribe()`) to stop it. A meter that was asked for is subscribed again after a reconnect, design push or resubscribe; one that wasn't stays off. Before v4, every meter was subscribed when the session started, whether or not anything used it. For level-threshold feedback, prefer a logic meter in the design, which publishes only when its state changes.  
+Meters are opt-in: a meter streams only while something has asked for it. Raise the meter's subscribe join (or call `Subscribe()` on the meter device) to start it, and lower the join (or call `UnSubscribe()`) to stop it. A standalone program without a SIMPL bridge can set `"subscribeOnStart": true` on the meter instead, so it streams from session start; lowering the join or calling `UnSubscribe()` still stops it. A meter that was asked for is subscribed again after a reconnect, design push or resubscribe; one that wasn't stays off. Before v4, every meter was subscribed when the session started, whether or not anything used it. For level-threshold feedback, prefer a logic meter in the design, which publishes only when its state changes.  
 
 Within the **Legacy** object this Join map represents a control that is part of an array of controls.  Each join number = Join Map Number + (```bridgeIndex``` − 1); `bridgeIndex` counts from 1, and a meter with `bridgeIndex` 0 is logged and not linked.
 
@@ -779,7 +779,8 @@ Within the **Standalone** object, this join map represents a single control as d
         "label" : "State01",
         "meterInstanceTag" : "Meter1",
         "index" : 1,
-        "bridgeIndex" : 1
+        "bridgeIndex" : 1,
+        "subscribeOnStart" : false
     }
 }
 ```
@@ -793,6 +794,7 @@ In the provided example config object, given a base object key of ```dsp-1```, t
 **meterInstanceTag** - Instance tag of the meter control
 **index** - Index of the control point.
 **bridgeIndex** - The index of the control on a **Legacy** object
+**subscribeOnStart** - Optional, default `false`. `true` streams the meter from session start without a subscribe join or `Subscribe()` call, for standalone programs. The subscribe join and `UnSubscribe()` still stop it.
 
 ***
 
