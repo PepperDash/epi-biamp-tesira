@@ -35,6 +35,13 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
         // lock, while a reply holds the queue lock and waits here.
         private readonly object stateLock = new object();
 
+        // Serializes turning polling on and off (SetPolling, Start, Stop), so the interval and the
+        // timer always change together: two callers at once (both bridges' enable joins, or a join
+        // and devjson) can't leave the timer stopped while polling reports enabled. Held only around
+        // the interval and timer change, never while sending or publishing, so it can't form a
+        // cycle with the command queue lock.
+        private readonly object controlLock = new object();
+
         // Tags each poll with a generation, so a reply to a poll sent before polling was turned off
         // is dropped (see FaultReplyGate).
         private readonly FaultReplyGate replyGate = new FaultReplyGate(AttributeCode);
@@ -102,15 +109,18 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
         /// </summary>
         public void Start()
         {
-            if (!PollingEnabled) return;
-            StartTimer();
-            PollPeriodic();
+            lock (controlLock)
+            {
+                if (!PollingEnabled) return;
+                StartTimer();
+            }
+            PollPeriodic(); // outside controlLock: sending takes the queue lock
         }
 
         /// <summary>Stops the timer (program stopping). The interval is kept.</summary>
         public void Stop()
         {
-            StopTimer();
+            lock (controlLock) StopTimer();
         }
 
         /// <summary>
@@ -123,25 +133,33 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
                 this.LogInformation("Fault poll interval {secs}s is below the minimum; using {min}s", intervalSecs, secs);
 
             bool wasEnabled;
-            lock (stateLock)
+            lock (controlLock)
             {
-                wasEnabled = PollingEnabled;
-                IntervalSecs = secs;
-                if (secs == 0) replyGate.PollingTurnedOff(); // drop replies to polls queued before this
+                lock (stateLock)
+                {
+                    wasEnabled = PollingEnabled;
+                    IntervalSecs = secs;
+                    if (secs == 0) replyGate.PollingTurnedOff(); // drop replies to polls queued before this
+                }
+                if (secs > 0) StartTimer();
+                else StopTimer();
             }
 
+            // Outside controlLock: sending takes the queue lock, and Publish runs subscribers.
             if (secs > 0)
             {
                 this.LogInformation("Fault monitoring on: polling every {interval}s", secs);
-                StartTimer();
-                if (!wasEnabled) PollPeriodic();
+                if (!wasEnabled) PollPeriodic(); // sends nothing if polling was turned off meanwhile
             }
             else
             {
-                StopTimer();
                 if (wasEnabled) this.LogInformation("Fault monitoring off");
-                bool changed;
-                lock (stateLock) changed = Store(new TesiraFaultList(), logChange: false);
+                // Clear only if still off: a concurrent SetPolling may have turned it back on.
+                bool changed = false;
+                lock (stateLock)
+                {
+                    if (!PollingEnabled) changed = Store(new TesiraFaultList(), logChange: false);
+                }
                 Publish(changed);
             }
 
