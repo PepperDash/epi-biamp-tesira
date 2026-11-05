@@ -43,6 +43,32 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Mock
         /// </summary>
         [JsonProperty("switcherControlBlocks")]
         public Dictionary<string, TesiraDspMockSourceSelectorConfig> SwitcherControlBlocks { get; set; }
+
+        /// <summary>Optional device info the mock reports, as the real driver reports the DSP's.</summary>
+        [JsonProperty("deviceInfo")]
+        public TesiraDspMockDeviceInfoConfig DeviceInfo { get; set; }
+    }
+
+    /// <summary>
+    /// Optional <c>deviceInfo</c> block: what the mock reports through IDeviceInfoProvider. Every field
+    /// is optional; see <see cref="MockDeviceInfoValues"/> for the defaults.
+    /// </summary>
+    public class TesiraDspMockDeviceInfoConfig
+    {
+        [JsonProperty("hostName")]
+        public string HostName { get; set; }
+
+        [JsonProperty("ipAddress")]
+        public string IpAddress { get; set; }
+
+        [JsonProperty("macAddress")]
+        public string MacAddress { get; set; }
+
+        [JsonProperty("serialNumber")]
+        public string SerialNumber { get; set; }
+
+        [JsonProperty("firmwareVersion")]
+        public string FirmwareVersion { get; set; }
     }
 
     /// <summary>Preset entry (label only — mock does not hit hardware).</summary>
