@@ -62,7 +62,9 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
 		public StringFeedback CommandPassthruFeedback { get; set; }
 
         /// <summary>
-        /// True when all components have been subscribed
+        /// True when every component expected to be subscribed is: enabled ones, meters only if asked
+        /// to stream, and not ones that can't be (quarantined by the watchdog for a config error, or
+        /// on a Tesira unit that is unavailable). <see cref="UnsubscribedControls"/> lists the rest.
         /// </summary>
         public bool IsSubscribed
         {
@@ -71,7 +73,7 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
                 bool subscribeTracker;
                 lock (watchdogLock)
                 {
-                    subscribeTracker = ControlPointList.All(subscribedComponent => subscribedComponent.IsSubscribed);
+                    subscribeTracker = ExpectedSubscribed().All(c => c.IsSubscribed);
                 }
                 if (subscribeThread == null) return subscribeTracker;
                 if (subscribeTracker && subscribeThread.ThreadState == ThreadState.Running)
@@ -79,6 +81,30 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
                 return subscribeTracker;
             }
         }
+
+        /// <summary>
+        /// Components expected to be subscribed but not yet, by key (or "none"). Shown by <c>devprops</c>.
+        /// </summary>
+        public string UnsubscribedControls
+        {
+            get
+            {
+                List<string> keys;
+                lock (watchdogLock)
+                {
+                    keys = ExpectedSubscribed().Where(c => !c.IsSubscribed).Select(c => c.Key).OrderBy(k => k).ToList();
+                }
+                return keys.Count == 0 ? "none" : string.Join(", ", keys);
+            }
+        }
+
+        // Call with watchdogLock held.
+        private IEnumerable<ISubscribedComponent> ExpectedSubscribed() =>
+            ControlPointList
+                .Where(c => c.Enabled)
+                .Where(c => !(c is TesiraDspMeter meter) || meter.SubscriptionRequested)
+                .Where(c => !watchdogPatrol.IsQuarantined(c))
+                .Where(c => !controlAvailability.Contains(c.Key));
 
         private readonly GenericQueue transmitQueue;
 
@@ -371,6 +397,8 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
                 watchdogSecs = 10;
             }
             watchDogIntervalMs = (int)Math.Min((long)watchdogSecs * 1000, int.MaxValue);
+            // Unavailable controls are retried on watchdog ticks, backing off to about every 5 minutes.
+            unavailableRetry = new RetryBackoff(Math.Max(1, unavailableRetryMaxSecs / watchdogSecs));
             var patrolSize = Math.Max(0, props.WatchdogPatrolSize ?? defaultWatchdogPatrolSize);
             lock (watchdogLock)
             {
@@ -921,6 +949,8 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
         {
             try
             {
+                RetryUnavailableControls();
+
                 if (WatchdogSuspend)
                 {
                     lock (watchdogLock) probeBatch.Close();
@@ -1077,6 +1107,41 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
         /// with its component. Replies to watchdog probes decide what happens next.
         /// </summary>
         private readonly ControlAvailability controlAvailability = new ControlAvailability();
+
+        private const int unavailableRetryMaxSecs = 300;
+        private RetryBackoff unavailableRetry = new RetryBackoff(unavailableRetryMaxSecs / defaultWatchdogIntervalSecs);
+
+        /// <summary>
+        /// Called on each watchdog tick: resubscribes the control points whose unit answered
+        /// -CANNOT_DELIVER, on a backoff (the first tick, then 2, 4, 8 ... ticks apart, up to about
+        /// 5 minutes). That covers blocks that were down at startup and never subscribed; a +OK
+        /// marks them available again. Runs even when watchdog probing is suspended.
+        /// </summary>
+        private void RetryUnavailableControls()
+        {
+            var keys = controlAvailability.Keys;
+            if (keys.Count == 0)
+            {
+                unavailableRetry.Reset();
+                return;
+            }
+            if (!unavailableRetry.Tick()) return;
+
+            List<ISubscribedComponent> components;
+            lock (watchdogLock)
+            {
+                components = ControlPointList.Where(c => c.Enabled && keys.Contains(c.Key)).ToList();
+            }
+
+            this.LogInformation("Retrying {count} unavailable control(s): {keys}", components.Count, string.Join(", ", keys));
+            foreach (var component in components)
+            {
+                bool known;
+                lock (watchdogLock) known = knownSubscribed.Contains(component);
+                // Never subscribed (down since startup): full setup. Subscribed before: subscriptions only.
+                SubscribeAutomatically(component, subscriptionsOnly: known);
+            }
+        }
 
         /// <summary>
         /// Control points whose Tesira unit answered -CANNOT_DELIVER (offline, rebooting or not running

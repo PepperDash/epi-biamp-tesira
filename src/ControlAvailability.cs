@@ -29,6 +29,12 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
             lock (sync) return unavailable.Remove(key);
         }
 
+        public bool Contains(string key)
+        {
+            if (string.IsNullOrEmpty(key)) return false;
+            lock (sync) return unavailable.Contains(key);
+        }
+
         public int Count
         {
             get { lock (sync) return unavailable.Count; }
