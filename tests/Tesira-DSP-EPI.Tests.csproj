@@ -44,5 +44,6 @@
     <!-- Mock fader state and the mock's config shape (Newtonsoft only). -->
     <Compile Include="..\src\Mock\MockFaderModel.cs" Link="Mock\MockFaderModel.cs" />
     <Compile Include="..\src\Mock\TesiraDspMockConfig.cs" Link="Mock\TesiraDspMockConfig.cs" />
+    <Compile Include="..\src\Mock\MockDeviceInfoValues.cs" Link="Mock\MockDeviceInfoValues.cs" />
   </ItemGroup>
 </Project>
