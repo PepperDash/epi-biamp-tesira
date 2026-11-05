@@ -27,6 +27,13 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Mock
         public FeedbackCollection<Feedback> Feedbacks { get; } = new FeedbackCollection<Feedback>();
 
         private readonly MockRouteTable routes;
+
+        // Serializes each route change together with its publication, so overlapping calls can't
+        // publish an older route after a newer one. A route requested from inside a callback (same
+        // thread, so the re-entrant lock lets it in) is queued and applied after the current one.
+        private readonly object routeChangeLock = new object();
+        private readonly Queue<KeyValuePair<uint, uint>> pendingRoutes = new Queue<KeyValuePair<uint, uint>>();
+        private bool applyingRoutes;
         private readonly Dictionary<uint, string> inputLabels = new Dictionary<uint, string>();
         private readonly RoutingPortNamedSlots namedSlots;
 
@@ -241,6 +248,31 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Mock
         }
 
         private void ApplyRoute(uint output, uint input)
+        {
+            lock (routeChangeLock)
+            {
+                pendingRoutes.Enqueue(new KeyValuePair<uint, uint>(output, input));
+                if (applyingRoutes) return; // requested by a callback below: applied after the current route
+
+                applyingRoutes = true;
+                try
+                {
+                    while (pendingRoutes.Count > 0)
+                    {
+                        var next = pendingRoutes.Dequeue();
+                        ApplyAndPublish(next.Key, next.Value);
+                    }
+                }
+                finally
+                {
+                    applyingRoutes = false;
+                    pendingRoutes.Clear(); // only non-empty if a subscriber threw
+                }
+            }
+        }
+
+        // Call with routeChangeLock held.
+        private void ApplyAndPublish(uint output, uint input)
         {
             switch (routes.Route(output, input))
             {
