@@ -36,6 +36,10 @@
     <Compile Include="..\src\LogicSelectorStates.cs" Link="LogicSelectorStates.cs" />
     <Compile Include="..\src\RouterProtocol.cs" Link="RouterProtocol.cs" />
     <Compile Include="..\src\SubscriptionWatchdogCore.cs" Link="SubscriptionWatchdogCore.cs" />
+    <Compile Include="..\src\TtpReply.cs" Link="TtpReply.cs" />
+    <Compile Include="..\src\ControlAvailability.cs" Link="ControlAvailability.cs" />
+    <Compile Include="..\src\RetryBackoff.cs" Link="RetryBackoff.cs" />
+    <Compile Include="..\src\RecoveryTracker.cs" Link="RecoveryTracker.cs" />
     <Compile Include="..\src\Queue\CommandLanes.cs" Link="Queue\CommandLanes.cs" />
   </ItemGroup>
 </Project>
