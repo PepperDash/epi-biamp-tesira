@@ -7,6 +7,7 @@ using PepperDash.Essentials.AppServer.Messengers;
 using PepperDash.Essentials.Core;
 using PepperDash.Essentials.Core.Config;
 using PepperDash.Essentials.Core.DeviceTypeInterfaces;
+using PepperDash.Essentials.Core.DeviceInfo;
 
 namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Mock
 {
@@ -45,8 +46,13 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Mock
     /// Intended for bench-testing frontend/backend round-trips when no physical DSP
     /// is available. Not for production use.
     /// </remarks>
-    public class TesiraDspMock : EssentialsDevice, IHasDspPresetSave, IDspPresetsDirectRecall, ICommunicationMonitor
+    public class TesiraDspMock : EssentialsDevice, IHasDspPresetSave, IDspPresetsDirectRecall, ICommunicationMonitor,
+        IDeviceInfoProvider
     {
+        // IDeviceInfoProvider — the fields the real driver fills from the DSP's replies, here from config.
+        public DeviceInfo DeviceInfo { get; }
+        public event DeviceInfoChangeHandler DeviceInfoChanged;
+
         private const string ChildKeyFormat = "{0}--{1}";
 
         // IDspPresets requires a Presets dictionary keyed by config key, as TesiraDsp does; populated at ctor.
@@ -75,6 +81,17 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Mock
             PopulatePresets(props.Presets);
 
             CommunicationMonitor = new AlwaysOnMonitor(this);
+
+            var info = MockDeviceInfoValues.Resolve(Key, props.DeviceInfo,
+                (string)dc.Properties?.SelectToken("control.tcpSshProperties.address"));
+            DeviceInfo = new DeviceInfo
+            {
+                HostName = info.HostName,
+                IpAddress = info.IpAddress,
+                MacAddress = info.MacAddress,
+                SerialNumber = info.SerialNumber,
+                FirmwareVersion = info.FirmwareVersion,
+            };
 
             this.LogInformation(
                 "TesiraDspMock '{key}' built: {faderCount} fader(s), {presetCount} preset(s), switcherCount={switcherCount}",
@@ -114,6 +131,15 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Mock
             // No-op: mock has no hardware state to persist.
         }
 
+        // ── IDeviceInfoProvider ──────────────────────────────────────────────
+
+        /// <summary>Re-sends the configured device info to DeviceInfoChanged subscribers.</summary>
+        public void UpdateDeviceInfo()
+        {
+            this.LogDebug("UpdateDeviceInfo (mock) — host '{host}', ip {ip}", DeviceInfo.HostName, DeviceInfo.IpAddress);
+            DeviceInfoChanged?.Invoke(this, new DeviceInfoEventArgs(DeviceInfo));
+        }
+
         // ── Setup helpers ────────────────────────────────────────────────────
 
         protected override bool CustomActivate()
@@ -138,6 +164,8 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Mock
                     fader.ForcePublishState();
                 foreach (var selector in _selectors)
                     selector.FireUpdate();
+                // The real driver raises DeviceInfoChanged as the DSP's replies arrive after connect
+                UpdateDeviceInfo();
             }, null, 5000);
 
             // AlwaysOnMonitor sets Status = IsOk in its constructor, which fires
