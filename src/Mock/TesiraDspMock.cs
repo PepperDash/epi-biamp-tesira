@@ -195,11 +195,13 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Mock
             foreach (var kvp in faderConfigs)
             {
                 // As the real driver: a fader without its own hold timeout inherits the device's
-                if (kvp.Value != null && !kvp.Value.VolumeHoldTimeoutMs.HasValue)
-                    kvp.Value.VolumeHoldTimeoutMs = volumeHoldTimeoutMs;
+                // A null entry is a default fader, which inherits the device's hold timeout too
+                var cfg = kvp.Value ?? new TesiraDspMockFaderConfig();
+                if (!cfg.VolumeHoldTimeoutMs.HasValue)
+                    cfg.VolumeHoldTimeoutMs = volumeHoldTimeoutMs;
                 var childKey = string.Format(ChildKeyFormat, Key, kvp.Key);
-                var name = string.IsNullOrEmpty(kvp.Value?.Label) ? kvp.Key : kvp.Value.Label;
-                var fader = new TesiraDspMockFader(childKey, name, kvp.Value);
+                var name = string.IsNullOrEmpty(cfg.Label) ? kvp.Key : cfg.Label;
+                var fader = new TesiraDspMockFader(childKey, name, cfg);
 
                 DeviceManager.AddDevice(fader);
                 _faders.Add(fader);
