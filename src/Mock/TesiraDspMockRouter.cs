@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Routing;
 using PepperDash.Core.Logging;
 using PepperDash.Essentials.Core;
@@ -94,6 +95,13 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Mock
                 Feedbacks.Add(OutputRouteFeedbacks[n]);
                 Feedbacks.Add(OutputRouteNameFeedbacks[n]);
             }
+
+            // Every output starts routed to None: publish that through the routing views too, so
+            // consumers see it before the first route change.
+            CurrentRoutes = BuildCurrentRoutes();
+            var none = FindPort(InputPorts, 0);
+            foreach (var outputPort in OutputPorts)
+                namedSlots.HandleRouteChange(outputPort, none, eRoutingSignalType.Audio);
         }
 
         /// <summary>
@@ -201,13 +209,35 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Mock
             }
         }
 
-        /// <summary>Re-fires every route feedback (bootstrap, see <see cref="TesiraDspMock"/>).</summary>
+        /// <summary>
+        /// Publishes every route feedback even if its value hasn't changed (bootstrap, see
+        /// <see cref="TesiraDspMock"/>). A plain FireUpdate() skips an unchanged value, and a route
+        /// index of 0 never differs from a new feedback's initial value, so it would never publish.
+        /// </summary>
         public void FireUpdate()
         {
-            SourceIndexFeedback.FireUpdate();
-            RoutedSourceNameFeedback.FireUpdate();
-            foreach (var feedback in OutputRouteFeedbacks.Values) feedback.FireUpdate();
-            foreach (var feedback in OutputRouteNameFeedbacks.Values) feedback.FireUpdate();
+            foreach (var feedback in Feedbacks) ForceFire(feedback);
+        }
+
+        // Essentials keeps the last published value in a private field; reset it to a value the
+        // feedback can't produce so FireUpdate() sees a change (as TesiraDspMockFader does).
+        private static readonly FieldInfo IntValueField =
+            typeof(IntFeedback).GetField("_IntValue", BindingFlags.NonPublic | BindingFlags.Instance);
+        private static readonly FieldInfo StringValueField =
+            typeof(StringFeedback).GetField("_StringValue", BindingFlags.NonPublic | BindingFlags.Instance);
+        private bool forceFireWarned;
+
+        private void ForceFire(Feedback feedback)
+        {
+            var field = feedback is IntFeedback ? IntValueField : feedback is StringFeedback ? StringValueField : null;
+            if (field != null)
+                field.SetValue(feedback, feedback is IntFeedback ? (object)int.MinValue : "\u0000");
+            else if (!forceFireWarned)
+            {
+                forceFireWarned = true;
+                this.LogWarning("Can't force-publish {feedback}: Essentials' feedback internals changed; unchanged values won't re-publish", feedback.Key);
+            }
+            feedback.FireUpdate();
         }
 
         private void ApplyRoute(uint output, uint input)
