@@ -17,7 +17,10 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
         public const string AttributeCode = "activeFaultList";
 
         /// <summary>Shortest allowed poll interval; 1-9 is clamped up to this.</summary>
-        public const int MinimumIntervalSecs = 10;
+        public const int MinimumIntervalSecs = FaultPollInterval.MinimumSecs;
+
+        /// <summary>Longest allowed poll interval (1 day); longer is clamped down to this.</summary>
+        public const int MaximumIntervalSecs = FaultPollInterval.MaximumSecs;
 
         /// <summary>Interval used when the bridge join turns polling on and the config has none.</summary>
         public const int DefaultIntervalSecs = 60;
@@ -96,12 +99,8 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
                 this.LogInformation("Fault monitoring on: polling every {interval}s", IntervalSecs);
         }
 
-        /// <summary>0 or less = off; 1-9 is clamped to the minimum.</summary>
-        public static int Normalize(int secs)
-        {
-            if (secs <= 0) return 0;
-            return Math.Max(secs, MinimumIntervalSecs);
-        }
+        /// <summary>0 or less = off; otherwise clamped to 10 s - 1 day (see <see cref="FaultPollInterval"/>).</summary>
+        public static int Normalize(int secs) => FaultPollInterval.Normalize(secs);
 
         /// <summary>
         /// Called when the TTP session is ready (subscriptions done): starts the timer if polling is
@@ -130,7 +129,8 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
         {
             var secs = Normalize(intervalSecs);
             if (intervalSecs > 0 && secs != intervalSecs)
-                this.LogInformation("Fault poll interval {secs}s is below the minimum; using {min}s", intervalSecs, secs);
+                this.LogInformation("Fault poll interval {requested}s is outside {min}-{max}s; using {secs}s",
+                    intervalSecs, MinimumIntervalSecs, MaximumIntervalSecs, secs);
 
             bool wasEnabled;
             lock (controlLock)

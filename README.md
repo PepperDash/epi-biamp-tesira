@@ -104,7 +104,7 @@ Ways to turn it on:
 
 | How | Example | Lasts |
 |---|---|---|
-| Config (the default at startup) | `"faultPollIntervalSecs": 60` in the DSP's `properties`. 0 or missing means off; 1-9 is raised to 10 | Always |
+| Config (the default at startup) | `"faultPollIntervalSecs": 60` in the DSP's `properties`. 0 or missing means off; 1-9 is raised to 10, and more than 86400 (1 day) is lowered to 86400 | Always |
 | Bridge join FaultPollingEnable (d11) | Rising edge: on, at the config interval or 60 s. Falling edge: off | Until the program restarts. The join never changes the config |
 | Console | `devjson {"deviceKey":"dsp-1","methodName":"SetFaultPolling","params":[60]}`. Use 0 to turn it off | Until the program restarts. To keep it, set `faultPollIntervalSecs` in the config |
 

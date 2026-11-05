@@ -71,7 +71,8 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
 
         /// <summary>
         /// Seconds between 'DEVICE get activeFaultList' polls (the Tesira can't subscribe to faults).
-        /// 0 (default) = fault monitoring off; values 1-9 are clamped to 10. The bridge's
+        /// 0 (default) = fault monitoring off; values 1-9 are clamped to 10, and above 86400 (1 day)
+        /// to 86400. The bridge's
         /// FaultPollingEnable join and SetFaultPolling (devjson) can change it at runtime.
         /// </summary>
         [JsonProperty("faultPollIntervalSecs")]

@@ -145,7 +145,8 @@
         "faultPollIntervalSecs": {
           "type": "integer",
           "minimum": 0,
-          "description": "Seconds between polls of the DSP's active fault list (the Tesira can't subscribe to faults). 0 (default) turns fault monitoring off; 1-9 is raised to 10."
+          "maximum": 86400,
+          "description": "Seconds between polls of the DSP's active fault list (the Tesira can't subscribe to faults). 0 (default) turns fault monitoring off; 1-9 is raised to 10, and more than 86400 (1 day) is lowered to 86400."
         },
         "watchdogIntervalSecs": {
           "type": "integer",
