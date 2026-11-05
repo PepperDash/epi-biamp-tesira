@@ -39,3 +39,19 @@ public class TtpReplyTests
         TtpReply.IsUnavailable(line).Should().Be(expected);
     }
 }
+
+public class TtpReplyTargetTests
+{
+    [Theory]
+    [InlineData("\"Level1\" get level 1", "Level1")]
+    [InlineData("\"RMA-ROOM\" subscribe mute 1 RMA-ROOM__mute1 500", "RMA-ROOM")]
+    [InlineData("\"Level 1\" set level 1 0", "Level 1")]
+    [InlineData("DEVICE get activeFaultList", "DEVICE")]
+    [InlineData("  \"Mixer\" get crosspoint 1 1", "Mixer")]
+    [InlineData("", "")]
+    [InlineData(null, "")]
+    public void TargetOf_Returns_The_Commands_Instance_Tag(string? command, string expected)
+    {
+        TtpReply.TargetOf(command).Should().Be(expected);
+    }
+}

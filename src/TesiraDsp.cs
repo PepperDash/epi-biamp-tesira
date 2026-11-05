@@ -1159,17 +1159,23 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
             var key = (command?.ControlPoint ?? command?.RequestingComponent)?.Key;
             if (key == null || response == null) return;
 
+            // Per block: one control point can use blocks on different units (a fader's level and mute).
+            var target = TtpReply.TargetOf(command.Command);
+
             if (TtpReply.IsUnavailable(response))
             {
-                if (controlAvailability.MarkUnavailable(key))
-                    this.LogWarning("'{key}' is unavailable: the DSP answered {response} to '{command}'. Its Tesira unit may be offline, rebooting or not running the design; other controls carry on ({count} unavailable).",
-                        key, response, command.Command, controlAvailability.Count);
+                if (controlAvailability.MarkUnavailable(key, target))
+                    this.LogWarning("'{key}' block '{target}' is unavailable: the DSP answered {response} to '{command}'. Its Tesira unit may be offline, rebooting or not running the design; other controls carry on ({count} control(s) unavailable).",
+                        key, target, response, command.Command, controlAvailability.Count);
             }
             else if (response.StartsWith("+OK", StringComparison.Ordinal)
                      || response.IndexOf("ALREADY_SUBSCRIBED", StringComparison.Ordinal) >= 0)
             {
-                if (controlAvailability.MarkAvailable(key))
-                    this.LogInformation("'{key}' is answering again ({count} unavailable)", key, controlAvailability.Count);
+                if (controlAvailability.MarkAvailable(key, target, out var targetRecovered))
+                    this.LogInformation("'{key}' is answering again ({count} control(s) unavailable)", key, controlAvailability.Count);
+                else if (targetRecovered)
+                    this.LogInformation("'{key}' block '{target}' is answering again; still unavailable: {targets}",
+                        key, target, string.Join(", ", controlAvailability.TargetsOf(key)));
             }
         }
 

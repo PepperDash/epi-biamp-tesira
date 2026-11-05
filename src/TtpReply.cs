@@ -22,6 +22,21 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
         // DEVICE, and publishes with "! ", so neither matches.
         private static readonly Regex ErrorToken = new Regex(@"^(-[A-Z][A-Z0-9_]*)(?=$|[\s:])", RegexOptions.Compiled);
 
+        // The instance tag a command addresses: quoted ("Level 1" set level 1 0) or a bare first word.
+        private static readonly Regex Target = new Regex(@"^\s*(?:""([^""]*)""|(\S+))", RegexOptions.Compiled);
+
+        /// <summary>
+        /// The instance tag a TTP command addresses (its block), e.g. <c>Level1</c> for
+        /// <c>"Level1" get level 1</c>, or empty if there is none.
+        /// </summary>
+        public static string TargetOf(string command)
+        {
+            if (string.IsNullOrEmpty(command)) return string.Empty;
+            var match = Target.Match(command);
+            if (!match.Success) return string.Empty;
+            return match.Groups[1].Success ? match.Groups[1].Value : match.Groups[2].Value;
+        }
+
         /// <summary>True for a TTP error reply: <c>-ERR ...</c> or any other <c>-TOKEN</c>.</summary>
         public static bool IsError(string line) => line != null && ErrorToken.IsMatch(line);
 
