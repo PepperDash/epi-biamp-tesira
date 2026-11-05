@@ -145,12 +145,40 @@ public class MockFaderStepTests
         none.MaxLevel.Should().Be(12);
         none.UnmuteOnVolChange.Should().BeFalse();
         none.VolumeRepeatRateMs.Should().Be(100);
-        none.VolumeHoldTimeoutMs.Should().Be(10000);
+        none.VolumeHoldTimeoutMs.Should().BeNull("unset inherits the device's timeout");
 
         var real = JsonConvert.DeserializeObject<TesiraDspMockFaderConfig>(
             "{\"incrementAmount\":\"2.0\",\"unmuteOnVolChange\":true,\"minLevel\":-40,\"maxLevel\":12}");
         real.IncrementAmount.Should().Be("2.0");
         real.UnmuteOnVolChange.Should().BeTrue();
         real.MinLevel.Should().Be(-40);
+    }
+
+    [Fact]
+    public void A_reused_real_fader_config_with_a_null_hold_timeout_deserializes()
+    {
+        var cfg = JsonConvert.DeserializeObject<TesiraDspMockFaderConfig>("{\"volumeHoldTimeoutMs\":null}");
+        cfg.VolumeHoldTimeoutMs.Should().BeNull();
+        JsonConvert.DeserializeObject<TesiraDspMockFaderConfig>("{\"volumeHoldTimeoutMs\":0}")
+            .VolumeHoldTimeoutMs.Should().Be(0, "an explicit 0 disables the timeout and is kept");
+    }
+
+    [Fact]
+    public void The_device_hold_timeout_defaults_as_the_real_driver()
+    {
+        JsonConvert.DeserializeObject<TesiraDspMockPropertiesConfig>("{}").VolumeHoldTimeoutMs.Should().Be(10000);
+        JsonConvert.DeserializeObject<TesiraDspMockPropertiesConfig>("{\"volumeHoldTimeoutMs\":4000}")
+            .VolumeHoldTimeoutMs.Should().Be(4000);
+    }
+
+    [Fact]
+    public void Concurrent_steps_are_not_lost()
+    {
+        // VolumeRamp steps from timer threads, outside its lock
+        var m = new MockFaderModel(true, true, 0, false);
+        System.Threading.Tasks.Parallel.For(0, 500, _ => m.Step(up: true, 10));
+        m.Level.Should().Be(5000);
+        System.Threading.Tasks.Parallel.For(0, 200, i => { if (i % 2 == 0) m.Step(false, 10); else m.Step(true, 10); });
+        m.Level.Should().Be(5000);
     }
 }
