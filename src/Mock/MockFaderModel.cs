@@ -49,6 +49,36 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Mock
             return true;
         }
 
+        /// <summary>
+        /// Steps the level up or down by <paramref name="rawStep"/>, stopping at the ends of the range.
+        /// Returns true when it changed; false without a level or already at the end.
+        /// </summary>
+        public bool Step(bool up, ushort rawStep)
+        {
+            var target = up ? System.Math.Min(Level + rawStep, MaxRawLevel) : System.Math.Max(Level - rawStep, 0);
+            return SetLevel((ushort)target);
+        }
+
+        internal const ushort LegacyRawStep = 655;    // ~1%: the step without an incrementAmount
+        internal const double DefaultMinLevel = -100; // a Tesira level block's default range, dB
+        internal const double DefaultMaxLevel = 12;
+
+        /// <summary>
+        /// One volume step on the 0-65535 scale: <paramref name="incrementAmount"/> dB (the real fader's
+        /// config value, a string such as "2.0") over the fader's minLevel..maxLevel range, as the real
+        /// fader's increment moves the level, at least 1. Without a usable amount or range, the legacy
+        /// ~1% step.
+        /// </summary>
+        internal static ushort RawStep(string incrementAmount, double minLevel, double maxLevel)
+        {
+            if (!double.TryParse(incrementAmount, System.Globalization.NumberStyles.Float,
+                    System.Globalization.CultureInfo.InvariantCulture, out var db)
+                || !(db > 0) || double.IsInfinity(db) || !(maxLevel > minLevel))
+                return LegacyRawStep;
+            var raw = System.Math.Round(db / (maxLevel - minLevel) * MaxRawLevel);
+            return (ushort)System.Math.Max(1, System.Math.Min(MaxRawLevel, raw));
+        }
+
         internal static ushort PercentToRaw(ushort percent)
         {
             if (percent >= 100) return MaxRawLevel;
