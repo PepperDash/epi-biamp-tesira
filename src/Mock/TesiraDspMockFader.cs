@@ -14,13 +14,20 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Mock
     public class TesiraDspMockFader : EssentialsDevice, IBasicVolumeWithFeedback
     {
         // Essentials volume is a ushort 0-65535. Callers on the config side supply
-        // an initial percent (0-100) which we scale up once at construction.
-        private const ushort MaxRawLevel = 65535;
+        // an initial percent (0-100) which the model scales up once at construction.
+        private const ushort MaxRawLevel = MockFaderModel.MaxRawLevel;
         private const ushort VolumeStep  = 655; // ~1% per press for VolumeUp/Down
         private const ushort DefaultMuteToggleLevel = 0;
 
-        private ushort _volumeLevel;
-        private bool _isMuted;
+        private readonly MockFaderModel _model;
+        private ushort _volumeLevel => _model.Level;
+        private bool _isMuted => _model.IsMuted;
+
+        /// <summary>The block has a level (config <c>hasLevel</c>), as on the real fader.</summary>
+        public bool HasLevel => _model.HasLevel;
+
+        /// <summary>The block has a mute (config <c>hasMute</c>), as on the real fader.</summary>
+        public bool HasMute => _model.HasMute;
 
         // Typed backing fields so ForcePublishState() can call ForceFireUpdate().
         // The public properties expose them as IntFeedback/BoolFeedback (base types)
@@ -31,11 +38,11 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Mock
         public IntFeedback  VolumeLevelFeedback { get; }
         public BoolFeedback MuteFeedback        { get; }
 
-        public TesiraDspMockFader(string key, string name, ushort initialLevelPercent, bool initialMute)
+        public TesiraDspMockFader(string key, string name, ushort initialLevelPercent, bool initialMute,
+            bool hasLevel = true, bool hasMute = true)
             : base(key, name)
         {
-            _volumeLevel = PercentToRaw(initialLevelPercent);
-            _isMuted = initialMute;
+            _model = new MockFaderModel(hasLevel, hasMute, initialLevelPercent, initialMute);
 
             _typedVolumeFeedback = new ForceFireIntFeedback(key + "-VolumeLevel", () => _volumeLevel);
             _typedMuteFeedback   = new ForceFireBoolFeedback(key + "-Mute",       () => _isMuted);
@@ -68,44 +75,58 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Mock
 
         public void SetVolume(ushort level)
         {
-            if (_volumeLevel == level) return;
-            _volumeLevel = level;
+            if (!HasLevel)
+            {
+                // The real fader sends the set, and the DSP refuses it on a mute-only block
+                this.LogDebug("SetVolume {level} ignored: the block has no level", level);
+                return;
+            }
+            if (!_model.SetLevel(level)) return;
             this.LogDebug("SetVolume: {level}", level);
             VolumeLevelFeedback.FireUpdate();
         }
 
         public void VolumeUp(bool pressRelease)
         {
-            if (!pressRelease) return;
+            if (!pressRelease || !HasLevel) return;
             var target = (ushort)System.Math.Min(_volumeLevel + VolumeStep, MaxRawLevel);
             SetVolume(target);
         }
 
         public void VolumeDown(bool pressRelease)
         {
-            if (!pressRelease) return;
+            if (!pressRelease || !HasLevel) return;
             var target = (ushort)System.Math.Max(_volumeLevel - VolumeStep, 0);
             SetVolume(target);
         }
 
         public void MuteOn()
         {
-            if (_isMuted) return;
-            _isMuted = true;
+            if (!HasMute)
+            {
+                this.LogDebug("MuteOn ignored: the block has no mute");
+                return;
+            }
+            if (!_model.SetMute(true)) return;
             this.LogDebug("MuteOn");
             MuteFeedback.FireUpdate();
         }
 
         public void MuteOff()
         {
-            if (!_isMuted) return;
-            _isMuted = false;
+            if (!HasMute)
+            {
+                this.LogDebug("MuteOff ignored: the block has no mute");
+                return;
+            }
+            if (!_model.SetMute(false)) return;
             this.LogDebug("MuteOff");
             MuteFeedback.FireUpdate();
         }
 
         public void MuteToggle()
         {
+            if (!HasMute) return;
             if (_isMuted) MuteOff(); else MuteOn();
             // Guard: if a caller toggles from mute-on directly with no level set yet,
             // still leave level at DefaultMuteToggleLevel so consumers see something
@@ -114,12 +135,6 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Mock
             {
                 SetVolume(DefaultMuteToggleLevel);
             }
-        }
-
-        private static ushort PercentToRaw(ushort percent)
-        {
-            if (percent >= 100) return MaxRawLevel;
-            return (ushort)(percent * MaxRawLevel / 100);
         }
 
         // ── Force-fire feedback helpers ──────────────────────────────────────

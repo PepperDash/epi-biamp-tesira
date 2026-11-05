@@ -65,6 +65,20 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Mock
         /// <summary>Initial mute state. Defaults to false.</summary>
         [JsonProperty("initialMute")]
         public bool InitialMute { get; set; }
+
+        /// <summary>
+        /// The block has a level, as the real fader's <c>hasLevel</c>. Defaults to true. False makes a
+        /// mute-only block: its level stays 0 and level changes are ignored.
+        /// </summary>
+        [JsonProperty("hasLevel")]
+        public bool HasLevel { get; set; } = true;
+
+        /// <summary>
+        /// The block has a mute, as the real fader's <c>hasMute</c>. Defaults to true. False makes a
+        /// level-only block: it stays unmuted and mute changes are ignored.
+        /// </summary>
+        [JsonProperty("hasMute")]
+        public bool HasMute { get; set; } = true;
     }
 
     /// <summary>Source-selector entry — sources are keyed and labelled generically.</summary>
