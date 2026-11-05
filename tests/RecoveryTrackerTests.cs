@@ -82,7 +82,7 @@ public class RecoveryTrackerRestoreTests
         recovery.IsRestored("dsp--Fader1").Should().BeFalse();
         recovery.MarkRestoreSent("dsp--Fader1");
         recovery.IsRestored("dsp--Fader1").Should().BeFalse();
-        recovery.Acknowledge("dsp--Fader1");
+        recovery.Acknowledge("dsp--Fader1", isSubscribe: true);
         recovery.IsRestored("dsp--Fader1").Should().BeTrue();
     }
 
@@ -92,7 +92,7 @@ public class RecoveryTrackerRestoreTests
         // A successful reply to a command from before the restore (sent while unavailable).
         var recovery = Pending("dsp--Fader1");
 
-        recovery.Acknowledge("dsp--Fader1");
+        recovery.Acknowledge("dsp--Fader1", isSubscribe: true);
         recovery.MarkRestoreSent("dsp--Fader1");
 
         recovery.IsRestored("dsp--Fader1").Should().BeFalse();
@@ -104,7 +104,7 @@ public class RecoveryTrackerRestoreTests
         // -GENERAL_FAILURE on the subscribe after the read was answered.
         var recovery = Pending("dsp--Fader1");
         recovery.MarkRestoreSent("dsp--Fader1");
-        recovery.Acknowledge("dsp--Fader1");
+        recovery.Acknowledge("dsp--Fader1", isSubscribe: true);
 
         recovery.Fail("dsp--Fader1");
 
@@ -117,7 +117,7 @@ public class RecoveryTrackerRestoreTests
     {
         var recovery = Pending("dsp--Fader1");
         recovery.MarkRestoreSent("dsp--Fader1");
-        recovery.Acknowledge("dsp--Fader1");
+        recovery.Acknowledge("dsp--Fader1", isSubscribe: true);
 
         recovery.MarkNeeded("dsp--Fader1", fullSetup: false);
 
@@ -139,10 +139,61 @@ public class RecoveryTrackerRestoreTests
     {
         var recovery = new RecoveryTracker();
         recovery.MarkRestoreSent("dsp--Fader1");
-        recovery.Acknowledge("dsp--Fader1");
+        recovery.Acknowledge("dsp--Fader1", isSubscribe: true);
         recovery.Fail("dsp--Fader1");
 
         recovery.IsPending("dsp--Fader1").Should().BeFalse();
         recovery.IsRestored("dsp--Fader1").Should().BeFalse();
+    }
+
+    [Fact]
+    public void Once_A_Subscribe_Is_Queued_Only_A_Subscribe_Reply_Acknowledges()
+    {
+        // A fader's range read answered while its subscribe was dropped must not end recovery.
+        var recovery = Pending("dsp--Fader1");
+        recovery.MarkRestoreSent("dsp--Fader1");
+        recovery.ExpectSubscribe("dsp--Fader1");
+
+        recovery.Acknowledge("dsp--Fader1", isSubscribe: false);
+        recovery.IsRestored("dsp--Fader1").Should().BeFalse();
+
+        recovery.Acknowledge("dsp--Fader1", isSubscribe: true);
+        recovery.IsRestored("dsp--Fader1").Should().BeTrue();
+    }
+
+    [Fact]
+    public void A_Read_Answered_Before_The_Subscribe_Was_Queued_No_Longer_Counts()
+    {
+        var recovery = Pending("dsp--Fader1");
+        recovery.MarkRestoreSent("dsp--Fader1");
+        recovery.Acknowledge("dsp--Fader1", isSubscribe: false);
+
+        recovery.ExpectSubscribe("dsp--Fader1");
+
+        recovery.IsRestored("dsp--Fader1").Should().BeFalse();
+    }
+
+    [Fact]
+    public void A_Polled_Control_Is_Acknowledged_By_Its_State_Read()
+    {
+        // A crosspoint or polled router queues no subscribe.
+        var recovery = Pending("dsp--Xpt1");
+        recovery.MarkRestoreSent("dsp--Xpt1");
+
+        recovery.Acknowledge("dsp--Xpt1", isSubscribe: false);
+
+        recovery.IsRestored("dsp--Xpt1").Should().BeTrue();
+    }
+
+    [Fact]
+    public void A_Subscribe_Expected_Before_Any_Restore_Is_Ignored()
+    {
+        var recovery = Pending("dsp--Fader1");
+        recovery.ExpectSubscribe("dsp--Fader1");
+        recovery.MarkRestoreSent("dsp--Fader1");
+
+        recovery.Acknowledge("dsp--Fader1", isSubscribe: false);
+
+        recovery.IsRestored("dsp--Fader1").Should().BeTrue();
     }
 }

@@ -22,6 +22,7 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
             public bool FullSetup;
             public bool RestoreSent;
             public bool Acknowledged;
+            public bool ExpectsSubscribe;
         }
 
         private readonly object sync = new object();
@@ -41,6 +42,7 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
                 entry.FullSetup |= fullSetup;
                 entry.RestoreSent = false;
                 entry.Acknowledged = false;
+                entry.ExpectsSubscribe = false;
             }
         }
 
@@ -53,15 +55,38 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
                 if (!pending.TryGetValue(key, out var entry)) return;
                 entry.RestoreSent = true;
                 entry.Acknowledged = false;
+                entry.ExpectsSubscribe = false;
             }
         }
 
-        /// <summary>A restore command (subscribe or read) for the control point was answered successfully.</summary>
-        public void Acknowledge(string key)
+        /// <summary>
+        /// The restore queued a subscribe for the control point: from now on only a successful
+        /// subscribe reply acknowledges it (a read answered earlier doesn't count).
+        /// </summary>
+        public void ExpectSubscribe(string key)
         {
             if (string.IsNullOrEmpty(key)) return;
             lock (sync)
-                if (pending.TryGetValue(key, out var entry) && entry.RestoreSent) entry.Acknowledged = true;
+            {
+                if (!pending.TryGetValue(key, out var entry) || !entry.RestoreSent) return;
+                entry.ExpectsSubscribe = true;
+                entry.Acknowledged = false;
+            }
+        }
+
+        /// <summary>
+        /// A restore command for the control point was answered successfully. A read counts only for
+        /// a control point whose restore queued no subscribe (a polled one).
+        /// </summary>
+        public void Acknowledge(string key, bool isSubscribe)
+        {
+            if (string.IsNullOrEmpty(key)) return;
+            lock (sync)
+            {
+                if (!pending.TryGetValue(key, out var entry) || !entry.RestoreSent) return;
+                if (entry.ExpectsSubscribe && !isSubscribe) return;
+                entry.Acknowledged = true;
+            }
         }
 
         /// <summary>A restore command for the control point failed: the restore doesn't count, retry it.</summary>
@@ -73,6 +98,7 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
                 if (!pending.TryGetValue(key, out var entry)) return;
                 entry.RestoreSent = false;
                 entry.Acknowledged = false;
+                entry.ExpectsSubscribe = false;
             }
         }
 

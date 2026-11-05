@@ -1081,6 +1081,9 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
             var component = command?.RequestingComponent;
             if (component == null || !ProbeReplies.IsSubscribeCommand(command.Command)) return;
 
+            // A restore that subscribes is acknowledged only by a subscribe reply.
+            recovery.ExpectSubscribe(component.Key);
+
             lock (watchdogLock)
             {
                 probeBatch.ExpectReply(component, command);
@@ -1096,6 +1099,9 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
         {
             var component = command?.RequestingComponent;
             if (component == null || !ProbeReplies.IsSubscribeCommand(command.Command)) return;
+
+            // A restore whose subscribe the queue dropped hasn't restored anything: retry it.
+            recovery.Fail(component.Key);
 
             lock (watchdogLock)
             {
@@ -1193,6 +1199,13 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
                 var fullSetup = recovery.NeedsFullSetup(component.Key);
                 if (!controlAvailability.Contains(component.Key)) recovery.MarkRestoreSent(component.Key);
                 SubscribeAutomatically(component, subscriptionsOnly: !fullSetup);
+
+                // A switcher of type "router" subscribes nothing: its Subscribe() only restarts a poll
+                // timer, which each retry would push back before it fires. Poll it now instead.
+                if (component is TesiraDspSwitcher switcher)
+                {
+                    using (CommandQueue.BackgroundScope()) switcher.DoPoll();
+                }
             }
         }
 
@@ -1215,14 +1228,15 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
             // Per block: one control point can use blocks on different units (a fader's level and mute).
             var target = TtpReply.TargetOf(command.Command);
 
-            // A control point being restored: only a successful subscribe or read proves the restore
-            // took; any other error to one sends it back to retrying. User writes don't count.
-            if (recovery.IsPending(key))
+            // A control point being restored: only a successful subscribe (or, for a polled control
+            // point that subscribes nothing, a state read) proves the restore took; any other error to
+            // one sends it back to retrying. Range reads and user writes don't count.
+            if (recovery.IsPending(key) && !IsRangeRead(command.AttributeCode))
             {
                 var verb = TtpReply.VerbOf(command.Command);
                 if (verb == "subscribe" || verb == "get")
                 {
-                    if (TtpReply.IsSuccess(response)) recovery.Acknowledge(key);
+                    if (TtpReply.IsSuccess(response)) recovery.Acknowledge(key, isSubscribe: verb == "subscribe");
                     else if (TtpReply.IsError(response) && !TtpReply.IsUnavailable(response)) recovery.Fail(key);
                 }
             }
@@ -1252,6 +1266,10 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
         /// Called by the command queue, under its lock, with the reply to a subscribe command tagged
         /// with its component. Replies to watchdog probes decide what happens next.
         /// </summary>
+        private static bool IsRangeRead(string attributeCode) =>
+            attributeCode == "minLevel" || attributeCode == "maxLevel"
+            || attributeCode == "levelOutMin" || attributeCode == "levelOutMax";
+
         internal void NotifySubscribeReply(QueuedCommand command, string response)
         {
             var component = command?.RequestingComponent;
