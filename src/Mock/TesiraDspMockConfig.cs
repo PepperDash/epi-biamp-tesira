@@ -105,6 +105,33 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Mock
         /// </summary>
         [JsonProperty("hasMute")]
         public bool HasMute { get; set; } = true;
+
+        /// <summary>
+        /// dB per volume step, as the real fader's <c>incrementAmount</c> (e.g. "2.0"). Unset keeps the
+        /// mock's legacy ~1% step.
+        /// </summary>
+        [JsonProperty("incrementAmount")]
+        public string IncrementAmount { get; set; }
+
+        /// <summary>The fader's range in dB, which the real fader reads from the DSP. Defaults -100.</summary>
+        [JsonProperty("minLevel")]
+        public double MinLevel { get; set; } = MockFaderModel.DefaultMinLevel;
+
+        /// <summary>The fader's range in dB, which the real fader reads from the DSP. Defaults 12.</summary>
+        [JsonProperty("maxLevel")]
+        public double MaxLevel { get; set; } = MockFaderModel.DefaultMaxLevel;
+
+        /// <summary>Unmute on a volume-up press or a higher level, as the real <c>unmuteOnVolChange</c>.</summary>
+        [JsonProperty("unmuteOnVolChange")]
+        public bool UnmuteOnVolChange { get; set; }
+
+        /// <summary>Interval between steps while volume up/down is held. Defaults 100, as the real fader.</summary>
+        [JsonProperty("volumeRepeatRateMs")]
+        public int VolumeRepeatRateMs { get; set; } = 100;
+
+        /// <summary>Longest hold before the repeat stops; 0 or less disables it. Defaults 10000.</summary>
+        [JsonProperty("volumeHoldTimeoutMs")]
+        public int VolumeHoldTimeoutMs { get; set; } = 10000;
     }
 
     /// <summary>Source-selector entry — sources are keyed and labelled generically.</summary>
