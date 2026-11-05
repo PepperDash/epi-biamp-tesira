@@ -3,37 +3,38 @@
 namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
 {
     /// <summary>
-    /// Decides which fault poll replies to apply. While polling is on, every reply is applied. While
-    /// it's off, only replies to explicit one-shot polls (PollNow / d13) are applied, one per request,
-    /// so a reply to a periodic poll queued before polling was turned off can't restore the values
-    /// that turning it off cleared. Not thread-safe: the caller holds its own lock.
+    /// Decides which fault poll replies to apply, per request. Each poll is queued with the
+    /// attribute code <see cref="Tag"/>, which carries a generation number, and the queue hands that
+    /// code back with the reply. Turning polling off starts a new generation, so a reply is applied
+    /// only if polling hasn't been turned off since its request was sent. That holds for periodic
+    /// polls and explicit one-shots alike: a reply to a poll sent before the turn-off can't restore
+    /// the values that turning it off cleared, nor take the place of a later one-shot's reply.
+    /// Not thread-safe: the caller holds its own lock.
     /// </summary>
     public class FaultReplyGate
     {
-        private int pendingOneShots;
+        private readonly string attributeCode;
+        private int generation;
 
-        /// <summary>Explicit polls sent while polling was off whose replies haven't arrived yet.</summary>
-        public int PendingOneShots => pendingOneShots;
-
-        /// <summary>Call when a poll is sent. Only polls sent while polling is off are counted.</summary>
-        public void PollSent(bool pollingEnabled)
+        public FaultReplyGate(string attributeCode)
         {
-            if (!pollingEnabled) pendingOneShots++;
+            this.attributeCode = attributeCode;
         }
 
-        /// <summary>Call when polling is turned off: replies to earlier polls are no longer wanted.</summary>
+        /// <summary>The attribute code to queue a poll with now.</summary>
+        public string Tag => attributeCode + "#" + generation;
+
+        /// <summary>Call when polling is turned off: replies to every earlier poll are no longer wanted.</summary>
         public void PollingTurnedOff()
         {
-            pendingOneShots = 0;
+            generation++;
         }
 
-        /// <summary>Call for each parsed reply. True if it should be applied.</summary>
-        public bool ShouldApply(bool pollingEnabled)
-        {
-            if (pollingEnabled) return true;
-            if (pendingOneShots <= 0) return false;
-            pendingOneShots--;
-            return true;
-        }
+        /// <summary>True if the queued attribute code belongs to a fault poll (of any generation).</summary>
+        public bool IsFaultReply(string queuedAttributeCode) =>
+            queuedAttributeCode != null && queuedAttributeCode.StartsWith(attributeCode + "#", System.StringComparison.Ordinal);
+
+        /// <summary>True if the reply to a poll queued with this attribute code should be applied.</summary>
+        public bool ShouldApply(string queuedAttributeCode) => queuedAttributeCode == Tag;
     }
 }

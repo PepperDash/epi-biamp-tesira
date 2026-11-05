@@ -1,5 +1,6 @@
 using System;
 using Crestron.SimplSharpPro.DeviceSupport;
+using Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Queue;
 using PepperDash.Core.Logging;
 using PepperDash.Essentials.Core;
 using PepperDash.Essentials.Core.Bridges;
@@ -34,8 +35,11 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
         // lock, while a reply holds the queue lock and waits here.
         private readonly object stateLock = new object();
 
-        // While polling is off, only replies to explicit PollNow() calls are applied, one per call.
-        private readonly FaultReplyGate replyGate = new FaultReplyGate();
+        // Tags each poll with a generation, so a reply to a poll sent before polling was turned off
+        // is dropped (see FaultReplyGate).
+        private readonly FaultReplyGate replyGate = new FaultReplyGate(AttributeCode);
+
+        private const string PollCommand = "\"DEVICE\" get " + AttributeCode;
 
         /// <summary>The interval from config (0 = off), used when the bridge join turns polling on.</summary>
         public int ConfiguredIntervalSecs { get; }
@@ -100,7 +104,7 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
         {
             if (!PollingEnabled) return;
             StartTimer();
-            PollNow();
+            PollPeriodic();
         }
 
         /// <summary>Stops the timer (program stopping). The interval is kept.</summary>
@@ -130,7 +134,7 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
             {
                 this.LogInformation("Fault monitoring on: polling every {interval}s", secs);
                 StartTimer();
-                if (!wasEnabled) PollNow();
+                if (!wasEnabled) PollPeriodic();
             }
             else
             {
@@ -145,10 +149,35 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
         }
 
         /// <summary>
-        /// Queues one 'DEVICE get activeFaultList' in the background lane, behind user commands.
-        /// Skipped while the DSP is offline (the queue drops commands then anyway).
+        /// Polls once now (d13 / PollFaults), whether or not periodic polling is on. Its reply is
+        /// applied unless polling is turned off before it arrives.
         /// </summary>
         public void PollNow()
+        {
+            string tag;
+            lock (stateLock) tag = replyGate.Tag;
+            Send(tag);
+        }
+
+        // Timer ticks and the first poll after turning on. A tick that lands after polling was
+        // turned off sends nothing.
+        private void PollPeriodic()
+        {
+            string tag;
+            lock (stateLock)
+            {
+                if (!PollingEnabled) return;
+                tag = replyGate.Tag;
+            }
+            Send(tag);
+        }
+
+        /// <summary>
+        /// Queues one 'DEVICE get activeFaultList' in the background lane, behind user commands,
+        /// tagged so its reply can be matched to this request. Skipped while the DSP is offline
+        /// (the queue drops commands then anyway).
+        /// </summary>
+        private void Send(string tag)
         {
             if (Parent.CommunicationMonitor == null || !Parent.CommunicationMonitor.IsOnline)
             {
@@ -156,20 +185,15 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
                 return;
             }
 
-            lock (stateLock)
-            {
-                replyGate.PollSent(PollingEnabled);
-            }
-
             using (Parent.CommandQueue.BackgroundScope())
             {
-                SendFullCommand("get", AttributeCode, null, 999);
+                Parent.CommandQueue.EnqueueCommand(new QueuedCommand(PollCommand, tag, this, priority: (int)CommandPriority.Critical));
             }
         }
 
         public override void ParseGetMessage(string attributeCode, string message)
         {
-            if (attributeCode != AttributeCode || string.IsNullOrEmpty(message)) return;
+            if (!replyGate.IsFaultReply(attributeCode) || string.IsNullOrEmpty(message)) return;
 
             if (message.StartsWith("-ERR", StringComparison.Ordinal))
             {
@@ -190,10 +214,10 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
             bool changed;
             lock (stateLock)
             {
-                // Off: apply only answers to explicit one-shot polls, never a stale periodic one.
-                if (!replyGate.ShouldApply(PollingEnabled))
+                // Drop the reply to any poll sent before polling was last turned off.
+                if (!replyGate.ShouldApply(attributeCode))
                 {
-                    this.LogVerbose("Fault poll reply discarded: monitoring was turned off");
+                    this.LogVerbose("Fault poll reply discarded: monitoring was turned off after it was sent");
                     return;
                 }
                 changed = Store(parsed, logChange: true);
@@ -269,7 +293,7 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
                 pollTimer?.Stop();
                 pollTimer?.Dispose();
                 pollTimer = new System.Timers.Timer(IntervalSecs * 1000.0) { AutoReset = true };
-                pollTimer.Elapsed += (s, e) => PollNow();
+                pollTimer.Elapsed += (s, e) => PollPeriodic();
                 pollTimer.Start();
             }
         }

@@ -5,62 +5,74 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Tests;
 
 public class FaultReplyGateTests
 {
+    private const string Attr = "activeFaultList";
+
     [Fact]
-    public void Applies_Every_Reply_While_Polling_Is_On()
+    public void Applies_Replies_Sent_Since_The_Last_Turn_Off()
     {
-        var gate = new FaultReplyGate();
+        var gate = new FaultReplyGate(Attr);
+        var a = gate.Tag;
+        var b = gate.Tag;
 
-        gate.PollSent(pollingEnabled: true);
-        gate.PollSent(pollingEnabled: true);
-
-        gate.ShouldApply(pollingEnabled: true).Should().BeTrue();
-        gate.ShouldApply(pollingEnabled: true).Should().BeTrue();
-        gate.PendingOneShots.Should().Be(0);
+        gate.ShouldApply(a).Should().BeTrue();
+        gate.ShouldApply(b).Should().BeTrue();
     }
 
     [Fact]
     public void Drops_A_Periodic_Reply_That_Arrives_After_Polling_Is_Turned_Off()
     {
-        var gate = new FaultReplyGate();
+        var gate = new FaultReplyGate(Attr);
+        var periodic = gate.Tag;
 
-        gate.PollSent(pollingEnabled: true);
         gate.PollingTurnedOff();
 
-        gate.ShouldApply(pollingEnabled: false).Should().BeFalse();
+        gate.ShouldApply(periodic).Should().BeFalse();
     }
 
     [Fact]
-    public void Applies_The_Reply_To_A_One_Shot_Poll_While_Off()
+    public void A_Stale_Periodic_Reply_Does_Not_Take_A_Later_One_Shots_Place()
     {
-        var gate = new FaultReplyGate();
+        // Periodic poll A is outstanding when polling is turned off; one-shot B is sent before A replies.
+        var gate = new FaultReplyGate(Attr);
+        var a = gate.Tag;
+        gate.PollingTurnedOff();
+        var b = gate.Tag;
 
-        gate.PollSent(pollingEnabled: false);
-
-        gate.ShouldApply(pollingEnabled: false).Should().BeTrue();
-        gate.ShouldApply(pollingEnabled: false).Should().BeFalse();
+        gate.ShouldApply(a).Should().BeFalse();
+        gate.ShouldApply(b).Should().BeTrue();
     }
 
     [Fact]
-    public void Applies_Both_Replies_When_Two_One_Shots_Are_Outstanding()
+    public void Applies_Every_One_Shot_While_Off()
     {
-        var gate = new FaultReplyGate();
+        var gate = new FaultReplyGate(Attr);
+        gate.PollingTurnedOff();
+        var first = gate.Tag;
+        var second = gate.Tag;
 
-        gate.PollSent(pollingEnabled: false);
-        gate.PollSent(pollingEnabled: false);
-
-        gate.ShouldApply(pollingEnabled: false).Should().BeTrue();
-        gate.ShouldApply(pollingEnabled: false).Should().BeTrue();
-        gate.ShouldApply(pollingEnabled: false).Should().BeFalse();
+        gate.ShouldApply(first).Should().BeTrue();
+        gate.ShouldApply(second).Should().BeTrue();
     }
 
     [Fact]
-    public void Turning_Polling_Off_Drops_Outstanding_One_Shots()
+    public void Drops_A_One_Shot_Sent_Before_Polling_Is_Turned_Off()
     {
-        var gate = new FaultReplyGate();
+        var gate = new FaultReplyGate(Attr);
+        var oneShot = gate.Tag;
 
-        gate.PollSent(pollingEnabled: false);
         gate.PollingTurnedOff();
 
-        gate.ShouldApply(pollingEnabled: false).Should().BeFalse();
+        gate.ShouldApply(oneShot).Should().BeFalse();
+    }
+
+    [Theory]
+    [InlineData("activeFaultList#0", true)]
+    [InlineData("activeFaultList#12", true)]
+    [InlineData("activeFaultList", false)]
+    [InlineData("level", false)]
+    [InlineData(null, false)]
+    public void Recognises_Its_Own_Tags(string? queued, bool expected)
+    {
+        new FaultReplyGate(Attr).IsFaultReply(queued).Should().Be(expected);
     }
 }
