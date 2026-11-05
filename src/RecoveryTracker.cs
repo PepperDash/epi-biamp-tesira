@@ -6,27 +6,54 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
 {
     /// <summary>
     /// Control points that need restoring after their Tesira unit was unavailable, kept apart from
-    /// whether the unit answers now: a control point leaves only once it is subscribed again, so a
-    /// stray successful reply (a user command, a range poll) can't drop it before its subscriptions
-    /// are restored. Each entry notes whether the control point needs its full setup (it went
-    /// unavailable during startup, so its one-time writes may have failed) or subscriptions only.
-    /// Thread-safe.
+    /// whether the unit answers now. A control point leaves only after a restore was sent while its
+    /// unit was answering and no unavailable reply came back since. A stray successful reply (a user
+    /// command, a range poll) can't drop it early, and neither can a subscribed flag left over from
+    /// before the outage (a unit that restarts drops its subscriptions). Each entry also notes
+    /// whether the control point needs its full setup (it went unavailable during startup, so its
+    /// one-time writes may have failed) or subscriptions only. Thread-safe.
     /// </summary>
     /// <remarks>Kept free of Crestron types so it can be unit tested.</remarks>
     public sealed class RecoveryTracker
     {
+        private sealed class Entry
+        {
+            public bool FullSetup;
+            public bool RestoreSent;
+        }
+
         private readonly object sync = new object();
-        private readonly Dictionary<string, bool> pending = new Dictionary<string, bool>();
+        private readonly Dictionary<string, Entry> pending = new Dictionary<string, Entry>();
 
         /// <summary>
-        /// Records that a control point needs restoring. Full setup, once asked for, stays asked for
-        /// until the control point is restored.
+        /// Records an unavailable reply for a control point: it needs restoring, and any restore sent
+        /// before this reply no longer counts. Full setup, once asked for, stays asked for until the
+        /// control point is restored.
         /// </summary>
         public void MarkNeeded(string key, bool fullSetup)
         {
             if (string.IsNullOrEmpty(key)) return;
             lock (sync)
-                pending[key] = (pending.TryGetValue(key, out var existing) && existing) || fullSetup;
+            {
+                if (!pending.TryGetValue(key, out var entry)) pending[key] = entry = new Entry();
+                entry.FullSetup |= fullSetup;
+                entry.RestoreSent = false;
+            }
+        }
+
+        /// <summary>Records that a restore was sent while the control point's unit was answering.</summary>
+        public void MarkRestoreSent(string key)
+        {
+            if (string.IsNullOrEmpty(key)) return;
+            lock (sync)
+                if (pending.TryGetValue(key, out var entry)) entry.RestoreSent = true;
+        }
+
+        /// <summary>True once a restore was sent while answering, with no unavailable reply since.</summary>
+        public bool IsRestored(string key)
+        {
+            if (string.IsNullOrEmpty(key)) return false;
+            lock (sync) return pending.TryGetValue(key, out var entry) && entry.RestoreSent;
         }
 
         public bool IsPending(string key)
@@ -39,7 +66,7 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
         public bool NeedsFullSetup(string key)
         {
             if (string.IsNullOrEmpty(key)) return false;
-            lock (sync) return pending.TryGetValue(key, out var full) && full;
+            lock (sync) return pending.TryGetValue(key, out var entry) && entry.FullSetup;
         }
 
         /// <summary>The control points waiting to be restored, sorted.</summary>

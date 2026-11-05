@@ -1122,11 +1122,13 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
 
         /// <summary>
         /// Called on each watchdog tick: restores the control points whose unit answered
-        /// -CANNOT_DELIVER, until each is subscribed again. Retries back off (the first tick, then 2,
-        /// 4, 8 ... ticks apart, up to about 5 minutes); when a control point's last unavailable block
-        /// answers, the next tick restores it at once. Each retry re-reads a volume control's range
-        /// first, then subscribes: with full setup for a control point that went unavailable during
-        /// startup, subscriptions only otherwise. Runs even when watchdog probing is suspended.
+        /// -CANNOT_DELIVER. Retries back off (the first tick, then 2, 4, 8 ... ticks apart, up to
+        /// about 5 minutes); when a control point's last unavailable block answers, the next tick
+        /// restores it at once. Each retry re-reads a volume control's range first, then subscribes:
+        /// with full setup for a control point that went unavailable during startup, subscriptions
+        /// only otherwise. A control point is done once a restore went out while its unit was
+        /// answering and no unavailable reply came back: never on its IsSubscribed flag, which can be
+        /// left over from before the outage. Runs even when watchdog probing is suspended.
         /// </summary>
         private void RetryUnavailableControls()
         {
@@ -1151,10 +1153,10 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
                         recovery.Complete(key); // nothing to restore
                         continue;
                     }
-                    if (!controlAvailability.Contains(key) && component.IsSubscribed)
+                    if (!controlAvailability.Contains(key) && recovery.IsRestored(key))
                     {
                         recovery.Complete(key);
-                        this.LogInformation("'{key}' is subscribed again", key);
+                        this.LogInformation("'{key}' is restored", key);
                         continue;
                     }
                     due.Add(component);
@@ -1183,7 +1185,11 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
                         volume.GetMaxLevel();
                     }
                 }
-                SubscribeAutomatically(component, subscriptionsOnly: !recovery.NeedsFullSetup(component.Key));
+                // Counts as the restore only if the unit is answering now. Marked before sending, so an
+                // unavailable reply to it, however soon it arrives, resets the mark (RecoveryTracker.MarkNeeded).
+                var fullSetup = recovery.NeedsFullSetup(component.Key);
+                if (!controlAvailability.Contains(component.Key)) recovery.MarkRestoreSent(component.Key);
+                SubscribeAutomatically(component, subscriptionsOnly: !fullSetup);
             }
         }
 

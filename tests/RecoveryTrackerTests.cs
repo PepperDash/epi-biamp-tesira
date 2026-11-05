@@ -63,3 +63,41 @@ public class RecoveryTrackerTests
         recovery.Count.Should().Be(2);
     }
 }
+
+public class RecoveryTrackerRestoreTests
+{
+    [Fact]
+    public void Is_Restored_Only_After_A_Restore_Was_Sent()
+    {
+        // A subscribed flag left over from before the outage must not count.
+        var recovery = new RecoveryTracker();
+        recovery.MarkNeeded("dsp--Fader1", fullSetup: false);
+
+        recovery.IsRestored("dsp--Fader1").Should().BeFalse();
+        recovery.MarkRestoreSent("dsp--Fader1");
+        recovery.IsRestored("dsp--Fader1").Should().BeTrue();
+    }
+
+    [Fact]
+    public void An_Unavailable_Reply_After_The_Restore_Undoes_It()
+    {
+        var recovery = new RecoveryTracker();
+        recovery.MarkNeeded("dsp--Fader1", fullSetup: false);
+        recovery.MarkRestoreSent("dsp--Fader1");
+
+        recovery.MarkNeeded("dsp--Fader1", fullSetup: false);
+
+        recovery.IsRestored("dsp--Fader1").Should().BeFalse();
+        recovery.IsPending("dsp--Fader1").Should().BeTrue();
+    }
+
+    [Fact]
+    public void Restore_Sent_For_An_Unknown_Key_Is_Ignored()
+    {
+        var recovery = new RecoveryTracker();
+        recovery.MarkRestoreSent("dsp--Fader1");
+
+        recovery.IsPending("dsp--Fader1").Should().BeFalse();
+        recovery.IsRestored("dsp--Fader1").Should().BeFalse();
+    }
+}
