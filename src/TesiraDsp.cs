@@ -1127,8 +1127,10 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
         /// restores it at once. Each retry re-reads a volume control's range first, then subscribes:
         /// with full setup for a control point that went unavailable during startup, subscriptions
         /// only otherwise. A control point is done once a restore went out while its unit was
-        /// answering and no unavailable reply came back: never on its IsSubscribed flag, which can be
-        /// left over from before the outage. Runs even when watchdog probing is suspended.
+        /// answering and one of its subscribes or reads was answered successfully, with no error
+        /// since: never on its IsSubscribed flag, which can be left over from before the outage. A
+        /// restore the queue rejects or discards gets no reply, so it is retried. Runs even when
+        /// watchdog probing is suspended.
         /// </summary>
         private void RetryUnavailableControls()
         {
@@ -1185,8 +1187,9 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
                         volume.GetMaxLevel();
                     }
                 }
-                // Counts as the restore only if the unit is answering now. Marked before sending, so an
-                // unavailable reply to it, however soon it arrives, resets the mark (RecoveryTracker.MarkNeeded).
+                // Counts as the restore only if the unit is answering now, and only once a reply to it
+                // succeeds (NotifyCommandReply). Marked before sending, so a reply, however soon it
+                // arrives, lands on this restore.
                 var fullSetup = recovery.NeedsFullSetup(component.Key);
                 if (!controlAvailability.Contains(component.Key)) recovery.MarkRestoreSent(component.Key);
                 SubscribeAutomatically(component, subscriptionsOnly: !fullSetup);
@@ -1212,6 +1215,18 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
             // Per block: one control point can use blocks on different units (a fader's level and mute).
             var target = TtpReply.TargetOf(command.Command);
 
+            // A control point being restored: only a successful subscribe or read proves the restore
+            // took; any other error to one sends it back to retrying. User writes don't count.
+            if (recovery.IsPending(key))
+            {
+                var verb = TtpReply.VerbOf(command.Command);
+                if (verb == "subscribe" || verb == "get")
+                {
+                    if (TtpReply.IsSuccess(response)) recovery.Acknowledge(key);
+                    else if (TtpReply.IsError(response) && !TtpReply.IsUnavailable(response)) recovery.Fail(key);
+                }
+            }
+
             if (TtpReply.IsUnavailable(response))
             {
                 recovery.MarkNeeded(key, fullSetup: !startupComplete);
@@ -1219,8 +1234,7 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
                     this.LogWarning("'{key}' block '{target}' is unavailable: the DSP answered {response} to '{command}'. Its Tesira unit may be offline, rebooting or not running the design; other controls carry on ({count} control(s) unavailable).",
                         key, target, response, command.Command, controlAvailability.Count);
             }
-            else if (response.StartsWith("+OK", StringComparison.Ordinal)
-                     || response.IndexOf("ALREADY_SUBSCRIBED", StringComparison.Ordinal) >= 0)
+            else if (TtpReply.IsSuccess(response))
             {
                 if (controlAvailability.MarkAvailable(key, target, out var targetRecovered))
                 {

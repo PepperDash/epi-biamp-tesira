@@ -37,6 +37,25 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
             return match.Groups[1].Success ? match.Groups[1].Value : match.Groups[2].Value;
         }
 
+        /// <summary>
+        /// The verb of a TTP command (<c>get</c>, <c>set</c>, <c>subscribe</c> ...): the word after
+        /// its instance tag, or empty if there is none.
+        /// </summary>
+        public static string VerbOf(string command)
+        {
+            if (string.IsNullOrEmpty(command)) return string.Empty;
+            var match = Target.Match(command);
+            if (!match.Success) return string.Empty;
+            var rest = command.Substring(match.Index + match.Length).TrimStart();
+            var end = rest.IndexOfAny(new[] { ' ', '\t' });
+            return end < 0 ? rest : rest.Substring(0, end);
+        }
+
+        /// <summary>True for a reply that confirms a subscription or read: <c>+OK ...</c> or <c>-ERR ALREADY_SUBSCRIBED</c>.</summary>
+        public static bool IsSuccess(string line) =>
+            line != null && (line.StartsWith("+OK", StringComparison.Ordinal)
+                             || line.IndexOf("ALREADY_SUBSCRIBED", StringComparison.Ordinal) >= 0);
+
         /// <summary>True for a TTP error reply: <c>-ERR ...</c> or any other <c>-TOKEN</c>.</summary>
         public static bool IsError(string line) => line != null && ErrorToken.IsMatch(line);
 

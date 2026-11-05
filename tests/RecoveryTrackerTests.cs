@@ -66,36 +66,81 @@ public class RecoveryTrackerTests
 
 public class RecoveryTrackerRestoreTests
 {
-    [Fact]
-    public void Is_Restored_Only_After_A_Restore_Was_Sent()
+    private static RecoveryTracker Pending(string key)
     {
-        // A subscribed flag left over from before the outage must not count.
         var recovery = new RecoveryTracker();
-        recovery.MarkNeeded("dsp--Fader1", fullSetup: false);
+        recovery.MarkNeeded(key, fullSetup: false);
+        return recovery;
+    }
+
+    [Fact]
+    public void A_Restore_Counts_Only_Once_Acknowledged()
+    {
+        // Neither a leftover subscribed flag nor a restore merely sent ends recovery.
+        var recovery = Pending("dsp--Fader1");
 
         recovery.IsRestored("dsp--Fader1").Should().BeFalse();
         recovery.MarkRestoreSent("dsp--Fader1");
+        recovery.IsRestored("dsp--Fader1").Should().BeFalse();
+        recovery.Acknowledge("dsp--Fader1");
         recovery.IsRestored("dsp--Fader1").Should().BeTrue();
     }
 
     [Fact]
-    public void An_Unavailable_Reply_After_The_Restore_Undoes_It()
+    public void A_Success_Before_Any_Restore_Was_Sent_Does_Not_Count()
     {
-        var recovery = new RecoveryTracker();
-        recovery.MarkNeeded("dsp--Fader1", fullSetup: false);
+        // A successful reply to a command from before the restore (sent while unavailable).
+        var recovery = Pending("dsp--Fader1");
+
+        recovery.Acknowledge("dsp--Fader1");
         recovery.MarkRestoreSent("dsp--Fader1");
 
-        recovery.MarkNeeded("dsp--Fader1", fullSetup: false);
+        recovery.IsRestored("dsp--Fader1").Should().BeFalse();
+    }
+
+    [Fact]
+    public void A_Failed_Restore_Command_Undoes_It_Even_After_A_Success()
+    {
+        // -GENERAL_FAILURE on the subscribe after the read was answered.
+        var recovery = Pending("dsp--Fader1");
+        recovery.MarkRestoreSent("dsp--Fader1");
+        recovery.Acknowledge("dsp--Fader1");
+
+        recovery.Fail("dsp--Fader1");
 
         recovery.IsRestored("dsp--Fader1").Should().BeFalse();
         recovery.IsPending("dsp--Fader1").Should().BeTrue();
     }
 
     [Fact]
-    public void Restore_Sent_For_An_Unknown_Key_Is_Ignored()
+    public void An_Unavailable_Reply_After_The_Restore_Undoes_It()
+    {
+        var recovery = Pending("dsp--Fader1");
+        recovery.MarkRestoreSent("dsp--Fader1");
+        recovery.Acknowledge("dsp--Fader1");
+
+        recovery.MarkNeeded("dsp--Fader1", fullSetup: false);
+
+        recovery.IsRestored("dsp--Fader1").Should().BeFalse();
+    }
+
+    [Fact]
+    public void A_Rejected_Or_Discarded_Restore_Stays_Pending()
+    {
+        // No reply ever comes: sent, never acknowledged.
+        var recovery = Pending("dsp--Fader1");
+        recovery.MarkRestoreSent("dsp--Fader1");
+
+        recovery.IsRestored("dsp--Fader1").Should().BeFalse();
+    }
+
+    [Fact]
+    public void Unknown_Keys_Are_Ignored()
     {
         var recovery = new RecoveryTracker();
         recovery.MarkRestoreSent("dsp--Fader1");
+        recovery.Acknowledge("dsp--Fader1");
+        recovery.Fail("dsp--Fader1");
 
         recovery.IsPending("dsp--Fader1").Should().BeFalse();
         recovery.IsRestored("dsp--Fader1").Should().BeFalse();

@@ -55,3 +55,33 @@ public class TtpReplyTargetTests
         TtpReply.TargetOf(command).Should().Be(expected);
     }
 }
+
+public class TtpReplyVerbTests
+{
+    [Theory]
+    [InlineData("\"Level1\" get level 1", "get")]
+    [InlineData("\"RMA-ROOM\" subscribe mute 1 RMA-ROOM__mute1 500", "subscribe")]
+    [InlineData("\"Level 1\" set level 1 0", "set")]
+    [InlineData("DEVICE get activeFaultList", "get")]
+    [InlineData("\"Dial1\" dial 1 1 5551212", "dial")]
+    [InlineData("\"Level1\"", "")]
+    [InlineData("", "")]
+    [InlineData(null, "")]
+    public void VerbOf_Returns_The_Word_After_The_Instance_Tag(string? command, string expected)
+    {
+        TtpReply.VerbOf(command).Should().Be(expected);
+    }
+
+    [Theory]
+    [InlineData("+OK", true)]
+    [InlineData("+OK \"value\":-12.000000", true)]
+    [InlineData("-ERR ALREADY_SUBSCRIBED", true)]
+    [InlineData("-ERR address not found: [0 0 0]", false)]
+    [InlineData("-CANNOT_DELIVER", false)]
+    [InlineData("-GENERAL_FAILURE", false)]
+    [InlineData(null, false)]
+    public void IsSuccess_Is_Ok_Or_Already_Subscribed(string? line, bool expected)
+    {
+        TtpReply.IsSuccess(line).Should().Be(expected);
+    }
+}
