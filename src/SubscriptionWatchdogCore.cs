@@ -18,7 +18,10 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
         ConfigError,
 
         /// <summary>Any other error.</summary>
-        OtherError
+        OtherError,
+
+        /// <summary>-CANNOT_DELIVER: the block's Tesira unit is offline, rebooting or not running the design.</summary>
+        Unavailable
     }
 
     /// <summary>
@@ -42,6 +45,7 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
             var text = response.Trim();
             if (text.IndexOf("ALREADY_SUBSCRIBED", StringComparison.Ordinal) >= 0) return ProbeReply.Healthy;
             if (text.StartsWith("+OK", StringComparison.Ordinal)) return ProbeReply.Lost;
+            if (TtpReply.IsUnavailable(text)) return ProbeReply.Unavailable;
             if (ConfigErrorTexts.Any(e => text.IndexOf(e, StringComparison.OrdinalIgnoreCase) >= 0)) return ProbeReply.ConfigError;
             return ProbeReply.OtherError;
         }

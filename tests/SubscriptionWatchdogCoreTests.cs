@@ -16,6 +16,8 @@ public class ProbeRepliesTests
     [InlineData("-ERR operation subscribe not supported on attribute: minLevel", ProbeReply.ConfigError)]
     [InlineData("-ERR INVALID_PARAMETER Index out of range:channelIndex min:1 max:1 received:99", ProbeReply.ConfigError)]
     [InlineData("-ERR SOMETHING_ELSE", ProbeReply.OtherError)]
+    [InlineData("-CANNOT_DELIVER", ProbeReply.Unavailable)]
+    [InlineData("-GENERAL_FAILURE", ProbeReply.OtherError)]
     [InlineData("", ProbeReply.OtherError)]
     [InlineData(null, ProbeReply.OtherError)]
     public void Classify_Matches_Hardware_Replies(string? response, ProbeReply expected)

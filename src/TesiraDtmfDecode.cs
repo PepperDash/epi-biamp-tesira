@@ -118,7 +118,8 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
         public override void ParseGetMessage(string attributeCode, string message)
         {
             // Handle initial state query response
-            if (!string.IsNullOrEmpty(message) && !message.Contains("error"))
+            // An error reply (-ERR ..., -CANNOT_DELIVER) isn't a tone.
+            if (!string.IsNullOrEmpty(message) && !message.Contains("error") && !TtpReply.IsError(message))
             {
                 lastDetectedTone = message;
                 LastDetectedToneFeedback.FireUpdate();

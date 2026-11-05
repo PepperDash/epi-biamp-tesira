@@ -1076,6 +1076,38 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
         /// Called by the command queue, under its lock, with the reply to a subscribe command tagged
         /// with its component. Replies to watchdog probes decide what happens next.
         /// </summary>
+        private readonly ControlAvailability controlAvailability = new ControlAvailability();
+
+        /// <summary>
+        /// Control points whose Tesira unit answered -CANNOT_DELIVER (offline, rebooting or not running
+        /// the design), until they answer again. Shown by <c>devprops</c>.
+        /// </summary>
+        public string UnavailableControls =>
+            controlAvailability.Count == 0 ? "none" : string.Join(", ", controlAvailability.Keys);
+
+        /// <summary>
+        /// Called by the queue for every reply to a command it sent. Tracks which control points
+        /// are unavailable and logs each change once. Runs under the queue's lock: keep it cheap.
+        /// </summary>
+        internal void NotifyCommandReply(QueuedCommand command, string response)
+        {
+            var key = (command?.ControlPoint ?? command?.RequestingComponent)?.Key;
+            if (key == null || response == null) return;
+
+            if (TtpReply.IsUnavailable(response))
+            {
+                if (controlAvailability.MarkUnavailable(key))
+                    this.LogWarning("'{key}' is unavailable: the DSP answered {response} to '{command}'. Its Tesira unit may be offline, rebooting or not running the design; other controls carry on ({count} unavailable).",
+                        key, response, command.Command, controlAvailability.Count);
+            }
+            else if (response.StartsWith("+OK", StringComparison.Ordinal)
+                     || response.IndexOf("ALREADY_SUBSCRIBED", StringComparison.Ordinal) >= 0)
+            {
+                if (controlAvailability.MarkAvailable(key))
+                    this.LogInformation("'{key}' is answering again ({count} unavailable)", key, controlAvailability.Count);
+            }
+        }
+
         internal void NotifySubscribeReply(QueuedCommand command, string response)
         {
             var component = command?.RequestingComponent;
@@ -1109,6 +1141,10 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
                     if (newlyQuarantined)
                         this.LogWarning("Watchdog: '{component}' quarantined, its subscription can't succeed: {response} ({count} quarantined). Check its config against the design.",
                             component.Key, response, quarantined);
+                    break;
+                case ProbeReply.Unavailable:
+                    // Its unit is down. Resubscribing now would only fail again; the patrol probes it
+                    // again later, and a +OK then restores every subscription.
                     break;
                 case ProbeReply.OtherError:
                     this.LogWarning("Watchdog: '{command}' failed: {response}. Resubscribing '{component}'.", command.Command, response, component.Key);
@@ -1372,8 +1408,10 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
                     return;
                 }
 
-                // Only at the start: an echoed command containing "-ERR" (a preset name) isn't a reply
-                if (args.Text.StartsWith("-ERR", StringComparison.Ordinal))
+                // Only at the start: an echoed command containing "-ERR" (a preset name) isn't a reply.
+                // Any "-TOKEN" is a reply, not only -ERR: -CANNOT_DELIVER (the block's unit is
+                // unavailable) left unrecognized made the queue time out and reconnect (#208).
+                if (TtpReply.IsError(args.Text))
                 {
                     // Watchdog probe replies are attributed to their command by the queue
                     // (NotifySubscribeReply), not counted here.

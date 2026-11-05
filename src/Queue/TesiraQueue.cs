@@ -90,6 +90,10 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Queue
                     Parent.LogVerbose("[HandleResponse] Incoming Response: '{response}'. No Controlpoint waiting for response", response);
                 }
 
+                // Track control points whose unit is unavailable (-CANNOT_DELIVER), per reply.
+                if (lastDequeued != null)
+                    Parent.NotifyCommandReply(lastDequeued, response);
+
                 // Subscribe replies go to the watchdog, attributed to the component that sent them.
                 if (lastDequeued?.RequestingComponent != null)
                     Parent.NotifySubscribeReply(lastDequeued, response);
