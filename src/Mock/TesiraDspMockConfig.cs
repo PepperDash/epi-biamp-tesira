@@ -44,6 +44,13 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Mock
         [JsonProperty("switcherControlBlocks")]
         public Dictionary<string, TesiraDspMockSourceSelectorConfig> SwitcherControlBlocks { get; set; }
 
+        /// <summary>
+        /// Longest volume hold for every fader without its own <c>volumeHoldTimeoutMs</c>. Defaults 10000,
+        /// as the real driver's.
+        /// </summary>
+        [JsonProperty("volumeHoldTimeoutMs")]
+        public int VolumeHoldTimeoutMs { get; set; } = 10000;
+
         /// <summary>Optional device info the mock reports, as the real driver reports the DSP's.</summary>
         [JsonProperty("deviceInfo")]
         public TesiraDspMockDeviceInfoConfig DeviceInfo { get; set; }
@@ -129,9 +136,12 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Mock
         [JsonProperty("volumeRepeatRateMs")]
         public int VolumeRepeatRateMs { get; set; } = 100;
 
-        /// <summary>Longest hold before the repeat stops; 0 or less disables it. Defaults 10000.</summary>
+        /// <summary>
+        /// Longest hold before the repeat stops; 0 or less disables it. Null (or omitted) inherits the
+        /// device's <c>volumeHoldTimeoutMs</c>, as the real fader does.
+        /// </summary>
         [JsonProperty("volumeHoldTimeoutMs")]
-        public int VolumeHoldTimeoutMs { get; set; } = 10000;
+        public int? VolumeHoldTimeoutMs { get; set; }
     }
 
     /// <summary>Source-selector entry — sources are keyed and labelled generically.</summary>

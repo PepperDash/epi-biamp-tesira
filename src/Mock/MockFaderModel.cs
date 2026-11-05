@@ -15,6 +15,10 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Mock
     {
         internal const ushort MaxRawLevel = 65535;
 
+        // Volume steps come from VolumeRamp's timer threads, outside its lock, and can overlap each
+        // other or a direct SetLevel: every read-modify-write of the state happens under this lock.
+        private readonly object _gate = new object();
+
         public MockFaderModel(bool hasLevel, bool hasMute, ushort initialLevelPercent, bool initialMute)
         {
             HasLevel = hasLevel;
@@ -36,17 +40,23 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Mock
         /// <summary>Sets the level. Returns true when it changed; false without a level.</summary>
         public bool SetLevel(ushort level)
         {
-            if (!HasLevel || Level == level) return false;
-            Level = level;
-            return true;
+            lock (_gate)
+            {
+                if (!HasLevel || Level == level) return false;
+                Level = level;
+                return true;
+            }
         }
 
         /// <summary>Sets the mute state. Returns true when it changed; false without a mute.</summary>
         public bool SetMute(bool muted)
         {
-            if (!HasMute || IsMuted == muted) return false;
-            IsMuted = muted;
-            return true;
+            lock (_gate)
+            {
+                if (!HasMute || IsMuted == muted) return false;
+                IsMuted = muted;
+                return true;
+            }
         }
 
         /// <summary>
@@ -55,8 +65,11 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Mock
         /// </summary>
         public bool Step(bool up, ushort rawStep)
         {
-            var target = up ? System.Math.Min(Level + rawStep, MaxRawLevel) : System.Math.Max(Level - rawStep, 0);
-            return SetLevel((ushort)target);
+            lock (_gate)  // the target is computed from the level it replaces (SetLevel re-enters the lock)
+            {
+                var target = up ? System.Math.Min(Level + rawStep, MaxRawLevel) : System.Math.Max(Level - rawStep, 0);
+                return SetLevel((ushort)target);
+            }
         }
 
         internal const ushort LegacyRawStep = 655;    // ~1%: the step without an incrementAmount

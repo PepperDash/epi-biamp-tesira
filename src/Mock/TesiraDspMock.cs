@@ -76,7 +76,7 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Mock
             var props = dc.Properties?.ToObject<TesiraDspMockPropertiesConfig>()
                         ?? new TesiraDspMockPropertiesConfig();
 
-            RegisterFaders(props.FaderControlBlocks);
+            RegisterFaders(props.FaderControlBlocks, props.VolumeHoldTimeoutMs);
             RegisterSwitcherControlBlocks(props.SwitcherControlBlocks);
             PopulatePresets(props.Presets);
 
@@ -189,11 +189,14 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Mock
             ((AlwaysOnMonitor)CommunicationMonitor).Refresh();
         }
 
-        private void RegisterFaders(Dictionary<string, TesiraDspMockFaderConfig> faderConfigs)
+        private void RegisterFaders(Dictionary<string, TesiraDspMockFaderConfig> faderConfigs, int volumeHoldTimeoutMs)
         {
             if (faderConfigs == null) return;
             foreach (var kvp in faderConfigs)
             {
+                // As the real driver: a fader without its own hold timeout inherits the device's
+                if (kvp.Value != null && !kvp.Value.VolumeHoldTimeoutMs.HasValue)
+                    kvp.Value.VolumeHoldTimeoutMs = volumeHoldTimeoutMs;
                 var childKey = string.Format(ChildKeyFormat, Key, kvp.Key);
                 var name = string.IsNullOrEmpty(kvp.Value?.Label) ? kvp.Key : kvp.Value.Label;
                 var fader = new TesiraDspMockFader(childKey, name, kvp.Value);
