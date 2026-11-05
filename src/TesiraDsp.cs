@@ -1109,6 +1109,18 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
             }
         }
 
+        /// <summary>
+        /// Called by the command queue, under its lock, when it drops (queue full) a command a
+        /// restore queued (<see cref="QueuedCommand.IsRestoreCommand"/>), e.g. a full restore's dialer
+        /// setup write. The restore didn't happen, so it stays pending and is retried.
+        /// </summary>
+        internal void NotifyRestoreCommandRejected(QueuedCommand command)
+        {
+            var key = (command?.ControlPoint ?? command?.RequestingComponent)?.Key;
+            if (key == null) return;
+            recovery.Fail(key);
+        }
+
         private readonly ControlAvailability controlAvailability = new ControlAvailability();
 
         // Control points to restore after their unit was unavailable, until they are subscribed again.

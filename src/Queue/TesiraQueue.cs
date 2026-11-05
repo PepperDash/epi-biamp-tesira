@@ -148,10 +148,16 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Queue
                     // every sent command frees one slot, which would otherwise log again per drop.
                     if (LocalQueue.Count <= queueCapacity / 2) queueFullLogged = false;
                 }
-                else if (commandToEnqueue.RequestingComponent != null)
+                else
                 {
                     // A rejected probe still counts as an attempt (see NotifySubscribeRejected).
-                    Parent.NotifySubscribeRejected(commandToEnqueue);
+                    if (commandToEnqueue.RequestingComponent != null)
+                        Parent.NotifySubscribeRejected(commandToEnqueue);
+
+                    // Any command a restore queued, including a full restore's setup writes (which
+                    // carry no RequestingComponent), dropped here means the restore didn't happen.
+                    if (commandToEnqueue.IsRestoreCommand)
+                        Parent.NotifyRestoreCommandRejected(commandToEnqueue);
                 }
 
                 if (LocalQueue.Count == countBefore && !queueFullLogged)
