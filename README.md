@@ -108,7 +108,12 @@ Ways to turn it on:
 | Bridge join FaultPollingEnable (d11) | Rising edge: on, at the config interval or 60 s. Falling edge: off | Until the program restarts. The join never changes the config |
 | Console | `devjson {"deviceKey":"dsp-1","methodName":"SetFaultPolling","params":[60]}`. Use 0 to turn it off | Until the program restarts. To keep it, set `faultPollIntervalSecs` in the config |
 
-The enable join acts only on a change, so a SIMPL program that leaves it low doesn't turn off monitoring the config turned on. `devjson {"deviceKey":"dsp-1","methodName":"PollFaults"}` (or a pulse on d13) polls once.
+The enable join acts only on a change. A SIMPL program that leaves it low doesn't turn off monitoring that the config turned on, including the low state the EISC sends when it comes online. `devjson {"deviceKey":"dsp-1","methodName":"PollFaults"}` (or a pulse on d13) polls once.
+
+**SIMPL restarts.** The join follows the SIMPL program's state. If a SIMPL program turned polling on with the join and then restarts, it comes back with the join low, and that falling edge turns polling off. To keep polling on across a SIMPL restart, either:
+
+- raise the join again after startup, for example from a value the program saves and reads back from its own config. The rising edge turns polling back on and polls at once. Until that first reply arrives, the fault joins read as no faults, so if the program alarms on a fault clearing, have it ignore them until it finishes loading; or
+- set `faultPollIntervalSecs` in the Essentials config instead. Config-enabled polling never turns off on a SIMPL restart, and the plugin re-sends the current values when the EISC reconnects.
 
 The joins are on the device join map (both the **Legacy** and the **Standalone** `DeviceInfo` object): see [DeviceInfo](#deviceinfo). From code, use `FaultMonitor` on the DSP device: its feedbacks, `Current` (the parsed list) and the `FaultsChanged` event. A fault appearing, changing or clearing is also logged.
 

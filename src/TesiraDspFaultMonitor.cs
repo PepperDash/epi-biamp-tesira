@@ -29,10 +29,13 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
         private string lastSignature;
         private bool errorLogged;
 
-        // While polling is off, only the reply to an explicit PollNow() is applied: a reply to a poll
-        // queued before polling was turned off must not restore the values that turning it off cleared.
+        // Guards current, lastSignature, IntervalSecs and replyGate. Never held while feedbacks or
+        // FaultsChanged are published: a subscriber may send a DSP command, which takes the queue
+        // lock, while a reply holds the queue lock and waits here.
         private readonly object stateLock = new object();
-        private bool oneShotPending;
+
+        // While polling is off, only replies to explicit PollNow() calls are applied, one per call.
+        private readonly FaultReplyGate replyGate = new FaultReplyGate();
 
         /// <summary>The interval from config (0 = off), used when the bridge join turns polling on.</summary>
         public int ConfiguredIntervalSecs { get; }
@@ -120,7 +123,7 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
             {
                 wasEnabled = PollingEnabled;
                 IntervalSecs = secs;
-                if (secs == 0) oneShotPending = false; // drop replies to polls queued before this
+                if (secs == 0) replyGate.PollingTurnedOff(); // drop replies to polls queued before this
             }
 
             if (secs > 0)
@@ -133,7 +136,9 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
             {
                 StopTimer();
                 if (wasEnabled) this.LogInformation("Fault monitoring off");
-                lock (stateLock) Apply(new TesiraFaultList(), logChange: false);
+                bool changed;
+                lock (stateLock) changed = Store(new TesiraFaultList(), logChange: false);
+                Publish(changed);
             }
 
             PollingEnabledFeedback.FireUpdate();
@@ -153,7 +158,7 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
 
             lock (stateLock)
             {
-                if (!PollingEnabled) oneShotPending = true;
+                replyGate.PollSent(PollingEnabled);
             }
 
             using (Parent.CommandQueue.BackgroundScope())
@@ -182,23 +187,22 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
 
             errorLogged = false;
 
+            bool changed;
             lock (stateLock)
             {
-                if (!PollingEnabled)
+                // Off: apply only answers to explicit one-shot polls, never a stale periodic one.
+                if (!replyGate.ShouldApply(PollingEnabled))
                 {
-                    // Off: apply only the answer to an explicit one-shot poll, never a stale periodic one.
-                    if (!oneShotPending)
-                    {
-                        this.LogVerbose("Fault poll reply discarded: monitoring was turned off");
-                        return;
-                    }
-                    oneShotPending = false;
+                    this.LogVerbose("Fault poll reply discarded: monitoring was turned off");
+                    return;
                 }
-                Apply(parsed, logChange: true);
+                changed = Store(parsed, logChange: true);
             }
+            Publish(changed);
         }
 
-        private void Apply(TesiraFaultList parsed, bool logChange)
+        /// <summary>Stores the new list and logs a change. Caller holds stateLock. True if it changed.</summary>
+        private bool Store(TesiraFaultList parsed, bool logChange)
         {
             var previous = current;
             current = parsed;
@@ -216,14 +220,46 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
                     this.LogInformation("DSP faults cleared: {faultName}", parsed.FaultName);
             }
 
-            HasFaultFeedback.FireUpdate();
-            ActiveFaultCountFeedback.FireUpdate();
-            FaultSeverityFeedback.FireUpdate();
-            FaultIdFeedback.FireUpdate();
-            FaultNameFeedback.FireUpdate();
-            FaultListFeedback.FireUpdate();
+            return changed;
+        }
 
-            if (changed) FaultsChanged?.Invoke(this, EventArgs.Empty);
+        /// <summary>
+        /// Fires the value feedbacks and, if the list changed, FaultsChanged. Called outside stateLock.
+        /// It runs on the reply path (inside the command queue), so a subscriber that throws is logged
+        /// and can't stop the queue from finishing the response.
+        /// </summary>
+        private void Publish(bool changed)
+        {
+            try
+            {
+                HasFaultFeedback.FireUpdate();
+                ActiveFaultCountFeedback.FireUpdate();
+                FaultSeverityFeedback.FireUpdate();
+                FaultIdFeedback.FireUpdate();
+                FaultNameFeedback.FireUpdate();
+                FaultListFeedback.FireUpdate();
+            }
+            catch (Exception e)
+            {
+                this.LogError(e, "Error in a fault feedback subscriber");
+            }
+
+            if (!changed) return;
+            var handlers = FaultsChanged;
+            if (handlers == null) return;
+
+            // Invoke each handler on its own, so one subscriber's failure can't stop another's
+            foreach (var handler in handlers.GetInvocationList())
+            {
+                try
+                {
+                    ((EventHandler)handler)(this, EventArgs.Empty);
+                }
+                catch (Exception e)
+                {
+                    this.LogError(e, "Error in a FaultsChanged handler");
+                }
+            }
         }
 
         private void StartTimer()
