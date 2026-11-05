@@ -45,6 +45,14 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Mock
         public Dictionary<string, TesiraDspMockSourceSelectorConfig> SwitcherControlBlocks { get; set; }
 
         /// <summary>
+        /// Optional router blocks, in the real Tesira EPI's <c>routerControlBlocks</c> format, so a
+        /// real config works unchanged. Each becomes a <see cref="TesiraDspMockRouter"/> registered as
+        /// <c>{parentKey}--{blockKey}</c>. Instance tags and poll settings are ignored.
+        /// </summary>
+        [JsonProperty("routerControlBlocks")]
+        public Dictionary<string, TesiraRouterControlBlockConfig> RouterControlBlocks { get; set; }
+
+        /// <summary>
         /// Longest volume hold for every fader without its own <c>volumeHoldTimeoutMs</c>. Defaults 10000,
         /// as the real driver's.
         /// </summary>
