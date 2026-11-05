@@ -129,7 +129,11 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Mock
 
         private void StepLevel(bool up)
         {
-            if (!_model.Step(up, _rawStep)) return;
+            var changed = _model.Step(up, _rawStep, out var pastEnd);
+            // As the real fader, which cancels its ramp on the DSP's out-of-range reply: a step past an
+            // end lands on it (the real fader then sets the limit) and the repeat stops until a new press
+            if (pastEnd) _ramp.Cancel();
+            if (!changed) return;
             this.LogVerbose("Volume {direction}: {level}", up ? "up" : "down", _volumeLevel);
             VolumeLevelFeedback.FireUpdate();
         }

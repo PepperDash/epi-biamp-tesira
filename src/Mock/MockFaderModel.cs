@@ -65,9 +65,23 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Mock
         /// </summary>
         public bool Step(bool up, ushort rawStep)
         {
+            return Step(up, rawStep, out _);
+        }
+
+        /// <summary>
+        /// As <see cref="Step(bool, ushort)"/>; <paramref name="pastEnd"/> is true when the full step would
+        /// have passed the end of the range, decided with the same level the step changed. The real DSP
+        /// refuses such a step and the real fader then stops its press-and-hold repeat.
+        /// </summary>
+        public bool Step(bool up, ushort rawStep, out bool pastEnd)
+        {
             lock (_gate)  // the target is computed from the level it replaces (SetLevel re-enters the lock)
             {
-                var target = up ? System.Math.Min(Level + rawStep, MaxRawLevel) : System.Math.Max(Level - rawStep, 0);
+                pastEnd = false;
+                if (!HasLevel) return false;
+                var unclamped = up ? Level + rawStep : Level - rawStep;
+                pastEnd = unclamped > MaxRawLevel || unclamped < 0;
+                var target = System.Math.Max(0, System.Math.Min(MaxRawLevel, unclamped));
                 return SetLevel((ushort)target);
             }
         }
