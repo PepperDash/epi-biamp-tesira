@@ -16,6 +16,10 @@ public class TtpReplyTests
     [InlineData("CANNOT_DELIVER ", true)]
     [InlineData("GENERAL_FAILURE", true)]
     [InlineData("CANNOT_DELIVERY", false)]
+    [InlineData("CANNOT_DELIVER get dndEnable 1", false)]    // echo of a dialer whose block is named CANNOT_DELIVER
+    [InlineData("GENERAL_FAILURE set autoAnswer 1 true", false)]
+    [InlineData("CANNOT_DELIVER: detail", false)]            // a bare token must fill the line
+    [InlineData("-CANNOT_DELIVER: detail", true)]            // a signed one keeps its detail
     [InlineData("SESSION get aliases", false)]               // keyword command echoes
     [InlineData("SESSION set verbose false", false)]
     [InlineData("DEVICE get version", false)]

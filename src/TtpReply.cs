@@ -24,13 +24,16 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
         /// </summary>
         public const string CannotDeliver = "CANNOT_DELIVER";
 
-        // Either a minus sign and any upper-case token (-ERR, -CANNOT_DELIVER, -GENERAL_FAILURE, ...),
-        // or one of the known tokens with no minus (CANNOT_DELIVER, GENERAL_FAILURE), then the end of
-        // the line or a separator. The token name, without the minus, is in group "token". Command
-        // echoes start with a quoted instance tag or a keyword such as DEVICE or SESSION, and
-        // publishes with "! ", so none of them match.
+        // Either a minus sign and any upper-case token (-ERR, -CANNOT_DELIVER, -GENERAL_FAILURE, ...)
+        // followed by the end of the line or a separator (error details may follow), or one of the
+        // known tokens with no minus (CANNOT_DELIVER, GENERAL_FAILURE) as the WHOLE line, trailing
+        // whitespace allowed. The token name, without the minus, is in group "token". Command echoes
+        // start with a quoted instance tag or a bare word (DEVICE, SESSION, or a dialer's unquoted
+        // instance tag), and publishes with "! ". A bare token must fill the line so that the echo of
+        // a dialer whose block is named CANNOT_DELIVER ("CANNOT_DELIVER get dndEnable 1") isn't taken
+        // for a reply.
         private static readonly Regex ErrorToken = new Regex(
-            @"^(?:-(?<token>[A-Z][A-Z0-9_]*)|(?<token>CANNOT_DELIVER|GENERAL_FAILURE))(?=$|[\s:])",
+            @"^(?:-(?<token>[A-Z][A-Z0-9_]*)(?=$|[\s:])|(?<token>CANNOT_DELIVER|GENERAL_FAILURE)\s*$)",
             RegexOptions.Compiled);
 
         // The instance tag a command addresses: quoted ("Level 1" set level 1 0) or a bare first word.
