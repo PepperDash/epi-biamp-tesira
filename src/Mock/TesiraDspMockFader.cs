@@ -61,7 +61,7 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Mock
             _rawStep = MockFaderModel.RawStep(config.IncrementAmount, config.MinLevel, config.MaxLevel);
             _unmuteOnVolChange = config.UnmuteOnVolChange;
             var repeatMs = config.VolumeRepeatRateMs;
-            var holdMs = config.VolumeHoldTimeoutMs;
+            var holdMs = config.VolumeHoldTimeoutMs ?? 10000;  // the device resolves null first; as the real fader
             _ramp = new VolumeRamp(
                 StepLevel,
                 () => repeatMs,
