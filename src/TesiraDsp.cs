@@ -62,7 +62,9 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
 		public StringFeedback CommandPassthruFeedback { get; set; }
 
         /// <summary>
-        /// True when all components have been subscribed
+        /// True when every component expected to be subscribed is: enabled ones, meters only if asked
+        /// to stream, and not ones that can't be (quarantined by the watchdog for a config error, or
+        /// on a Tesira unit that is unavailable). <see cref="UnsubscribedControls"/> lists the rest.
         /// </summary>
         public bool IsSubscribed
         {
@@ -71,7 +73,7 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
                 bool subscribeTracker;
                 lock (watchdogLock)
                 {
-                    subscribeTracker = ControlPointList.All(subscribedComponent => subscribedComponent.IsSubscribed);
+                    subscribeTracker = ExpectedSubscribed().All(c => c.IsSubscribed);
                 }
                 if (subscribeThread == null) return subscribeTracker;
                 if (subscribeTracker && subscribeThread.ThreadState == ThreadState.Running)
@@ -79,6 +81,30 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
                 return subscribeTracker;
             }
         }
+
+        /// <summary>
+        /// Components expected to be subscribed but not yet, by key (or "none"). Shown by <c>devprops</c>.
+        /// </summary>
+        public string UnsubscribedControls
+        {
+            get
+            {
+                List<string> keys;
+                lock (watchdogLock)
+                {
+                    keys = ExpectedSubscribed().Where(c => !c.IsSubscribed).Select(c => c.Key).OrderBy(k => k).ToList();
+                }
+                return keys.Count == 0 ? "none" : string.Join(", ", keys);
+            }
+        }
+
+        // Call with watchdogLock held.
+        private IEnumerable<ISubscribedComponent> ExpectedSubscribed() =>
+            ControlPointList
+                .Where(c => c.Enabled)
+                .Where(c => !(c is TesiraDspMeter meter) || meter.SubscriptionRequested)
+                .Where(c => !watchdogPatrol.IsQuarantined(c))
+                .Where(c => !controlAvailability.Contains(c.Key));
 
         private readonly GenericQueue transmitQueue;
 
@@ -371,6 +397,8 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
                 watchdogSecs = 10;
             }
             watchDogIntervalMs = (int)Math.Min((long)watchdogSecs * 1000, int.MaxValue);
+            // Unavailable controls are retried on watchdog ticks, backing off to about every 5 minutes.
+            unavailableRetry = new RetryBackoff(Math.Max(1, unavailableRetryMaxSecs / watchdogSecs));
             var patrolSize = Math.Max(0, props.WatchdogPatrolSize ?? defaultWatchdogPatrolSize);
             lock (watchdogLock)
             {
@@ -869,6 +897,7 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
         /// </summary>
         private void ResetWatchdogSession()
         {
+            startupComplete = false;
             lock (watchdogLock)
             {
                 probeBatch.Close();
@@ -921,6 +950,8 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
         {
             try
             {
+                RetryUnavailableControls();
+
                 if (WatchdogSuspend)
                 {
                     lock (watchdogLock) probeBatch.Close();
@@ -1050,6 +1081,9 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
             var component = command?.RequestingComponent;
             if (component == null || !ProbeReplies.IsSubscribeCommand(command.Command)) return;
 
+            // A restore that subscribes is acknowledged only by a subscribe reply.
+            recovery.ExpectSubscribe(component.Key);
+
             lock (watchdogLock)
             {
                 probeBatch.ExpectReply(component, command);
@@ -1066,6 +1100,9 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
             var component = command?.RequestingComponent;
             if (component == null || !ProbeReplies.IsSubscribeCommand(command.Command)) return;
 
+            // A restore whose subscribe the queue dropped hasn't restored anything: retry it.
+            recovery.Fail(component.Key);
+
             lock (watchdogLock)
             {
                 probeBatch.MarkAttempted(component);
@@ -1073,9 +1110,191 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
         }
 
         /// <summary>
+        /// Called by the command queue, under its lock, when it drops (queue full) a command a
+        /// restore queued (<see cref="QueuedCommand.IsRestoreCommand"/>), e.g. a full restore's dialer
+        /// setup write. The restore didn't happen, so it stays pending and is retried.
+        /// </summary>
+        internal void NotifyRestoreCommandRejected(QueuedCommand command)
+        {
+            var key = (command?.ControlPoint ?? command?.RequestingComponent)?.Key;
+            if (key == null) return;
+            recovery.Fail(key);
+        }
+
+        private readonly ControlAvailability controlAvailability = new ControlAvailability();
+
+        // Control points to restore after their unit was unavailable, until they are subscribed again.
+        private readonly RecoveryTracker recovery = new RecoveryTracker();
+
+        // False from a new session (or a Resubscribe) until its startup pass ends. A control point
+        // that goes unavailable meanwhile may have missed its one-time setup, so it gets the full
+        // setup when it recovers.
+        private volatile bool startupComplete;
+
+        // Set when a control point's last unavailable block answers: the next tick restores it at
+        // once rather than waiting out the backoff.
+        private volatile bool recoveryDue;
+
+        private const int unavailableRetryMaxSecs = 300;
+        private RetryBackoff unavailableRetry = new RetryBackoff(unavailableRetryMaxSecs / defaultWatchdogIntervalSecs);
+
+        /// <summary>
+        /// Called on each watchdog tick: restores the control points whose unit answered
+        /// -CANNOT_DELIVER. Retries back off (the first tick, then 2, 4, 8 ... ticks apart, up to
+        /// about 5 minutes); when a control point's last unavailable block answers, the next tick
+        /// restores it at once. Each retry re-reads a volume control's range first, then subscribes:
+        /// with full setup for a control point that went unavailable during startup, subscriptions
+        /// only otherwise. A control point is done once a restore went out while its unit was
+        /// answering and one of its subscribes or reads was answered successfully, with no error
+        /// since: never on its IsSubscribed flag, which can be left over from before the outage. A
+        /// restore the queue rejects or discards gets no reply, so it is retried. Runs even when
+        /// watchdog probing is suspended.
+        /// </summary>
+        private void RetryUnavailableControls()
+        {
+            var keys = recovery.Keys;
+            if (keys.Count == 0)
+            {
+                unavailableRetry.Reset();
+                return;
+            }
+
+            var due = new List<ISubscribedComponent>();
+            lock (watchdogLock)
+            {
+                foreach (var key in keys)
+                {
+                    var component = ControlPointList.FirstOrDefault(c => c.Key == key);
+                    var expected = component != null && component.Enabled
+                        && (!(component is TesiraDspMeter meter) || meter.SubscriptionRequested)
+                        && !watchdogPatrol.IsQuarantined(component);
+                    if (!expected)
+                    {
+                        recovery.Complete(key); // nothing to restore
+                        continue;
+                    }
+                    if (!controlAvailability.Contains(key) && recovery.IsRestored(key))
+                    {
+                        recovery.Complete(key);
+                        this.LogInformation("'{key}' is restored", key);
+                        continue;
+                    }
+                    due.Add(component);
+                }
+            }
+
+            if (due.Count == 0)
+            {
+                unavailableRetry.Reset();
+                return;
+            }
+
+            if (recoveryDue) recoveryDue = false;
+            else if (!unavailableRetry.Tick()) return;
+
+            this.LogInformation("Restoring {count} control(s) after their Tesira unit was unavailable: {keys}",
+                due.Count, string.Join(", ", due.Select(c => c.Key)));
+            foreach (var component in due)
+            {
+                // The startup range reads may have failed too, and a fader's limits would stay 0.
+                if (component is IVolumeComponent volume)
+                {
+                    using (CommandQueue.BackgroundScope())
+                    {
+                        volume.GetMinLevel();
+                        volume.GetMaxLevel();
+                    }
+                }
+                // Counts as the restore only if the unit is answering now, and only once a reply to it
+                // succeeds (NotifyCommandReply). Marked before sending, so a reply, however soon it
+                // arrives, lands on this restore.
+                var fullSetup = recovery.NeedsFullSetup(component.Key);
+                if (!controlAvailability.Contains(component.Key)) recovery.MarkRestoreSent(component.Key);
+                // Marks everything the restore queues, so a failed automatic setup write (a full
+                // restore's dialer redial/auto-answer settings) fails the restore (NotifyCommandReply).
+                using (CommandQueue.RestoreScope())
+                    SubscribeAutomatically(component, subscriptionsOnly: !fullSetup);
+
+                // A switcher of type "router" subscribes nothing: its Subscribe() only restarts a poll
+                // timer, which each retry would push back before it fires. Poll it now instead.
+                if (component is TesiraDspSwitcher switcher)
+                {
+                    using (CommandQueue.BackgroundScope()) switcher.DoPoll();
+                }
+            }
+        }
+
+        /// <summary>
+        /// Control points whose Tesira unit answered -CANNOT_DELIVER (offline, rebooting or not running
+        /// the design), until they answer again. Shown by <c>devprops</c>.
+        /// </summary>
+        public string UnavailableControls =>
+            controlAvailability.Count == 0 ? "none" : string.Join(", ", controlAvailability.Keys);
+
+        /// <summary>
+        /// Called by the queue for every reply to a command it sent. Tracks which control points
+        /// are unavailable and logs each change once. Runs under the queue's lock: keep it cheap.
+        /// </summary>
+        internal void NotifyCommandReply(QueuedCommand command, string response)
+        {
+            var key = (command?.ControlPoint ?? command?.RequestingComponent)?.Key;
+            if (key == null || response == null) return;
+
+            // Per block: one control point can use blocks on different units (a fader's level and mute).
+            var target = TtpReply.TargetOf(command.Command);
+
+            // A control point being restored: only a successful subscribe (or, for a polled control
+            // point that subscribes nothing, a state read) proves the restore took; any other error to
+            // one sends it back to retrying. Range reads and user writes don't count.
+            if (recovery.IsPending(key) && !IsRangeRead(command.AttributeCode))
+            {
+                var verb = TtpReply.VerbOf(command.Command);
+                if (verb == "subscribe" || verb == "get")
+                {
+                    if (TtpReply.IsSuccess(response)) recovery.Acknowledge(key, isSubscribe: verb == "subscribe");
+                    else if (TtpReply.IsError(response) && !TtpReply.IsUnavailable(response)) recovery.Fail(key);
+                }
+                // An automatic setup write the restore itself sent (a full restore's dialer
+                // redial/auto-answer settings): its failure keeps the restore pending, since the
+                // configured setting was never applied. Its success never acknowledges, and user writes
+                // (not restore-scoped) are ignored. Fail is sticky until the next restore is sent, so a
+                // subscribe answered after this failure (they run in the background lane) can't
+                // acknowledge it.
+                else if (command.IsRestoreCommand && TtpReply.IsError(response) && !TtpReply.IsUnavailable(response))
+                {
+                    recovery.Fail(key);
+                }
+            }
+
+            if (TtpReply.IsUnavailable(response))
+            {
+                recovery.MarkNeeded(key, fullSetup: !startupComplete);
+                if (controlAvailability.MarkUnavailable(key, target))
+                    this.LogWarning("'{key}' block '{target}' is unavailable: the DSP answered {response} to '{command}'. Its Tesira unit may be offline, rebooting or not running the design; other controls carry on ({count} control(s) unavailable).",
+                        key, target, response, command.Command, controlAvailability.Count);
+            }
+            else if (TtpReply.IsSuccess(response))
+            {
+                if (controlAvailability.MarkAvailable(key, target, out var targetRecovered))
+                {
+                    // Restored on the next watchdog tick, off this lock (see RetryUnavailableControls).
+                    recoveryDue = true;
+                    this.LogInformation("'{key}' is answering again; restoring it ({count} control(s) unavailable)", key, controlAvailability.Count);
+                }
+                else if (targetRecovered)
+                    this.LogInformation("'{key}' block '{target}' is answering again; still unavailable: {targets}",
+                        key, target, string.Join(", ", controlAvailability.TargetsOf(key)));
+            }
+        }
+
+        /// <summary>
         /// Called by the command queue, under its lock, with the reply to a subscribe command tagged
         /// with its component. Replies to watchdog probes decide what happens next.
         /// </summary>
+        private static bool IsRangeRead(string attributeCode) =>
+            attributeCode == "minLevel" || attributeCode == "maxLevel"
+            || attributeCode == "levelOutMin" || attributeCode == "levelOutMax";
+
         internal void NotifySubscribeReply(QueuedCommand command, string response)
         {
             var component = command?.RequestingComponent;
@@ -1109,6 +1328,10 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
                     if (newlyQuarantined)
                         this.LogWarning("Watchdog: '{component}' quarantined, its subscription can't succeed: {response} ({count} quarantined). Check its config against the design.",
                             component.Key, response, quarantined);
+                    break;
+                case ProbeReply.Unavailable:
+                    // Its unit is down. Resubscribing now would only fail again; the patrol probes it
+                    // again later, and a +OK then restores every subscription.
                     break;
                 case ProbeReply.OtherError:
                     this.LogWarning("Watchdog: '{command}' failed: {response}. Resubscribing '{component}'.", command.Command, response, component.Key);
@@ -1372,8 +1595,11 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
                     return;
                 }
 
-                // Only at the start: an echoed command containing "-ERR" (a preset name) isn't a reply
-                if (args.Text.StartsWith("-ERR", StringComparison.Ordinal))
+                // Only at the start: an echoed command containing "-ERR" (a preset name) isn't a reply.
+                // Any "-TOKEN" is a reply, not only -ERR: -CANNOT_DELIVER (the block's unit is
+                // unavailable) left unrecognized made the queue time out and reconnect (#208).
+                // Firmware 5.6.1.2 sends it as a bare CANNOT_DELIVER, which TtpReply also accepts.
+                if (TtpReply.IsError(args.Text))
                 {
                     // Watchdog probe replies are attributed to their command by the queue
                     // (NotifySubscribeReply), not counted here.
@@ -1748,6 +1974,8 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
                 control.DoPoll();
             }
 
+            startupComplete = true;
+
             // Start watchdog only after all subscriptions are complete
             this.LogDebug("All subscriptions complete. Starting watchdog.");
             StartWatchDog();
@@ -1768,6 +1996,7 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
             // never comes, its timeout reconnects the session (see NotifyCommandTimedOut).
             CommandQueue.ClearPending();
 
+            startupComplete = false; // the startup pass runs again, with full setup
             StopWatchDog();
             StartSubscriptionThread();
         }

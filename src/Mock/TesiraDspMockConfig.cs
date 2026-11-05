@@ -51,6 +51,39 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Mock
         /// </summary>
         [JsonProperty("routerControlBlocks")]
         public Dictionary<string, TesiraRouterControlBlockConfig> RouterControlBlocks { get; set; }
+
+        /// <summary>
+        /// Longest volume hold for every fader without its own <c>volumeHoldTimeoutMs</c>. Defaults 10000,
+        /// as the real driver's.
+        /// </summary>
+        [JsonProperty("volumeHoldTimeoutMs")]
+        public int VolumeHoldTimeoutMs { get; set; } = 10000;
+
+        /// <summary>Optional device info the mock reports, as the real driver reports the DSP's.</summary>
+        [JsonProperty("deviceInfo")]
+        public TesiraDspMockDeviceInfoConfig DeviceInfo { get; set; }
+    }
+
+    /// <summary>
+    /// Optional <c>deviceInfo</c> block: what the mock reports through IDeviceInfoProvider. Every field
+    /// is optional; see <see cref="MockDeviceInfoValues"/> for the defaults.
+    /// </summary>
+    public class TesiraDspMockDeviceInfoConfig
+    {
+        [JsonProperty("hostName")]
+        public string HostName { get; set; }
+
+        [JsonProperty("ipAddress")]
+        public string IpAddress { get; set; }
+
+        [JsonProperty("macAddress")]
+        public string MacAddress { get; set; }
+
+        [JsonProperty("serialNumber")]
+        public string SerialNumber { get; set; }
+
+        [JsonProperty("firmwareVersion")]
+        public string FirmwareVersion { get; set; }
     }
 
     /// <summary>Preset entry (label only — mock does not hit hardware).</summary>
@@ -73,6 +106,50 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Mock
         /// <summary>Initial mute state. Defaults to false.</summary>
         [JsonProperty("initialMute")]
         public bool InitialMute { get; set; }
+
+        /// <summary>
+        /// The block has a level, as the real fader's <c>hasLevel</c>. Defaults to true. False makes a
+        /// mute-only block: its level stays 0 and level changes are ignored.
+        /// </summary>
+        [JsonProperty("hasLevel")]
+        public bool HasLevel { get; set; } = true;
+
+        /// <summary>
+        /// The block has a mute, as the real fader's <c>hasMute</c>. Defaults to true. False makes a
+        /// level-only block: it stays unmuted and mute changes are ignored.
+        /// </summary>
+        [JsonProperty("hasMute")]
+        public bool HasMute { get; set; } = true;
+
+        /// <summary>
+        /// dB per volume step, as the real fader's <c>incrementAmount</c> (e.g. "2.0"). Unset keeps the
+        /// mock's legacy ~1% step.
+        /// </summary>
+        [JsonProperty("incrementAmount")]
+        public string IncrementAmount { get; set; }
+
+        /// <summary>The fader's range in dB, which the real fader reads from the DSP. Defaults -100.</summary>
+        [JsonProperty("minLevel")]
+        public double MinLevel { get; set; } = MockFaderModel.DefaultMinLevel;
+
+        /// <summary>The fader's range in dB, which the real fader reads from the DSP. Defaults 12.</summary>
+        [JsonProperty("maxLevel")]
+        public double MaxLevel { get; set; } = MockFaderModel.DefaultMaxLevel;
+
+        /// <summary>Unmute on a volume-up press or a higher level, as the real <c>unmuteOnVolChange</c>.</summary>
+        [JsonProperty("unmuteOnVolChange")]
+        public bool UnmuteOnVolChange { get; set; }
+
+        /// <summary>Interval between steps while volume up/down is held. Defaults 100, as the real fader.</summary>
+        [JsonProperty("volumeRepeatRateMs")]
+        public int VolumeRepeatRateMs { get; set; } = 100;
+
+        /// <summary>
+        /// Longest hold before the repeat stops; 0 or less disables it. Null (or omitted) inherits the
+        /// device's <c>volumeHoldTimeoutMs</c>, as the real fader does.
+        /// </summary>
+        [JsonProperty("volumeHoldTimeoutMs")]
+        public int? VolumeHoldTimeoutMs { get; set; }
     }
 
     /// <summary>Source-selector entry — sources are keyed and labelled generically.</summary>

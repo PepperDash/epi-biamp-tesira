@@ -161,6 +161,10 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
                 if (!attributeCode.Equals(AttributeCode, StringComparison.InvariantCultureIgnoreCase)) return;
                 state = bool.Parse(value);
                 this.LogVerbose("New Value: {state}", state);
+                // Crosspoint state can't be subscribed; polling keeps it current, so a parsed reply is
+                // as good as a subscription. Without this, the DSP's aggregate IsSubscribed could never
+                // be true on a design with a crosspoint.
+                IsSubscribed = true;
                 CrosspointStateFeedback.FireUpdate();
             }
 

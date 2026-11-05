@@ -90,6 +90,10 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Queue
                     Parent.LogVerbose("[HandleResponse] Incoming Response: '{response}'. No Controlpoint waiting for response", response);
                 }
 
+                // Track control points whose unit is unavailable (-CANNOT_DELIVER), per reply.
+                if (lastDequeued != null)
+                    Parent.NotifyCommandReply(lastDequeued, response);
+
                 // Subscribe replies go to the watchdog, attributed to the component that sent them.
                 if (lastDequeued?.RequestingComponent != null)
                     Parent.NotifySubscribeReply(lastDequeued, response);
@@ -132,6 +136,8 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Queue
                 Parent.LogVerbose("[EnqueueCommand] Attempting to enqueue command for {controlPoint} with priority {priority}", commandToEnqueue.ControlPoint?.Key ?? "no control point", commandToEnqueue.Priority);
                 Parent.LogVerbose("[EnqueueCommand] Command Queue {state} in progress.", CommandQueueInProgress ? "is" : "is not");
 
+                if (restoreScopeDepth > 0) commandToEnqueue.IsRestoreCommand = true;
+
                 var countBefore = LocalQueue.Count;
                 // In a background scope, reads go to the background too; writes never do (see BackgroundScope).
                 var isBackground = !commandToEnqueue.ForceForeground && (CommandLanes.IsBackground(commandToEnqueue.Command)
@@ -142,10 +148,16 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Queue
                     // every sent command frees one slot, which would otherwise log again per drop.
                     if (LocalQueue.Count <= queueCapacity / 2) queueFullLogged = false;
                 }
-                else if (commandToEnqueue.RequestingComponent != null)
+                else
                 {
                     // A rejected probe still counts as an attempt (see NotifySubscribeRejected).
-                    Parent.NotifySubscribeRejected(commandToEnqueue);
+                    if (commandToEnqueue.RequestingComponent != null)
+                        Parent.NotifySubscribeRejected(commandToEnqueue);
+
+                    // Any command a restore queued, including a full restore's setup writes (which
+                    // carry no RequestingComponent), dropped here means the restore didn't happen.
+                    if (commandToEnqueue.IsRestoreCommand)
+                        Parent.NotifyRestoreCommandRejected(commandToEnqueue);
                 }
 
                 if (LocalQueue.Count == countBefore && !queueFullLogged)
@@ -285,18 +297,36 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Queue
         public System.IDisposable BackgroundScope()
         {
             backgroundScopeDepth++;
-            return new ScopeExit();
+            return new ScopeExit(() => backgroundScopeDepth--);
+        }
+
+        // Per thread, like backgroundScopeDepth: a restore runs on the watchdog's thread.
+        [System.ThreadStatic]
+        private static int restoreScopeDepth;
+
+        /// <summary>
+        /// Until disposed, every command this thread queues is marked as part of a recovery restore
+        /// (<see cref="QueuedCommand.IsRestoreCommand"/>), so a failed reply to any of them, including
+        /// the automatic setup writes of a full restore, keeps the restore pending.
+        /// </summary>
+        public System.IDisposable RestoreScope()
+        {
+            restoreScopeDepth++;
+            return new ScopeExit(() => restoreScopeDepth--);
         }
 
         private sealed class ScopeExit : System.IDisposable
         {
+            private readonly System.Action onExit;
             private bool disposed;
+
+            public ScopeExit(System.Action onExit) => this.onExit = onExit;
 
             public void Dispose()
             {
                 if (disposed) return;
                 disposed = true;
-                backgroundScopeDepth--;
+                onExit();
             }
         }
 
