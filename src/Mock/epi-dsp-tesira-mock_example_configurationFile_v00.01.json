@@ -41,6 +41,23 @@
                                 "source3": { "label": "Source 3" }
                             }
                         }
+                    },
+                    "_routerComment": "Same format as the real EPI's routerControlBlocks; instance tags are ignored. Every output starts cleared (input 0). Simulate a DSP-side route: devjson {\"deviceKey\":\"dsp-mock-01--router1\",\"methodName\":\"SimulateRoute\",\"params\":[2,3]}",
+                    "routerControlBlocks": {
+                        "router1": {
+                            "enabled": true,
+                            "label": "Program Router",
+                            "routerInstanceTag": "Router1",
+                            "routerInputs": {
+                                "1": { "label": "Laptop" },
+                                "2": { "label": "Codec" },
+                                "3": { "label": "Wireless Mic" }
+                            },
+                            "routerOutputs": {
+                                "1": { "label": "Room Speakers" },
+                                "2": { "label": "Codec Send" }
+                            }
+                        }
                     }
                 }
             }

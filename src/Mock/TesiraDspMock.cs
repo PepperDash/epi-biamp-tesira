@@ -60,6 +60,8 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Mock
         private readonly List<TesiraDspMockFader> _faders = new List<TesiraDspMockFader>();
         // Child source selectors tracked alongside faders for periodic state re-fire.
         private readonly List<TesiraDspMockSourceSelector> _selectors = new List<TesiraDspMockSourceSelector>();
+        // Child routers, re-fired with the rest at bootstrap.
+        private readonly List<TesiraDspMockRouter> _routers = new List<TesiraDspMockRouter>();
         // One-shot bootstrap timer — fires both fader and selector state 5 s after
         // activation, giving DeviceVolumeMessenger time to subscribe to OutputChange
         // and (on RMC4) the TLS cert generation time to complete.
@@ -72,16 +74,18 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Mock
 
             RegisterFaders(props.FaderControlBlocks);
             RegisterSwitcherControlBlocks(props.SwitcherControlBlocks);
+            RegisterRouterControlBlocks(props.RouterControlBlocks);
             PopulatePresets(props.Presets);
 
             CommunicationMonitor = new AlwaysOnMonitor(this);
 
             this.LogInformation(
-                "TesiraDspMock '{key}' built: {faderCount} fader(s), {presetCount} preset(s), switcherCount={switcherCount}",
+                "TesiraDspMock '{key}' built: {faderCount} fader(s), {presetCount} preset(s), switcherCount={switcherCount}, routerCount={routerCount}",
                 Key,
                 props.FaderControlBlocks?.Count ?? 0,
                 props.Presets?.Count ?? 0,
-                props.SwitcherControlBlocks?.Count ?? 0);
+                props.SwitcherControlBlocks?.Count ?? 0,
+                props.RouterControlBlocks?.Count ?? 0);
         }
 
         // ── IDspPresets / IDspPresetsDirectRecall ────────────────────────────
@@ -138,6 +142,8 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Mock
                     fader.ForcePublishState();
                 foreach (var selector in _selectors)
                     selector.FireUpdate();
+                foreach (var router in _routers)
+                    router.FireUpdate();
             }, null, 5000);
 
             // AlwaysOnMonitor sets Status = IsOk in its constructor, which fires
@@ -199,6 +205,20 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Mock
                 var selector = new TesiraDspMockSourceSelector(childKey, name, labels, cfg?.InitialSource);
                 DeviceManager.AddDevice(selector);
                 _selectors.Add(selector);
+            }
+        }
+
+        private void RegisterRouterControlBlocks(Dictionary<string, TesiraRouterControlBlockConfig> blocks)
+        {
+            if (blocks == null) return;
+            foreach (var kvp in blocks)
+            {
+                var childKey = string.Format(ChildKeyFormat, Key, kvp.Key);
+                var name = string.IsNullOrEmpty(kvp.Value?.Label) ? kvp.Key : kvp.Value.Label;
+
+                var router = new TesiraDspMockRouter(childKey, name, kvp.Value);
+                DeviceManager.AddDevice(router);
+                _routers.Add(router);
             }
         }
 
