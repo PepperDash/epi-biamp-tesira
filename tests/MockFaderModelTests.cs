@@ -181,4 +181,28 @@ public class MockFaderStepTests
         System.Threading.Tasks.Parallel.For(0, 200, i => { if (i % 2 == 0) m.Step(false, 10); else m.Step(true, 10); });
         m.Level.Should().Be(5000);
     }
+
+    [Fact]
+    public void A_step_past_an_end_lands_on_it_and_reports_it()
+    {
+        var m = new MockFaderModel(true, true, 0, false);
+        m.SetLevel(65000);
+        m.Step(up: true, 1170, out var past).Should().BeTrue("it still lands on the end");
+        past.Should().BeTrue();
+        m.Level.Should().Be(65535);
+        m.Step(up: true, 1170, out past).Should().BeFalse();
+        past.Should().BeTrue("a step from the end is past it too, so the repeat stops");
+
+        m.SetLevel(1170);
+        m.Step(up: false, 1170, out past).Should().BeTrue();
+        past.Should().BeFalse("landing exactly on the end is not past it");
+        m.Level.Should().Be(0);
+    }
+
+    [Fact]
+    public void A_mute_only_block_reports_no_past_end_step()
+    {
+        new MockFaderModel(false, true, 0, false).Step(false, 1170, out var past).Should().BeFalse();
+        past.Should().BeFalse();
+    }
 }
