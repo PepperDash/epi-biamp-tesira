@@ -133,13 +133,21 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
                     intervalSecs, MinimumIntervalSecs, MaximumIntervalSecs, secs);
 
             bool wasEnabled;
+            var cleared = false;
             lock (controlLock)
             {
                 lock (stateLock)
                 {
                     wasEnabled = PollingEnabled;
                     IntervalSecs = secs;
-                    if (secs == 0) replyGate.PollingTurnedOff(); // drop replies to polls queued before this
+                    if (secs == 0)
+                    {
+                        // One step: drop replies to polls queued before this, and clear the values. A
+                        // PollNow() sent after this point gets the new generation, so its reply is
+                        // applied after the clear and can't be erased by it.
+                        replyGate.PollingTurnedOff();
+                        cleared = Store(new TesiraFaultList(), logChange: false);
+                    }
                 }
                 if (secs > 0) StartTimer();
                 else StopTimer();
@@ -154,13 +162,7 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
             else
             {
                 if (wasEnabled) this.LogInformation("Fault monitoring off");
-                // Clear only if still off: a concurrent SetPolling may have turned it back on.
-                bool changed = false;
-                lock (stateLock)
-                {
-                    if (!PollingEnabled) changed = Store(new TesiraFaultList(), logChange: false);
-                }
-                Publish(changed);
+                Publish(cleared);
             }
 
             PollingEnabledFeedback.FireUpdate();
