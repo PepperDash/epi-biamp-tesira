@@ -172,7 +172,9 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Mock
                     childKey,
                     name,
                     kvp.Value?.InitialLevelPercent ?? 50,
-                    kvp.Value?.InitialMute ?? false);
+                    kvp.Value?.InitialMute ?? false,
+                    kvp.Value?.HasLevel ?? true,
+                    kvp.Value?.HasMute ?? true);
 
                 DeviceManager.AddDevice(fader);
                 _faders.Add(fader);

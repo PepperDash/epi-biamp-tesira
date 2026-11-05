@@ -41,5 +41,8 @@
     <Compile Include="..\src\RetryBackoff.cs" Link="RetryBackoff.cs" />
     <Compile Include="..\src\RecoveryTracker.cs" Link="RecoveryTracker.cs" />
     <Compile Include="..\src\Queue\CommandLanes.cs" Link="Queue\CommandLanes.cs" />
+    <!-- Mock fader state and the mock's config shape (Newtonsoft only). -->
+    <Compile Include="..\src\Mock\MockFaderModel.cs" Link="Mock\MockFaderModel.cs" />
+    <Compile Include="..\src\Mock\TesiraDspMockConfig.cs" Link="Mock\TesiraDspMockConfig.cs" />
   </ItemGroup>
 </Project>
