@@ -1198,7 +1198,10 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
                 // arrives, lands on this restore.
                 var fullSetup = recovery.NeedsFullSetup(component.Key);
                 if (!controlAvailability.Contains(component.Key)) recovery.MarkRestoreSent(component.Key);
-                SubscribeAutomatically(component, subscriptionsOnly: !fullSetup);
+                // Marks everything the restore queues, so a failed automatic setup write (a full
+                // restore's dialer redial/auto-answer settings) fails the restore (NotifyCommandReply).
+                using (CommandQueue.RestoreScope())
+                    SubscribeAutomatically(component, subscriptionsOnly: !fullSetup);
 
                 // A switcher of type "router" subscribes nothing: its Subscribe() only restarts a poll
                 // timer, which each retry would push back before it fires. Poll it now instead.
@@ -1238,6 +1241,16 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
                 {
                     if (TtpReply.IsSuccess(response)) recovery.Acknowledge(key, isSubscribe: verb == "subscribe");
                     else if (TtpReply.IsError(response) && !TtpReply.IsUnavailable(response)) recovery.Fail(key);
+                }
+                // An automatic setup write the restore itself sent (a full restore's dialer
+                // redial/auto-answer settings): its failure keeps the restore pending, since the
+                // configured setting was never applied. Its success never acknowledges, and user writes
+                // (not restore-scoped) are ignored. Fail is sticky until the next restore is sent, so a
+                // subscribe answered after this failure (they run in the background lane) can't
+                // acknowledge it.
+                else if (command.IsRestoreCommand && TtpReply.IsError(response) && !TtpReply.IsUnavailable(response))
+                {
+                    recovery.Fail(key);
                 }
             }
 

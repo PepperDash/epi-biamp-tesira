@@ -136,6 +136,8 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Queue
                 Parent.LogVerbose("[EnqueueCommand] Attempting to enqueue command for {controlPoint} with priority {priority}", commandToEnqueue.ControlPoint?.Key ?? "no control point", commandToEnqueue.Priority);
                 Parent.LogVerbose("[EnqueueCommand] Command Queue {state} in progress.", CommandQueueInProgress ? "is" : "is not");
 
+                if (restoreScopeDepth > 0) commandToEnqueue.IsRestoreCommand = true;
+
                 var countBefore = LocalQueue.Count;
                 // In a background scope, reads go to the background too; writes never do (see BackgroundScope).
                 var isBackground = !commandToEnqueue.ForceForeground && (CommandLanes.IsBackground(commandToEnqueue.Command)
@@ -289,18 +291,36 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Queue
         public System.IDisposable BackgroundScope()
         {
             backgroundScopeDepth++;
-            return new ScopeExit();
+            return new ScopeExit(() => backgroundScopeDepth--);
+        }
+
+        // Per thread, like backgroundScopeDepth: a restore runs on the watchdog's thread.
+        [System.ThreadStatic]
+        private static int restoreScopeDepth;
+
+        /// <summary>
+        /// Until disposed, every command this thread queues is marked as part of a recovery restore
+        /// (<see cref="QueuedCommand.IsRestoreCommand"/>), so a failed reply to any of them, including
+        /// the automatic setup writes of a full restore, keeps the restore pending.
+        /// </summary>
+        public System.IDisposable RestoreScope()
+        {
+            restoreScopeDepth++;
+            return new ScopeExit(() => restoreScopeDepth--);
         }
 
         private sealed class ScopeExit : System.IDisposable
         {
+            private readonly System.Action onExit;
             private bool disposed;
+
+            public ScopeExit(System.Action onExit) => this.onExit = onExit;
 
             public void Dispose()
             {
                 if (disposed) return;
                 disposed = true;
-                backgroundScopeDepth--;
+                onExit();
             }
         }
 

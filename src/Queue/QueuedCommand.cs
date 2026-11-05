@@ -67,6 +67,13 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Queue
     public bool ForceForeground { get; set; }
 
     /// <summary>
+    /// Queued by a recovery restore (see <see cref="TesiraQueue.RestoreScope"/>), including the
+    /// automatic setup writes a full restore sends (e.g. a dialer's configured redial/auto-answer
+    /// settings). A failed reply to one keeps the restore pending; a user write never sets this.
+    /// </summary>
+    public bool IsRestoreCommand { get; set; }
+
+    /// <summary>
     /// Command String to send
     /// </summary>
     public readonly string Command;

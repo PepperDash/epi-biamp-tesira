@@ -6,6 +6,29 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Tests;
 public class RecoveryTrackerTests
 {
     [Fact]
+    public void A_Failed_Setup_Write_Is_Not_Undone_By_A_Later_Subscribe_Reply()
+    {
+        // A full restore's setup writes run in the foreground lane and its subscribes in the
+        // background, so a failed write can be answered before the subscribe's +OK. The failure
+        // must hold until the next restore is sent.
+        var recovery = new RecoveryTracker();
+        recovery.MarkNeeded("dsp--Dialer1", fullSetup: true);
+        recovery.MarkRestoreSent("dsp--Dialer1");
+        recovery.ExpectSubscribe("dsp--Dialer1");
+
+        recovery.Fail("dsp--Dialer1");                               // set redialEnable -> -GENERAL_FAILURE
+        recovery.Acknowledge("dsp--Dialer1", isSubscribe: true);     // subscribe callState -> +OK
+
+        recovery.IsRestored("dsp--Dialer1").Should().BeFalse();
+        recovery.IsPending("dsp--Dialer1").Should().BeTrue();
+        recovery.NeedsFullSetup("dsp--Dialer1").Should().BeTrue();   // the retry re-sends the setup
+
+        recovery.MarkRestoreSent("dsp--Dialer1");                    // next retry, writes succeed
+        recovery.Acknowledge("dsp--Dialer1", isSubscribe: true);
+        recovery.IsRestored("dsp--Dialer1").Should().BeTrue();
+    }
+
+    [Fact]
     public void Keeps_A_Control_Pending_Until_It_Is_Completed()
     {
         // A stray successful reply clears availability, not recovery: only Complete does.
