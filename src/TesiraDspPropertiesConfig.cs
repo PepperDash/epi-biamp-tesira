@@ -70,6 +70,15 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
         public int LevelRangePollIntervalSecs { get; set; } = 0;
 
         /// <summary>
+        /// Seconds between 'DEVICE get activeFaultList' polls (the Tesira can't subscribe to faults).
+        /// 0 (default) = fault monitoring off; values 1-9 are clamped to 10, and above 86400 (1 day)
+        /// to 86400. The bridge's
+        /// FaultPollingEnable join and SetFaultPolling (devjson) can change it at runtime.
+        /// </summary>
+        [JsonProperty("faultPollIntervalSecs")]
+        public int FaultPollIntervalSecs { get; set; } = 0;
+
+        /// <summary>
         /// Seconds between subscription watchdog checks. Each check re-subscribes the sentinels and the
         /// next watchdogPatrolSize components; a +OK reply means the DSP dropped subscriptions (design
         /// push, partition restart) and everything is resubscribed. Default 30; minimum 10.

@@ -130,6 +130,12 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
         private TesiraDspDeviceInfo DevInfo { get; set; }
 
         /// <summary>
+        /// Opt-in fault monitoring (DEVICE activeFaultList). Always created; it polls only when
+        /// faultPollIntervalSecs, the FaultPollingEnable join or SetFaultPolling turns it on.
+        /// </summary>
+        public TesiraDspFaultMonitor FaultMonitor { get; private set; }
+
+        /// <summary>
         /// Hostname/IP from the configured comm object, captured in the constructor and
         /// seeded onto DevInfo once it exists. Empty for RS-232 control.
         /// </summary>
@@ -353,6 +359,7 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
             // Stop subscription thread
             StopSubscriptionThread();
             StopLevelRangePollTimer();
+            FaultMonitor?.Stop();
 
             if (watchDogTimer != null)
             {
@@ -451,6 +458,8 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
 
             CreateDevInfo();
 
+            CreateFaultMonitor(props.FaultPollIntervalSecs);
+
             //Keep me at the end of this method!
             CreateExpanderTracker(props);
 
@@ -482,6 +491,38 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
             Feedbacks.Add(DevInfo.HostnameFeedback);
             Feedbacks.Add(DevInfo.IpAddressFeedback);
             Feedbacks.Add(DevInfo.MacAddressFeedback);
+        }
+
+        private void CreateFaultMonitor(int faultPollIntervalSecs)
+        {
+            FaultMonitor = new TesiraDspFaultMonitor(this, faultPollIntervalSecs);
+            DeviceManager.AddDevice(FaultMonitor);
+
+            // Re-fired by the parent's OnlineStatusChange handler when SIMPL reconnects.
+            foreach (var feedback in FaultMonitor.Feedbacks) Feedbacks.Add(feedback);
+        }
+
+        /// <summary>
+        /// Turns fault monitoring on (poll every intervalSecs, minimum 10) or off (0) until the
+        /// program restarts. Runtime only: to keep it, set faultPollIntervalSecs in the config.
+        /// (Not saved through ConfigWriter: that writes LocalConfig, which then overrides every later
+        /// config upload until someone deletes it.)
+        /// Console: devjson {"deviceKey":"dsp-1","methodName":"SetFaultPolling","params":[60]}
+        /// </summary>
+        [Api]
+        public void SetFaultPolling(int intervalSecs)
+        {
+            FaultMonitor?.SetPolling(intervalSecs);
+        }
+
+        /// <summary>
+        /// Polls the active fault list once now, whether or not periodic polling is on.
+        /// Console: devjson {"deviceKey":"dsp-1","methodName":"PollFaults"}
+        /// </summary>
+        [Api]
+        public void PollFaults()
+        {
+            FaultMonitor?.PollNow();
         }
 
         private void CreatePresets(TesiraDspPropertiesConfig props)
@@ -1980,6 +2021,7 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
             this.LogDebug("All subscriptions complete. Starting watchdog.");
             StartWatchDog();
             StartLevelRangePollTimer();
+            FaultMonitor?.Start();
         }
 
         #endregion
@@ -2115,6 +2157,10 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
 
                 DevInfo.FireAllFeedbacks();
             }
+
+            FaultMonitor?.LinkFaultJoins(trilist, deviceJoinMap.FaultPollingEnable, deviceJoinMap.HasFault,
+                deviceJoinMap.FaultPollNow, deviceJoinMap.ActiveFaultCount, deviceJoinMap.FaultSeverity,
+                deviceJoinMap.FaultId, deviceJoinMap.FaultName, deviceJoinMap.FaultList);
 
             LinkFadersToApi(trilist, faderJoinMap);
 

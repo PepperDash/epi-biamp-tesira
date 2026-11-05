@@ -97,6 +97,86 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Bridge.JoinMaps
           JoinCapabilities = eJoinCapabilities.ToSIMPL,
           JoinType = eJoinType.Serial
         });
+    [JoinName("FaultPollingEnable")]
+    public JoinDataComplete FaultPollingEnable =
+        new JoinDataComplete(new JoinData { JoinNumber = 11, JoinSpan = 1 },
+        new JoinMetadata
+        {
+            Description = "Fault monitoring: rising edge turns polling on (config interval, or 60 s), falling edge turns it off. Runtime only, never written to config. Feedback: polling active",
+            JoinCapabilities = eJoinCapabilities.ToFromSIMPL,
+            JoinType = eJoinType.Digital
+        });
+
+    [JoinName("HasFault")]
+    public JoinDataComplete HasFault =
+        new JoinDataComplete(new JoinData { JoinNumber = 12, JoinSpan = 1 },
+        new JoinMetadata
+        {
+            Description = "Fault monitoring: high while the DSP reports any active fault",
+            JoinCapabilities = eJoinCapabilities.ToSIMPL,
+            JoinType = eJoinType.Digital
+        });
+
+    [JoinName("FaultPollNow")]
+    public JoinDataComplete FaultPollNow =
+        new JoinDataComplete(new JoinData { JoinNumber = 13, JoinSpan = 1 },
+        new JoinMetadata
+        {
+            Description = "Fault monitoring: poll the active fault list once now",
+            JoinCapabilities = eJoinCapabilities.FromSIMPL,
+            JoinType = eJoinType.Digital
+        });
+
+    [JoinName("ActiveFaultCount")]
+    public JoinDataComplete ActiveFaultCount =
+        new JoinDataComplete(new JoinData { JoinNumber = 11, JoinSpan = 1 },
+        new JoinMetadata
+        {
+            Description = "Fault monitoring: number of active faults",
+            JoinCapabilities = eJoinCapabilities.ToSIMPL,
+            JoinType = eJoinType.Analog
+        });
+
+    [JoinName("FaultSeverity")]
+    public JoinDataComplete FaultSeverity =
+        new JoinDataComplete(new JoinData { JoinNumber = 12, JoinSpan = 1 },
+        new JoinMetadata
+        {
+            Description = "Fault monitoring: worst indicator severity (0 none, 1 minor, 2 major, 3 critical)",
+            JoinCapabilities = eJoinCapabilities.ToSIMPL,
+            JoinType = eJoinType.Analog
+        });
+
+    [JoinName("FaultId")]
+    public JoinDataComplete FaultId =
+        new JoinDataComplete(new JoinData { JoinNumber = 11, JoinSpan = 1 },
+        new JoinMetadata
+        {
+            Description = "Fault monitoring: worst indicator id, e.g. INDICATOR_MAJOR_IN_DEVICE",
+            JoinCapabilities = eJoinCapabilities.ToSIMPL,
+            JoinType = eJoinType.Serial
+        });
+
+    [JoinName("FaultName")]
+    public JoinDataComplete FaultName =
+        new JoinDataComplete(new JoinData { JoinNumber = 12, JoinSpan = 1 },
+        new JoinMetadata
+        {
+            Description = "Fault monitoring: worst indicator name, e.g. Major Fault in Device",
+            JoinCapabilities = eJoinCapabilities.ToSIMPL,
+            JoinType = eJoinType.Serial
+        });
+
+    [JoinName("FaultList")]
+    public JoinDataComplete FaultList =
+        new JoinDataComplete(new JoinData { JoinNumber = 13, JoinSpan = 1 },
+        new JoinMetadata
+        {
+            Description = "Fault monitoring: active fault names, comma-separated",
+            JoinCapabilities = eJoinCapabilities.ToSIMPL,
+            JoinType = eJoinType.Serial
+        });
+
     public TesiraDspDeviceJoinMapAdvanced(uint joinStart)
         : base(joinStart, typeof(TesiraDspDeviceJoinMapAdvanced))
     {

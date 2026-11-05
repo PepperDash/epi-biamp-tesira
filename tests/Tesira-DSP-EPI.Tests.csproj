@@ -34,6 +34,9 @@
     <Compile Include="..\src\Queue\PendingCommandCounter.cs" Link="Queue\PendingCommandCounter.cs" />
     <Compile Include="..\src\PresetHoldButton.cs" Link="PresetHoldButton.cs" />
     <Compile Include="..\src\LogicSelectorStates.cs" Link="LogicSelectorStates.cs" />
+    <Compile Include="..\src\TesiraFaultList.cs" Link="TesiraFaultList.cs" />
+    <Compile Include="..\src\FaultReplyGate.cs" Link="FaultReplyGate.cs" />
+    <Compile Include="..\src\FaultPollInterval.cs" Link="FaultPollInterval.cs" />
     <Compile Include="..\src\RouterProtocol.cs" Link="RouterProtocol.cs" />
     <Compile Include="..\src\Mock\MockRouteTable.cs" Link="Mock\MockRouteTable.cs" />
     <Compile Include="..\src\SubscriptionWatchdogCore.cs" Link="SubscriptionWatchdogCore.cs" />
