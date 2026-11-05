@@ -12,6 +12,14 @@ public class TtpReplyTests
     [InlineData("-CANNOT_DELIVER ", true)]
     [InlineData("-GENERAL_FAILURE", true)]
     [InlineData("-ERR", true)]
+    [InlineData("CANNOT_DELIVER", true)]                     // firmware 5.6.1.2: no leading minus
+    [InlineData("CANNOT_DELIVER ", true)]
+    [InlineData("GENERAL_FAILURE", true)]
+    [InlineData("CANNOT_DELIVERY", false)]
+    [InlineData("SESSION get aliases", false)]               // keyword command echoes
+    [InlineData("SESSION set verbose false", false)]
+    [InlineData("DEVICE get version", false)]
+    [InlineData("ERR address not found", false)]             // only the known tokens go without a minus
     [InlineData("+OK", false)]
     [InlineData("+OK \"value\":-12.5", false)]
     [InlineData("\"Level1\" get level 1", false)]            // a command echo
@@ -29,9 +37,13 @@ public class TtpReplyTests
     [Theory]
     [InlineData("-CANNOT_DELIVER", true)]
     [InlineData("-CANNOT_DELIVER ", true)]
+    [InlineData("CANNOT_DELIVER", true)]                     // firmware 5.6.1.2: no leading minus
+    [InlineData("CANNOT_DELIVER\r", true)]
     [InlineData("-CANNOT_DELIVERY", false)]
+    [InlineData("CANNOT_DELIVERY", false)]
     [InlineData("-ERR CANNOT_DELIVER", false)]
     [InlineData("-GENERAL_FAILURE", false)]
+    [InlineData("GENERAL_FAILURE", false)]
     [InlineData("+OK", false)]
     [InlineData(null, false)]
     public void IsUnavailable_Is_Only_Cannot_Deliver(string? line, bool expected)

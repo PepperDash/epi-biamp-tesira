@@ -1555,6 +1555,7 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
                 // Only at the start: an echoed command containing "-ERR" (a preset name) isn't a reply.
                 // Any "-TOKEN" is a reply, not only -ERR: -CANNOT_DELIVER (the block's unit is
                 // unavailable) left unrecognized made the queue time out and reconnect (#208).
+                // Firmware 5.6.1.2 sends it as a bare CANNOT_DELIVER, which TtpReply also accepts.
                 if (TtpReply.IsError(args.Text))
                 {
                     // Watchdog probe replies are attributed to their command by the queue
