@@ -1642,6 +1642,11 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
                 // Firmware 5.6.1.2 sends it as a bare CANNOT_DELIVER, which TtpReply also accepts.
                 if (TtpReply.IsError(args.Text))
                 {
+                    // The echo of the command awaiting its reply isn't the reply, even when it looks
+                    // like an error: a dialer's instance tag is sent unquoted, so a block tagged
+                    // -DIALER1 echoes as "-DIALER1 get dndEnable 1" (#214). Its real reply follows.
+                    if (CommandQueue.IsEchoOfOutstanding(args.Text)) return;
+
                     // Watchdog probe replies are attributed to their command by the queue
                     // (NotifySubscribeReply), not counted here.
                     CommandQueue.HandleResponse(args.Text);
