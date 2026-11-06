@@ -74,6 +74,18 @@ public class ConfigDeserializationTests
     }
 
     [Theory]
+    [InlineData("meterInstanceTag")]
+    [InlineData("bridgeIndex")]
+    [InlineData("subscribeOnStart")]
+    public void MeterBlock_Property_Has_JsonPropertyAttribute(string jsonName)
+    {
+        var type = AssemblyFixture.PluginAssembly.GetType(Ns + "TesiraMeterBlockConfig");
+        type.Should().NotBeNull("TesiraMeterBlockConfig class should exist");
+        HasJsonProperty(type!, jsonName).Should()
+            .BeTrue($"TesiraMeterBlockConfig should have a property with [JsonProperty(\"{jsonName}\")]");
+    }
+
+    [Theory]
     [InlineData("FaderControlBlocks", "TesiraFaderControlBlockConfig")]
     [InlineData("DialerControlBlocks", "TesiraDialerControlBlockConfig")]
     [InlineData("ExpanderBlocks",      "TesiraExpanderBlockConfig")]

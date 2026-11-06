@@ -649,6 +649,10 @@
             "integer",
             "null"
           ]
+        },
+        "subscribeOnStart": {
+          "type": "boolean",
+          "description": "Stream this meter from session start without a bridge join or Subscribe() call, for standalone programs. Default false (meters are opt-in)."
         }
       }
     },

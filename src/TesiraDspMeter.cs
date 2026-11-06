@@ -57,6 +57,11 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
             Label = config.Label;
             Enabled = config.Enabled;
 
+            // A standalone program has no subscribe join, and IMeterFeedback has no subscribe method:
+            // subscribeOnStart records the request up front, so session start subscribes it like any
+            // requested meter (and reconnects, design pushes and resubscribes restore it).
+            SubscriptionRequested = config.SubscribeOnStart;
+
             // Registered up front so a publish from a subscription this meter didn't make (one that
             // outlived an Essentials restart on a serial link) still reaches the stray-publish cleanup.
             MeterCustomName = string.Format("{0}__meter{1}", InstanceTag1, Index1);
