@@ -65,6 +65,16 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Queue
         }
 
         /// <summary>
+        /// True when <paramref name="line"/> is the echo of the command awaiting its reply, so it must
+        /// not be taken for that reply (#214).
+        /// </summary>
+        public bool IsEchoOfOutstanding(string line)
+        {
+            lock (lockObject)
+                return lastDequeued != null && TtpReply.IsEchoOf(line, lastDequeued.Command);
+        }
+
+        /// <summary>
         /// Dequeue from TesiraQueue and process queue responses
         /// </summary>
         /// <param name="response">Command String comparator for QueuedCommand</param>

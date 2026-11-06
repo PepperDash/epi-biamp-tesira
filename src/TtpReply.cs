@@ -86,5 +86,18 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
             var match = ErrorToken.Match(line);
             return match.Success && string.Equals(match.Groups["token"].Value, CannotDeliver, StringComparison.Ordinal);
         }
+
+        /// <summary>
+        /// True when <paramref name="line"/> is the echo of <paramref name="command"/>: the same text,
+        /// ignoring surrounding whitespace and line endings. Over SSH the Tesira echoes each command
+        /// before its reply, and an echo can look like an error reply: a dialer's instance tag is sent
+        /// unquoted, so a block tagged <c>-DIALER1</c> echoes as <c>-DIALER1 get dndEnable 1</c> (#214).
+        /// </summary>
+        public static bool IsEchoOf(string line, string command)
+        {
+            if (line == null || command == null) return false;
+            var echo = line.Trim();
+            return echo.Length > 0 && string.Equals(echo, command.Trim(), StringComparison.Ordinal);
+        }
     }
 }

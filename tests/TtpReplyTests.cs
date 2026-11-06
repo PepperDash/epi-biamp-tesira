@@ -72,6 +72,32 @@ public class TtpReplyTargetTests
     }
 }
 
+public class TtpReplyEchoTests
+{
+    [Theory]
+    [InlineData("-DIALER1 get dndEnable 1", "-DIALER1 get dndEnable 1", true)]           // #214
+    [InlineData("-DIALER1 get dndEnable 1\r", "-DIALER1 get dndEnable 1\r\n", true)]     // line endings
+    [InlineData("  \"Level1\" get level 1 ", "\"Level1\" get level 1", true)]
+    [InlineData("-ERR address not found: {\"deviceId\":0}", "-DIALER1 get dndEnable 1", false)]
+    [InlineData("CANNOT_DELIVER", "-DIALER1 get dndEnable 1", false)]
+    [InlineData("-dialer1 get dndEnable 1", "-DIALER1 get dndEnable 1", false)]          // case matters
+    [InlineData("", "", false)]
+    [InlineData(null, "-DIALER1 get dndEnable 1", false)]
+    [InlineData("-DIALER1 get dndEnable 1", null, false)]
+    public void IsEchoOf_Matches_The_Command_Text_Only(string? line, string? command, bool expected)
+    {
+        TtpReply.IsEchoOf(line, command).Should().Be(expected);
+    }
+
+    [Fact]
+    public void A_Signed_Tag_Echo_Looks_Like_An_Error_So_The_Echo_Check_Must_Come_First()
+    {
+        const string command = "-DIALER1 get dndEnable 1";
+        TtpReply.IsError(command).Should().BeTrue("this is why the reply handler checks for the echo first");
+        TtpReply.IsEchoOf(command, command).Should().BeTrue();
+    }
+}
+
 public class TtpReplyVerbTests
 {
     [Theory]
