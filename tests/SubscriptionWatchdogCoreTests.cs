@@ -68,7 +68,7 @@ public class WatchdogPatrolTests
     }
 
     [Fact]
-    public void Quarantined_Components_Are_Never_Probed()
+    public void Quarantined_Components_Leave_The_Patrol_And_One_Is_Probed_Last()
     {
         var patrol = new WatchdogPatrol<string>(10);
         patrol.Quarantine("a").Should().BeTrue();
@@ -76,12 +76,61 @@ public class WatchdogPatrolTests
         patrol.Quarantine("d");
 
         var probe = patrol.NextProbeSet(Six, new[] { "a" });
-        probe.Should().NotContain(new[] { "a", "d" });
         probe.First().Should().Be("b"); // the sentinel is quarantined, so the first usable candidate stands in
+        probe.Should().Equal("b", "c", "e", "f", "a");
         patrol.QuarantinedCount.Should().Be(2);
+    }
+
+    [Fact]
+    public void Quarantined_Probe_Rotates_One_Per_Tick()
+    {
+        var patrol = new WatchdogPatrol<string>(0);
+        patrol.Quarantine("b");
+        patrol.Quarantine("e");
+
+        patrol.NextProbeSet(Six, null).Should().Equal("a", "b");
+        patrol.NextProbeSet(Six, null).Should().Equal("a", "e");
+        patrol.NextProbeSet(Six, null).Should().Equal("a", "b");
+    }
+
+    [Fact]
+    public void All_Quarantined_Still_Probes_One_So_A_Returning_Design_Is_Seen()
+    {
+        var patrol = new WatchdogPatrol<string>(2);
+        foreach (var c in Six) patrol.Quarantine(c);
+
+        patrol.NextProbeSet(Six, new[] { "a" }).Should().Equal("a");
+        patrol.NextProbeSet(Six, new[] { "a" }).Should().Equal("b");
+    }
+
+    [Fact]
+    public void Quarantined_Snapshot_And_Clear()
+    {
+        var patrol = new WatchdogPatrol<string>(2);
+        patrol.Quarantine("c");
+        patrol.Quarantine("a");
+
+        var snapshot = patrol.Quarantined;
+        snapshot.Should().BeEquivalentTo(new[] { "a", "c" });
 
         patrol.ClearQuarantine();
-        patrol.IsQuarantined("a").Should().BeFalse();
+        snapshot.Should().HaveCount(2, "callers read the snapshot outside the lock");
+        patrol.Quarantined.Should().BeEmpty();
+    }
+
+    [Fact]
+    public void Release_Returns_One_Component_To_The_Patrol()
+    {
+        var patrol = new WatchdogPatrol<string>(10);
+        patrol.Quarantine("b");
+        patrol.Quarantine("d");
+
+        patrol.Release("b").Should().BeTrue();
+        patrol.Release("b").Should().BeFalse();
+        patrol.Release(null).Should().BeFalse();
+
+        patrol.Quarantined.Should().Equal("d");
+        patrol.NextProbeSet(Six, null).Should().Equal("a", "b", "c", "e", "f", "d");
     }
 
     [Fact]

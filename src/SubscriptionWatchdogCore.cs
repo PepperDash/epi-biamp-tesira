@@ -57,8 +57,10 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
 
     /// <summary>
     /// Chooses what each watchdog tick probes: the sentinels (one per partition, from config; by default
-    /// the first candidate) plus the next few candidates of a rotating patrol. Quarantined components are
-    /// never probed.
+    /// the first candidate) plus the next few candidates of a rotating patrol. Quarantined components
+    /// leave the patrol, but one of them (rotating) is probed each tick: a whole design going missing
+    /// quarantines working components too, and without a probe among them the watchdog couldn't see
+    /// the design come back once everything is quarantined.
     /// </summary>
     /// <remarks>Kept free of Crestron types so it can be unit tested.</remarks>
     internal sealed class WatchdogPatrol<T> where T : class
@@ -66,6 +68,7 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
         private readonly int patrolSize;
         private readonly HashSet<T> quarantined = new HashSet<T>();
         private int cursor;
+        private int quarantineCursor;
 
         public WatchdogPatrol(int patrolSize)
         {
@@ -79,18 +82,46 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
         /// <returns>true if the component was newly quarantined</returns>
         public bool Quarantine(T component) => component != null && quarantined.Add(component);
 
-        /// <summary>Forgets quarantines, e.g. after a reconnect (the design may have been fixed).</summary>
+        /// <summary>Releases one component, e.g. when its probe shows it is subscribed after all.</summary>
+        /// <returns>true if the component was quarantined</returns>
+        public bool Release(T component) => component != null && quarantined.Remove(component);
+
+        /// <summary>Snapshot of the quarantined components, in no particular order.</summary>
+        public IReadOnlyList<T> Quarantined => quarantined.ToList();
+
+        /// <summary>
+        /// Forgets quarantines: after a reconnect, or when the DSP turns out to have dropped its
+        /// subscriptions (the design may have changed). Components still missing from the design are
+        /// quarantined again by later probes.
+        /// </summary>
         public void ClearQuarantine() => quarantined.Clear();
 
         /// <summary>
-        /// The components to probe this tick, sentinels first, without duplicates.
+        /// The components to probe this tick: the sentinels and patrol, then one quarantined candidate
+        /// (rotating), without duplicates.
         /// </summary>
         /// <param name="candidates">Components that can be probed (subscribed), in a stable order</param>
         /// <param name="sentinels">Configured sentinels; when none are usable, the first candidate is the sentinel</param>
         public IReadOnlyList<T> NextProbeSet(IReadOnlyList<T> candidates, IEnumerable<T> sentinels)
         {
+            var candidateList = (candidates ?? new List<T>()).Where(c => c != null).ToList();
+            var probe = SentinelsAndPatrol(candidateList.Where(c => !quarantined.Contains(c)).ToList(), sentinels);
+
+            var quarantinedCandidates = candidateList.Where(quarantined.Contains).ToList();
+            if (quarantinedCandidates.Count > 0)
+            {
+                quarantineCursor %= quarantinedCandidates.Count;
+                probe.Add(quarantinedCandidates[quarantineCursor]);
+                quarantineCursor = (quarantineCursor + 1) % quarantinedCandidates.Count;
+            }
+
+            return probe;
+        }
+
+        /// <summary>Sentinels first, then the next patrol components in rotation.</summary>
+        private List<T> SentinelsAndPatrol(List<T> usable, IEnumerable<T> sentinels)
+        {
             var probe = new List<T>();
-            var usable = (candidates ?? new List<T>()).Where(c => c != null && !quarantined.Contains(c)).ToList();
             if (usable.Count == 0) return probe;
 
             foreach (var sentinel in sentinels ?? Enumerable.Empty<T>())
