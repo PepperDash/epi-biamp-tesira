@@ -1292,3 +1292,917 @@ In the provided example config object, given a base object key of ```dsp-1```, t
 ## RoadMap
 
 A Method by which we can continue even with *"bad"* instance tags in the config.  Currently, this causes everything to fail upon subscription.
+<!-- START Minimum Essentials Framework Versions -->
+### Minimum Essentials Framework Versions
+
+- 3.0.0
+- 3.0.0
+<!-- END Minimum Essentials Framework Versions -->
+<!-- START Config Example -->
+### Config Example
+
+```json
+{
+    "key": "GeneratedKey",
+    "uid": 1,
+    "name": "GeneratedName",
+    "type": "TesiraDspProperties",
+    "group": "Group",
+    "properties": {
+        "CommunicationMonitorProperties": "SampleValue",
+        "Control": "SampleValue",
+        "faderControlBlocks": {
+            "SampleString": {
+                "enabled": true,
+                "label": "SampleString",
+                "levelInstanceTag": "SampleString",
+                "muteInstanceTag": "SampleString",
+                "index1": 0,
+                "index2": 0,
+                "hasMute": true,
+                "hasLevel": true,
+                "isMic": true,
+                "useAbsoluteValue": true,
+                "unmuteOnVolChange": true,
+                "incrementAmount": "SampleString",
+                "permissions": 0,
+                "bridgeIndex": "SampleValue",
+                "volumeRepeatRateMs": 0,
+                "volumeHoldTimeoutMs": 0
+            }
+        },
+        "dialerControlBlocks": {
+            "SampleString": {
+                "enabled": true,
+                "isVoip": true,
+                "label": "SampleString",
+                "displayNumber": "SampleString",
+                "dialerInstanceTag": "SampleString",
+                "controlStatusInstanceTag": "SampleString",
+                "index": 0,
+                "clearOnHangup": true,
+                "appendDtmf": true,
+                "redialEnable": true,
+                "autoAnswerRingCount": "SampleString",
+                "bridgeIndex": "SampleValue",
+                "phonebook": {
+                    "enabled": true,
+                    "entryCount": 0
+                },
+                "callAppearances": {
+                    "0": {
+                        "label": "SampleString",
+                        "bridgeIndex": "SampleValue"
+                    }
+                }
+            }
+        },
+        "switcherControlBlocks": {
+            "SampleString": {
+                "enabled": true,
+                "label": "SampleString",
+                "type": "SampleString",
+                "switcherInstanceTag": "SampleString",
+                "index1": 0,
+                "bridgeIndex": "SampleValue",
+                "switcherInputs": {
+                    "SampleValue": {
+                        "label": "SampleString"
+                    }
+                },
+                "switcherOutputs": {
+                    "SampleValue": {
+                        "label": "SampleString"
+                    }
+                },
+                "showRoutedStringFeedback": true,
+                "pollIntervalMs": 0
+            }
+        },
+        "routerControlBlocks": {
+            "SampleString": {
+                "enabled": true,
+                "label": "SampleString",
+                "routerInstanceTag": "SampleString",
+                "index1": 0,
+                "routerInputs": {
+                    "SampleValue": {
+                        "label": "SampleString"
+                    }
+                },
+                "routerOutput": {
+                    "label": "SampleString"
+                },
+                "routerOutputs": {
+                    "SampleValue": {
+                        "label": "SampleString"
+                    }
+                },
+                "showRoutedStringFeedback": true,
+                "pollIntervalMs": 0,
+                "bridgeIndex": "SampleValue"
+            }
+        },
+        "sourceSelectorControlBlocks": {
+            "SampleString": {
+                "enabled": true,
+                "label": "SampleString",
+                "type": "SampleString",
+                "sourceSelectorInstanceTag": "SampleString",
+                "sourceSelectorInputs": {
+                    "SampleValue": {
+                        "label": "SampleString"
+                    }
+                },
+                "sourceSelectorOutput": {
+                    "label": "SampleString"
+                },
+                "showSelectedStringFeedback": true,
+                "bridgeIndex": "SampleValue"
+            }
+        },
+        "logicSelectorControlBlocks": {
+            "SampleString": {
+                "logicSelectorInstanceTag": "SampleString",
+                "logicSelectorInputs": {
+                    "SampleValue": {
+                        "label": "SampleString"
+                    }
+                }
+            }
+        },
+        "presets": {
+            "SampleString": {
+                "label": "SampleString",
+                "presetName": "SampleString",
+                "presetId": 0,
+                "presetIndex": 0
+            }
+        },
+        "stateControlBlocks": {
+            "SampleString": {
+                "enabled": true,
+                "label": "SampleString",
+                "stateInstanceTag": "SampleString",
+                "subscriptionInstanceTag": "SampleString",
+                "index": 0,
+                "bridgeIndex": "SampleValue"
+            }
+        },
+        "meterControlBlocks": {
+            "SampleString": {
+                "enabled": true,
+                "label": "SampleString",
+                "meterInstanceTag": "SampleString",
+                "index": 0,
+                "meterData": {
+                    "meterMinimum": 0,
+                    "meterMaximum": 0,
+                    "defaultPollTime": 0
+                },
+                "bridgeIndex": "SampleValue",
+                "subscribeOnStart": true
+            }
+        },
+        "logicMeterControlBlocks": {
+            "SampleString": {
+                "enabled": true,
+                "label": "SampleString",
+                "meterInstanceTag": "SampleString",
+                "index": 0,
+                "bridgeIndex": "SampleValue"
+            }
+        },
+        "crosspointStateControlBlocks": {
+            "SampleString": {
+                "enabled": true,
+                "label": "SampleString",
+                "matrixInstanceTag": "SampleString",
+                "index1": 0,
+                "index2": 0,
+                "bridgeIndex": "SampleValue",
+                "pollEnable": true,
+                "pollTimeMs": 0
+            }
+        },
+        "roomCombinerControlBlocks": {
+            "SampleString": {
+                "enabled": true,
+                "label": "SampleString",
+                "roomCombinerInstanceTag": "SampleString",
+                "roomIndex": 0,
+                "isMic": true,
+                "useAbsoluteValue": true,
+                "umuteOnVolChange": true,
+                "incerementAmount": "SampleString",
+                "permissions": 0,
+                "bridgeIndex": "SampleValue",
+                "volumeRepeatRateMs": 0,
+                "volumeHoldTimeoutMs": 0
+            }
+        },
+        "dtmfDecodeControlBlocks": {
+            "SampleString": {
+                "enabled": true,
+                "label": "SampleString",
+                "dtmfDecodeInstanceTag": "SampleString",
+                "index": 0,
+                "bridgeIndex": "SampleValue"
+            }
+        },
+        "tesiraExpanderBlocks": {
+            "SampleString": {
+                "hostname": "SampleString",
+                "index": 0
+            }
+        },
+        "resubscribeString": "SampleString",
+        "levelRangePollIntervalSecs": 0,
+        "faultPollIntervalSecs": 0,
+        "watchdogIntervalSecs": 0,
+        "watchdogPatrolSize": 0,
+        "watchdogSentinels": [
+            "SampleString"
+        ],
+        "volumeHoldTimeoutMs": 0,
+        "presetHoldTimeMs": 0
+    }
+}
+```
+<!-- END Config Example -->
+<!-- START Supported Types -->
+
+<!-- END Supported Types -->
+<!-- START Join Maps -->
+### Join Maps
+
+#### Digitals
+
+| Join | Type (RW) | Description |
+| --- | --- | --- |
+| 1 | R | Device Online |
+| 3501 | R | High to Subscribe - Low to Unsubscribe |
+| 150 | R | Poll Current Route |
+| 1300 | R | State Toggle and Feedback |
+| 1450 | R | State On and Feedback |
+| 1600 | R | State On and Feedback |
+| 2203 | R | Fader Mute Toggle and Feedback |
+| 2204 | R | Fader Mute On and Feedback |
+| 2205 | R | Fader Mute Off and Feedback |
+| 2201 | R | Fader Level Increment |
+| 2202 | R | Fader Level Decrement |
+| 2206 | R | Fader Visible and In Use |
+| 1 | R | Device Online |
+| 1 | R | Trigger control resubscription |
+| 11 | R | Fault monitoring: rising edge turns polling on (config interval, or 60 s), falling edge turns it off. Runtime only, never written to config. Feedback: polling active |
+| 12 | R | Fault monitoring: high while the DSP reports any active fault |
+| 13 | R | Fault monitoring: poll the active fault list once now |
+| 100 | R | Recall Preset Explicitly by Configured Index |
+| 100 | R | Preset saved: pulses high for 2 seconds when the DSP confirms a save (per configured index) |
+| 100 | R | Recall Preset by name |
+| 2001 | R | State Toggle and Feedback |
+| 2002 | R | State On and Feedback |
+| 2003 | R | State On and Feedback |
+| 400 | R | Fader Mute Toggle and Feedback |
+| 600 | R | Fader Mute On and Feedback |
+| 800 | R | Fader Mute Off and Feedback |
+| 1000 | R | Fader Level Increment |
+| 1200 | R | Fader Level Decrement |
+| 200 | R | Fader Visible and In Use |
+| 1 | R | Recall Preset Explicitly by Configured Index |
+| 1 | R | Preset Preset and Configured |
+| 101 | R | Preset saved: pulses high for 2 seconds when the DSP confirms a save (per configured index) |
+| 1 | R | Recall Preset by name |
+| 1 | R | State On and Feedback |
+| 2 | R | State On and Feedback |
+| 3 | R | State Toggle and Feedback |
+| 1 | R | Device Online |
+| 1 | R | Trigger control resubscription |
+| 11 | R | Fault monitoring: rising edge turns polling on (config interval, or 60 s), falling edge turns it off. Runtime only, never written to config. Feedback: polling active |
+| 12 | R | Fault monitoring: high while the DSP reports any active fault |
+| 13 | R | Fault monitoring: poll the active fault list once now |
+| 1 | R | Fader Level Increment |
+| 2 | R | Fader Level Decrement |
+| 3 | R | Fader Mute On and Feedback |
+| 4 | R | Fader Mute Off and Feedback |
+| 5 | R | Fader Mute Toggle and Feedback |
+| 6 | R | Fader Visible and In Use |
+| 1 | R | High to Subscribe - Low to Unsubscribe |
+| 1 | R | Poll Current Route |
+| 1 | R | State Toggle and Feedback |
+| 2 | R | State On and Feedback |
+| 3 | R | State On and Feedback |
+| 1 | R | Poll every output's route |
+
+#### Analogs
+
+| Join | Type (RW) | Description |
+| --- | --- | --- |
+| 3501 | R | Meter Data |
+| 2601 | R | Router output: set the input routed to this output (0 clears) and feedback of the routed input |
+| 150 | R | Source Selector Index Set and Feedback |
+| 2201 | R | Fader Level Set and Feedback |
+| 2202 | R | Fader Type [Speaker / Microphone] |
+| 2204 | R | Fader Control Data [Mic / Speaker] |
+| 2203 | R | Fader Permissions |
+| 11 | R | Fault monitoring: number of active faults |
+| 12 | R | Fault monitoring: worst indicator severity (0 none, 1 minor, 2 major, 3 critical) |
+| 200 | R | Fader Level Set and Feedback |
+| 400 | R | Fader Type [Speaker / Microphone] |
+| 600 | R | Fader Control Data [Mic / Speaker] |
+| 800 | R | Fader Permissions |
+| 11 | R | Fault monitoring: number of active faults |
+| 12 | R | Fault monitoring: worst indicator severity (0 none, 1 minor, 2 major, 3 critical) |
+| 1 | R | Fader Level Set and Feedback |
+| 2 | R | Fader Type [Speaker / Microphone] |
+| 3 | R | Fader Permissions |
+| 4 | R | Fader Control Data [Mic / Speaker] |
+| 1 | R | Meter Data |
+| 1 | R | Source Selector Index Set and Feedback |
+| 1 | R | Route to the first output, set and feedback (same join as OutputRoute for output 1) |
+| 1 | R | Router output: set the input routed to this output (0 clears) and feedback of the routed input |
+
+#### Serials
+
+| Join | Type (RW) | Description |
+| --- | --- | --- |
+| 1 | R | Device Hostname |
+| 2 | R | Device Serial Number |
+| 3 | R | Device Firmware |
+| 4 | R | Device Mac Address |
+| 3501 | R | Meter Label |
+| 2601 | R | Router output: label of the routed input |
+| 150 | R | Source Selector Label |
+| 1300 | R | State Label |
+| 2201 | R | Fader Label |
+| 1 | R | Device Name |
+| 2 | R | Pass discrete commands directly to/from the device |
+| 3 | R | Serial Number of the Device |
+| 4 | R | Firmware of the Device |
+| 5 | R | Hostname of the Device |
+| 6 | R | IP Address of the Device |
+| 7 | R | Mac Address of the Device |
+| 11 | R | Fault monitoring: worst indicator id, e.g. INDICATOR_MAJOR_IN_DEVICE |
+| 12 | R | Fault monitoring: worst indicator name, e.g. Major Fault in Device |
+| 13 | R | Fault monitoring: active fault names, comma-separated |
+| 100 | R | Preset Labels as configured for explicit preset recall |
+| 2001 | R | State Label |
+| 200 | R | Fader Label |
+| 400 | R | Fader Raw Level with dB suffix |
+| 1 | R | Preset Labels as configured for explicit preset recall |
+| 1 | R | State Label |
+| 1 | R | Device Name |
+| 2 | R | Pass discrete commands directly to/from the device |
+| 3 | R | Serial Number of the Device |
+| 4 | R | Firmware of the Device |
+| 5 | R | Hostname of the Device |
+| 6 | R | IP Address of the Device |
+| 7 | R | Mac Address of the Device |
+| 11 | R | Fault monitoring: worst indicator id, e.g. INDICATOR_MAJOR_IN_DEVICE |
+| 12 | R | Fault monitoring: worst indicator name, e.g. Major Fault in Device |
+| 13 | R | Fault monitoring: active fault names, comma-separated |
+| 1 | R | Fader Label |
+| 1 | R | Meter Label |
+| 1 | R | Source Selector Label |
+| 2 | R | Source List XSIG -or- Routed String |
+| 1 | R | State Label |
+| 1 | R | Router Label |
+| 2 | R | Source List XSIG -or- Routed String |
+| 101 | R | Router output: label of the routed input |
+<!-- END Join Maps -->
+<!-- START Interfaces Implemented -->
+### Interfaces Implemented
+
+- IRoutingWithFeedback
+- IHasNamedRoutingSlots
+- IDtmfDecode
+- IHasFeedback
+- IStateFeedback
+- ISubscribedComponent
+- IPrivacy
+- IHasStateControlWithFeedback
+- IMeterFeedback
+- IBasicVolumeWithFeedbackAdvanced
+- IVolumeComponent
+- IHasDspPresetSave // extends IDspPresets
+- IBasicVolumeWithFeedback
+- IDeviceInfoProvider
+- IDisposable
+- IHasDspPresetSave
+- ICommunicationMonitor
+- IRoutingSlotInfo
+- IAudioCodecPhonebook
+- IJoinCalls
+- IBridgeAdvanced
+- IKeyName
+- IOnline
+- IHasInputs<string>
+- IRoutingInputs
+- IRoutingOutputs
+<!-- END Interfaces Implemented -->
+<!-- START Base Classes -->
+### Base Classes
+
+- TesiraDspControlPoint
+- EssentialsBridgeableDevice
+- TesiraSourceSelectorControlBlockConfig
+- // extends IDspPresets
+        IDspPresetsDirectRecall
+- TesiraDspSourceSelector
+- StatusMonitorBase
+- JoinMapBaseAdvanced
+- MessengerBase
+- TesiraDspDialerControlPoint
+- AudioCodecBase
+- EssentialsDevice
+- System.IDisposable
+<!-- END Base Classes -->
+<!-- START Public Methods -->
+### Public Methods
+
+- public void SetSource(int data)
+- public void SetDestination(int data)
+- public void GetSourceNames()
+- public void ExecuteSwitch(object inputSelector, object outputSelector, eRoutingSignalType signalType)
+- public void ClearRoute(object outputSelector, eRoutingSignalType signalType)
+- public void GetState()
+- public void StateOn()
+- public void StateOff()
+- public void StateToggle()
+- public void PrivacyModeOff()
+- public void PrivacyModeOn()
+- public void PrivacyModeToggle()
+- public bool RestoreSubscription()
+- public void UnSubscribe()
+- public void SetSubscribed(bool subscribe)
+- public bool IsQuarantined(T component)
+- public bool Quarantine(T component)
+- public bool Release(T component)
+- public void ClearQuarantine()
+- public bool Contains(TComponent component)
+- public void Begin(IEnumerable<TComponent> components)
+- public void ExpectReply(TComponent component, TCommand command)
+- public void MarkAttempted(TComponent component)
+- public bool EndCapture()
+- public bool EndCapture(out IReadOnlyList<TComponent> healthySenders)
+- public void Close()
+- public bool Tick()
+- public void Reset()
+- public void MuteOff()
+- public void MuteOn()
+- public void SetVolume(ushort level)
+- public void GetVolume()
+- public void GetMinLevel()
+- public void GetMaxLevel()
+- public void GetMute()
+- public void MuteToggle()
+- public void VolumeDown(bool press)
+- public void VolumeUp(bool press)
+- public void RunPresetNumber(ushort n)
+- public void RunPreset(string name)
+- public void RunPreset(int id)
+- public void RecallPreset(string key)
+- public void SavePreset(string key)
+- public void GetState()
+- public void StateOn()
+- public void StateOff()
+- public void StateToggle()
+- public void MuteOff()
+- public void MuteOn()
+- public void SetVolume(ushort level)
+- public void SetRoomGroup(ushort group)
+- public void GetVolume()
+- public void GetMinLevel()
+- public void GetMaxLevel()
+- public void GetMute()
+- public void GetRoomGroup()
+- public void MuteToggle()
+- public void VolumeDown(bool press)
+- public void VolumeUp(bool press)
+- public void GetDeviceInfo()
+- public void OnDeviceInfoChanged()
+- public void UpdateDeviceInfo()
+- public void Set(bool press)
+- public void Press()
+- public void Release()
+- public void Cancel()
+- public void Dispose()
+- public void Start()
+- public void Stop()
+- public void SetPolling(int intervalSecs)
+- public void PollNow()
+- public void LinkFaultJoins(BasicTriList trilist, JoinDataComplete enable, JoinDataComplete hasFault,
+            JoinDataComplete pollNow, JoinDataComplete count, JoinDataComplete severity,
+            JoinDataComplete faultId, JoinDataComplete faultName, JoinDataComplete faultList)
+- public void SetFaultPolling(int intervalSecs)
+- public void PollFaults()
+- public void SendLine(string s, bool bypassTxQueue = false)
+- public void SendLineRaw(string s, bool bypassTxQueue = false)
+- public void RunPresetNumber(ushort n)
+- public void EnqueuePassthru(string data)
+- public void RunPreset(string name)
+- public void RunPreset(int id)
+- public void RecallPreset(string key)
+- public void SavePreset(string key)
+- public void Resubscribe()
+- public void UpdateDeviceInfo()
+- public void SetSource(int data)
+- public void GetSourceNames()
+- public void ExecuteSwitch(object inputSelector, object outputSelector, eRoutingSignalType signalType)
+- public void ClearRoute(object outputSelector, eRoutingSignalType signalType)
+- public void Pulse()
+- public void Dispose()
+- public void MarkNeeded(string key, bool fullSetup)
+- public void MarkRestoreSent(string key)
+- public void ExpectSubscribe(string key)
+- public void Acknowledge(string key, bool isSubscribe)
+- public void Fail(string key)
+- public bool IsRestored(string key)
+- public bool IsPending(string key)
+- public bool NeedsFullSetup(string key)
+- public bool Complete(string key)
+- public void Clear()
+- public void Set(bool isUp, bool press)
+- public void Press(bool isUp)
+- public void Release(bool isUp)
+- public void Cancel()
+- public void Dispose()
+- public void Dispose()
+- public void PollingTurnedOff()
+- public bool IsFaultReply(string queuedAttributeCode)
+- public bool ShouldApply(string queuedAttributeCode)
+- public bool MarkUnavailable(string key, string target)
+- public bool MarkAvailable(string key, string target, out bool targetRecovered)
+- public bool Contains(string key)
+- public void Clear()
+- public object ReadValue()
+- public uint GetOutputRoute(uint output)
+- public void SetSource(int data)
+- public void RouteOutput(uint output, uint input)
+- public void SetDestination(int data)
+- public void GetSourceNames()
+- public void ExecuteSwitch(object inputSelector, object outputSelector, eRoutingSignalType signalType)
+- public void ClearRoute(object outputSelector, eRoutingSignalType signalType)
+- public void HandleRouteChange(
+            RoutingOutputPort outputPort,
+            RoutingInputPort inputPort,
+            eRoutingSignalType signalType)
+- public void OnAppearanceCallStatusChanged(TesiraCallAppearance appearance)
+- public void Conference(int callAppearance = 0)
+- public void ConferenceAllActive()
+- public void LeaveConference(int callAppearance = 0)
+- public void JoinCall(CodecActiveCallItem activeCall)
+- public void JoinAllCalls()
+- public void SubscribeOnly()
+- public void PollPhonebook()
+- public void SetPhonebookEntry(int index, string name, string number)
+- public void DialPhonebookEntry(int index)
+- public void Dial(string number, int callAppearance = 0)
+- public void EndCall(int callAppearance = 0)
+- public void Hold(int callAppearance = 0)
+- public void Resume(int callAppearance = 0)
+- public void Redial(int callAppearance = 0)
+- public void Flash()
+- public void AutoAnswerOn()
+- public void AutoAnswerOff()
+- public void AutoAnswerToggle()
+- public void DoNotDisturbOn()
+- public void DoNotDisturbOff()
+- public void DoNotDisturbToggle()
+- public void Subscribe()
+- public void Unsubscribe()
+- public void ParseGetMessage(string attributeCode, string message)
+- public void SetOffHookFromHookState(bool offHook)
+- public void SetDialString(string data)
+- public void Dial()
+- public void Dial(string number)
+- public void OnHook()
+- public void OffHook()
+- public void Answer()
+- public void End()
+- public void HoldCall()
+- public void ResumeCall()
+- public void HoldToggle()
+- public void Conference()
+- public void LeaveConference()
+- public void Redial()
+- public void Flash()
+- public void SendDtmf(string digit)
+- public void SendKeypad(TesiraDspDialer.EKeypadKeys data)
+- public void SetData(string data, string macData)
+- public void UpdateDeviceInfo()
+- public bool SetLevel(ushort level)
+- public bool SetMute(bool muted)
+- public bool Step(bool up, ushort rawStep)
+- public bool Step(bool up, ushort rawStep, out bool pastEnd)
+- public void FireUpdate()
+- public void Select()
+- public void FireUpdate()
+- public void RunPreset(string name)
+- public void RecallPreset(string key)
+- public void SavePreset(string key)
+- public void UpdateDeviceInfo()
+- public void SetIsOnline(bool online)
+- public void SetCommStatus(string status)
+- public void SetStatus(MonitorStatus status)
+- public void Refresh()
+- public bool HasOutput(uint output)
+- public bool HasInput(uint input)
+- public uint Get(uint output)
+- public RouteResult Route(uint output, uint input)
+- public void ExecuteSwitch(object inputSelector, object outputSelector, eRoutingSignalType signalType)
+- public void ClearRoute(object outputSelector, eRoutingSignalType signalType)
+- public void SimulateRoute(uint output, uint input)
+- public uint GetOutputRoute(uint output)
+- public void ReportRoutes()
+- public void FireUpdate()
+- public void ForcePublishState()
+- public void SetVolume(ushort level)
+- public void VolumeUp(bool pressRelease)
+- public void VolumeDown(bool pressRelease)
+- public void MuteOn()
+- public void MuteOff()
+- public void MuteToggle()
+- public void ForceFireUpdate()
+- public void ForceFireUpdate()
+- public void Add(object key)
+- public void Remove(object key)
+- public bool Has(object key)
+- public void Clear()
+- public bool Enqueue(T item, bool isBackground)
+- public bool TryDequeue(out T item)
+- public void Clear()
+- public bool IsEchoOfOutstanding(string line)
+- public void HandleResponse(string response)
+- public void EnqueueCommand(QueuedCommand commandToEnqueue)
+- public void EnqueueCommand(string command, bool sendLineRaw = false, int priority = (int)
+- public void SendNextQueuedCommand()
+- public void Dispose()
+- public void Clear()
+- public void ClearPending()
+- public bool HasPendingLevelChange(ISubscribedComponent controlPoint)
+- public void Enqueue(T item, int priority)
+- public bool TryDequeue(out T item)
+- public bool TryPeek(out T item)
+- public void Clear()
+- public void Tracks_Each_Key_Separately()
+- public void Stays_Pending_Until_Every_Add_Is_Removed()
+- public void Remove_Without_Add_Is_Ignored()
+- public void Clear_Drops_Everything()
+- public void Matches_Only_The_Verb_After_The_Instance_Tag(string? command, bool expected)
+- public void TryGetRawLevelTarget_Finds_The_Tag_Attribute_And_Channel(string? command, string? expectedTag, string? expectedAttribute, int expectedIndex)
+- public void RawKey_Is_Case_Insensitive_And_Per_Channel()
+- public void Slot_key_resolves_to_the_inputs_index()
+- public void Existing_callers_selector_still_resolves()
+- public void Clear_route_sentinel_resolves_to_zero()
+- public void Unknown_label_is_rejected_rather_than_sent_to_the_dsp()
+- public void Null_selector_is_rejected()
+- public void Null_input_selector_is_input_zero_so_a_cleared_route_reaches_the_dsp()
+- public void Input_resolve_still_maps_slot_keys_and_rejects_unknown_labels()
+- public void Untyped_resolve_passes_a_non_string_through()
+- public void Classify_Matches_Hardware_Replies(string? response, ProbeReply expected)
+- public void IsSubscribeCommand(string? command, bool expected)
+- public void Default_Sentinel_Is_The_First_Candidate_And_The_Patrol_Rotates()
+- public void Configured_Sentinels_Are_Probed_Every_Tick_And_Left_Out_Of_The_Patrol()
+- public void Sentinels_That_Are_Not_Candidates_Fall_Back_To_The_First_Candidate()
+- public void Quarantined_Components_Leave_The_Patrol_And_One_Is_Probed_Last()
+- public void Quarantined_Probe_Rotates_One_Per_Tick()
+- public void All_Quarantined_Still_Probes_One_So_A_Returning_Design_Is_Seen()
+- public void Quarantined_Snapshot_And_Clear()
+- public void Release_Returns_One_Component_To_The_Patrol()
+- public void No_Candidates_Means_Nothing_To_Probe()
+- public void Patrol_Smaller_Than_Size_Takes_What_There_Is()
+- public void Closes_When_Every_Expected_Reply_Is_Healthy()
+- public void Sender_Is_Healthy_Only_After_Its_Last_Reply_And_All_Healthy()
+- public void A_Healthy_Reply_During_Capture_Does_Not_Settle_A_Sender_Still_Queueing()
+- public void Senders_Answered_Healthy_During_Capture_Are_Reported_When_It_Ends()
+- public void A_Rejected_Subscribe_Keeps_The_Sender_Unhealthy(bool replyDuringCapture)
+- public void One_Config_Error_Keeps_The_Sender_Unhealthy_In_Either_Order(bool missingMuteFirst)
+- public void A_Lost_Reply_Closes_The_Batch_At_Once()
+- public void A_Subscribe_Queued_Before_The_Probe_Does_Not_Take_The_Probes_Place()
+- public void Commands_From_Non_Members_Are_Not_Expected()
+- public void Commands_Queued_After_Capture_Ends_Are_Not_Expected()
+- public void A_Batch_Where_Nothing_Was_Queued_Closes_At_End_Of_Capture()
+- public void Reply_Arriving_During_Capture_Does_Not_Close_Early()
+- public void Reports_Members_Whose_Probe_Queued_Nothing()
+- public void A_Probe_Rejected_By_A_Full_Queue_Is_Not_Reported_As_Silent()
+- public void Contains_Is_False_Once_Closed()
+- public void IsBackground_Puts_Only_Subscriptions_In_The_Background(string? command, bool expected)
+- public void IsReadOrSubscription_Excludes_Writes(string? command, bool expected)
+- public void Foreground_Items_Come_Out_First_Each_Lane_In_Order()
+- public void A_Foreground_Item_Queued_Mid_Burst_Goes_Next()
+- public void A_Steady_Foreground_Stream_Still_Lets_Background_Items_Through()
+- public void A_Foreground_Run_With_Nothing_Waiting_Does_Not_Count()
+- public void Capacity_Counts_Both_Lanes()
+- public void Clear_Empties_Both_Lanes()
+- public void SetCommand_Quotes_The_Tag_And_Sends_Output_Then_Input(uint output, uint input, string expected)
+- public void Get_Subscribe_And_Unsubscribe_Name_The_Output()
+- public void TryParseSubscriptionOutput_Reads_The_Output_From_The_Name(string? name, bool ok, uint output)
+- public void SubscriptionName_Round_Trips()
+- public void GetAttributeCode_Round_Trips()
+- public void TryParseInput_Accepts_A_Single_Value(string? value, bool ok, uint input)
+- public void Reports_Each_Target_Becoming_Unavailable_Once()
+- public void Stays_Unavailable_Until_Every_Unavailable_Target_Answers()
+- public void Reports_A_Target_Recovering_While_Another_Is_Still_Down()
+- public void A_Successful_Reply_From_An_Available_Control_Changes_Nothing()
+- public void Lists_Keys_Sorted_And_Ignores_Empty_Keys()
+- public void Short_Press_Recalls_On_Release()
+- public void Hold_Saves_And_The_Release_Does_Nothing()
+- public void Hold_Timer_Firing_After_Release_Does_Not_Save()
+- public void Stale_Hold_Callback_From_An_Earlier_Press_Is_Ignored()
+- public void Cancel_Drops_A_Pending_Press_Without_Recall_Or_Save()
+- public void Release_Without_Press_Does_Nothing()
+- public void Each_Press_Gets_Exactly_One_Action()
+- public void Real_Timer_Saves_After_The_Hold_Time()
+- public void ActiveChannel_Returns_The_1_Based_True_Channel_Or_0(string? value, int expected)
+- public void ChannelCount_Counts_The_Channels(string? value, int expected)
+- public void Applies_Replies_Sent_Since_The_Last_Turn_Off()
+- public void Drops_A_Periodic_Reply_That_Arrives_After_Polling_Is_Turned_Off()
+- public void A_Stale_Periodic_Reply_Does_Not_Take_A_Later_One_Shots_Place()
+- public void Applies_Every_One_Shot_While_Off()
+- public void Drops_A_One_Shot_Sent_Before_Polling_Is_Turned_Off()
+- public void Recognises_Its_Own_Tags(string? queued, bool expected)
+- public void Normalize_Clamps_To_Ten_Seconds_Through_One_Day(int requested, int expected)
+- public void The_Maximum_Fits_The_Timer()
+- public void Defaults_without_a_deviceInfo_block_or_control_address()
+- public void Control_address_from_a_reused_real_config_is_the_ip()
+- public void Configured_values_win_and_blanks_fall_back()
+- public void Doubles_The_Gap_Up_To_The_Maximum()
+- public void Reset_Starts_Over()
+- public void A_Maximum_Below_One_Retries_Every_Tick()
+- public void A_Failed_Setup_Write_Is_Not_Undone_By_A_Later_Subscribe_Reply()
+- public void Keeps_A_Control_Pending_Until_It_Is_Completed()
+- public void Full_Setup_Once_Asked_For_Stays_Asked_For()
+- public void A_Runtime_Outage_Needs_Subscriptions_Only()
+- public void Full_Setup_Is_Forgotten_Once_Restored()
+- public void Lists_Keys_Sorted_And_Ignores_Empty_Keys()
+- public void A_Restore_Counts_Only_Once_Acknowledged()
+- public void A_Success_Before_Any_Restore_Was_Sent_Does_Not_Count()
+- public void A_Failed_Restore_Command_Undoes_It_Even_After_A_Success()
+- public void An_Unavailable_Reply_After_The_Restore_Undoes_It()
+- public void A_Rejected_Or_Discarded_Restore_Stays_Pending()
+- public void Unknown_Keys_Are_Ignored()
+- public void Once_A_Subscribe_Is_Queued_Only_A_Subscribe_Reply_Acknowledges()
+- public void A_Read_Answered_Before_The_Subscribe_Was_Queued_No_Longer_Counts()
+- public void A_Polled_Control_Is_Acknowledged_By_Its_State_Read()
+- public void A_Subscribe_Expected_Before_Any_Restore_Is_Ignored()
+- public void IsError_Recognizes_Every_Ttp_Error_Token(string? line, bool expected)
+- public void IsUnavailable_Is_Only_Cannot_Deliver(string? line, bool expected)
+- public void TargetOf_Returns_The_Commands_Instance_Tag(string? command, string expected)
+- public void IsEchoOf_Matches_The_Command_Text_Only(string? line, string? command, bool expected)
+- public void A_Signed_Tag_Echo_Looks_Like_An_Error_So_The_Echo_Check_Must_Come_First()
+- public void VerbOf_Returns_The_Word_After_The_Instance_Tag(string? command, string expected)
+- public void IsSuccess_Is_Ok_Or_Already_Subscribed(string? line, bool expected)
+- public void Every_Output_Starts_Cleared()
+- public void Routes_Each_Output_Independently()
+- public void Input_Zero_Clears_Only_That_Output()
+- public void The_Same_Route_Again_Is_Unchanged()
+- public void Refuses_An_Unconfigured_Output_Or_Input()
+- public void Snapshot_Is_A_Copy()
+- public void Config_Class_Exists()
+- public void Config_Block_Class_Exists_And_Is_Constructible(string className)
+- public void Config_Property_Has_JsonPropertyAttribute(string jsonName)
+- public void ExpanderBlock_Property_Has_JsonPropertyAttribute(string jsonName)
+- public void MeterBlock_Property_Has_JsonPropertyAttribute(string jsonName)
+- public void Block_Property_Is_Dictionary_Of_Expected_Value(string propertyName, string expectedValueType)
+- public void Assembly_Loads_Successfully()
+- public void Assembly_Name_Is_Expected()
+- public void Factory_Count_Is_One()
+- public void MockFactory_Exists()
+- public void TesiraFactory_Exists()
+- public void Factory_Has_Parameterless_Constructor()
+- public void MockRouter_Implements_The_Real_Routers_Interfaces(string interfaceName)
+- public void MockConfig_Takes_The_Real_RouterControlBlocks_Format()
+- public void MockRouter_Has_Its_Bench_And_Routing_Methods(string method, int parameterCount)
+- public void Press_Sends_One_Step_And_Arms_Hold_Timer()
+- public void Delay_Then_Repeat_Steps_While_Held_Without_New_Up_Press()
+- public void Callbacks_Queued_Before_Release_Do_Nothing_After_Release()
+- public void Release_While_A_Step_Is_Being_Sent_Does_Not_Rearm_The_Repeat()
+- public void Stale_Delay_Callback_Does_Nothing_After_Release_And_Repress()
+- public void Releasing_One_Direction_Keeps_The_Other_Hold_Timeout_Armed()
+- public void Hold_Timeout_Releases_Only_Its_Direction()
+- public void Stale_Hold_Callback_Does_Not_Release_A_Newer_Press()
+- public void Cancel_Stops_Repeats_In_Both_Directions_But_Keeps_Hold_Timers()
+- public void Zero_Hold_Timeout_Disables_The_Safety_Stop()
+- public void Real_Timers_Repeat_Then_Stop_On_Release()
+- public void Parses_The_Hardware_Reply()
+- public void Parses_The_Terse_Hardware_Reply_Like_The_Verbose_One()
+- public void Terse_Indicators_Are_Named_From_Their_Text(string reply, int severity, string id)
+- public void No_Fault_Reports_The_None_Indicator_Like_UDM()
+- public void Worst_Indicator_Wins_And_Faults_Are_Counted_Across_Indicators()
+- public void Signature_Changes_Only_With_The_Active_Faults()
+- public void Returns_Null_For_Anything_But_A_Value_List(string? reply)
+- public void Unknown_Indicator_With_Faults_Counts_As_A_Fault()
+- public void Empty_List_Is_No_Fault()
+- public void Factory_Sets_MinimumEssentialsFrameworkVersion_To_3_0_0()
+- public void Factory_Sets_TypeNames()
+- public void Factory_Source_Contains_TypeName(string typeName)
+- public void No_Duplicate_TypeNames_In_Factory_Source()
+- public void Level_and_mute_block_changes_both()
+- public void Unchanged_values_report_no_change()
+- public void Mute_only_block_keeps_level_zero_and_ignores_level_changes()
+- public void Level_only_block_stays_unmuted_and_ignores_mute_changes()
+- public void Percent_scales_to_raw(ushort percent, ushort raw)
+- public void Fader_config_defaults_to_level_and_mute()
+- public void Fader_config_reads_the_real_fader_flags()
+- public void Step_is_incrementAmount_dB_over_the_range(string amount, double min, double max, ushort raw)
+- public void No_usable_amount_keeps_the_legacy_step(string amount)
+- public void An_empty_or_inverted_range_keeps_the_legacy_step()
+- public void Steps_stop_at_the_ends_of_the_range()
+- public void A_mute_only_block_never_steps()
+- public void Fader_config_reads_the_real_volume_keys_with_real_defaults()
+- public void A_reused_real_fader_config_with_a_null_hold_timeout_deserializes()
+- public void The_device_hold_timeout_defaults_as_the_real_driver()
+- public void Concurrent_steps_are_not_lost()
+- public void A_step_past_an_end_lands_on_it_and_reports_it()
+- public void A_mute_only_block_reports_no_past_end_step()
+<!-- END Public Methods -->
+<!-- START Bool Feedbacks -->
+### Bool Feedbacks
+
+- StateFeedback
+- SubscribedFeedback
+- StateFeedback
+- PrivacyModeIsOnFeedback
+- SubscribedFeedback
+- MuteFeedback
+- VisibleFeedback
+- CrosspointStateFeedback
+- MuteFeedback
+- VisibleFeedback
+- PollingEnabledFeedback
+- HasFaultFeedback
+- Feedback
+- AutoAnswerFeedback
+- DoNotDisturbFeedback
+- ConferenceActiveFeedback
+- LineReadyFeedback
+- DialToneDetectedFeedback
+- BusyToneDetectedFeedback
+- RingBackToneDetectedFeedback
+- RingDetectedFeedback
+- DialingFeedback
+- OffHookFeedback
+- IncomingCallFeedback
+- HoldCallFeedback
+- InConferenceFeedback
+- IsOnline
+- MuteFeedback
+<!-- END Bool Feedbacks -->
+<!-- START Int Feedbacks -->
+### Int Feedbacks
+
+- SourceIndexFeedback
+- MeterFeedback
+- MeterFeedback
+- VolumeLevelFeedback
+- TypeFeedback
+- ControlTypeFeedback
+- PermissionsFeedback
+- VolumeLevelFeedback
+- TypeFeedback
+- PermissionsFeedback
+- RoomGroupFeedback
+- ActiveFaultCountFeedback
+- FaultSeverityFeedback
+- SourceIndexFeedback
+- SourceIndexFeedback
+- ConferenceCountFeedback
+- CallStateFeedback
+- SourceIndexFeedback
+- VolumeLevelFeedback
+<!-- END Int Feedbacks -->
+<!-- START String Feedbacks -->
+### String Feedbacks
+
+- SourceNamesFeedback
+- RoutedSourceNameFeedback
+- LastDetectedToneFeedback
+- NameFeedback
+- RawLevelFeedback
+- IpAddressFeedback
+- HostnameFeedback
+- SerialNumberFeedback
+- FirmwareFeedback
+- MacAddressFeedback
+- MakeFeedback
+- ModelFeedback
+- LabelFeedback
+- FaultIdFeedback
+- FaultNameFeedback
+- FaultListFeedback
+- CommandPassthruFeedback
+- SourceNamesFeedback
+- RoutedSourceNameFeedback
+- SourceNamesFeedback
+- RoutedSourceNameFeedback
+- LastDialedFeedback
+- NameFeedback
+- DisplayNumberFeedback
+- DialStringFeedback
+- CallerIdNumberFeedback
+- CallerIdNameFeedback
+- CallerIdTimestampFeedback
+- NameFeedback
+- RoutedSourceNameFeedback
+<!-- END String Feedbacks -->
