@@ -192,6 +192,41 @@ public class ProbeBatchTests
         afterMute.Should().BeTrue();
     }
 
+    [Fact]
+    public void A_Healthy_Reply_During_Capture_Does_Not_Settle_A_Sender_Still_Queueing()
+    {
+        var mute = C("fader mute"); var level = C("fader level");
+        var batch = new ProbeBatch<string, Cmd>();
+        batch.Begin(new[] { "fader" });
+        batch.ExpectReply("fader", mute);
+        batch.Record(mute, "-ERR ALREADY_SUBSCRIBED", out var early);
+        early.Should().BeFalse("the fader may still queue its level subscribe");
+
+        batch.ExpectReply("fader", level);
+        batch.EndCapture(out var healthy).Should().BeTrue();
+        healthy.Should().BeEmpty("the level reply is still outstanding");
+
+        batch.Record(level, "-ERR address not found: [0 0 0]", out var late);
+        late.Should().BeFalse();
+    }
+
+    [Fact]
+    public void Senders_Answered_Healthy_During_Capture_Are_Reported_When_It_Ends()
+    {
+        var mute = C("fader mute"); var level = C("fader level"); var state = C("state");
+        var batch = new ProbeBatch<string, Cmd>();
+        batch.Begin(new[] { "fader", "state" });
+        batch.ExpectReply("fader", mute);
+        batch.ExpectReply("fader", level);
+        batch.ExpectReply("state", state);
+        batch.Record(mute, "-ERR ALREADY_SUBSCRIBED", out _);
+        batch.Record(level, "-ERR ALREADY_SUBSCRIBED", out _);
+        batch.Record(state, "-ERR address not found: [0 0 0]", out _);
+
+        batch.EndCapture(out var healthy).Should().BeFalse("every reply is in");
+        healthy.Should().Equal("fader");
+    }
+
     [Theory]
     [InlineData(true)]
     [InlineData(false)]

@@ -1100,7 +1100,10 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
                     // IsSubscribed) can't stand in as the default sentinel.
                     foreach (var silent in probeBatch.MembersWithoutExpectedReplies())
                         silentProbes.Add(silent);
-                    probeBatch.EndCapture();
+                    // Probes answered (all healthy) before capture ended: subscribed after all.
+                    probeBatch.EndCapture(out var healthyDuringCapture);
+                    foreach (var component in healthyDuringCapture)
+                        watchdogPatrol.Release(component);
                 }
             }
             catch (Exception ex)

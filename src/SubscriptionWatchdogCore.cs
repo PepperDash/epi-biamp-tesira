@@ -169,6 +169,7 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
         // component's probe can be several subscribes (a fader's level and mute), judged together.
         private readonly Dictionary<TCommand, TComponent> senders = new Dictionary<TCommand, TComponent>();
         private readonly HashSet<TComponent> notHealthy = new HashSet<TComponent>();
+        private readonly HashSet<TComponent> replied = new HashSet<TComponent>();
 
         /// <summary>A batch has been started and not yet closed.</summary>
         public bool IsOpen { get; private set; }
@@ -221,12 +222,21 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
         /// Ends capture. If no member queued a probe (all opted out), the batch closes.
         /// </summary>
         /// <returns>true if the batch is still waiting for replies</returns>
-        public bool EndCapture()
+        public bool EndCapture() => EndCapture(out _);
+
+        /// <param name="healthySenders">
+        /// Members whose probe replies all arrived during capture and were all healthy. A reply during
+        /// capture can't settle its sender, which may still be queueing more subscribes.
+        /// </param>
+        public bool EndCapture(out IReadOnlyList<TComponent> healthySenders)
         {
             Capturing = false;
+            healthySenders = replied.Where(IsSettledHealthy).ToList();
             if (Outstanding == 0) Close();
             return IsOpen;
         }
+
+        private bool IsSettledHealthy(TComponent sender) => !notHealthy.Contains(sender) && !senders.ContainsValue(sender);
 
         /// <summary>
         /// Records the reply to one of this batch's probe commands. A <see cref="ProbeReply.Lost"/>
@@ -236,8 +246,9 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
         public ProbeReply? Record(TCommand command, string response) => Record(command, response, out _);
 
         /// <param name="senderHealthy">
-        /// true when this was the sender's last outstanding probe reply and all of its replies were
-        /// healthy (ALREADY_SUBSCRIBED)
+        /// true when capture has ended, this was the sender's last outstanding probe reply and all of
+        /// its replies were healthy (ALREADY_SUBSCRIBED). Senders settled during capture are reported
+        /// by <see cref="EndCapture(out IReadOnlyList{TComponent})"/> instead.
         /// </param>
         public ProbeReply? Record(TCommand command, string response, out bool senderHealthy)
         {
@@ -249,8 +260,9 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
             if (senders.TryGetValue(command, out var sender))
             {
                 senders.Remove(command);
+                replied.Add(sender);
                 if (reply != ProbeReply.Healthy) notHealthy.Add(sender);
-                senderHealthy = !notHealthy.Contains(sender) && !senders.ContainsValue(sender);
+                senderHealthy = !Capturing && IsSettledHealthy(sender);
             }
 
             if (reply == ProbeReply.Lost || (!Capturing && Outstanding == 0)) Close();
@@ -271,6 +283,7 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
             outstanding.Clear();
             senders.Clear();
             notHealthy.Clear();
+            replied.Clear();
         }
     }
 }
