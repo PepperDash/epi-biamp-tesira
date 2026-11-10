@@ -1371,7 +1371,7 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
             var released = 0;
             lock (watchdogLock)
             {
-                reply = probeBatch.Record(command, response);
+                reply = probeBatch.Record(command, response, out var probeHealthy);
 
                 // Any subscribe that succeeded or was already there means the component is subscribed,
                 // probe or not: a healthy reply publishes nothing to set IsSubscribed again.
@@ -1385,8 +1385,9 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
                     released = watchdogPatrol.QuarantinedCount;
                     watchdogPatrol.ClearQuarantine();
                 }
-                // Subscribed after all (e.g. a manual Resubscribe restored it): back into the patrol.
-                if (reply == ProbeReply.Healthy) watchdogPatrol.Release(component);
+                // Subscribed after all (e.g. a manual Resubscribe restored it): back into the patrol, but
+                // only once every subscribe of its probe is healthy (a fader's level and mute are separate).
+                if (probeHealthy) watchdogPatrol.Release(component);
                 quarantined = watchdogPatrol.QuarantinedCount;
             }
 

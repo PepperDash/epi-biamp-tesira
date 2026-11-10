@@ -165,6 +165,11 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
         // a member had queued before the probe can't take a probe's place.
         private readonly HashSet<TCommand> outstanding = new HashSet<TCommand>();
 
+        // Which member sent each probe command, and members with any reply that wasn't healthy: a
+        // component's probe can be several subscribes (a fader's level and mute), judged together.
+        private readonly Dictionary<TCommand, TComponent> senders = new Dictionary<TCommand, TComponent>();
+        private readonly HashSet<TComponent> notHealthy = new HashSet<TComponent>();
+
         /// <summary>A batch has been started and not yet closed.</summary>
         public bool IsOpen { get; private set; }
 
@@ -177,9 +182,7 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
 
         public void Begin(IEnumerable<TComponent> components)
         {
-            members.Clear();
-            membersWithReplies.Clear();
-            outstanding.Clear();
+            Reset();
             foreach (var c in components ?? Enumerable.Empty<TComponent>())
             {
                 if (c != null) members.Add(c);
@@ -193,6 +196,7 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
         {
             if (!Capturing || component == null || command == null || !members.Contains(component)) return;
             outstanding.Add(command);
+            senders[command] = component;
             membersWithReplies.Add(component);
         }
 
@@ -229,11 +233,25 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
         /// reply closes the batch; otherwise it closes once every expected reply is in.
         /// </summary>
         /// <returns>the reply's classification, or null when the command isn't one this batch is waiting for</returns>
-        public ProbeReply? Record(TCommand command, string response)
+        public ProbeReply? Record(TCommand command, string response) => Record(command, response, out _);
+
+        /// <param name="senderHealthy">
+        /// true when this was the sender's last outstanding probe reply and all of its replies were
+        /// healthy (ALREADY_SUBSCRIBED)
+        /// </param>
+        public ProbeReply? Record(TCommand command, string response, out bool senderHealthy)
         {
+            senderHealthy = false;
             if (!IsOpen || command == null || !outstanding.Remove(command)) return null;
 
             var reply = ProbeReplies.Classify(response);
+
+            if (senders.TryGetValue(command, out var sender))
+            {
+                senders.Remove(command);
+                if (reply != ProbeReply.Healthy) notHealthy.Add(sender);
+                senderHealthy = !notHealthy.Contains(sender) && !senders.ContainsValue(sender);
+            }
 
             if (reply == ProbeReply.Lost || (!Capturing && Outstanding == 0)) Close();
             return reply;
@@ -243,9 +261,16 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
         {
             IsOpen = false;
             Capturing = false;
+            Reset();
+        }
+
+        private void Reset()
+        {
             members.Clear();
             membersWithReplies.Clear();
             outstanding.Clear();
+            senders.Clear();
+            notHealthy.Clear();
         }
     }
 }

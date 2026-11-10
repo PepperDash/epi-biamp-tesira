@@ -170,6 +170,45 @@ public class ProbeBatchTests
         batch.IsOpen.Should().BeFalse();
     }
 
+    private static ProbeBatch<string, Cmd> FaderBatch(Cmd level, Cmd mute)
+    {
+        var batch = new ProbeBatch<string, Cmd>();
+        batch.Begin(new[] { "fader" });
+        batch.ExpectReply("fader", level);
+        batch.ExpectReply("fader", mute);
+        batch.EndCapture();
+        return batch;
+    }
+
+    [Fact]
+    public void Sender_Is_Healthy_Only_After_Its_Last_Reply_And_All_Healthy()
+    {
+        var level = C("fader level"); var mute = C("fader mute");
+        var batch = FaderBatch(level, mute);
+
+        batch.Record(level, "-ERR ALREADY_SUBSCRIBED", out var afterLevel);
+        afterLevel.Should().BeFalse("the mute reply is still outstanding");
+        batch.Record(mute, "-ERR ALREADY_SUBSCRIBED", out var afterMute);
+        afterMute.Should().BeTrue();
+    }
+
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void One_Config_Error_Keeps_The_Sender_Unhealthy_In_Either_Order(bool missingMuteFirst)
+    {
+        var level = C("fader level"); var mute = C("fader mute");
+        var batch = FaderBatch(level, mute);
+        var first = missingMuteFirst ? mute : level;
+        var second = missingMuteFirst ? level : mute;
+
+        batch.Record(first, first == mute ? "-ERR address not found: [0 0 0]" : "-ERR ALREADY_SUBSCRIBED", out var a);
+        batch.Record(second, second == mute ? "-ERR address not found: [0 0 0]" : "-ERR ALREADY_SUBSCRIBED", out var b);
+
+        a.Should().BeFalse();
+        b.Should().BeFalse();
+    }
+
     [Fact]
     public void A_Lost_Reply_Closes_The_Batch_At_Once()
     {
