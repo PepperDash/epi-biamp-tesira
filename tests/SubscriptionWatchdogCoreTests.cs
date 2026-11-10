@@ -230,6 +230,36 @@ public class ProbeBatchTests
     [Theory]
     [InlineData(true)]
     [InlineData(false)]
+    public void A_Rejected_Subscribe_Keeps_The_Sender_Unhealthy(bool replyDuringCapture)
+    {
+        var mute = C("fader mute");
+        var batch = new ProbeBatch<string, Cmd>();
+        batch.Begin(new[] { "fader" });
+        batch.ExpectReply("fader", mute);
+        batch.MarkAttempted("fader"); // the level subscribe was rejected (queue full)
+
+        var healthy = new List<string>();
+        bool settled;
+        if (replyDuringCapture)
+        {
+            batch.Record(mute, "-ERR ALREADY_SUBSCRIBED", out settled);
+            batch.EndCapture(out var reported);
+            healthy.AddRange(reported);
+        }
+        else
+        {
+            batch.EndCapture(out var reported);
+            healthy.AddRange(reported);
+            batch.Record(mute, "-ERR ALREADY_SUBSCRIBED", out settled);
+        }
+
+        settled.Should().BeFalse("the level subscription was never checked");
+        healthy.Should().BeEmpty();
+    }
+
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
     public void One_Config_Error_Keeps_The_Sender_Unhealthy_In_Either_Order(bool missingMuteFirst)
     {
         var level = C("fader level"); var mute = C("fader mute");

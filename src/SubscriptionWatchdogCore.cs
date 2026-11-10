@@ -209,6 +209,8 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
         {
             if (!Capturing || component == null || !members.Contains(component)) return;
             membersWithReplies.Add(component);
+            // A subscribe that never went out wasn't checked, so this probe can't show the component healthy.
+            notHealthy.Add(component);
         }
 
         /// <summary>
