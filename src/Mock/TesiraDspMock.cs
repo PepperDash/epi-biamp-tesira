@@ -34,7 +34,7 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Mock
     /// <summary>
     /// Standalone in-memory stand-in for <see cref="TesiraDsp"/>. Implements the
     /// contracts a Mobile-Control room-plugin cares about — level/mute per fader,
-    /// selectable inputs on the source selector, and DSP presets (recall + save) —
+    /// routable source selectors, switchers and routers, and DSP presets (recall + save) —
     /// with zero hardware, zero comm, zero subscription machinery.
     /// </summary>
     /// <remarks>
@@ -80,6 +80,7 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Mock
 
             RegisterFaders(props.FaderControlBlocks, props.VolumeHoldTimeoutMs);
             RegisterSwitcherControlBlocks(props.SwitcherControlBlocks);
+            RegisterSourceSelectorControlBlocks(props.SourceSelectorControlBlocks);
             RegisterRouterControlBlocks(props.RouterControlBlocks);
             PopulatePresets(props.Presets);
 
@@ -97,11 +98,12 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Mock
             };
 
             this.LogInformation(
-                "TesiraDspMock '{key}' built: {faderCount} fader(s), {presetCount} preset(s), switcherCount={switcherCount}, routerCount={routerCount}",
+                "TesiraDspMock '{key}' built: {faderCount} fader(s), {presetCount} preset(s), switcherCount={switcherCount}, sourceSelectorCount={sourceSelectorCount}, routerCount={routerCount}",
                 Key,
                 props.FaderControlBlocks?.Count ?? 0,
                 props.Presets?.Count ?? 0,
                 props.SwitcherControlBlocks?.Count ?? 0,
+                props.SourceSelectorControlBlocks?.Count ?? 0,
                 props.RouterControlBlocks?.Count ?? 0);
         }
 
@@ -223,15 +225,21 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Mock
                 var cfg = kvp.Value;
                 var name = string.IsNullOrEmpty(cfg?.Label) ? kvp.Key : cfg.Label;
 
-                var labels = new Dictionary<string, string>();
-                var sources = cfg?.EffectiveSources;
-                if (sources != null)
-                {
-                    foreach (var s in sources)
-                        labels[s.Key] = string.IsNullOrEmpty(s.Value?.Label) ? s.Key : s.Value.Label;
-                }
+                var selector = new TesiraDspMockSourceSelector(childKey, name, MockSelectorLayout.ForSwitcher(cfg));
+                DeviceManager.AddDevice(selector);
+                _selectors.Add(selector);
+            }
+        }
 
-                var selector = new TesiraDspMockSourceSelector(childKey, name, labels, cfg?.InitialSource);
+        private void RegisterSourceSelectorControlBlocks(Dictionary<string, TesiraSourceSelectorControlBlockConfig> blocks)
+        {
+            if (blocks == null) return;
+            foreach (var kvp in blocks)
+            {
+                var childKey = string.Format(ChildKeyFormat, Key, kvp.Key);
+                var name = string.IsNullOrEmpty(kvp.Value?.Label) ? kvp.Key : kvp.Value.Label;
+
+                var selector = new TesiraDspMockSourceSelector(childKey, name, MockSelectorLayout.ForSourceSelector(kvp.Value));
                 DeviceManager.AddDevice(selector);
                 _selectors.Add(selector);
             }

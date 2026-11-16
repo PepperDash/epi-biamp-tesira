@@ -36,13 +36,24 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Mock
             = new Dictionary<string, TesiraDspMockFaderConfig>();
 
         /// <summary>
-        /// Optional source-selector blocks — each becomes a child device implementing
-        /// <see cref="PepperDash.Essentials.Core.DeviceTypeInterfaces.IHasInputs{T}"/>.
-        /// Keyed by block key; child device registered as <c>{parentKey}--{blockKey}</c>
-        /// to match the Tesira EPI <c>switcherControlBlocks</c> naming convention.
+        /// Optional switcher blocks, a stand-in for the real EPI's <c>switcherControlBlocks</c>. Each
+        /// becomes a routable <see cref="TesiraDspMockSourceSelector"/> registered as
+        /// <c>{parentKey}--{blockKey}</c>, with the real switcher's ports (see
+        /// <see cref="MockSelectorLayout.ForSwitcher"/>). Takes the mock's <c>sources</c> format or the
+        /// real <c>switcherInputs</c> / <c>switcherOutputs</c>.
         /// </summary>
         [JsonProperty("switcherControlBlocks")]
         public Dictionary<string, TesiraDspMockSourceSelectorConfig> SwitcherControlBlocks { get; set; }
+
+        /// <summary>
+        /// Optional source selector blocks, in the real Tesira EPI's <c>sourceSelectorControlBlocks</c>
+        /// format, so a real config works unchanged. Each becomes a routable
+        /// <see cref="TesiraDspMockSourceSelector"/> registered as <c>{parentKey}--{blockKey}</c>, with the
+        /// real source selector's ports (see <see cref="MockSelectorLayout.ForSourceSelector"/>). Instance
+        /// tags and poll settings are ignored.
+        /// </summary>
+        [JsonProperty("sourceSelectorControlBlocks")]
+        public Dictionary<string, TesiraSourceSelectorControlBlockConfig> SourceSelectorControlBlocks { get; set; }
 
         /// <summary>
         /// Optional router blocks, in the real Tesira EPI's <c>routerControlBlocks</c> format, so a
@@ -152,7 +163,7 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Mock
         public int? VolumeHoldTimeoutMs { get; set; }
     }
 
-    /// <summary>Source-selector entry — sources are keyed and labelled generically.</summary>
+    /// <summary>Switcher entry — sources are keyed and labelled generically, or in the real format.</summary>
     public class TesiraDspMockSourceSelectorConfig
     {
         [JsonProperty("label")]
@@ -173,6 +184,13 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Mock
         /// </summary>
         [JsonProperty("switcherInputs")]
         public Dictionary<string, TesiraDspMockSourceConfig> SwitcherInputs { get; set; }
+
+        /// <summary>
+        /// Real Tesira-format output list, as the real switcher's <c>switcherOutputs</c>. Each becomes an
+        /// output port; with none, routes can't end on the block (as on the real switcher).
+        /// </summary>
+        [JsonProperty("switcherOutputs")]
+        public Dictionary<string, TesiraDspMockSourceConfig> SwitcherOutputs { get; set; }
 
         /// <summary>
         /// Resolved source list — <see cref="Sources"/> if present and non-empty,
