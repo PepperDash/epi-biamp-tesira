@@ -1,5 +1,4 @@
 using System;
-using System.Reflection;
 using PepperDash.Core.Logging;
 using PepperDash.Essentials.Core;
 
@@ -32,11 +31,7 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Mock
         /// <summary>The block has a mute (config <c>hasMute</c>), as on the real fader.</summary>
         public bool HasMute => _model.HasMute;
 
-        // Typed backing fields so ForcePublishState() can call ForceFireUpdate().
-        // The public properties expose them as IntFeedback/BoolFeedback (base types)
-        // to satisfy IBasicVolumeWithFeedback without an explicit interface impl.
-        private readonly ForceFireIntFeedback  _typedVolumeFeedback;
-        private readonly ForceFireBoolFeedback _typedMuteFeedback;
+        private bool _forceFireWarned;
 
         public IntFeedback  VolumeLevelFeedback { get; }
         public BoolFeedback MuteFeedback        { get; }
@@ -69,12 +64,8 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Mock
                 onUpPress: () => { if (_unmuteOnVolChange && _isMuted) MuteOff(); },
                 logWarning: message => this.LogWarning("{key}: {message}", Key, message));
 
-            _typedVolumeFeedback = new ForceFireIntFeedback(key + "-VolumeLevel", () => _volumeLevel);
-            _typedMuteFeedback   = new ForceFireBoolFeedback(key + "-Mute",       () => _isMuted);
-
-            // Assign base-typed properties so the interface contract is satisfied.
-            VolumeLevelFeedback = _typedVolumeFeedback;
-            MuteFeedback        = _typedMuteFeedback;
+            VolumeLevelFeedback = new IntFeedback(key + "-VolumeLevel", () => _volumeLevel);
+            MuteFeedback        = new BoolFeedback(key + "-Mute",       () => _isMuted);
         }
 
         protected override bool CustomActivate()
@@ -94,8 +85,14 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Mock
         /// </summary>
         public void ForcePublishState()
         {
-            _typedVolumeFeedback.ForceFireUpdate();
-            _typedMuteFeedback.ForceFireUpdate();
+            foreach (Feedback feedback in new Feedback[] { VolumeLevelFeedback, MuteFeedback })
+            {
+                if (!MockFeedback.ForceFire(feedback) && !_forceFireWarned)
+                {
+                    _forceFireWarned = true;
+                    this.LogWarning("Can't force-publish {feedback}: Essentials' feedback internals changed; unchanged values won't re-publish", feedback.Key);
+                }
+            }
         }
 
         public void SetVolume(ushort level)
@@ -172,62 +169,6 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Mock
             if (!_isMuted && _volumeLevel == 0)
             {
                 SetVolume(DefaultMuteToggleLevel);
-            }
-        }
-
-        // ── Force-fire feedback helpers ──────────────────────────────────────
-        //
-        // IntFeedback.FireUpdate() and BoolFeedback.FireUpdate() only invoke
-        // OutputChange when the value has changed since the last call, which means
-        // a repeating timer that re-fires the same stored value is a no-op.
-        // These subclasses reset the internal change-tracking field to a sentinel
-        // before calling FireUpdate(), guaranteeing OutputChange fires every time
-        // ForceFireUpdate() is called regardless of current value.
-
-        private sealed class ForceFireIntFeedback : IntFeedback
-        {
-            // Cache the FieldInfo once per type. The private _IntValue field lives
-            // on IntFeedback itself, so we target that declaring type explicitly.
-            private static readonly FieldInfo s_field =
-                typeof(IntFeedback).GetField(
-                    "_IntValue",
-                    BindingFlags.NonPublic | BindingFlags.Instance);
-
-            public ForceFireIntFeedback(string key, Func<int> valueFunc)
-                : base(key, valueFunc) { }
-
-            /// <summary>
-            /// Forces OutputChange to fire with the current value even if unchanged.
-            /// Uses int.MaxValue as sentinel — outside the valid ushort range (0–65535),
-            /// so ValueFunc() can never equal it.
-            /// </summary>
-            public void ForceFireUpdate()
-            {
-                if (s_field == null) throw new MissingFieldException(typeof(IntFeedback).FullName, "_IntValue");
-                s_field.SetValue(this, int.MaxValue);
-                FireUpdate();
-            }
-        }
-
-        private sealed class ForceFireBoolFeedback : BoolFeedback
-        {
-            private static readonly FieldInfo s_field =
-                typeof(BoolFeedback).GetField(
-                    "_BoolValue",
-                    BindingFlags.NonPublic | BindingFlags.Instance);
-
-            public ForceFireBoolFeedback(string key, Func<bool> valueFunc)
-                : base(key, valueFunc) { }
-
-            /// <summary>
-            /// Forces OutputChange to fire with the current mute value even if unchanged.
-            /// Flips the tracking field to the opposite bool, then FireUpdate() detects
-            /// a change back to the actual value.
-            /// </summary>
-            public void ForceFireUpdate()
-            {
-                s_field?.SetValue(this, !BoolValue);
-                FireUpdate();
             }
         }
     }

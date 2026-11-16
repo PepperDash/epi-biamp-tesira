@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using Crestron.SimplSharp;
+using Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Routing;
 using PepperDash.Core;
 using PepperDash.Core.Logging;
 using PepperDash.Essentials.AppServer.Messengers;
@@ -208,6 +209,7 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Mock
                 if (!cfg.VolumeHoldTimeoutMs.HasValue)
                     cfg.VolumeHoldTimeoutMs = volumeHoldTimeoutMs;
                 var childKey = string.Format(ChildKeyFormat, Key, kvp.Key);
+                if (!ChildKeyIsFree(childKey, "fader")) continue;
                 var name = string.IsNullOrEmpty(cfg.Label) ? kvp.Key : cfg.Label;
                 var fader = new TesiraDspMockFader(childKey, name, cfg);
 
@@ -222,10 +224,11 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Mock
             foreach (var kvp in blocks)
             {
                 var childKey = string.Format(ChildKeyFormat, Key, kvp.Key);
+                if (!ChildKeyIsFree(childKey, "switcher")) continue;
                 var cfg = kvp.Value;
                 var name = string.IsNullOrEmpty(cfg?.Label) ? kvp.Key : cfg.Label;
 
-                var selector = new TesiraDspMockSourceSelector(childKey, name, MockSelectorLayout.ForSwitcher(cfg));
+                var selector = new TesiraDspMockSourceSelector(childKey, name, MockSelectorConfig.ForSwitcher(cfg));
                 DeviceManager.AddDevice(selector);
                 _selectors.Add(selector);
             }
@@ -237,9 +240,11 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Mock
             foreach (var kvp in blocks)
             {
                 var childKey = string.Format(ChildKeyFormat, Key, kvp.Key);
+                if (!ChildKeyIsFree(childKey, "source selector")) continue;
                 var name = string.IsNullOrEmpty(kvp.Value?.Label) ? kvp.Key : kvp.Value.Label;
 
-                var selector = new TesiraDspMockSourceSelector(childKey, name, MockSelectorLayout.ForSourceSelector(kvp.Value));
+                var selector = new TesiraDspMockSourceSelector(childKey, name,
+                    SelectorPortLayout.ForSourceSelector(kvp.Value?.SourceSelectorInputs));
                 DeviceManager.AddDevice(selector);
                 _selectors.Add(selector);
             }
@@ -251,12 +256,26 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Mock
             foreach (var kvp in blocks)
             {
                 var childKey = string.Format(ChildKeyFormat, Key, kvp.Key);
+                if (!ChildKeyIsFree(childKey, "router")) continue;
                 var name = string.IsNullOrEmpty(kvp.Value?.Label) ? kvp.Key : kvp.Value.Label;
 
                 var router = new TesiraDspMockRouter(childKey, name, kvp.Value);
                 DeviceManager.AddDevice(router);
                 _routers.Add(router);
             }
+        }
+
+        /// <summary>
+        /// Child keys are <c>{parentKey}--{blockKey}</c> for every block kind, so the same block key in two
+        /// sections (e.g. a switcher and a source selector) would collide. The first one keeps the key.
+        /// </summary>
+        private bool ChildKeyIsFree(string childKey, string blockKind)
+        {
+            if (DeviceManager.GetDeviceForKey(childKey) == null) return true;
+
+            this.LogWarning("Skipping {blockKind} block: device key {childKey} is already used. Block keys must be unique across fader, switcher, source selector and router blocks.",
+                blockKind, childKey);
+            return false;
         }
 
         private void PopulatePresets(Dictionary<string, TesiraDspMockPresetConfig> presetConfigs)

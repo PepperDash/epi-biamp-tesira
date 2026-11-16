@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Reflection;
 using Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Routing;
 using PepperDash.Core.Logging;
 using PepperDash.Essentials.Core;
@@ -13,10 +12,12 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Mock
     /// <summary>
     /// In-memory source selector or switcher block, a stand-in for <see cref="TesiraDspSourceSelector"/>
     /// (<c>sourceSelectorControlBlocks</c>) and <see cref="TesiraDspSwitcher"/>
-    /// (<c>switcherControlBlocks</c>). It builds the same ports (see <see cref="MockSelectorLayout"/>)
-    /// and routes like them: one selection for the block, set by <see cref="ExecuteSwitch"/> whatever
-    /// the output, cleared by <see cref="ClearRoute"/> (input 0), and reported through
-    /// <see cref="CurrentRoutes"/>, <see cref="RouteChanged"/> and the named routing slots.
+    /// (<c>switcherControlBlocks</c>). It builds the same ports from the same
+    /// <see cref="SelectorPortLayout"/> and routes like them: one selection for the block, set by
+    /// <see cref="ExecuteSwitch"/> whatever the output, cleared by <see cref="ClearRoute"/> (input 0),
+    /// and reported through <see cref="CurrentRoutes"/>, <see cref="RouteChanged"/> and the named
+    /// routing slots. A selection the config doesn't list is accepted, as the DSP accepts it, and
+    /// reported as "Input N" with no route.
     /// </summary>
     /// <remarks>
     /// It also lists its inputs through <see cref="IHasInputs{T}"/> for front ends that select from a
@@ -27,19 +28,17 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Mock
     public class TesiraDspMockSourceSelector : EssentialsDevice, IRoutingWithFeedback, IHasNamedRoutingSlots,
         IHasFeedback, IHasInputs<string>
     {
-        // The selection, kept as the one output of a route table so it shares the router's state rules.
-        private const uint SelectionSlot = 1;
-
-        private readonly MockSelectorLayout layout;
-        private readonly MockRouteTable selection;
+        private readonly SelectorPortLayout layout;
         private readonly RoutingPortNamedSlots namedSlots;
         private readonly MockSourceInputs items;
 
-        // Serializes each selection with its publication, as the mock router does. A selection
-        // requested from inside a callback is queued and applied after the current one.
-        private readonly object selectionLock = new object();
-        private readonly Queue<uint> pendingSelections = new Queue<uint>();
-        private bool applyingSelections;
+        // Selections are applied one at a time, in order, with no lock held while they're published.
+        private readonly MockChangeQueue<uint> selections;
+
+        // Guards the selected input, which is read from any thread. Never held while publishing.
+        private readonly object stateLock = new object();
+        private uint selectedInput;
+        private bool forceFireWarned;
 
         /// <summary>Every feedback, for <c>devfb</c> on the console.</summary>
         public FeedbackCollection<Feedback> Feedbacks { get; } = new FeedbackCollection<Feedback>();
@@ -53,7 +52,7 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Mock
         /// <summary>The selected input. 0 = none.</summary>
         public IntFeedback SourceIndexFeedback { get; }
 
-        /// <summary>Label of the selected input ("None" when cleared).</summary>
+        /// <summary>Label of the selected input ("None" when cleared, "Input N" when not configured).</summary>
         public StringFeedback RoutedSourceNameFeedback { get; }
 
         public List<RouteSwitchDescriptor> CurrentRoutes { get; private set; } = new List<RouteSwitchDescriptor>();
@@ -62,11 +61,14 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Mock
 
         public ISelectableItems<string> Inputs => items;
 
-        public TesiraDspMockSourceSelector(string key, string name, MockSelectorLayout layout)
+        public TesiraDspMockSourceSelector(string key, string name, SelectorPortLayout layout)
             : base(key, name)
         {
             this.layout = layout;
-            selection = new MockRouteTable(new[] { SelectionSlot }, layout.Inputs.Select(i => i.Index));
+            selections = new MockChangeQueue<uint>(ApplySelection);
+
+            foreach (var problem in layout.Problems)
+                this.LogWarning("Config: {problem}", problem);
 
             foreach (var input in layout.Inputs)
                 InputPorts.Add(new RoutingInputPort(input.Label, eRoutingSignalType.Audio,
@@ -89,17 +91,19 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Mock
                 itemsByKey[input.ItemKey] = new MockSource(input.ItemKey, input.Label, input.Index, Select);
             items.Items = itemsByKey;
 
-            if (layout.InitialInput != 0)
-                selection.Route(SelectionSlot, layout.InitialInput);
+            selectedInput = layout.InitialInput;
 
             // Publish the starting selection through every view before the first change.
             SyncItems();
             CurrentRoutes = BuildCurrentRoutes();
-            namedSlots.HandleRouteChange(OutputPorts.FirstOrDefault(), FindPort(InputPorts, SelectedInput), eRoutingSignalType.Audio);
+            namedSlots.HandleRouteChange(OutputPorts.FirstOrDefault(), MockFeedback.FindPort(InputPorts, SelectedInput), eRoutingSignalType.Audio);
         }
 
         /// <summary>The selected input. 0 = none.</summary>
-        public uint SelectedInput => selection.Get(SelectionSlot);
+        public uint SelectedInput
+        {
+            get { lock (stateLock) return selectedInput; }
+        }
 
         protected override bool CustomActivate()
         {
@@ -115,13 +119,15 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Mock
         /// <summary>
         /// Selects an input. The selector may be a port selector (number) or, from mobile control's
         /// matrix routing, a named slot key, as on the real blocks. The output is ignored: the block
-        /// has one selection. Input 0 clears it.
+        /// has one selection. Input 0 clears it. As on the real blocks, a source selector acts on any
+        /// signal type that includes audio, a switcher only on exactly audio.
         /// </summary>
         public void ExecuteSwitch(object inputSelector, object outputSelector, eRoutingSignalType signalType)
         {
-            if (!signalType.HasFlag(eRoutingSignalType.Audio))
+            if (!layout.AcceptsSignalType(signalType))
             {
-                this.LogWarning("Signal Type {signalType} is not supported. Only Audio routing is supported.", signalType);
+                this.LogWarning("Signal Type {signalType} is not supported by this {kind}; the real block ignores it too.",
+                    signalType, layout.Kind);
                 return;
             }
 
@@ -135,7 +141,7 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Mock
             Select(input);
         }
 
-        /// <summary>Clears the selection by selecting input 0 (None).</summary>
+        /// <summary>Clears the selection by selecting input 0 (None), with the same signal type rule as a switch.</summary>
         public void ClearRoute(object outputSelector, eRoutingSignalType signalType)
         {
             ExecuteSwitch((uint)0, outputSelector, signalType);
@@ -145,7 +151,7 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Mock
         /// Bench control: simulates a selection made inside the DSP (for example by a preset), so the
         /// feedback can be tested without a switch request. From the console:
         /// <c>devjson {"deviceKey":"dsp-1--selector1","methodName":"SimulateSelection","params":[2]}</c>
-        /// selects input 2. Input 0 clears it.
+        /// selects input 2. Input 0 clears it. An input the config doesn't list is reported as "Input N".
         /// </summary>
         public void SimulateSelection(uint input)
         {
@@ -159,59 +165,62 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Mock
         /// </summary>
         public void FireUpdate()
         {
-            foreach (var feedback in Feedbacks) ForceFire(feedback);
+            foreach (var feedback in Feedbacks)
+            {
+                if (!MockFeedback.ForceFire(feedback) && !forceFireWarned)
+                {
+                    forceFireWarned = true;
+                    this.LogWarning("Can't force-publish {feedback}: Essentials' feedback internals changed; unchanged values won't re-publish", feedback.Key);
+                }
+            }
             items.FireUpdate();
         }
 
-        private void Select(uint input)
-        {
-            lock (selectionLock)
-            {
-                pendingSelections.Enqueue(input);
-                if (applyingSelections) return; // requested by a callback below: applied after the current one
+        private void Select(uint input) => selections.Post(input);
 
-                applyingSelections = true;
-                try
-                {
-                    while (pendingSelections.Count > 0)
-                        ApplyAndPublish(pendingSelections.Dequeue());
-                }
-                finally
-                {
-                    applyingSelections = false;
-                    pendingSelections.Clear(); // only non-empty if a subscriber threw
-                }
-            }
-        }
-
-        // Call with selectionLock held.
-        private void ApplyAndPublish(uint input)
+        // Runs on the thread that is applying selections, one at a time, with no lock held while publishing.
+        private void ApplySelection(uint input)
         {
-            switch (selection.Route(SelectionSlot, input))
+            lock (stateLock)
             {
-                case RouteResult.UnknownInput:
-                    this.LogWarning("Selection ignored: input {input} is not configured", input);
-                    return;
-                case RouteResult.Unchanged:
-                    return;
+                if (selectedInput == input) return;
+                selectedInput = input;
             }
 
             CurrentRoutes = BuildCurrentRoutes();
-            SourceIndexFeedback.FireUpdate();
-            RoutedSourceNameFeedback.FireUpdate();
-            SyncItems();
 
-            // As the real blocks: route feedback on the first output, and RouteChanged with the
-            // current route, which is null when a switcher (no "None" port) is cleared.
-            namedSlots.HandleRouteChange(OutputPorts.FirstOrDefault(), FindPort(InputPorts, input), eRoutingSignalType.Audio);
-            RouteChanged?.Invoke(this, CurrentRoutes.FirstOrDefault());
+            // As the real blocks: route feedback on the first output, and RouteChanged with the current
+            // route, which is null when nothing routable is selected (a cleared switcher, or an input the
+            // config doesn't list). A subscriber that throws doesn't stop the others.
+            var outputPort = OutputPorts.FirstOrDefault();
+            var inputPort = MockFeedback.FindPort(InputPorts, input);
+            Publish("source feedback", input, () =>
+            {
+                SourceIndexFeedback.FireUpdate();
+                RoutedSourceNameFeedback.FireUpdate();
+            });
+            Publish("input list", input, SyncItems);
+            Publish("named slots", input, () => namedSlots.HandleRouteChange(outputPort, inputPort, eRoutingSignalType.Audio));
+            Publish("RouteChanged", input, () => RouteChanged?.Invoke(this, CurrentRoutes.FirstOrDefault()));
+        }
+
+        private void Publish(string what, uint input, Action publish)
+        {
+            try
+            {
+                publish();
+            }
+            catch (Exception ex)
+            {
+                this.LogError(ex, "Error publishing {what} for selection of input {input}", what, input);
+            }
         }
 
         private List<RouteSwitchDescriptor> BuildCurrentRoutes()
         {
             var current = new List<RouteSwitchDescriptor>();
             var outputPort = OutputPorts.FirstOrDefault();
-            var inputPort = FindPort(InputPorts, SelectedInput);
+            var inputPort = MockFeedback.FindPort(InputPorts, SelectedInput);
             if (outputPort != null && inputPort != null)
                 current.Add(new RouteSwitchDescriptor(outputPort, inputPort));
             return current;
@@ -227,30 +236,6 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Mock
                 if (item.Index == selected) currentKey = item.Key;
             }
             items.CurrentItem = currentKey;
-        }
-
-        private static T FindPort<T>(IEnumerable<T> ports, uint selector) where T : PepperDash.Essentials.Core.RoutingPort =>
-            ports.FirstOrDefault(p => p.Selector != null && Convert.ToUInt32(p.Selector) == selector);
-
-        // Essentials keeps the last published value in a private field; reset it to a value the
-        // feedback can't produce so FireUpdate() sees a change (as TesiraDspMockRouter does).
-        private static readonly FieldInfo IntValueField =
-            typeof(IntFeedback).GetField("_IntValue", BindingFlags.NonPublic | BindingFlags.Instance);
-        private static readonly FieldInfo StringValueField =
-            typeof(StringFeedback).GetField("_StringValue", BindingFlags.NonPublic | BindingFlags.Instance);
-        private bool forceFireWarned;
-
-        private void ForceFire(Feedback feedback)
-        {
-            var field = feedback is IntFeedback ? IntValueField : feedback is StringFeedback ? StringValueField : null;
-            if (field != null)
-                field.SetValue(feedback, feedback is IntFeedback ? (object)int.MinValue : "\u0000");
-            else if (!forceFireWarned)
-            {
-                forceFireWarned = true;
-                this.LogWarning("Can't force-publish {feedback}: Essentials' feedback internals changed; unchanged values won't re-publish", feedback.Key);
-            }
-            feedback.FireUpdate();
         }
 
         // ── inner types ──────────────────────────────────────────────────────

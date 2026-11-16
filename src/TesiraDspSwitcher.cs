@@ -22,6 +22,9 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
     {
         private int sourceIndex;
 
+        // Ports from config, built the same way as the mock's (shared with TesiraDspMockSourceSelector).
+        private readonly SelectorPortLayout layout;
+
         private const string keyFormatter = "{0}--{1}";
 
         /// <summary>
@@ -79,7 +82,8 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
             set
             {
                 sourceIndex = value;
-                RoutedSourceName = SwitcherInputs[(uint)value] ?? "None";
+                // A selection the config doesn't list is reported as "Input N" (it used to throw).
+                RoutedSourceName = value >= 0 ? layout.LabelFor((uint)value) : "Input " + value;
                 RoutedSourceNameFeedback.FireUpdate();
                 SourceIndexFeedback.FireUpdate();
                 UpdateCurrentRoutes();
@@ -122,14 +126,13 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
         public TesiraDspSwitcher(string key, TesiraSwitcherControlBlockConfig config, TesiraDsp parent)
             : base(config.SwitcherInstanceTag, string.Empty, config.Index1, 0, parent, string.Format(keyFormatter, parent.Key, key), config.Label, config.BridgeIndex)
         {
-            SwitcherInputs = new Dictionary<uint, string>();
+            // Inputs and outputs from config (no "None" port; 0 still means none selected). Entries the
+            // config can't support are skipped and logged in Initialize.
+            layout = SelectorPortLayout.ForSwitcher(config.SwitcherInputs, config.SwitcherOutputs);
+            SwitcherInputs = layout.Inputs.ToDictionary(p => p.Index, p => p.Label);
+            SwitcherInputs.Add(0, SelectorPortLayout.NoneLabel);
 
             ShowRoutedString = config.ShowRoutedStringFeedback;
-            foreach (var input in config.SwitcherInputs)
-            {
-                SwitcherInputs.Add(input.Key, input.Value.Label);
-            }
-            SwitcherInputs.Add(0, "None");
 
             PollIntervalMs = config.PollIntervalMs ?? 90000;
 
@@ -177,29 +180,21 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
 
             Enabled = config.Enabled;
 
-            if (config.SwitcherInputs != null)
+            foreach (var problem in layout.Problems)
             {
-                foreach (
-                    var input in
-                        from input in config.SwitcherInputs
-                        let inputPort = input.Value
-                        let inputPortKey = input.Key
-                        select input)
-                {
-                    InputPorts.Add(new RoutingInputPort(input.Value.Label, eRoutingSignalType.Audio,
-                        eRoutingPortConnectionType.BackplaneOnly, input.Key, this));
-                }
+                this.LogWarning("Config: {problem}", problem);
             }
-            if (config.SwitcherOutputs == null) return;
-            foreach (
-                var output in
-                    from output in config.SwitcherOutputs
-                    let outputPort = output.Value
-                    let outputPortKey = output.Key
-                    select output)
+
+            foreach (var input in layout.Inputs)
             {
-                OutputPorts.Add(new RoutingOutputPort(output.Value.Label, eRoutingSignalType.Audio,
-                    eRoutingPortConnectionType.BackplaneOnly, output.Key, this));
+                InputPorts.Add(new RoutingInputPort(input.Label, eRoutingSignalType.Audio,
+                    eRoutingPortConnectionType.BackplaneOnly, input.Index, this));
+            }
+
+            foreach (var output in layout.Outputs)
+            {
+                OutputPorts.Add(new RoutingOutputPort(output.Label, eRoutingSignalType.Audio,
+                    eRoutingPortConnectionType.BackplaneOnly, output.Index, this));
             }
         }
 
