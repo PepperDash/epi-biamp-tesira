@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Reflection;
 using Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Routing;
 using PepperDash.Core.Logging;
 using PepperDash.Essentials.Core;
@@ -28,12 +27,11 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Mock
 
         private readonly MockRouteTable routes;
 
-        // Serializes each route change together with its publication, so overlapping calls can't
-        // publish an older route after a newer one. A route requested from inside a callback (same
-        // thread, so the re-entrant lock lets it in) is queued and applied after the current one.
-        private readonly object routeChangeLock = new object();
-        private readonly Queue<KeyValuePair<uint, uint>> pendingRoutes = new Queue<KeyValuePair<uint, uint>>();
-        private bool applyingRoutes;
+        // Route changes (output, input) are applied one at a time, in order, with no lock held while
+        // they're published, so overlapping calls can't publish an older route after a newer one and a
+        // subscriber that routes another device can't deadlock against this one.
+        private readonly MockChangeQueue<KeyValuePair<uint, uint>> routeChanges;
+        private bool forceFireWarned;
         private readonly Dictionary<uint, string> inputLabels = new Dictionary<uint, string>();
         private readonly RoutingPortNamedSlots namedSlots;
 
@@ -65,6 +63,7 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Mock
             : base(key, name)
         {
             config = config ?? new TesiraRouterControlBlockConfig();
+            routeChanges = new MockChangeQueue<KeyValuePair<uint, uint>>(change => ApplyAndPublish(change.Key, change.Value));
 
             inputLabels[0] = "None";
             foreach (var input in config.RouterInputs ?? new Dictionary<uint, RoutingPort>())
@@ -106,7 +105,7 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Mock
             // Every output starts routed to None: publish that through the routing views too, so
             // consumers see it before the first route change.
             CurrentRoutes = BuildCurrentRoutes();
-            var none = FindPort(InputPorts, 0);
+            var none = MockFeedback.FindPort(InputPorts, 0);
             foreach (var outputPort in OutputPorts)
                 namedSlots.HandleRouteChange(outputPort, none, eRoutingSignalType.Audio);
         }
@@ -210,7 +209,7 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Mock
         {
             foreach (var route in routes.Snapshot().OrderBy(r => r.Key))
             {
-                var outputLabel = FindPort(OutputPorts, route.Key)?.Key ?? $"Output {route.Key}";
+                var outputLabel = MockFeedback.FindPort(OutputPorts, route.Key)?.Key ?? $"Output {route.Key}";
                 this.LogInformation("MOCK output {output} ({outputLabel}): input {input} ({inputLabel})",
                     route.Key, outputLabel, route.Value, InputLabel(route.Value));
             }
@@ -223,55 +222,20 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Mock
         /// </summary>
         public void FireUpdate()
         {
-            foreach (var feedback in Feedbacks) ForceFire(feedback);
-        }
-
-        // Essentials keeps the last published value in a private field; reset it to a value the
-        // feedback can't produce so FireUpdate() sees a change (as TesiraDspMockFader does).
-        private static readonly FieldInfo IntValueField =
-            typeof(IntFeedback).GetField("_IntValue", BindingFlags.NonPublic | BindingFlags.Instance);
-        private static readonly FieldInfo StringValueField =
-            typeof(StringFeedback).GetField("_StringValue", BindingFlags.NonPublic | BindingFlags.Instance);
-        private bool forceFireWarned;
-
-        private void ForceFire(Feedback feedback)
-        {
-            var field = feedback is IntFeedback ? IntValueField : feedback is StringFeedback ? StringValueField : null;
-            if (field != null)
-                field.SetValue(feedback, feedback is IntFeedback ? (object)int.MinValue : "\u0000");
-            else if (!forceFireWarned)
+            foreach (var feedback in Feedbacks)
             {
-                forceFireWarned = true;
-                this.LogWarning("Can't force-publish {feedback}: Essentials' feedback internals changed; unchanged values won't re-publish", feedback.Key);
-            }
-            feedback.FireUpdate();
-        }
-
-        private void ApplyRoute(uint output, uint input)
-        {
-            lock (routeChangeLock)
-            {
-                pendingRoutes.Enqueue(new KeyValuePair<uint, uint>(output, input));
-                if (applyingRoutes) return; // requested by a callback below: applied after the current route
-
-                applyingRoutes = true;
-                try
+                if (!MockFeedback.ForceFire(feedback) && !forceFireWarned)
                 {
-                    while (pendingRoutes.Count > 0)
-                    {
-                        var next = pendingRoutes.Dequeue();
-                        ApplyAndPublish(next.Key, next.Value);
-                    }
-                }
-                finally
-                {
-                    applyingRoutes = false;
-                    pendingRoutes.Clear(); // only non-empty if a subscriber threw
+                    forceFireWarned = true;
+                    this.LogWarning("Can't force-publish {feedback}: Essentials' feedback internals changed; unchanged values won't re-publish", feedback.Key);
                 }
             }
         }
 
-        // Call with routeChangeLock held.
+        private void ApplyRoute(uint output, uint input) =>
+            routeChanges.Post(new KeyValuePair<uint, uint>(output, input));
+
+        // Runs on the thread that is applying route changes, one at a time, with no lock held while publishing.
         private void ApplyAndPublish(uint output, uint input)
         {
             switch (routes.Route(output, input))
@@ -288,19 +252,35 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Mock
 
             CurrentRoutes = BuildCurrentRoutes();
 
-            OutputRouteFeedbacks[output].FireUpdate();
-            OutputRouteNameFeedbacks[output].FireUpdate();
-            if (output == FirstOutput)
+            // A subscriber that throws doesn't stop the others.
+            Publish("output feedback", output, input, () =>
             {
-                SourceIndexFeedback.FireUpdate();
-                RoutedSourceNameFeedback.FireUpdate();
-            }
+                OutputRouteFeedbacks[output].FireUpdate();
+                OutputRouteNameFeedbacks[output].FireUpdate();
+                if (output == FirstOutput)
+                {
+                    SourceIndexFeedback.FireUpdate();
+                    RoutedSourceNameFeedback.FireUpdate();
+                }
+            });
 
-            var outputPort = FindPort(OutputPorts, output);
-            var inputPort = FindPort(InputPorts, input);
-            namedSlots.HandleRouteChange(outputPort, inputPort, eRoutingSignalType.Audio);
+            var outputPort = MockFeedback.FindPort(OutputPorts, output);
+            var inputPort = MockFeedback.FindPort(InputPorts, input);
+            Publish("named slots", output, input, () => namedSlots.HandleRouteChange(outputPort, inputPort, eRoutingSignalType.Audio));
             if (outputPort != null && inputPort != null)
-                RouteChanged?.Invoke(this, new RouteSwitchDescriptor(outputPort, inputPort));
+                Publish("RouteChanged", output, input, () => RouteChanged?.Invoke(this, new RouteSwitchDescriptor(outputPort, inputPort)));
+        }
+
+        private void Publish(string what, uint output, uint input, Action publish)
+        {
+            try
+            {
+                publish();
+            }
+            catch (Exception ex)
+            {
+                this.LogError(ex, "Error publishing {what} for the route of output {output} to input {input}", what, output, input);
+            }
         }
 
         // A cleared output (input 0) is reported with the "None" port, as on the real router.
@@ -309,15 +289,12 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira.Mock
             var current = new List<RouteSwitchDescriptor>();
             foreach (var route in routes.Snapshot())
             {
-                var outputPort = FindPort(OutputPorts, route.Key);
-                var inputPort = FindPort(InputPorts, route.Value);
+                var outputPort = MockFeedback.FindPort(OutputPorts, route.Key);
+                var inputPort = MockFeedback.FindPort(InputPorts, route.Value);
                 if (outputPort != null && inputPort != null)
                     current.Add(new RouteSwitchDescriptor(outputPort, inputPort));
             }
             return current;
         }
-
-        private static T FindPort<T>(IEnumerable<T> ports, uint selector) where T : PepperDash.Essentials.Core.RoutingPort =>
-            ports.FirstOrDefault(p => p.Selector != null && Convert.ToUInt32(p.Selector) == selector);
     }
 }

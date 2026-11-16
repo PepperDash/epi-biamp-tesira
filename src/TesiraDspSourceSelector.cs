@@ -18,6 +18,9 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
     {
         private int _sourceIndex;
 
+        // Ports from config, built the same way as the mock's (shared with TesiraDspMockSourceSelector).
+        private readonly SelectorPortLayout _layout;
+
         private const string KeyFormatter = "{0}--{1}";
 
         /// <summary>
@@ -133,14 +136,12 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
         public TesiraDspSourceSelector(string key, TesiraSourceSelectorControlBlockConfig config, TesiraDsp parent)
             : base(config.SourceSelectorInstanceTag, String.Empty, parent, string.Format(KeyFormatter, parent.Key, key), config.Label, config.BridgeIndex)
         {
-            SourceSelectorInputs = new Dictionary<uint, string>();
+            // The configured inputs plus "None" (0). Inputs the config can't support are skipped and
+            // logged in Initialize.
+            _layout = SelectorPortLayout.ForSourceSelector(config.SourceSelectorInputs);
+            SourceSelectorInputs = _layout.Inputs.ToDictionary(p => p.Index, p => p.Label);
 
             ShowRoutedString = config.ShowSelectedStringFeedback;
-            foreach (var input in config.SourceSelectorInputs ?? new Dictionary<uint, RoutingPort>())
-            {
-                SourceSelectorInputs.Add(input.Key, input.Value.Label);
-            }
-            SourceSelectorInputs.Add(0, "None");
 
             //if (Type == "router")
             //{
@@ -175,18 +176,24 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
 
             Enabled = config.Enabled;
 
-            if (SourceSelectorInputs != null)
+            foreach (var problem in _layout.Problems)
             {
-                foreach (var input in SourceSelectorInputs)
-                {
-                    this.LogVerbose("Adding Input Port {key} with Selector {value}", input.Value, input.Key);
-                    InputPorts.Add(new RoutingInputPort(input.Value, eRoutingSignalType.Audio,
-                        eRoutingPortConnectionType.BackplaneOnly, input.Key, this));
-                }
+                this.LogWarning("Config: {problem}", problem);
             }
 
-            OutputPorts.Add(new RoutingOutputPort("output", eRoutingSignalType.Audio,
-                eRoutingPortConnectionType.BackplaneOnly, 1, this));
+            foreach (var input in _layout.Inputs)
+            {
+                this.LogVerbose("Adding Input Port {key} with Selector {value}", input.Label, input.Index);
+                InputPorts.Add(new RoutingInputPort(input.Label, eRoutingSignalType.Audio,
+                    eRoutingPortConnectionType.BackplaneOnly, input.Index, this));
+            }
+
+            // The output's selector stays an int, as before.
+            foreach (var output in _layout.Outputs)
+            {
+                OutputPorts.Add(new RoutingOutputPort(output.Label, eRoutingSignalType.Audio,
+                    eRoutingPortConnectionType.BackplaneOnly, (int)output.Index, this));
+            }
         }
 
         /// <summary>
