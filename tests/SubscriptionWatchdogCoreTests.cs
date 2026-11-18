@@ -68,7 +68,7 @@ public class WatchdogPatrolTests
     }
 
     [Fact]
-    public void Quarantined_Components_Are_Never_Probed()
+    public void Quarantined_Components_Leave_The_Patrol_And_One_Is_Probed_Last()
     {
         var patrol = new WatchdogPatrol<string>(10);
         patrol.Quarantine("a").Should().BeTrue();
@@ -76,12 +76,61 @@ public class WatchdogPatrolTests
         patrol.Quarantine("d");
 
         var probe = patrol.NextProbeSet(Six, new[] { "a" });
-        probe.Should().NotContain(new[] { "a", "d" });
         probe.First().Should().Be("b"); // the sentinel is quarantined, so the first usable candidate stands in
+        probe.Should().Equal("b", "c", "e", "f", "a");
         patrol.QuarantinedCount.Should().Be(2);
+    }
+
+    [Fact]
+    public void Quarantined_Probe_Rotates_One_Per_Tick()
+    {
+        var patrol = new WatchdogPatrol<string>(0);
+        patrol.Quarantine("b");
+        patrol.Quarantine("e");
+
+        patrol.NextProbeSet(Six, null).Should().Equal("a", "b");
+        patrol.NextProbeSet(Six, null).Should().Equal("a", "e");
+        patrol.NextProbeSet(Six, null).Should().Equal("a", "b");
+    }
+
+    [Fact]
+    public void All_Quarantined_Still_Probes_One_So_A_Returning_Design_Is_Seen()
+    {
+        var patrol = new WatchdogPatrol<string>(2);
+        foreach (var c in Six) patrol.Quarantine(c);
+
+        patrol.NextProbeSet(Six, new[] { "a" }).Should().Equal("a");
+        patrol.NextProbeSet(Six, new[] { "a" }).Should().Equal("b");
+    }
+
+    [Fact]
+    public void Quarantined_Snapshot_And_Clear()
+    {
+        var patrol = new WatchdogPatrol<string>(2);
+        patrol.Quarantine("c");
+        patrol.Quarantine("a");
+
+        var snapshot = patrol.Quarantined;
+        snapshot.Should().BeEquivalentTo(new[] { "a", "c" });
 
         patrol.ClearQuarantine();
-        patrol.IsQuarantined("a").Should().BeFalse();
+        snapshot.Should().HaveCount(2, "callers read the snapshot outside the lock");
+        patrol.Quarantined.Should().BeEmpty();
+    }
+
+    [Fact]
+    public void Release_Returns_One_Component_To_The_Patrol()
+    {
+        var patrol = new WatchdogPatrol<string>(10);
+        patrol.Quarantine("b");
+        patrol.Quarantine("d");
+
+        patrol.Release("b").Should().BeTrue();
+        patrol.Release("b").Should().BeFalse();
+        patrol.Release(null).Should().BeFalse();
+
+        patrol.Quarantined.Should().Equal("d");
+        patrol.NextProbeSet(Six, null).Should().Equal("a", "b", "c", "e", "f", "d");
     }
 
     [Fact]
@@ -119,6 +168,110 @@ public class ProbeBatchTests
         batch.IsOpen.Should().BeTrue();
         batch.Record(mute, "-ERR ALREADY_SUBSCRIBED").Should().Be(ProbeReply.Healthy);
         batch.IsOpen.Should().BeFalse();
+    }
+
+    private static ProbeBatch<string, Cmd> FaderBatch(Cmd level, Cmd mute)
+    {
+        var batch = new ProbeBatch<string, Cmd>();
+        batch.Begin(new[] { "fader" });
+        batch.ExpectReply("fader", level);
+        batch.ExpectReply("fader", mute);
+        batch.EndCapture();
+        return batch;
+    }
+
+    [Fact]
+    public void Sender_Is_Healthy_Only_After_Its_Last_Reply_And_All_Healthy()
+    {
+        var level = C("fader level"); var mute = C("fader mute");
+        var batch = FaderBatch(level, mute);
+
+        batch.Record(level, "-ERR ALREADY_SUBSCRIBED", out var afterLevel);
+        afterLevel.Should().BeFalse("the mute reply is still outstanding");
+        batch.Record(mute, "-ERR ALREADY_SUBSCRIBED", out var afterMute);
+        afterMute.Should().BeTrue();
+    }
+
+    [Fact]
+    public void A_Healthy_Reply_During_Capture_Does_Not_Settle_A_Sender_Still_Queueing()
+    {
+        var mute = C("fader mute"); var level = C("fader level");
+        var batch = new ProbeBatch<string, Cmd>();
+        batch.Begin(new[] { "fader" });
+        batch.ExpectReply("fader", mute);
+        batch.Record(mute, "-ERR ALREADY_SUBSCRIBED", out var early);
+        early.Should().BeFalse("the fader may still queue its level subscribe");
+
+        batch.ExpectReply("fader", level);
+        batch.EndCapture(out var healthy).Should().BeTrue();
+        healthy.Should().BeEmpty("the level reply is still outstanding");
+
+        batch.Record(level, "-ERR address not found: [0 0 0]", out var late);
+        late.Should().BeFalse();
+    }
+
+    [Fact]
+    public void Senders_Answered_Healthy_During_Capture_Are_Reported_When_It_Ends()
+    {
+        var mute = C("fader mute"); var level = C("fader level"); var state = C("state");
+        var batch = new ProbeBatch<string, Cmd>();
+        batch.Begin(new[] { "fader", "state" });
+        batch.ExpectReply("fader", mute);
+        batch.ExpectReply("fader", level);
+        batch.ExpectReply("state", state);
+        batch.Record(mute, "-ERR ALREADY_SUBSCRIBED", out _);
+        batch.Record(level, "-ERR ALREADY_SUBSCRIBED", out _);
+        batch.Record(state, "-ERR address not found: [0 0 0]", out _);
+
+        batch.EndCapture(out var healthy).Should().BeFalse("every reply is in");
+        healthy.Should().Equal("fader");
+    }
+
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void A_Rejected_Subscribe_Keeps_The_Sender_Unhealthy(bool replyDuringCapture)
+    {
+        var mute = C("fader mute");
+        var batch = new ProbeBatch<string, Cmd>();
+        batch.Begin(new[] { "fader" });
+        batch.ExpectReply("fader", mute);
+        batch.MarkAttempted("fader"); // the level subscribe was rejected (queue full)
+
+        var healthy = new List<string>();
+        bool settled;
+        if (replyDuringCapture)
+        {
+            batch.Record(mute, "-ERR ALREADY_SUBSCRIBED", out settled);
+            batch.EndCapture(out var reported);
+            healthy.AddRange(reported);
+        }
+        else
+        {
+            batch.EndCapture(out var reported);
+            healthy.AddRange(reported);
+            batch.Record(mute, "-ERR ALREADY_SUBSCRIBED", out settled);
+        }
+
+        settled.Should().BeFalse("the level subscription was never checked");
+        healthy.Should().BeEmpty();
+    }
+
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void One_Config_Error_Keeps_The_Sender_Unhealthy_In_Either_Order(bool missingMuteFirst)
+    {
+        var level = C("fader level"); var mute = C("fader mute");
+        var batch = FaderBatch(level, mute);
+        var first = missingMuteFirst ? mute : level;
+        var second = missingMuteFirst ? level : mute;
+
+        batch.Record(first, first == mute ? "-ERR address not found: [0 0 0]" : "-ERR ALREADY_SUBSCRIBED", out var a);
+        batch.Record(second, second == mute ? "-ERR address not found: [0 0 0]" : "-ERR ALREADY_SUBSCRIBED", out var b);
+
+        a.Should().BeFalse();
+        b.Should().BeFalse();
     }
 
     [Fact]

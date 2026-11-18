@@ -57,8 +57,10 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
 
     /// <summary>
     /// Chooses what each watchdog tick probes: the sentinels (one per partition, from config; by default
-    /// the first candidate) plus the next few candidates of a rotating patrol. Quarantined components are
-    /// never probed.
+    /// the first candidate) plus the next few candidates of a rotating patrol. Quarantined components
+    /// leave the patrol, but one of them (rotating) is probed each tick: a whole design going missing
+    /// quarantines working components too, and without a probe among them the watchdog couldn't see
+    /// the design come back once everything is quarantined.
     /// </summary>
     /// <remarks>Kept free of Crestron types so it can be unit tested.</remarks>
     internal sealed class WatchdogPatrol<T> where T : class
@@ -66,6 +68,7 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
         private readonly int patrolSize;
         private readonly HashSet<T> quarantined = new HashSet<T>();
         private int cursor;
+        private int quarantineCursor;
 
         public WatchdogPatrol(int patrolSize)
         {
@@ -79,18 +82,46 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
         /// <returns>true if the component was newly quarantined</returns>
         public bool Quarantine(T component) => component != null && quarantined.Add(component);
 
-        /// <summary>Forgets quarantines, e.g. after a reconnect (the design may have been fixed).</summary>
+        /// <summary>Releases one component, e.g. when its probe shows it is subscribed after all.</summary>
+        /// <returns>true if the component was quarantined</returns>
+        public bool Release(T component) => component != null && quarantined.Remove(component);
+
+        /// <summary>Snapshot of the quarantined components, in no particular order.</summary>
+        public IReadOnlyList<T> Quarantined => quarantined.ToList();
+
+        /// <summary>
+        /// Forgets quarantines: after a reconnect, or when the DSP turns out to have dropped its
+        /// subscriptions (the design may have changed). Components still missing from the design are
+        /// quarantined again by later probes.
+        /// </summary>
         public void ClearQuarantine() => quarantined.Clear();
 
         /// <summary>
-        /// The components to probe this tick, sentinels first, without duplicates.
+        /// The components to probe this tick: the sentinels and patrol, then one quarantined candidate
+        /// (rotating), without duplicates.
         /// </summary>
         /// <param name="candidates">Components that can be probed (subscribed), in a stable order</param>
         /// <param name="sentinels">Configured sentinels; when none are usable, the first candidate is the sentinel</param>
         public IReadOnlyList<T> NextProbeSet(IReadOnlyList<T> candidates, IEnumerable<T> sentinels)
         {
+            var candidateList = (candidates ?? new List<T>()).Where(c => c != null).ToList();
+            var probe = SentinelsAndPatrol(candidateList.Where(c => !quarantined.Contains(c)).ToList(), sentinels);
+
+            var quarantinedCandidates = candidateList.Where(quarantined.Contains).ToList();
+            if (quarantinedCandidates.Count > 0)
+            {
+                quarantineCursor %= quarantinedCandidates.Count;
+                probe.Add(quarantinedCandidates[quarantineCursor]);
+                quarantineCursor = (quarantineCursor + 1) % quarantinedCandidates.Count;
+            }
+
+            return probe;
+        }
+
+        /// <summary>Sentinels first, then the next patrol components in rotation.</summary>
+        private List<T> SentinelsAndPatrol(List<T> usable, IEnumerable<T> sentinels)
+        {
             var probe = new List<T>();
-            var usable = (candidates ?? new List<T>()).Where(c => c != null && !quarantined.Contains(c)).ToList();
             if (usable.Count == 0) return probe;
 
             foreach (var sentinel in sentinels ?? Enumerable.Empty<T>())
@@ -134,6 +165,12 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
         // a member had queued before the probe can't take a probe's place.
         private readonly HashSet<TCommand> outstanding = new HashSet<TCommand>();
 
+        // Which member sent each probe command, and members with any reply that wasn't healthy: a
+        // component's probe can be several subscribes (a fader's level and mute), judged together.
+        private readonly Dictionary<TCommand, TComponent> senders = new Dictionary<TCommand, TComponent>();
+        private readonly HashSet<TComponent> notHealthy = new HashSet<TComponent>();
+        private readonly HashSet<TComponent> replied = new HashSet<TComponent>();
+
         /// <summary>A batch has been started and not yet closed.</summary>
         public bool IsOpen { get; private set; }
 
@@ -146,9 +183,7 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
 
         public void Begin(IEnumerable<TComponent> components)
         {
-            members.Clear();
-            membersWithReplies.Clear();
-            outstanding.Clear();
+            Reset();
             foreach (var c in components ?? Enumerable.Empty<TComponent>())
             {
                 if (c != null) members.Add(c);
@@ -162,6 +197,7 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
         {
             if (!Capturing || component == null || command == null || !members.Contains(component)) return;
             outstanding.Add(command);
+            senders[command] = component;
             membersWithReplies.Add(component);
         }
 
@@ -173,6 +209,8 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
         {
             if (!Capturing || component == null || !members.Contains(component)) return;
             membersWithReplies.Add(component);
+            // A subscribe that never went out wasn't checked, so this probe can't show the component healthy.
+            notHealthy.Add(component);
         }
 
         /// <summary>
@@ -186,23 +224,48 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
         /// Ends capture. If no member queued a probe (all opted out), the batch closes.
         /// </summary>
         /// <returns>true if the batch is still waiting for replies</returns>
-        public bool EndCapture()
+        public bool EndCapture() => EndCapture(out _);
+
+        /// <param name="healthySenders">
+        /// Members whose probe replies all arrived during capture and were all healthy. A reply during
+        /// capture can't settle its sender, which may still be queueing more subscribes.
+        /// </param>
+        public bool EndCapture(out IReadOnlyList<TComponent> healthySenders)
         {
             Capturing = false;
+            healthySenders = replied.Where(IsSettledHealthy).ToList();
             if (Outstanding == 0) Close();
             return IsOpen;
         }
+
+        private bool IsSettledHealthy(TComponent sender) => !notHealthy.Contains(sender) && !senders.ContainsValue(sender);
 
         /// <summary>
         /// Records the reply to one of this batch's probe commands. A <see cref="ProbeReply.Lost"/>
         /// reply closes the batch; otherwise it closes once every expected reply is in.
         /// </summary>
         /// <returns>the reply's classification, or null when the command isn't one this batch is waiting for</returns>
-        public ProbeReply? Record(TCommand command, string response)
+        public ProbeReply? Record(TCommand command, string response) => Record(command, response, out _);
+
+        /// <param name="senderHealthy">
+        /// true when capture has ended, this was the sender's last outstanding probe reply and all of
+        /// its replies were healthy (ALREADY_SUBSCRIBED). Senders settled during capture are reported
+        /// by <see cref="EndCapture(out IReadOnlyList{TComponent})"/> instead.
+        /// </param>
+        public ProbeReply? Record(TCommand command, string response, out bool senderHealthy)
         {
+            senderHealthy = false;
             if (!IsOpen || command == null || !outstanding.Remove(command)) return null;
 
             var reply = ProbeReplies.Classify(response);
+
+            if (senders.TryGetValue(command, out var sender))
+            {
+                senders.Remove(command);
+                replied.Add(sender);
+                if (reply != ProbeReply.Healthy) notHealthy.Add(sender);
+                senderHealthy = !Capturing && IsSettledHealthy(sender);
+            }
 
             if (reply == ProbeReply.Lost || (!Capturing && Outstanding == 0)) Close();
             return reply;
@@ -212,9 +275,17 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
         {
             IsOpen = false;
             Capturing = false;
+            Reset();
+        }
+
+        private void Reset()
+        {
             members.Clear();
             membersWithReplies.Clear();
             outstanding.Clear();
+            senders.Clear();
+            notHealthy.Clear();
+            replied.Clear();
         }
     }
 }

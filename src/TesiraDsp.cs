@@ -92,10 +92,35 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
                 List<string> keys;
                 lock (watchdogLock)
                 {
-                    keys = ExpectedSubscribed().Where(c => !c.IsSubscribed).Select(c => c.Key).OrderBy(k => k).ToList();
+                    keys = ExpectedSubscribed().Where(c => !c.IsSubscribed).Select(c => c.Key).ToList();
                 }
-                return keys.Count == 0 ? "none" : string.Join(", ", keys);
+                return KeyList(keys);
             }
+        }
+
+        /// <summary>
+        /// Components the watchdog has quarantined because their subscription can't succeed ("address
+        /// not found" and similar), by key (or "none"). They're left out of <see cref="IsSubscribed"/>
+        /// and <see cref="UnsubscribedControls"/>. Shown by <c>devprops</c>.
+        /// </summary>
+        public string QuarantinedControls
+        {
+            get
+            {
+                List<string> keys;
+                lock (watchdogLock)
+                {
+                    keys = watchdogPatrol.Quarantined.Select(c => c.Key).ToList();
+                }
+                return KeyList(keys);
+            }
+        }
+
+        /// <summary>Sorted, comma-separated keys for the devprops lists, or "none".</summary>
+        private static string KeyList(IEnumerable<string> keys)
+        {
+            var sorted = keys.OrderBy(k => k).ToList();
+            return sorted.Count == 0 ? "none" : string.Join(", ", sorted);
         }
 
         // Call with watchdogLock held.
@@ -1075,7 +1100,10 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
                     // IsSubscribed) can't stand in as the default sentinel.
                     foreach (var silent in probeBatch.MembersWithoutExpectedReplies())
                         silentProbes.Add(silent);
-                    probeBatch.EndCapture();
+                    // Probes answered (all healthy) before capture ended: subscribed after all.
+                    probeBatch.EndCapture(out var healthyDuringCapture);
+                    foreach (var component in healthyDuringCapture)
+                        watchdogPatrol.Release(component);
                 }
             }
             catch (Exception ex)
@@ -1269,8 +1297,7 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
         /// Control points whose Tesira unit answered -CANNOT_DELIVER (offline, rebooting or not running
         /// the design), until they answer again. Shown by <c>devprops</c>.
         /// </summary>
-        public string UnavailableControls =>
-            controlAvailability.Count == 0 ? "none" : string.Join(", ", controlAvailability.Keys);
+        public string UnavailableControls => KeyList(controlAvailability.Keys);
 
         /// <summary>
         /// Called by the queue for every reply to a command it sent. Tracks which control points
@@ -1344,15 +1371,26 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
             ProbeReply? reply;
             var newlyQuarantined = false;
             int quarantined;
+            var released = 0;
             lock (watchdogLock)
             {
-                reply = probeBatch.Record(command, response);
+                reply = probeBatch.Record(command, response, out var probeHealthy);
 
                 // Any subscribe that succeeded or was already there means the component is subscribed,
                 // probe or not: a healthy reply publishes nothing to set IsSubscribed again.
                 var ack = ProbeReplies.Classify(response);
                 if (ack == ProbeReply.Healthy || ack == ProbeReply.Lost) knownSubscribed.Add(component);
                 if (reply == ProbeReply.ConfigError) newlyQuarantined = watchdogPatrol.Quarantine(component);
+                if (reply == ProbeReply.Lost)
+                {
+                    // A missing design quarantines working components too; release them before the repair
+                    // snapshots its list. Record closed the batch, so no older probe reply can re-quarantine.
+                    released = watchdogPatrol.QuarantinedCount;
+                    watchdogPatrol.ClearQuarantine();
+                }
+                // Subscribed after all (e.g. a manual Resubscribe restored it): back into the patrol, but
+                // only once every subscribe of its probe is healthy (a fader's level and mute are separate).
+                if (probeHealthy) watchdogPatrol.Release(component);
                 quarantined = watchdogPatrol.QuarantinedCount;
             }
 
@@ -1362,7 +1400,7 @@ namespace Pepperdash.Essentials.Plugins.DSP.Biamp.Tesira
                     // The DSP had dropped this subscription. A design push or partition restart drops
                     // many, so restore everything now (as Biamp's modules do) rather than a cycle later.
                     // Off the queue's lock: this queues a subscribe per component.
-                    this.LogWarning("Watchdog: '{command}' was accepted as new (+OK), so the DSP had dropped subscriptions; restoring all subscriptions.", command.Command);
+                    this.LogWarning("Watchdog: '{command}' was accepted as new (+OK), so the DSP had dropped subscriptions; restoring all subscriptions ({released} quarantined released).", command.Command, released);
                     System.Threading.Tasks.Task.Run(() => RepairSubscriptions());
                     break;
                 case ProbeReply.ConfigError:
